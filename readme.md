@@ -1,5 +1,6 @@
 
-[中文版](readme_cn.md)
+访问： [中文版](readme_cn.md)
+
 BaiPiaoOCR means a PiaoLiang( A Chinese word  means Beautiful in English ) OCR Engine From Baidu, it's based on PaddleOCR & OnnxRuntime.
 
 We create the project to transfer PaddleOCR's model into the version of Onnx model to deploy the model on almost every devices, such as x86 PC, Android & IOS.
