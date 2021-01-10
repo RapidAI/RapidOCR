@@ -19,3 +19,10 @@ You can visualize the model by https://github.com/lutzroeder/netron/
 
 Welcome to our Group on QQ: 887298230
 or visit: https://jq.qq.com/?_wv=1027&k=P9b3olx6
+
+
+Download OCR　models:
+
+链接：https://pan.baidu.com/s/1UhDrC7iOMWiYaQiHk3acdw 
+提取码：yjgv 
+复制这段内容后打开百度网盘手机App，操作更方便哦
