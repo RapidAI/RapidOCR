@@ -130,8 +130,16 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+.gradle
+
 #idea
 .idea
-/images
-/models
-/release
+build/
+/run-test/images/
+/run-test/models/
+/run-test/*.dll
+/run-test/*.so
+/run-test/*.dylib
+/run-test/*.jar
+/run-test/valgrind-memcheck.txt
+/out

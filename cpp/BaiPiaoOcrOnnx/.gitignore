@@ -132,6 +132,11 @@ dmypy.json
 
 #idea
 .idea
-/images
-/models
-/release
+cmake-build-debug/
+build/
+build-lib/
+/models/
+onnxruntime-shared/
+onnxruntime-static/
+opencv-static/
+opencv-shared/
