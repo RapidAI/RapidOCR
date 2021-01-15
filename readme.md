@@ -1,5 +1,5 @@
 
-访问： [中文版](readme_cn.md)   Chinese Name: 白富美OCR
+访问： [中文版](readme_cn.md)             Chinese Name: 白富美OCR
 
 Author: benjaminwan, znsoftm
 
