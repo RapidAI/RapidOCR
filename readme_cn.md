@@ -11,9 +11,9 @@
 * C++范例(Windows/Linux/macOS): [demo](https://github.com/znsoftm/BaiPiaoOCR/tree/main/cpp)
 * Jvm范例(Java/Kotlin): [demo](https://github.com/znsoftm/BaiPiaoOCR/tree/main/jvm)
 * .Net范例(C#): [demo](https://github.com/znsoftm/BaiPiaoOCR/tree/main/dotnet)
-* Android范例: 暂缺
+* Android范例: [demo](https://github.com/znsoftm/BaiPiaoOCR/tree/main/android)
 * IOS范例: 暂缺
-* python范例: 暂缺
+* python范例: [demo](https://github.com/znsoftm/BaiPiaoOCR/tree/main/python)
 
 ### 模型训练
 https://zhuanlan.zhihu.com/p/268761718
