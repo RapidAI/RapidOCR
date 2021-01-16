@@ -1,0 +1,6 @@
+onnxruntime
+opencv-python
+numpy
+pyclipper
+Shapely
+python==3.6.4
