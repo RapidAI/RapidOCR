@@ -22,6 +22,7 @@ or visit: https://jq.qq.com/?_wv=1027&k=P9b3olx6
 
 
 Download OCR　models:
+
 Linkage ：https://pan.baidu.com/s/1UhDrC7iOMWiYaQiHk3acdw 
 
 code：yjgv 
