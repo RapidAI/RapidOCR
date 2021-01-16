@@ -18,7 +18,7 @@ You can visualize the model by https://github.com/lutzroeder/netron/
 
 
 Welcome to our Group on QQ: 887298230
-or visit: https://jq.qq.com/?_wv=1027&k=P9b3olx6
+or visit: https://jq.qq.com/?_wv=1027&k=P9b3olx6 to join us.
 
 
 Download OCR　models:
