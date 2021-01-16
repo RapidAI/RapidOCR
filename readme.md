@@ -1,5 +1,5 @@
 
-访问： [中文版](readme_cn.md)   Chinese Name: 白富美OCR
+访问： [中文版](readme_cn.md)             Chinese Name: 白富美OCR
 
 Author: benjaminwan, znsoftm
 
@@ -18,12 +18,21 @@ You can visualize the model by https://github.com/lutzroeder/netron/
 
 
 Welcome to our Group on QQ: 887298230
-or visit: https://jq.qq.com/?_wv=1027&k=P9b3olx6
+or visit: https://jq.qq.com/?_wv=1027&k=P9b3olx6 to join us.
 
 
 Download OCR　models:
 
-链接：https://pan.baidu.com/s/1UhDrC7iOMWiYaQiHk3acdw 
+Linkage ：https://pan.baidu.com/s/1UhDrC7iOMWiYaQiHk3acdw 
 
-提取码：yjgv 
+code：yjgv 
 
+
+
+### Demonstration with C++/JVM
+
+![avatar](test_imgs/test_cpp.png)
+
+### Demonstration with  .Net
+
+![avatar](test_imgs/test_cs.png)
