@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <Button
+        android:id="@+id/galleryBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="相册识别" />
+
+    <Button
+        android:id="@+id/cameraBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="相机识别" />
+
+    <Button
+        android:id="@+id/imeiBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="手机IMEI号识别" />
+
+    <Button
+        android:id="@+id/plateBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="车牌识别" />
+
+    <Button
+        android:id="@+id/idCardBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="身份证人像面识别" />
+
+</LinearLayout>
