@@ -70,7 +70,7 @@ PaddleOCR/models
     │   ├── best_accuracy.states
     │   └── train.log
 ```
-* 把本项目tools文件夹里的export_custom.py复制到PaddleOCR/tools里
+* 把本项目tools文件夹里的export_custom.py复制到PaddleOCR/tools里，把program.py覆盖到PaddleOCR/tools里
 * 把本项目tools文件夹里的gen-models.sh复制到PaddleOCR根目录
 * 开始转换
 ```shell
