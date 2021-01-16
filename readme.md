@@ -27,3 +27,12 @@ Download OCR　models:
 
 提取码：yjgv 
 
+
+
+### Demonstration with C++/JVM
+
+![avatar](test_imgs/test_cpp.png)
+
+### Demonstration with  .Net
+
+![avatar](test_imgs/test_cs.png)
