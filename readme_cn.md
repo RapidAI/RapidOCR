@@ -18,6 +18,9 @@
 ### 模型训练
 https://zhuanlan.zhihu.com/p/268761718
 
+### 模型转换
+[模型转换说明](https://github.com/znsoftm/BaiPiaoOCR/tree/main/models)
+
 ## 授权：
 OCR模型版权归百度所有，其它工程代码版权归本仓库所有者所有。 本软件采用LGPL 授权方式，欢迎大家贡献代码，提交issue 甚至pr.
 
