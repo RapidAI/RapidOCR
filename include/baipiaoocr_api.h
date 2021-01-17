@@ -15,9 +15,9 @@ extern "C"
 #define _QM_OCR_API 
 #endif
 
-	typedef void* BPHANDLE;
-
-	typedef  char BOOL;
+typedef void* BPHANDLE;
+typedef  char BOOL;
+	
 #ifndef NULL
 #define NULL 0
 #endif 
