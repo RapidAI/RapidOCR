@@ -62,8 +62,11 @@ fun main(args: Array<String>) {
     ocrEngine.enableResultText(imagePath)
 
     //------- init Models -------
-    val ret = ocrEngine.initModels(modelsDir, detName, clsName, recName, keysName)
-    println("init Models $ret")
+    val initModelsRet = ocrEngine.initModels(modelsDir, detName, clsName, recName, keysName)
+    if (!initModelsRet) {
+        println("Error in models initialization, please check the models/keys path!")
+        return
+    }
 
     //------- set param -------
     println("padding($padding) boxScoreThresh($boxScoreThresh) boxThresh($boxThresh) unClipRatio($unClipRatio) doAngle($doAngle) mostAngle($mostAngle)")
