@@ -13,6 +13,7 @@ https://github.com/znsoftm/BaiPiaoOCR   in the prodouct derived from the reposit
 benjaminwan, znsoftm
 
 
+**Description**
 
 BaiPiaoOCR means an  OCR Engine who is fair-skinned,rich and beautiful  From Baidu, it's based on PaddleOCR & OnnxRuntime.
 
