@@ -3,7 +3,7 @@
 
 ### Directory structure
 
-[Visit to see it### 目录结构](dir.md)    
+[Visit to see it ### 目录结构](dir.md)    
 
 
 **Copyright announcement:**
