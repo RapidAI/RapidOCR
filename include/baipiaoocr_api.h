@@ -22,7 +22,7 @@ extern "C"
 #define NULL 0
 #endif 
 #define	TRUE	1
-#define	FALSE	��
+#define	FALSE	0
 
 	_QM_OCR_API BPHANDLE   BPOcrInit(const char * szDetModel, const char * szClsModel, const char * szRecModel);
 
