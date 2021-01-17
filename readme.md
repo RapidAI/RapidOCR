@@ -12,6 +12,8 @@ https://github.com/znsoftm/BaiPiaoOCR   in the prodouct derived from the reposit
 
 benjaminwan, znsoftm
 
+All contributors is in the contributor list on the right bottom of this page.
+
 
 **Description**
 
