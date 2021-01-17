@@ -121,8 +121,11 @@ public class Main {
         ocrEngine.enableResultText(imagePath);
 
         //------- init Models -------
-        boolean ret = ocrEngine.initModels(modelsDir, detName, clsName, recName, keysName);
-        System.out.println("init Models " + ret);
+        boolean initModelsRet = ocrEngine.initModels(modelsDir, detName, clsName, recName, keysName);
+        if (!initModelsRet) {
+            System.out.println("Error in models initialization, please check the models/keys path!");
+            return;
+        }
 
         //------- set param -------
         System.out.printf("padding(%d) boxScoreThresh(%f) boxThresh(%f) unClipRatio(%f) doAngle(%b) mostAngle(%b)", padding, boxScoreThresh, boxThresh, unClipRatio, doAngle, mostAngle);

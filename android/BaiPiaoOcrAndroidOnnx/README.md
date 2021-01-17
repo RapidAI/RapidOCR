@@ -23,9 +23,8 @@ onnxruntime框架[https://github.com/microsoft/onnxruntime](https://github.com/m
 
 ### 模型下载
 
-[模型下载地址](https://github.com/znsoftm/BaiPiaoOCR/tree/main/models)
+* [模型下载地址](https://github.com/znsoftm/BaiPiaoOCR/tree/main/models)
 也可以到Q群共享内下载，下载后解压到如下目录。 目前det模型有2种，如果想让apk体积小，那么就选mobile模型即可
-
 ```
 BaiPiaoOcrAndroidOnnx/OcrLibrary/src/main/assets
     ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
@@ -33,6 +32,17 @@ BaiPiaoOcrAndroidOnnx/OcrLibrary/src/main/assets
     ├── ch_ppocr_server_v2.0_det_infer.onnx 二选一
     ├── ch_ppocr_server_v2.0_rec_infer.onnx
     └── ppocr_keys_v1.txt
+```
+* 代码中配置使用哪个模型
+BaiPiaoOcrAndroidOnnx/OcrLibrary/src/main/java/com/benjaminwan/ocrlibrary/OcrEngine.kt，在init方法中配置：
+```kotlin
+val ret = init(
+            context.assets, numThread,
+            "ch_ppocr_mobile_v2.0_det_infer.onnx",
+            "ch_ppocr_mobile_v2.0_cls_infer.onnx",
+            "ch_ppocr_server_v2.0_rec_infer.onnx",
+            "ppocr_keys_v1.txt"
+        )
 ```
 
 ### 总体说明

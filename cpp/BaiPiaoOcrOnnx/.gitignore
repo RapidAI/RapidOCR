@@ -135,7 +135,8 @@ dmypy.json
 cmake-build-debug/
 build/
 build-lib/
-/models/
+models/
+images/
 onnxruntime-shared/
 onnxruntime-static/
 opencv-static/

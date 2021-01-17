@@ -7,20 +7,28 @@ set OMP_NUM_THREADS=%NUMBER_OF_PROCESSORS%
 
 echo "请选择det模型: 1)server, 2)mobile"
 set /p flag=
-if %flag% == 1 (set DET_MODEL="ch_ppocr_server_v2.0_det_infer.onnx")^
-else if %flag% == 2 (set DET_MODEL="ch_ppocr_mobile_v2.0_det_infer.onnx")^
+if %flag% == 1 (set DET_MODEL=ch_ppocr_server_v2.0_det_infer.onnx)^
+else if %flag% == 2 (set DET_MODEL=ch_ppocr_mobile_v2.0_det_infer.onnx)^
 else (echo 输入错误！Input Error!)
 
 echo "请输入循环次数:"
 set /p LOOP_COUNT=
 
+SET TARGET_IMG=images/1.jpg
+if not exist %TARGET_IMG% (
+echo "找不到待识别的目标图片：%TARGET_IMG%，请打开本文件并编辑TARGET_IMG"
+PAUSE
+exit
+)
+
 :: run Windows
+build\benchmark.exe --version
 build\benchmark.exe --models models ^
 --det %DET_MODEL% ^
 --cls ch_ppocr_mobile_v2.0_cls_infer.onnx ^
 --rec ch_ppocr_server_v2.0_rec_infer.onnx ^
 --keys ppocr_keys_v1.txt ^
---image ../../images/1.jpg ^
+--image %TARGET_IMG% ^
 --numThread %NUMBER_OF_PROCESSORS% ^
 --padding 0 ^
 --maxSideLen 1024 ^
@@ -28,7 +36,7 @@ build\benchmark.exe --models models ^
 --boxThresh 0.3 ^
 --unClipRatio 1.5 ^
 --doAngle 1 ^
---mostAngle 0 ^
+--mostAngle 1 ^
 --loopCount %LOOP_COUNT%
 PAUSE
 @ENDLOCAL

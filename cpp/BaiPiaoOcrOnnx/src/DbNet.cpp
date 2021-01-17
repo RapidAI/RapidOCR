@@ -1,6 +1,5 @@
 #include "DbNet.h"
 #include "OcrUtils.h"
-#include "clipper.hpp"
 
 DbNet::DbNet() {}
 
@@ -104,7 +103,6 @@ std::vector<TextBox> findRsBoxes(const cv::Mat &predMat, const cv::Mat &dilateMa
     reverse(rsBoxes.begin(), rsBoxes.end());
     return rsBoxes;
 }
-
 
 std::vector<TextBox>
 DbNet::getTextBoxes(cv::Mat &src, ScaleParam &s, float boxScoreThresh, float boxThresh, float unClipRatio) {

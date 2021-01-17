@@ -4,6 +4,7 @@
 #include <jni.h>
 #include "OcrLite.h"
 #include "OcrResultUtils.h"
+#include "OcrUtils.h"
 
 static OcrLite *ocrLite;
 
@@ -80,10 +81,10 @@ Java_com_benjaminwan_ocrlibrary_OcrEngine_initLogger(JNIEnv *env, jobject thiz, 
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_benjaminwan_ocrlibrary_OcrEngine_enableResultText(JNIEnv *env, jobject thiz, jstring input) {
-    std::string argImgPath = jstringToChar(env, input);
-    std::string imgPath = argImgPath.substr(0, argImgPath.find_last_of('/') + 1);
-    std::string imgName = argImgPath.substr(argImgPath.find_last_of('/') + 1);
-    ocrLite->enableResultTxt(imgPath.c_str(), imgName.c_str());
+    std::string imgPath = jstringToChar(env, input);
+    std::string imgDir = imgPath.substr(0, imgPath.find_last_of('/') + 1);
+    std::string imgName = imgPath.substr(imgPath.find_last_of('/') + 1);
+    ocrLite->enableResultTxt(imgDir.c_str(), imgName.c_str());
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
@@ -94,26 +95,53 @@ Java_com_benjaminwan_ocrlibrary_OcrEngine_initModels(JNIEnv *env, jobject thiz, 
     std::string clsName = jstringToChar(env, cls);
     std::string recName = jstringToChar(env, rec);
     std::string keysName = jstringToChar(env, keys);
-    std::string detPath = modelsDir + "/" + detName;
-    std::string clsPath = modelsDir + "/" + clsName;
-    std::string recPath = modelsDir + "/" + recName;
+    std::string modelDetPath = modelsDir + "/" + detName;
+    std::string modelClsPath = modelsDir + "/" + clsName;
+    std::string modelRecPath = modelsDir + "/" + recName;
     std::string keysPath = modelsDir + "/" + keysName;
     printf("modelsDir=%s\ndet=%s\ncls=%s\nrec=%s\nkeys=%s\n", modelsDir.c_str(), detName.c_str(), clsName.c_str(),
            recName.c_str(), keysName.c_str());
-    ocrLite->initModels(detPath, clsPath, recPath, keysPath);
+    bool hasModelDetFile = isFileExists(modelDetPath);
+    if (!hasModelDetFile) {
+        fprintf(stderr, "Model det file not found: %s\n", modelDetPath.c_str());
+        return false;
+    }
+    bool hasModelClsFile = isFileExists(modelClsPath);
+    if (!hasModelClsFile) {
+        fprintf(stderr, "Model cls file not found: %s\n", modelClsPath.c_str());
+        return false;
+    }
+    bool hasModelRecFile = isFileExists(modelRecPath);
+    if (!hasModelRecFile) {
+        fprintf(stderr, "Model rec file not found: %s\n", modelRecPath.c_str());
+        return false;
+    }
+    bool hasKeysFile = isFileExists(keysPath);
+    if (!hasKeysFile) {
+        fprintf(stderr, "keys file not found: %s\n", keysPath.c_str());
+        return false;
+    }
+    ocrLite->initModels(modelDetPath, modelClsPath, modelRecPath, keysPath);
     return true;
 }
 
 extern "C" JNIEXPORT jobject JNICALL
-Java_com_benjaminwan_ocrlibrary_OcrEngine_detect(JNIEnv *env, jobject thiz, jstring input, jint padding, jint maxSideLen,
+Java_com_benjaminwan_ocrlibrary_OcrEngine_detect(JNIEnv *env, jobject thiz, jstring input, jint padding,
+                                                 jint maxSideLen,
                                                  jfloat boxScoreThresh, jfloat boxThresh, jfloat unClipRatio,
                                                  jboolean doAngle, jboolean mostAngle
 ) {
-    std::string argImgPath = jstringToChar(env, input);
-    std::string imgPath = argImgPath.substr(0, argImgPath.find_last_of('/') + 1);
-    std::string imgName = argImgPath.substr(argImgPath.find_last_of('/') + 1);
-    printf("imgPath=%s, imgName=%s\n", imgPath.c_str(), imgName.c_str());
-    OcrResult result = ocrLite->detect(imgPath.c_str(), imgName.c_str(), padding, maxSideLen,
+    std::string imgPath = jstringToChar(env, input);
+    bool hasTargetImgFile = isFileExists(imgPath);
+    if (!hasTargetImgFile) {
+        fprintf(stderr, "Target image not found: %s\n", imgPath.c_str());
+        OcrResult result{};
+        return OcrResultUtils(env, result).getJObject();
+    }
+    std::string imgDir = imgPath.substr(0, imgPath.find_last_of('/') + 1);
+    std::string imgName = imgPath.substr(imgPath.find_last_of('/') + 1);
+    printf("imgDir=%s, imgName=%s\n", imgDir.c_str(), imgName.c_str());
+    OcrResult result = ocrLite->detect(imgDir.c_str(), imgName.c_str(), padding, maxSideLen,
                                        boxScoreThresh, boxThresh, unClipRatio, doAngle, mostAngle);
     return OcrResultUtils(env, result).getJObject();
 }
