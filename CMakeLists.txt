@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 project(BaiPiaoOCR)
 
 include_directories(cpp/BaiPiaoOcrOnnx/include)
+include_directories(include/onnxruntime/core/session)
+include_directories(include/)
 
 if(WIN32)
 
