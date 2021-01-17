@@ -18,9 +18,11 @@ extern "C"
 	typedef void* BPHANDLE;
 
 	typedef  char BOOL;
+#ifndef NULL
 #define NULL 0
+#endif 
 #define	TRUE	1
-#define	FALSE	£°
+#define	FALSE	ï¿½ï¿½
 
 	_QM_OCR_API BPHANDLE   BPOcrInit(const char * szDetModel, const char * szClsModel, const char * szRecModel);
 
