@@ -1,9 +1,23 @@
 
 访问： [中文版](readme_cn.md)             Chinese Name: 白富美OCR
 
-Author: benjaminwan, znsoftm
+**Copyright announcement:**
 
-BaiPiaoOCR means an  OCR Engine who is fair-skinned,rich and beautiful  From Baidu, it's based on PaddleOCR & OnnxRuntime.
+If you use or reference code or code snippet from the repository, please add our url 
+
+https://github.com/znsoftm/BaiPiaoOCR   in your prodouct derived from the repository.
+
+
+**Author:**
+
+benjaminwan, znsoftm
+
+All contributors is in the contributor list on the right side of this page.
+
+
+**Description**
+
+BaiPiaoOCR means an  OCR Engine who is fair-skinned, rich and beautiful from Baidu, it's based on PaddleOCR & OnnxRuntime.
 
 Note： The project is derived from https://github.com/PaddlePaddle/PaddleOCR
 
