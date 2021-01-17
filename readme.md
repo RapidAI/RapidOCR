@@ -3,7 +3,7 @@
 
 ### Directory structure
 
-[Visit to see it()](dir.md)    
+[Visit to see it《》](dir.md)    
 
 
 **Copyright announcement:**
