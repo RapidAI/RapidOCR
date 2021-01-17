@@ -1,4 +1,3 @@
-#pragma once
 #include "../include/precomp.h"
 #ifdef __cplusplus
 extern "C"
