@@ -13,6 +13,9 @@ elseif(UNIX)
 
 endif()
 
-set(OCR_SRC api4cpp/baipiaoocr_api.cpp cpp/BaiPiaoOcrOnnx/src/AngleNet.cpp )
+aux_source_directory(cpp/BaiPiaoOcrOnnx/src/ SRC_MAIN)
+set(OCR_SRC api4cpp/baipiaoocr_api.cpp ${SRC_MAIN}  )
 
 add_library(bpocrapi SHARED ${OCR_SRC})
+
+target_compile_definitions(bpocrapi PUBLIC -D_BPOCR_LIB)
