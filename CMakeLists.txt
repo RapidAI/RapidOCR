@@ -22,6 +22,11 @@ add_library(bpocrapi SHARED ${OCR_SRC})
 target_compile_definitions(bpocrapi PUBLIC -D_BPOCR_LIB)
 
 
+set(BPOCRTESTSRC api4cpp/bpocrapitest.cpp)
+add_executable(bpocrtest ${BPOCRTESTSRC})
+
+
+
 if(WIN32)
 
 target_link_directories(bpocrapi PUBLIC lib/win)
@@ -32,5 +37,9 @@ message(STATUS ${CMAKE_CURRENT_SOURCE_DIR}/lib/linux)
 target_link_directories(bpocrapi PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/linux )
 target_link_libraries(bpocrapi onnxruntime opencv_core)
 
+target_link_directories(bpocrtest PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/linux )
+target_link_libraries(bpocrtest onnxruntime opencv_core bpocrapi)
+
 endif()
+
 
