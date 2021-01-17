@@ -5,7 +5,7 @@
 
 If you use or reference code or code snippet from the repository, please add our url 
 
-https://github.com/znsoftm/BaiPiaoOCR   in the prodouct derived from the repository.
+https://github.com/znsoftm/BaiPiaoOCR   in your prodouct derived from the repository.
 
 
 **Author:**
