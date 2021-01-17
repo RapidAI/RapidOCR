@@ -1,6 +1,11 @@
 
 访问： [中文版](readme_cn.md)             Chinese Name: 白富美OCR
 
+### Directory structure
+
+### [Click to see 目录结构](dir.md)    
+
+
 **Copyright announcement:**
 
 If you use or reference code or code snippet from the repository, please add our url 
@@ -36,11 +41,11 @@ or visit: https://jq.qq.com/?_wv=1027&k=P9b3olx6 to join us.
 
 
 Download OCR　models:
-
+```
 Linkage ：https://pan.baidu.com/s/1UhDrC7iOMWiYaQiHk3acdw 
 
 code：yjgv 
-
+```
 
 
 ### Demonstration with C++/JVM
