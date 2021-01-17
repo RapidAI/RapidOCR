@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 3.1)
 project(BaiPiaoOcrOnnx)
 
-option(BAIPIAO_LIB "OcrLite Jni Support" OFF)
-option(BAIPIAO_STATIC "Use Static Librarys For Build" ON)
-option(BAIPIAO_OPENMP "OcrLite Enable OpenMP" ON)
-option(BAIPIAO_BENCHMARK "build benchmark" ON)
-#set(BAIPIAO_LIB ON)
-#set(BAIPIAO_STATIC OFF)
-#set(BAIPIAO_OPENMP OFF)
-set(BAIPIAO_BENCHMARK ON)
+option(OCR_LIB "OcrLite Jni Support" OFF)
+option(OCR_STATIC "Use Static Librarys For Build" ON)
+option(OCR_OPENMP "OcrLite Enable OpenMP" ON)
+option(OCR_BENCHMARK "build benchmark" ON)
+#set(OCR_LIB ON)
+#set(OCR_STATIC OFF)
+#set(OCR_OPENMP OFF)
+set(OCR_BENCHMARK ON)
 
 set(CMAKE_CXX_STANDARD 11)
 add_definitions(-DUNICODE -D_UNICODE)
@@ -47,7 +47,7 @@ else ()
 endif ()
 
 # OnnxRuntime
-if (BAIPIAO_STATIC)
+if (OCR_STATIC)
     set(OnnxRuntime_DIR "${CMAKE_CURRENT_SOURCE_DIR}/onnxruntime-static")
 else ()
     set(OnnxRuntime_DIR "${CMAKE_CURRENT_SOURCE_DIR}/onnxruntime-shared")
@@ -61,7 +61,7 @@ else ()
 endif (OnnxRuntime_FOUND)
 
 # OpenCV
-if (BAIPIAO_STATIC)
+if (OCR_STATIC)
     include(${CMAKE_CURRENT_SOURCE_DIR}/opencv-static/OpenCVWrapperConfig.cmake)
 else ()
     include(${CMAKE_CURRENT_SOURCE_DIR}/opencv-shared/OpenCVWrapperConfig.cmake)
@@ -75,7 +75,7 @@ else ()
 endif (OpenCV_FOUND)
 
 # JNI
-if (BAIPIAO_LIB)
+if (OCR_LIB)
     find_package(JNI REQUIRED)
     if (JNI_FOUND)
         message("JNI FOUND")
@@ -94,7 +94,16 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 file(GLOB OCR_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 set(OCR_COMPILE_CODE ${OCR_SRC})
 
-if (BAIPIAO_LIB)
+# static libgcc libstdc++
+if (OCR_STATIC)
+    if (APPLE)
+        set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++")
+    else ()
+        set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
+    endif ()
+endif ()
+
+if (OCR_LIB)
     add_library(BaiPiaoOcrOnnx SHARED ${OCR_COMPILE_CODE})
     target_compile_definitions(BaiPiaoOcrOnnx PRIVATE __JNI__)
     target_link_libraries(BaiPiaoOcrOnnx ${OnnxRuntime_LIBS} ${OpenCV_LIBS} ${JNI_LIBS} ${OpenMP_CXX_LIB_NAMES})
@@ -102,12 +111,13 @@ else ()
 add_executable(BaiPiaoOcrOnnx ${OCR_COMPILE_CODE})
 target_link_libraries(BaiPiaoOcrOnnx ${OnnxRuntime_LIBS} ${OpenCV_LIBS} ${OpenMP_CXX_LIB_NAMES})
 endif ()
-if (BAIPIAO_OPENMP)
+
+if (OCR_OPENMP)
     target_compile_definitions(BaiPiaoOcrOnnx PRIVATE __OPENMP__)
 endif ()
 
 # benchmark
-if (BAIPIAO_BENCHMARK AND NOT BAIPIAO_LIB)
+if (OCR_BENCHMARK AND NOT OCR_LIB)
     add_executable(benchmark benchmark/benchmark.cpp
             src/AngleNet.cpp
             src/clipper.cpp
@@ -117,7 +127,7 @@ if (BAIPIAO_BENCHMARK AND NOT BAIPIAO_LIB)
             src/OcrLite.cpp
             src/OcrUtils.cpp)
     target_link_libraries(benchmark ${OnnxRuntime_LIBS} ${OpenCV_LIBS} ${OpenMP_CXX_LIB_NAMES})
-    if (BAIPIAO_OPENMP)
+    if (OCR_OPENMP)
         target_compile_definitions(benchmark PRIVATE __OPENMP__)
     endif ()
 endif ()

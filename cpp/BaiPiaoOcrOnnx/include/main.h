@@ -33,21 +33,22 @@ const char *requiredMsg = "-d --models: models directory.\n" \
                           "-1 --det: model file name of det.\n" \
                           "-2 --cls: model file name of cls.\n" \
                           "-3 --rec: model file name of rec.\n" \
+						  "-4 --keys: keys file name.\n" \
                           "-i --image: path of target image.\n\n";
 
 const char *optionalMsg = "-t --numThread: value of numThread(int), default: 4\n" \
-                          "-p --padding: value of padding(int), default: 50\n" \
+                          "-p --padding: value of padding(int), default: 0\n" \
                           "-s --maxSideLen: Long side of picture for resize(int), default: 1024\n" \
                           "-b --boxScoreThresh: value of boxScoreThresh(float), default: 0.5\n" \
                           "-o --boxThresh: value of boxThresh(float), default: 0.3\n" \
                           "-u --unClipRatio: value of unClipRatio(float), default: 2.0\n" \
                           "-a --doAngle: Enable(1)/Disable(0) Angle Net, default: Enable\n" \
-                          "-A --mostAngle: Enable(1)/Disable(0) Most Possible AngleIndex, default: Disable\n\n";
+                          "-A --mostAngle: Enable(1)/Disable(0) Most Possible AngleIndex, default: Enable\n\n";
 
 const char *otherMsg = "-v --version: show version\n" \
                        "-h --help: print this help\n\n";
 
-const char *example1Msg = "Example1: %s --models models --det det.onnx --cls cls.onnx --rec rec.onnx --image 1.jpg\n";
-const char *example2Msg = "Example2: %s -d models -1 det.onnx -2 cls.onnx -3 rec.onnx -i 1.jpg -t 4 -p 50 -s 0 -b 0.6 -o 0.3 -u 2.0 -a 1 -A 1\n";
+const char *example1Msg = "Example1: %s --models models --det det.onnx --cls cls.onnx --rec rec.onnx --keys keys.txt --image 1.jpg\n";
+const char *example2Msg = "Example2: %s -d models -1 det.onnx -2 cls.onnx -3 rec.onnx -4 keys.txt -i 1.jpg -t 4 -p 50 -s 0 -b 0.6 -o 0.3 -u 2.0 -a 1 -A 1\n";
 
 #endif //__MAIN_H__

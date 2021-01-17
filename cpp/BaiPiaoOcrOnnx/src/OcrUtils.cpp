@@ -180,7 +180,7 @@ cv::Mat adjustTargetImg(cv::Mat &src, int dstWidth, int dstHeight) {
     return srcFit;
 }
 
-bool cvPointCompare(cv::Point a, cv::Point b) {
+bool cvPointCompare(const cv::Point &a, const cv::Point &b) {
     return a.x < b.x;
 }
 

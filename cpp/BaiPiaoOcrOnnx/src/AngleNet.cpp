@@ -98,7 +98,6 @@ std::vector<Angle> AngleNet::getAngles(std::vector<cv::Mat> &partImgs, const cha
             double startAngle = getCurrentTime();
             cv::Mat angleImg;
             cv::resize(partImgs[i], angleImg, cv::Size(dstWidth, dstHeight));
-            //auto angleImg = adjustTargetImg(partImgs[i], dstWidth, dstHeight);
             Angle angle = getAngle(angleImg);
             double endAngle = getCurrentTime();
             angle.time = endAngle - startAngle;

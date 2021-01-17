@@ -5,6 +5,7 @@
 #include "OcrStruct.h"
 #include "onnxruntime_cxx_api.h"
 #include <numeric>
+#include <sys/stat.h>
 
 template<typename T, typename... Ts>
 static std::unique_ptr<T> makeUnique(Ts &&... params) {
@@ -38,6 +39,11 @@ inline T clamp(T x, T min, T max) {
 }
 
 double getCurrentTime();
+
+inline bool isFileExists(const std::string &name) {
+    struct stat buffer;
+    return (stat(name.c_str(), &buffer) == 0);
+}
 
 std::wstring strToWstr(std::string str);
 

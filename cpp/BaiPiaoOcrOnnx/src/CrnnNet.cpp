@@ -60,8 +60,7 @@ void CrnnNet::initModel(const std::string &pathStr, const std::string &keysPath)
     if (keys.size() != 6623) {
         fprintf(stderr, "missing keys\n");
     }
-    keys.insert(keys.begin(),
-                "#"); // blank char for ctc
+    keys.insert(keys.begin(),"#");
     keys.emplace_back(" ");
     printf("total keys size(%lu)\n", keys.size());
 }
@@ -84,7 +83,7 @@ TextLine CrnnNet::scoreToTextLine(const std::vector<float> &outputData, int h, i
         maxValue = float(*std::max_element(&outputData[i * w], &outputData[(i + 1) * w]));
 
         if (maxIndex > 0 && maxIndex < keySize && (!(i > 0 && maxIndex == lastIndex))) {
-            scores.push_back(maxValue);
+            scores.emplace_back(maxValue);
             strRes.append(keys[maxIndex]);
         }
         lastIndex = maxIndex;

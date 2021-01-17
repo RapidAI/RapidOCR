@@ -1,9 +1,11 @@
+#ifndef __JNI__
 #include <omp.h>
 #include <cstdio>
 #include <string>
 #include "main.h"
 #include "version.h"
 #include "OcrLite.h"
+#include "OcrUtils.h"
 
 void printHelp(FILE *out, char *argv0) {
     fprintf(out, " ------- Usage -------\n");
@@ -24,10 +26,8 @@ int main(int argc, char **argv) {
         printHelp(stderr, argv[0]);
         return -1;
     }
-    std::string modelsDir = "../models";
-    std::string modelDetPath, modelClsPath, modelRecPath, keysPath;
-    std::string argImgPath = "../../test_imgs/1.jpg";
-    std::string imgPath, imgName;
+    std::string modelsDir, modelDetPath, modelClsPath, modelRecPath, keysPath;
+    std::string imgPath, imgDir, imgName;
     int numThread = 4;
     int padding = 0;
     int maxSideLen = 1024;
@@ -36,8 +36,8 @@ int main(int argc, char **argv) {
     float unClipRatio = 2.0f;
     bool doAngle = true;
     int flagDoAngle = 1;
-    bool mostAngle = false;
-    int flagMostAngle = 0;
+    bool mostAngle = true;
+    int flagMostAngle = 1;
 
     int opt;
     int optionIndex = 0;
@@ -65,10 +65,10 @@ int main(int argc, char **argv) {
                 printf("keys path=%s\n", keysPath.c_str());
                 break;
             case 'i':
-                argImgPath.assign(optarg);
-                imgPath.assign(argImgPath.substr(0, argImgPath.find_last_of('/') + 1));
-                imgName.assign(argImgPath.substr(argImgPath.find_last_of('/') + 1));
-                printf("imgPath=%s, imgName=%s\n", imgPath.c_str(), imgName.c_str());
+                imgPath.assign(optarg);
+                imgDir.assign(imgPath.substr(0, imgPath.find_last_of('/') + 1));
+                imgName.assign(imgPath.substr(imgPath.find_last_of('/') + 1));
+                printf("imgDir=%s, imgName=%s\n", imgDir.c_str(), imgName.c_str());
                 break;
             case 't':
                 numThread = (int) strtol(optarg, NULL, 10);
@@ -122,6 +122,31 @@ int main(int argc, char **argv) {
                 printf("other option %c :%s\n", opt, optarg);
         }
     }
+    bool hasTargetImgFile = isFileExists(imgPath);
+    if (!hasTargetImgFile) {
+        fprintf(stderr, "Target image not found: %s\n", imgPath.c_str());
+        return -1;
+    }
+    bool hasModelDetFile = isFileExists(modelDetPath);
+    if (!hasModelDetFile) {
+        fprintf(stderr, "Model det file not found: %s\n", modelDetPath.c_str());
+        return -1;
+    }
+    bool hasModelClsFile = isFileExists(modelClsPath);
+    if (!hasModelClsFile) {
+        fprintf(stderr, "Model cls file not found: %s\n", modelClsPath.c_str());
+        return -1;
+    }
+    bool hasModelRecFile = isFileExists(modelRecPath);
+    if (!hasModelRecFile) {
+        fprintf(stderr, "Model rec file not found: %s\n", modelRecPath.c_str());
+        return -1;
+    }
+    bool hasKeysFile = isFileExists(keysPath);
+    if (!hasKeysFile) {
+        fprintf(stderr, "keys file not found: %s\n", keysPath.c_str());
+        return -1;
+    }
     omp_set_num_threads(numThread);
     OcrLite ocrLite;
     ocrLite.setNumThread(numThread);
@@ -130,7 +155,7 @@ int main(int argc, char **argv) {
             false,//isOutputPartImg
             true);//isOutputResultImg
 
-    ocrLite.enableResultTxt(imgPath.c_str(), imgName.c_str());
+    ocrLite.enableResultTxt(imgDir.c_str(), imgName.c_str());
     ocrLite.Logger("=====Input Params=====\n");
     ocrLite.Logger(
             "numThread(%d),padding(%d),maxSideLen(%d),boxScoreThresh(%f),boxThresh(%f),unClipRatio(%f),doAngle(%d),mostAngle(%d)\n",
@@ -138,8 +163,10 @@ int main(int argc, char **argv) {
 
     ocrLite.initModels(modelDetPath, modelClsPath, modelRecPath, keysPath);
 
-    OcrResult result = ocrLite.detect(imgPath.c_str(), imgName.c_str(), padding, maxSideLen,
+    OcrResult result = ocrLite.detect(imgDir.c_str(), imgName.c_str(), padding, maxSideLen,
                                       boxScoreThresh, boxThresh, unClipRatio, doAngle, mostAngle);
     ocrLite.Logger("%s\n", result.strRes.c_str());
     return 0;
 }
+
+#endif
