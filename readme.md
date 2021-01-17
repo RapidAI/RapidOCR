@@ -8,7 +8,7 @@ If you use or reference code or code snippet from the repository, please add our
 https://github.com/znsoftm/BaiPiaoOCR   in the prodouct derived from the repository.
 
 
-**Author: **
+**Author:**
 
 benjaminwan, znsoftm
 
