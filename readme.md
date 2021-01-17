@@ -15,7 +15,7 @@ benjaminwan, znsoftm
 
 **Description**
 
-BaiPiaoOCR means an  OCR Engine who is fair-skinned,rich and beautiful  From Baidu, it's based on PaddleOCR & OnnxRuntime.
+BaiPiaoOCR means an  OCR Engine who is fair-skinned, rich and beautiful from Baidu, it's based on PaddleOCR & OnnxRuntime.
 
 Note： The project is derived from https://github.com/PaddlePaddle/PaddleOCR
 
