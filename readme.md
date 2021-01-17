@@ -8,7 +8,11 @@ If you use or reference code or code snippet from the repository, please add our
 https://github.com/znsoftm/BaiPiaoOCR   in the prodouct derived from the repository.
 
 
-Author: benjaminwan, znsoftm
+**Author: **
+
+benjaminwan, znsoftm
+
+
 
 BaiPiaoOCR means an  OCR Engine who is fair-skinned,rich and beautiful  From Baidu, it's based on PaddleOCR & OnnxRuntime.
 
