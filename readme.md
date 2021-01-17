@@ -1,6 +1,11 @@
 
 访问： [中文版](readme_cn.md)             Chinese Name: 白富美OCR
 
+### Directory structure
+
+[Visit](dir.md)    
+
+
 **Copyright announcement:**
 
 If you use or reference code or code snippet from the repository, please add our url 
