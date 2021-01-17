@@ -15,7 +15,7 @@ benjaminwan, znsoftm
 
 白富美OCR(名称由来：白富美→又白又漂亮→白漂), 模型来源于百度，富人家的千金 -- 白富美。
  
-基于百度的开源PaddleOCR，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle 框架进行模型优化。 
+基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle 框架进行模型优化。 
 
 ### 当前进展
 * C++范例(Windows/Linux/macOS): [demo](https://github.com/znsoftm/BaiPiaoOCR/tree/main/cpp)
