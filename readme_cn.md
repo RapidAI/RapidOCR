@@ -11,7 +11,7 @@ benjaminwan, znsoftm
 
 
 ### 简介   
-为什么要创建这个项目？ 百度paddlepaddle工程化不是太好，为了方便大家在各种端上进行ocr推理，我们将它转换为onnx格式，使用python/c++/java/swift 将它移植到各个平台。
+为什么要创建这个项目？ 百度paddlepaddle工程化不是太好，为了方便大家在各种端上进行ocr推理，我们将它转换为onnx格式，使用python/c++/java/swift/c# 将它移植到各个平台。
 
 白富美OCR(名称由来：白富美→又白又漂亮→白漂), 模型来源于百度，富人家的千金 -- 白富美。
  
