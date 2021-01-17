@@ -1,5 +1,9 @@
 本项目欢迎提交issue, 欢迎PR.
 
+### 版权声明
+
+如果你的产品使用了本仓库中的全部或部分代码、文字或材料， 请注明出处并包括我们的github url : https://github.com/znsoftm/BaiPiaoOCR 
+
 ### 简介   
 为什么要创建这个项目？ 百度paddlepaddle工程化不是太好，为了方便大家在各种端上进行ocr推理，我们将它转换为onnx格式，使用python/c++/java/swift 将它移植到各个平台。
 
