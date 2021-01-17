@@ -1,35 +1,33 @@
 ```
 BaiPiaoOCR
           |
-          |--android
+          |--android     安卓工程目录
           |
-          |--api4cpp
+          |--api4cpp      c语言跨平台接口库源码目录，直接用根下的CMakelists.txt 编译
           |
-          |--build
+          |--build        编译脚本
           |
-          |--commonlib
+          |--cpp          基于c++的工程项目文件夹
           |
-          |--cpp
+          |--datasets     额外的训练数据集，百度网盘下载地址
           |
-          |--datasets
+          |--dotnet       .Net程序目录
           |
-          |--dotnet
+          |--include      编译c语言接口库时的头文件目录
           |
-          |--include
+          |--ios          苹果手机平台工程目录
           |
-          |--ios
+          |--jvm          基于java的工程目录
           |
-          |--jvm
+          |--lib          编译用库文件目录，用于编译c语言接口库用，默认并不上传二进制文件
           |
-          |--lib
+          |--models       放置可使用的模型文件下载信息，基于百度网盘
+          | 
+          |--python       python推理代码目录
           |
-          |--models
+          |--test_imgs    一些演示用的图片，不是测试集
           |
-          |--python
+          |--tools        一些转换脚本之类
           |
-          |--test_imgs
-          |
-          |--tools
-          |
-          |--training
+          |--training     训练自己的模型使用的脚本或程序。
 ```
