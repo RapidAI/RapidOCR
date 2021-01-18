@@ -22,7 +22,7 @@ benjaminwan, znsoftm
 * Jvm范例(Java/Kotlin): [demo](https://github.com/znsoftm/BaiPiaoOCR/tree/main/jvm)
 * .Net范例(C#): [demo](https://github.com/znsoftm/BaiPiaoOCR/tree/main/dotnet)
 * Android范例: [demo](https://github.com/znsoftm/BaiPiaoOCR/tree/main/android)
-* IOS范例: 暂缺
+* IOS范例: 等待有缘人贡献代码
 * python范例: [demo](https://github.com/znsoftm/BaiPiaoOCR/tree/main/python)
 
 ### 模型训练
