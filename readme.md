@@ -1,6 +1,8 @@
 
 访问： [中文版](readme_cn.md)             Chinese Name: 白富美OCR
 
+Special thanks to Channingss@baidu (the owner of project Paddle2Onnx)
+
 ### Directory structure
 
 ### [Click to see 目录结构](dir.md)    
