@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 project(BaiPiaoOCR)
 
-include_directories(cpp/BaiPiaoOcrOnnx/include)
-include_directories(include/onnxruntime/core/session)
-include_directories(include/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cpp/BaiPiaoOcrOnnx/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/onnxruntime/core/session)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/)
 
 if(WIN32)
 
 	add_definitions(-D_BPOCR_EXPORT_API)
+	
 elseif(UNIX)
 	include_directories(/usr/include/opencv4/)
 
