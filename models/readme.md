@@ -42,6 +42,7 @@ sudo python3 setup.py install
 * 接下来的操作都在PaddleOCR文件夹里进行
 * PaddleOCR切换到2.0分支(因为预训练模型也是v2.0格式的)
 ```shell
+git clone https://github.com/PaddlePaddle/PaddleOCR.git
 cd PaddleOCR
 git checkout release/2.0-rc1-0
 ```
