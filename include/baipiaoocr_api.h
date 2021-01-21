@@ -1,3 +1,4 @@
+#pragma once
 #ifdef __cplusplus
 extern "C"
 {
@@ -24,12 +25,23 @@ typedef  char BOOL;
 #define	TRUE	1
 #define	FALSE	0
 
-	_QM_OCR_API BPHANDLE   BPOcrInit(const char * szDetModel, const char * szClsModel, const char * szRecModel);
 
-	_QM_OCR_API const char*  BPOcrDoOcr(BPHANDLE handle, const char* szImgPath, BOOL bAutoParam);
+typedef struct __bpocr_param
+{
+	int nLongsizeLen;
+	float  fClipRate;
+} BPOCR_PARAM;
 
-	_QM_OCR_API void  BPOcrDeinit(BPHANDLE handle);
 
+
+/*
+By default, nThreads should be the number of threads 
+*/
+_QM_OCR_API BPHANDLE   BPOcrInit(const char * szDetModel, const char * szClsModel, const char * szRecModel,const char *szKeyPath,int nThreads);
+
+_QM_OCR_API const char*  BPOcrDoOcr(BPHANDLE handle, const char* szImgPath, BOOL bAutoParam, BPOCR_PARAM *pParam);
+
+_QM_OCR_API void  BPOcrDeinit(BPHANDLE handle);
 
 
 

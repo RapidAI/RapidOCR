@@ -22,11 +22,13 @@ add_library(bpocrapi SHARED ${OCR_SRC})
 
 target_compile_definitions(bpocrapi PUBLIC -D_BPOCR_LIB)
 
-
+# test program 
 set(BPOCRTESTSRC api4cpp/bpocrapitest.cpp)
 add_executable(bpocrtest ${BPOCRTESTSRC})
 
 
+#opencv 
+set(OPENCV_LIB opencv_core opencv_imgproc opencv_imgcodecs)
 
 if(WIN32)
 
@@ -36,10 +38,11 @@ elseif(UNIX)
 
 message(STATUS ${CMAKE_CURRENT_SOURCE_DIR}/lib/linux)
 target_link_directories(bpocrapi PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/linux )
-target_link_libraries(bpocrapi onnxruntime opencv_core)
+target_link_libraries(bpocrapi onnxruntime ${OPENCV_LIB})
 
-target_link_directories(bpocrtest PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/linux )
-target_link_libraries(bpocrtest onnxruntime opencv_core bpocrapi)
+target_link_directories(bpocrtest PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/linux)
+target_link_libraries(bpocrtest onnxruntime ${OPENCV_LIB} bpocrapi  gomp)
+
 
 endif()
 
