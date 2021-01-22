@@ -3,4 +3,5 @@ opencv-python
 numpy
 pyclipper
 Shapely
+imghdr
 python==3.6.4
