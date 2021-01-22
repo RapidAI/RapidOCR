@@ -69,8 +69,8 @@ PaddleOCR/models
     │   ├── best_accuracy.states
     │   └── train.log
     ├── ch_ppocr_mobile_v2.0_rec_train
-    │       ├── best_accuracy.pdparams
-    │        └── train.log
+    │   ├── best_accuracy.pdparams
+    │   └── train.log
     ├── ch_ppocr_server_v2.0_det_train
     │   ├── best_accuracy.pdopt
     │   ├── best_accuracy.pdparams
