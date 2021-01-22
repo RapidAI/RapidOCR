@@ -25,9 +25,6 @@ visualize(img, dt_boxes, rec_res, image_path)
 **Note: 支持任意尺寸输入**
 
 #### 使用方法
-
-- 下载`ch_ppocr_mobile_v1.1_det`整个文件夹到本地目录
-- 运行
 ```python
 det_model_path = 'models\ch_mobile_v1.1_det.onnx'
 image_path = r'test_images\det_images\1.jpg'
