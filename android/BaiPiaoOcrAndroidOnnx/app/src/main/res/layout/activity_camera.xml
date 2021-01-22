@@ -56,16 +56,16 @@
         android:orientation="horizontal">
 
         <TextView
-            android:id="@+id/scaleTv"
+            android:id="@+id/maxSideLenTv"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Size:0(100%)" />
+            android:text="MaxSideLen:0(100%)" />
 
         <SeekBar
-            android:id="@+id/scaleSeekBar"
+            android:id="@+id/maxSideLenSeekBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:max="200"
+            android:max="100"
             android:min="10"
             android:progress="100" />
 

@@ -15,7 +15,7 @@ class OcrEngine(context: Context) {
             context.assets, numThread,
             "ch_ppocr_mobile_v2.0_det_infer.onnx",
             "ch_ppocr_mobile_v2.0_cls_infer.onnx",
-            "ch_ppocr_server_v2.0_rec_infer.onnx",
+            "ch_ppocr_mobile_v2.0_rec_infer.onnx",
             "ppocr_keys_v1.txt"
         )
         if (!ret) throw IllegalArgumentException()
@@ -28,9 +28,9 @@ class OcrEngine(context: Context) {
     var doAngle: Boolean = true
     var mostAngle: Boolean = true
 
-    fun detect(input: Bitmap, output: Bitmap, reSize: Int) =
+    fun detect(input: Bitmap, output: Bitmap, maxSideLen: Int) =
         detect(
-            input, output, padding, reSize,
+            input, output, padding, maxSideLen,
             boxScoreThresh, boxThresh,
             unClipRatio, doAngle, mostAngle
         )
@@ -42,7 +42,7 @@ class OcrEngine(context: Context) {
     ): Boolean
 
     external fun detect(
-        input: Bitmap, output: Bitmap, padding: Int, reSize: Int,
+        input: Bitmap, output: Bitmap, padding: Int, maxSideLen: Int,
         boxScoreThresh: Float, boxThresh: Float,
         unClipRatio: Float, doAngle: Boolean, mostAngle: Boolean
     ): OcrResult
