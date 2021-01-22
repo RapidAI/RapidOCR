@@ -15,7 +15,7 @@ onnxruntime框架[https://github.com/microsoft/onnxruntime](https://github.com/m
 ### 关于模型：
 * det模型用于分割文字块，有两种模型(server和mobile)，其中server体积大且较慢但效果好，mobile体积小且较快但效果差点。
 * cls模型用于检测文字方向，只有一种模型
-* rec模型用于文字识别，虽然有两种模型(server和mobile)，但mobile由于转换失败，目前只有server模型。未来转换工具成熟后可以直接支持mobile模型。
+* rec模型用于文字识别，有两种模型(server和mobile)，其中server体积大且较慢但效果好，mobile体积小且较快但效果差点。
 
 ### 模型下载
 [模型下载地址](https://github.com/znsoftm/BaiPiaoOCR/tree/main/models)
@@ -26,6 +26,7 @@ BaiPiaoOcrOnnx/models
     ├── ch_ppocr_mobile_v2.0_det_infer.onnx
     ├── ch_ppocr_server_v2.0_det_infer.onnx
     ├── ch_ppocr_server_v2.0_rec_infer.onnx
+    ├── ch_ppocr_mobile_v2.0_rec_infer.onnx
     └── ppocr_keys_v1.txt
 ```
 
