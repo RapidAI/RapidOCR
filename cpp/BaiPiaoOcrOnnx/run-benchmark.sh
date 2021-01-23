@@ -25,6 +25,16 @@ else
   echo -e "Input Error!"
 fi
 
+echo "请选择rec模型: 1)server, 2)mobile"
+read -p "" REC_MODEL
+if [ $REC_MODEL == 1 ]; then
+    REC_MODEL="ch_ppocr_server_v2.0_rec_infer.onnx"
+elif [ $REC_MODEL == 2 ]; then
+    REC_MODEL="ch_ppocr_mobile_v2.0_rec_infer.onnx"
+else
+  echo -e "Input Error!"
+fi
+
 echo "请输入循环次数:"
 read -p "" LOOP_COUNT
 
@@ -39,7 +49,7 @@ fi
 ./build/benchmark --models models \
 --det $DET_MODEL \
 --cls ch_ppocr_mobile_v2.0_cls_infer.onnx \
---rec ch_ppocr_server_v2.0_rec_infer.onnx \
+--rec $REC_MODEL \
 --keys ppocr_keys_v1.txt \
 --image $TARGET_IMG \
 --numThread $NUM_THREADS \

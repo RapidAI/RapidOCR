@@ -11,6 +11,12 @@ if %flag% == 1 (set DET_MODEL=ch_ppocr_server_v2.0_det_infer.onnx)^
 else if %flag% == 2 (set DET_MODEL=ch_ppocr_mobile_v2.0_det_infer.onnx)^
 else (echo 输入错误！Input Error!)
 
+echo "请选择rec模型: 1)server, 2)mobile"
+set /p flag=
+if %flag% == 1 (set REC_MODEL=ch_ppocr_server_v2.0_rec_infer.onnx)^
+else if %flag% == 2 (set REC_MODEL=ch_ppocr_mobile_v2.0_rec_infer.onnx)^
+else (echo 输入错误！Input Error!)
+
 echo "请输入循环次数:"
 set /p LOOP_COUNT=
 
@@ -26,7 +32,7 @@ build\benchmark.exe --version
 build\benchmark.exe --models models ^
 --det %DET_MODEL% ^
 --cls ch_ppocr_mobile_v2.0_cls_infer.onnx ^
---rec ch_ppocr_server_v2.0_rec_infer.onnx ^
+--rec %REC_MODEL% ^
 --keys ppocr_keys_v1.txt ^
 --image %TARGET_IMG% ^
 --numThread %NUMBER_OF_PROCESSORS% ^

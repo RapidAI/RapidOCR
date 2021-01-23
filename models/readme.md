@@ -33,9 +33,17 @@ sudo python3 get-pip.py
 * 下载PaddleOCR(用于预训练模型转paddle推理模型):```git clone https://github.com/PaddlePaddle/PaddleOCR.git```  
 * 安装转换工具库Paddle2ONNX(develop分支,用于paddle推理模型转onnx模型):
 ```shell
-git clone https://github.com/PaddlePaddle/Paddle2ONNX.git
-cd Paddle2ONNX
+#以下为修复mobile rec转换错误的开发版
+#修复代码还未同步进官方仓库之前，先使用此版本
+git clone https://github.com/Channingss/paddle2onnx.git
+cd paddle2onnx
+git checkout fix_adative_pool
 sudo python3 setup.py install
+
+#以下是官方仓库
+#git clone https://github.com/PaddlePaddle/Paddle2ONNX.git
+#cd Paddle2ONNX
+#sudo python3 setup.py install
 ```
 
 ### 三、开始转换
@@ -60,6 +68,9 @@ PaddleOCR/models
     │   ├── best_accuracy.pdparams
     │   ├── best_accuracy.states
     │   └── train.log
+    ├── ch_ppocr_mobile_v2.0_rec_train
+    │   ├── best_accuracy.pdparams
+    │   └── train.log
     ├── ch_ppocr_server_v2.0_det_train
     │   ├── best_accuracy.pdopt
     │   ├── best_accuracy.pdparams
@@ -79,5 +90,4 @@ cd PaddleOCR
 chmod a+x gen-models.sh
 ./gen-models.sh
 ```
-* 因为Paddle2ONNX还不支持mobile的rec模型转换，所以脚本里注释掉了相关内容
-* 转换成功后，会在PaddleOCR/models文件夹里生成4个onnx模型
+* 转换成功后，会在PaddleOCR/models文件夹里生成5个onnx模型

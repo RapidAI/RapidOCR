@@ -48,7 +48,7 @@ Linkage ：https://pan.baidu.com/s/1UhDrC7iOMWiYaQiHk3acdw
 
 code：yjgv 
 ```
-
+Also you can download demonstration APPs and their projects from our baidu netdisk with the above link.
 
 ### Demonstration with C++/JVM
 

@@ -19,7 +19,7 @@ onnxruntime框架[https://github.com/microsoft/onnxruntime](https://github.com/m
 
 * det模型用于分割文字块，有两种模型(server和mobile)，其中server体积大且较慢但效果好，mobile体积小且较快但效果差点。
 * cls模型用于检测文字方向，只有一种模型
-* rec模型用于文字识别，虽然有两种模型(server和mobile)，但mobile由于转换失败，目前只有server模型。未来转换工具成熟后可以直接支持mobile模型。
+* rec模型用于文字识别，有两种模型(server和mobile)，其中server体积大且较慢但效果好，mobile体积小且较快但效果差点。
 
 ### 模型下载
 
@@ -28,9 +28,10 @@ onnxruntime框架[https://github.com/microsoft/onnxruntime](https://github.com/m
 ```
 BaiPiaoOcrAndroidOnnx/OcrLibrary/src/main/assets
     ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
-    ├── ch_ppocr_mobile_v2.0_det_infer.onnx 二选一
-    ├── ch_ppocr_server_v2.0_det_infer.onnx 二选一
-    ├── ch_ppocr_server_v2.0_rec_infer.onnx
+    ├── ch_ppocr_mobile_v2.0_det_infer.onnx det二选一
+    ├── ch_ppocr_server_v2.0_det_infer.onnx det二选一
+    ├── ch_ppocr_mobile_v2.0_rec_infer.onnx rec二选一
+    ├── ch_ppocr_server_v2.0_rec_infer.onnx rec二选一
     └── ppocr_keys_v1.txt
 ```
 * 代码中配置使用哪个模型
@@ -40,7 +41,7 @@ val ret = init(
             context.assets, numThread,
             "ch_ppocr_mobile_v2.0_det_infer.onnx",
             "ch_ppocr_mobile_v2.0_cls_infer.onnx",
-            "ch_ppocr_server_v2.0_rec_infer.onnx",
+            "ch_ppocr_mobile_v2.0_rec_infer.onnx",
             "ppocr_keys_v1.txt"
         )
 ```
@@ -56,7 +57,7 @@ val ret = init(
 
 ### 编译说明
 
-1. AndroidStudio 4.1或以上
+1. AndroidStudio 4.1.2或以上
 2. NDK
 3. cmake 3.4.1或以上
 4. 下载opencv-3.4.10-android-sdk-static-lite.7z，[下载地址](https://gitee.com/benjaminwan/ocr-lite-android-onnx/releases/v1.0.0.20201022)

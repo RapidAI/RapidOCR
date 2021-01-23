@@ -51,11 +51,11 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, SeekBar.OnSeek
         paddingSeekBar.setOnSeekBarChangeListener(this)
         boxScoreThreshSeekBar.setOnSeekBarChangeListener(this)
         boxThreshSeekBar.setOnSeekBarChangeListener(this)
-        scaleSeekBar.setOnSeekBarChangeListener(this)
+        maxSideLenSeekBar.setOnSeekBarChangeListener(this)
         scaleUnClipRatioSeekBar.setOnSeekBarChangeListener(this)
         viewFinder = findViewById(R.id.viewFinder)
         cameraLensView.postDelayed({
-            updateScale(100)
+            updateMaxSideLen(100)
         }, 500)
     }
 
@@ -96,10 +96,10 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, SeekBar.OnSeek
             R.id.detectBtn -> {
                 val width = cameraLensView.measuredWidth * 9 / 10
                 val height = cameraLensView.measuredHeight * 9 / 10
-                val scale = scaleSeekBar.progress.toFloat() / 100.toFloat()
+                val ratio = maxSideLenSeekBar.progress.toFloat() / 100.toFloat()
                 val maxSize = max(width, height)
-                val reSize = (scale * maxSize).toInt()
-                detect(reSize)
+                val maxSideLen = (ratio * maxSize).toInt()
+                detect(maxSideLen)
             }
             R.id.resultBtn -> {
                 val result = ocrResult ?: return
@@ -123,8 +123,8 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, SeekBar.OnSeek
     override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
         seekBar ?: return
         when (seekBar.id) {
-            R.id.scaleSeekBar -> {
-                updateScale(progress)
+            R.id.maxSideLenSeekBar -> {
+                updateMaxSideLen(progress)
             }
             R.id.paddingSeekBar -> {
                 updatePadding(progress)
@@ -149,14 +149,14 @@ class CameraActivity : AppCompatActivity(), View.OnClickListener, SeekBar.OnSeek
     override fun onStopTrackingTouch(seekBar: SeekBar?) {
     }
 
-    private fun updateScale(progress: Int) {
+    private fun updateMaxSideLen(progress: Int) {
         val width = cameraLensView.measuredWidth * 9 / 10
         val height = cameraLensView.measuredHeight * 9 / 10
-        val scale = progress.toFloat() / 100.toFloat()
+        val ratio = progress.toFloat() / 100.toFloat()
         val maxSize = max(width, height)
-        val reSize = (scale * maxSize).toInt()
-        Logger.i("======$width,$height,$scale,$maxSize,$reSize")
-        scaleTv.text = "Size:$reSize(${scale * 100}%)"
+        val maxSideLen = (ratio * maxSize).toInt()
+        Logger.i("======$width,$height,$ratio,$maxSize,$maxSideLen")
+        maxSideLenTv.text = "MaxSideLen:$maxSideLen(${ratio * 100}%)"
     }
 
     private fun updatePadding(progress: Int) {
