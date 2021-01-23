@@ -7,13 +7,13 @@
 
 #define BPOCR_DET_MODEL "/ch_ppocr_mobile_v2.0_det_infer.onnx"
 #define BPOCR_CLS_MODEL "/ch_ppocr_mobile_v2.0_cls_infer.onnx"
-#define BPOCR_REC_MODEL "/ch_ppocr_mobile_v2.0_rec_pre.onnx"
+#define BPOCR_REC_MODEL "/ch_ppocr_mobile_v2.0_rec_infer.onnx"
 #define BPOCR_KEY_PATH  "/ppocr_keys_v1.txt"
 
 #define THREAD_NUM   3
 #define MAX_PATH    260
 
-#define  DEFAULT_MODEL_DIR  "/home/znsoft/models/"
+#define  DEFAULT_MODEL_DIR  "/data/workprj/BaiPiaoOCR/models/"
 int main(int argc, char * argv[])
 {
 
@@ -33,10 +33,10 @@ char *szModelDir=NULL;
         szModelDir=argv[1]; 
     }
     
-    char szDetModelPath[MAX_PATH];
-    char szClsModelPath[MAX_PATH];
-    char szRecModelPath[MAX_PATH];
-    char szKeylPath[MAX_PATH];
+    char szDetModelPath[MAX_PATH]={0};
+    char szClsModelPath[MAX_PATH]={0};
+    char szRecModelPath[MAX_PATH]={0};
+    char szKeylPath[MAX_PATH]={0};
 
     strcpy(szDetModelPath,szModelDir);
     strcpy(szClsModelPath,szModelDir);
