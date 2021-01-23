@@ -13,7 +13,9 @@
 #define THREAD_NUM   3
 #define MAX_PATH    260
 
-#define  DEFAULT_MODEL_DIR  "/data/workprj/BaiPiaoOCR/models/"
+const  char * DEFAULT_MODEL_DIR  ="/data/workprj/BaiPiaoOCR/models/";
+
+const char *  DEFAULT_TEST_IMG  ="/data/workprj/BaiPiaoOCR/images/1.jpg";
 int main(int argc, char * argv[])
 {
 
@@ -24,13 +26,18 @@ int main(int argc, char * argv[])
 
 #endif
 
-char *szModelDir=NULL;
+const char *szModelDir=NULL;
+const char *szImagePath=NULL;
 
     if(argc == 1)
+    {
         szModelDir=DEFAULT_MODEL_DIR;
+        szImagePath=DEFAULT_TEST_IMG;
+    }
     else
     {
         szModelDir=argv[1]; 
+        szImagePath = argv[2];
     }
     
     char szDetModelPath[MAX_PATH]={0};
@@ -55,8 +62,9 @@ char *szModelDir=NULL;
         return -1;
     }
 
-
-
+    BPOCR_PARAM Param={0};
+    const char * strResult =BPOcrDoOcr(Handle,szImagePath,false,false,&Param);
+    printf("%s",strResult);
 
     if(Handle)
     {
