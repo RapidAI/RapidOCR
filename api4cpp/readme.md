@@ -7,3 +7,10 @@ To start, you should open the CMakeLists.txt from the root directory.
 
 About files in this directory:
 
+
+aipiaoocr_api.cpp      : the implementation of APIs
+
+
+bpocrapitest.cpp      : the tester
+
+
