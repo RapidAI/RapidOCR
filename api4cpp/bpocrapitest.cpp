@@ -1,24 +1,67 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <iostream>
+#include <memory.h>
+#include <string>
 #include "../include/baipiaoocr_api.h"
 
-#define BPOCR_DET_MODEL ""
-#define BPOCR_CLS_MODEL ""
-#define BPOCR_REC_MODEL ""
-#define BPOCR_KEY_PATH  ""
+#define BPOCR_DET_MODEL "/ch_ppocr_mobile_v2.0_det_infer.onnx"
+#define BPOCR_CLS_MODEL "/ch_ppocr_mobile_v2.0_cls_infer.onnx"
+#define BPOCR_REC_MODEL "/ch_ppocr_mobile_v2.0_rec_pre.onnx"
+#define BPOCR_KEY_PATH  "/ppocr_keys_v1.txt"
 
 #define THREAD_NUM   3
+#define MAX_PATH    260
+
+#define  DEFAULT_MODEL_DIR  "/home/znsoft/models/"
 int main(int argc, char * argv[])
 {
 
 
-    BPHANDLE  Handle= BPOcrInit(BPOCR_DET_MODEL,BPOCR_CLS_MODEL,BPOCR_REC_MODEL,BPOCR_KEY_PATH,THREAD_NUM);
+#ifndef NDEBUG
+//debug
+
+
+#endif
+
+char *szModelDir=NULL;
+
+    if(argc == 1)
+        szModelDir=DEFAULT_MODEL_DIR;
+    else
+    {
+        szModelDir=argv[1]; 
+    }
+    
+    char szDetModelPath[MAX_PATH];
+    char szClsModelPath[MAX_PATH];
+    char szRecModelPath[MAX_PATH];
+    char szKeylPath[MAX_PATH];
+
+    strcpy(szDetModelPath,szModelDir);
+    strcpy(szClsModelPath,szModelDir);
+    strcpy(szRecModelPath,szModelDir);
+    strcpy(szKeylPath,szModelDir);
+
+    strcat(szDetModelPath,BPOCR_DET_MODEL);
+    strcat(szClsModelPath,BPOCR_CLS_MODEL);
+    strcat(szRecModelPath,BPOCR_REC_MODEL);
+    strcat(szKeylPath,BPOCR_KEY_PATH);
+
+    BPHANDLE  Handle= BPOcrInit(szDetModelPath,szClsModelPath,szRecModelPath,szKeylPath,THREAD_NUM);
     if(!Handle)
     {
         printf("cannot initialize the OCR Engine.\n");
         return -1;
     }
 
+
+
+
+    if(Handle)
+    {
+            BPOcrDeinit(Handle);
+    }
 
     return 0;
 }
