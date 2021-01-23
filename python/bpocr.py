@@ -2,13 +2,15 @@
 # -*- encoding: utf-8 -*-
 import copy
 import math
-import os
+import random
+from pathlib import Path
 
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from ch_ppocr_mobile_v1_det import TextDetector
+# from ch_ppocr_mobile_v1_det import TextDetector
+from ch_ppocr_mobile_v2_det_train import TextDetector
 from ch_ppocr_mobile_v2_rec import TextRecognizer
 
 font_path = r'resources\simfang.ttf'
@@ -22,12 +24,17 @@ def test_text_det():
 
     test_detector = TextDetector(det_model_path)
 
+    img, flag = check_and_read_gif(image_path)
+    if not flag:
+        img = cv2.imread(image_path)
+    if img is None:
+        raise ValueError(f"error in loading image:{image_path}")
+
     # dst_boxes: 检测到图像中的文本框坐标，ndarray格式
     # (10, 4, 2)→[10个，4个坐标，每个坐标两个点]
-    dt_boxes, elapse, ori_im = test_detector(image_path)
-
-    cv2.imwrite('det_results.jpg', im)
-    print('图像已经保存在了det_results.jpg中')
+    dt_boxes, elapse = test_detector(img)
+    print(dt_boxes.shape)
+    print(elapse)
 
 
 def test_text_rec():
@@ -40,13 +47,38 @@ def test_text_rec():
     print(f'识别结果：{rec_res}\tcost: {elapse}s')
 
 
-def draw_ocr_box_txt(image, boxes, txts, scores=None, drop_score=0.5,
+def check_and_read_gif(img_path):
+    if Path(img_path).name[-3:] in ['gif', 'GIF']:
+        gif = cv2.VideoCapture(img_path)
+        ret, frame = gif.read()
+        if not ret:
+            print("Cannot read {}. This gif image maybe corrupted.")
+            return None, False
+        if len(frame.shape) == 2 or frame.shape[-1] == 1:
+            frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
+        imgvalue = frame[:, :, ::-1]
+        return imgvalue, True
+    return None, False
+
+
+def draw_text_det_res(dt_boxes, raw_im):
+    src_im = copy.deepcopy(raw_im)
+    for i, box in enumerate(dt_boxes):
+        box = np.array(box).astype(np.int32).reshape(-1, 2)
+        cv2.polylines(src_im, [box], True,
+                      color=(255, 255, 0),
+                      thickness=2)
+        cv2.putText(src_im, str(i), (int(box[0][0]), int(box[0][1])),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+    return src_im
+
+
+def draw_ocr_box_txt(image, boxes, txts,
+                     scores=None, drop_score=0.5,
                      font_path="./doc/simfang.ttf"):
     h, w = image.height, image.width
     img_left = image.copy()
     img_right = Image.new('RGB', (w, h), (255, 255, 255))
-
-    import random
 
     random.seed(0)
     draw_left = ImageDraw.Draw(img_left)
@@ -88,20 +120,23 @@ def draw_ocr_box_txt(image, boxes, txts, scores=None, drop_score=0.5,
     return np.array(img_show)
 
 
-def visualize(img, boxes, rec_res, image_file):
-    image = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+def visualize(image_path, boxes, rec_res):
+    image = Image.open(image_path)
     txts = [rec_res[i][0] for i in range(len(rec_res))]
     scores = [rec_res[i][1] for i in range(len(rec_res))]
 
     draw_img = draw_ocr_box_txt(image, boxes, txts, scores,
                                 drop_score=drop_score,
                                 font_path=font_path)
+
     draw_img_save = "./inference_results/"
-    if not os.path.exists(draw_img_save):
-        os.makedirs(draw_img_save)
-    cv2.imwrite(
-        os.path.join(draw_img_save, os.path.basename(image_file)),
-        draw_img[:, :, ::-1])
+    if not Path(draw_img_save).exists():
+        Path(draw_img_save).mkdir(parents=True,
+                                  exist_ok=True)
+
+    image_save = str(Path(draw_img_save) / f'infer_{Path(image_path).name}')
+    cv2.imwrite(image_save, draw_img[:, :, ::-1])
+    print(f'The infer result has saved in {image_save}')
 
 
 class TextSystem(object):
@@ -165,8 +200,18 @@ class TextSystem(object):
                 _boxes[i + 1] = tmp
         return _boxes
 
-    def __call__(self, img_path):
-        dt_boxes, elapse, ori_im = self.text_detector(img_path)
+    @staticmethod
+    def load_image(image_path):
+        img, flag = check_and_read_gif(image_path)
+        if not flag:
+            img = cv2.imread(image_path)
+        if img is None:
+            raise ValueError(f"error in loading image:{image_path}")
+        return img
+
+    def __call__(self, image_path):
+        img = self.load_image(image_path)
+        dt_boxes, elapse = self.text_detector(img)
         print("dt_boxes num : {}, elapse : {}".format(
             len(dt_boxes), elapse))
         if dt_boxes is None:
@@ -177,7 +222,7 @@ class TextSystem(object):
 
         for bno in range(len(dt_boxes)):
             tmp_box = copy.deepcopy(dt_boxes[bno])
-            img_crop = self.get_rotate_crop_image(ori_im, tmp_box)
+            img_crop = self.get_rotate_crop_image(img, tmp_box)
             img_crop_list.append(img_crop)
         if self.use_angle_cls:
             img_crop_list, angle_list, elapse = self.text_classifier(
@@ -199,16 +244,14 @@ class TextSystem(object):
 
 
 if __name__ == '__main__':
-    # test_text_det()
+    test_text_det()
     # test_text_rec()
 
-    # 联合测试
-    det_model_path = 'models\ch_mobile_v1.1_det.onnx'
-    rec_model_path = 'models\ch_ppocr_mobile_v2.0_rec_pre_infer.onnx'
-    image_path = r'test_images\1.jpg'
-    text_sys = TextSystem(det_model_path, rec_model_path)
-    dt_boxes, rec_res = text_sys(image_path)
-    print(dt_boxes)
-    print(rec_res)
-    img = cv2.imread(image_path)
-    visualize(img, dt_boxes, rec_res, image_path)
+    # 文本检测+文本识别
+    # det_model_path = 'models\ch_ppocr_mobile_v2_det_train.onnx'
+    # rec_model_path = 'models\ch_ppocr_mobile_v2.0_rec_pre_infer.onnx'
+    # image_path = r'test_images\2021-01-23_12-30-56.png'
+
+    # text_sys = TextSystem(det_model_path, rec_model_path)
+    # dt_boxes, rec_res = text_sys(image_path)
+    # visualize(image_path, dt_boxes, rec_res)

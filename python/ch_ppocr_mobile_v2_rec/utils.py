@@ -16,33 +16,17 @@ class BaseRecLabelDecode(object):
                  character_dict_path=None,
                  character_type='ch',
                  use_space_char=False):
-        support_character_type = [
-            'ch', 'en', 'en_sensitive', 'french', 'german', 'japan', 'korean'
-        ]
-        assert character_type in support_character_type, "Only {} are supported now but get {}".format(
-            support_character_type, character_type)
+        self.character_str = ""
+        assert character_dict_path is not None, "character_dict_path should not be None when character_type is ch"
+        with open(character_dict_path, "rb") as fin:
+            lines = fin.readlines()
+            for line in lines:
+                line = line.decode('utf-8').strip("\n").strip("\r\n")
+                self.character_str += line
+        if use_space_char:
+            self.character_str += " "
+        dict_character = list(self.character_str)
 
-        if character_type == "en":
-            self.character_str = "0123456789abcdefghijklmnopqrstuvwxyz"
-            dict_character = list(self.character_str)
-        elif character_type in ["ch", "french", "german", "japan", "korean"]:
-            self.character_str = ""
-            assert character_dict_path is not None, "character_dict_path should not be None when character_type is ch"
-            with open(character_dict_path, "rb") as fin:
-                lines = fin.readlines()
-                for line in lines:
-                    line = line.decode('utf-8').strip("\n").strip("\r\n")
-                    self.character_str += line
-            if use_space_char:
-                self.character_str += " "
-            dict_character = list(self.character_str)
-        elif character_type == "en_sensitive":
-            # same with ASTER setting (use 94 char).
-            import string
-            self.character_str = string.printable[:-6]
-            dict_character = list(self.character_str)
-        else:
-            raise NotImplementedError
         self.character_type = character_type
         dict_character = self.add_special_char(dict_character)
         self.dict = {}
@@ -106,17 +90,6 @@ class CTCLabelDecode(BaseRecLabelDecode):
     def add_special_char(self, dict_character):
         dict_character = ['blank'] + dict_character
         return dict_character
-
-
-def get_check_global_params(mode):
-    check_params = ['use_gpu', 'max_text_length', 'image_shape', \
-                    'image_shape', 'character_type', 'loss_type']
-    if mode == "train_eval":
-        check_params = check_params + [ \
-            'train_batch_size_per_card', 'test_batch_size_per_card']
-    elif mode == "test":
-        check_params = check_params + ['test_batch_size_per_card']
-    return check_params
 
 
 def get_image_file_list(img_file):

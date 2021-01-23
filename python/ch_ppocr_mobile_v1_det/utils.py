@@ -17,7 +17,7 @@ from shapely.geometry import Polygon
 class DBPreProcess(object):
     def __init__(self):
         super(DBPreProcess, self).__init__()
-        self.max_side_len = 2400
+        self.max_side_len = 1000
 
     def resize_image(self, im):
         """

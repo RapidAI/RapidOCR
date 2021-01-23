@@ -19,7 +19,6 @@ from pathlib import Path
 import cv2
 import numpy as np
 import onnxruntime
-from numpy.lib.arraysetops import isin
 
 try:
     from .utils import CTCLabelDecode, check_and_read_gif, get_image_file_list
@@ -129,9 +128,9 @@ class TextRecognizer(object):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('image_dir', type=str, help='image_dir|image_path')
-    parser.add_argument('rec_model_path', type=str, help='rec_model_path')
+    parser.add_argument('model_path', type=str, help='rec_model_path')
     args = parser.parse_args()
 
-    text_recognizer = TextRecognizer(args.rec_model_path)
+    text_recognizer = TextRecognizer(args.model_path)
     rec_res, predict_time = text_recognizer(args.image_dir)
     print(f'识别结果: {rec_res}\t cost: {predict_time}s')
