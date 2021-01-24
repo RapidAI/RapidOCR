@@ -13,7 +13,7 @@
 #define THREAD_NUM   3
 #define MAX_PATH    260
 
-const  char * DEFAULT_MODEL_DIR  ="/data/workprj/BaiPiaoOCR/models/";
+const  char * DEFAULT_MODEL_DIR  ="/data/workprj/BaiPiaoOCR/models";
 
 const char *  DEFAULT_TEST_IMG  ="/data/workprj/BaiPiaoOCR/images/1.jpg";
 int main(int argc, char * argv[])
