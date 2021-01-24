@@ -14,6 +14,7 @@ elseif(UNIX)
 
 endif()
 
+add_definitions(-D__OPENMP__)
 aux_source_directory(cpp/BaiPiaoOcrOnnx/src/ SRC_MAIN)
 list(REMOVE_ITEM SRC_MAIN "main.cpp") 
 set(OCR_SRC api4cpp/baipiaoocr_api.cpp ${SRC_MAIN}  )
