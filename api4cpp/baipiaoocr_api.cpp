@@ -76,7 +76,7 @@ extern "C"
 		imgPath=szImgPath;
 		imgDir.assign(imgPath.substr(0, imgPath.find_last_of('/') + 1));
 		imgName.assign(imgPath.substr(imgPath.find_last_of('/') + 1));
-		OcrResult result=pOcrObj->detect(imgPath.c_str(),imgName.c_str(),Param.padding,Param.maxSideLen,Param.boxScoreThresh,Param.boxThresh,Param.unClipRatio,Param.flagDoAngle?true:false,Param.flagMostAngle?true:false);
+		OcrResult result=pOcrObj->detect(imgDir.c_str(),imgName.c_str(),Param.padding,Param.maxSideLen,Param.boxScoreThresh,Param.boxThresh,Param.unClipRatio,Param.flagDoAngle?true:false,Param.flagMostAngle?true:false);
 		if(result.strRes.length()>0)
 			return result.strRes.c_str();
 		else
