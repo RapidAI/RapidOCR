@@ -58,7 +58,7 @@ void OcrLite::Logger(const char *format, ...) {
 
 cv::Mat makePadding(cv::Mat &src, const int padding) {
     if (padding <= 0) return src;
-    cv::Scalar paddingScalar = {255, 255, 255}; //white color
+    cv::Scalar paddingScalar = {255, 255, 255};
     cv::Mat paddingSrc;
     cv::copyMakeBorder(src, paddingSrc, padding, padding, padding, padding, cv::BORDER_ISOLATED, paddingScalar);
     return paddingSrc;
