@@ -30,8 +30,8 @@ benjaminwan, znsoftm
 https://zhuanlan.zhihu.com/p/268761718
 
 ### 模型转换
-
-[模型转换说明](https://github.com/znsoftm/BaiPiaoOCR/tree/main/models)
+* 目前转换脚本支持的模型：文本方向分类模型1个，检测模型2个，识别模型28个(简体中文2种，繁体中文等26种)，合计31个
+* [模型转换说明](https://github.com/znsoftm/BaiPiaoOCR/tree/main/models)
 
 ## 授权：
 
