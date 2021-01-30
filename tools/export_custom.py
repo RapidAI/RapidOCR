@@ -36,8 +36,6 @@ def main():
     config = load_config(FLAGS.config)
     merge_config(FLAGS.opt)
     logger = get_logger()
-    logger.info('input height is {}'.format(FLAGS.height))
-    logger.info('input width is {}'.format(FLAGS.width))
     # build post process
 
     post_process_class = build_post_process(config['PostProcess'],
@@ -53,7 +51,11 @@ def main():
     model.eval()
 
     save_path = '{}/inference'.format(config['Global']['save_inference_dir'])
-    infer_shape = [3, int(FLAGS.height), int(FLAGS.width)]
+
+    infer_shape = [3, int(FLAGS.height), int(FLAGS.width)] 
+    if config['Architecture']['model_type'] == "rec":
+         infer_shape = [3, 32, -1]
+
     model = to_static(
         model,
         input_spec=[
