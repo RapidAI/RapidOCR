@@ -10,41 +10,12 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 # from ch_ppocr_mobile_v1_det import TextDetector
-from ch_ppocr_mobile_v2_det_train import TextDetector
+from ch_ppocr_mobile_v2_det import TextDetector
+from ch_ppocr_mobile_v2_cls import TextClassifier
 from ch_ppocr_mobile_v2_rec import TextRecognizer
 
 font_path = r'resources\simfang.ttf'
 drop_score = 0.5
-
-
-def test_text_det():
-    # 单独跑文本检测模型
-    det_model_path = 'models\ch_mobile_v1.1_det.onnx'
-    image_path = r'test_images\det_images\1.jpg'
-
-    test_detector = TextDetector(det_model_path)
-
-    img, flag = check_and_read_gif(image_path)
-    if not flag:
-        img = cv2.imread(image_path)
-    if img is None:
-        raise ValueError(f"error in loading image:{image_path}")
-
-    # dst_boxes: 检测到图像中的文本框坐标，ndarray格式
-    # (10, 4, 2)→[10个，4个坐标，每个坐标两个点]
-    dt_boxes, elapse = test_detector(img)
-    print(dt_boxes.shape)
-    print(elapse)
-
-
-def test_text_rec():
-    # 单独跑文本识别模型
-    rec_model_path = r'models\ch_ppocr_mobile_v2.0_rec_pre_infer.onnx'
-    image_path = r'test_images\rec_images\2021-01-19_13-44-34.png'
-    text_recongnizer = TextRecognizer(rec_model_path)
-
-    rec_res, elapse = text_recongnizer(image_path)
-    print(f'识别结果：{rec_res}\tcost: {elapse}s')
 
 
 def check_and_read_gif(img_path):
@@ -140,11 +111,16 @@ def visualize(image_path, boxes, rec_res):
 
 
 class TextSystem(object):
-    def __init__(self, det_model_path, rec_model_path) -> None:
+    def __init__(self, det_model_path,
+                 rec_model_path,
+                 use_angle_cls=False,
+                 cls_model_path=None) -> None:
         super(TextSystem).__init__()
         self.text_detector = TextDetector(det_model_path)
         self.text_recognizer = TextRecognizer(rec_model_path)
-        self.use_angle_cls = False
+        self.use_angle_cls = use_angle_cls
+        if self.use_angle_cls:
+            self.text_classifier = TextClassifier(cls_model_path)
 
     def get_rotate_crop_image(self, img, points):
         '''
@@ -244,14 +220,14 @@ class TextSystem(object):
 
 
 if __name__ == '__main__':
-    test_text_det()
-    # test_text_rec()
+    # 文本检测+方向分类+文本识别
+    det_model_path = 'models/ch_ppocr_mobile_v2_det_train.onnx'
+    cls_model_path = 'models/ch_ppocr_mobile_v2.0_cls_infer.onnx'
+    rec_model_path = 'models/ch_ppocr_mobile_v2.0_rec_pre_infer.onnx'
+    image_path = r'test_images\long1.jpg'
 
-    # 文本检测+文本识别
-    # det_model_path = 'models\ch_ppocr_mobile_v2_det_train.onnx'
-    # rec_model_path = 'models\ch_ppocr_mobile_v2.0_rec_pre_infer.onnx'
-    # image_path = r'test_images\2021-01-23_12-30-56.png'
-
-    # text_sys = TextSystem(det_model_path, rec_model_path)
-    # dt_boxes, rec_res = text_sys(image_path)
-    # visualize(image_path, dt_boxes, rec_res)
+    text_sys = TextSystem(det_model_path, rec_model_path,
+                          use_angle_cls=True,
+                          cls_model_path=cls_model_path)
+    dt_boxes, rec_res = text_sys(image_path)
+    visualize(image_path, dt_boxes, rec_res)
