@@ -51,16 +51,6 @@
 
 #include <cstdio>
 
-#if defined(__GNUC__) || defined(__clang__) // at least GCC 3.1+, clang 3.5+
-#  if defined(__MINGW_PRINTF_FORMAT)  // https://sourceforge.net/p/mingw-w64/wiki2/gnu%20printf/.
-#    define CV_FORMAT_PRINTF(string_idx, first_to_check) __attribute__ ((format (__MINGW_PRINTF_FORMAT, string_idx, first_to_check)))
-#  else
-#    define CV_FORMAT_PRINTF(string_idx, first_to_check) __attribute__ ((format (printf, string_idx, first_to_check)))
-#  endif
-#else
-#  define CV_FORMAT_PRINTF(A, B)
-#endif
-
 //! @cond IGNORED
 
 namespace cv
@@ -266,21 +256,21 @@ Matx<_Tp, n, l> Matx<_Tp, m, n>::solve(const Matx<_Tp, m, l>& rhs, int method) c
     template<typename _Tp, int m, int n> static inline A& operator op (A& a, const Matx<_Tp,m,n>& b) { cvop; return a; } \
     template<typename _Tp, int m, int n> static inline const A& operator op (const A& a, const Matx<_Tp,m,n>& b) { cvop; return a; }
 
-CV_MAT_AUG_OPERATOR  (+=, cv::add(a,b,a), Mat, Mat)
-CV_MAT_AUG_OPERATOR  (+=, cv::add(a,b,a), Mat, Scalar)
-CV_MAT_AUG_OPERATOR_T(+=, cv::add(a,b,a), Mat_<_Tp>, Mat)
-CV_MAT_AUG_OPERATOR_T(+=, cv::add(a,b,a), Mat_<_Tp>, Scalar)
-CV_MAT_AUG_OPERATOR_T(+=, cv::add(a,b,a), Mat_<_Tp>, Mat_<_Tp>)
-CV_MAT_AUG_OPERATOR_TN(+=, cv::add(a,Mat(b),a), Mat)
-CV_MAT_AUG_OPERATOR_TN(+=, cv::add(a,Mat(b),a), Mat_<_Tp>)
+CV_MAT_AUG_OPERATOR  (+=, cv::add(a, b, (const Mat&)a), Mat, Mat)
+CV_MAT_AUG_OPERATOR  (+=, cv::add(a, b, (const Mat&)a), Mat, Scalar)
+CV_MAT_AUG_OPERATOR_T(+=, cv::add(a, b, (const Mat&)a), Mat_<_Tp>, Mat)
+CV_MAT_AUG_OPERATOR_T(+=, cv::add(a, b, (const Mat&)a), Mat_<_Tp>, Scalar)
+CV_MAT_AUG_OPERATOR_T(+=, cv::add(a, b, (const Mat&)a), Mat_<_Tp>, Mat_<_Tp>)
+CV_MAT_AUG_OPERATOR_TN(+=, cv::add(a, Mat(b), (const Mat&)a), Mat)
+CV_MAT_AUG_OPERATOR_TN(+=, cv::add(a, Mat(b), (const Mat&)a), Mat_<_Tp>)
 
-CV_MAT_AUG_OPERATOR  (-=, cv::subtract(a,b,a), Mat, Mat)
-CV_MAT_AUG_OPERATOR  (-=, cv::subtract(a,b,a), Mat, Scalar)
-CV_MAT_AUG_OPERATOR_T(-=, cv::subtract(a,b,a), Mat_<_Tp>, Mat)
-CV_MAT_AUG_OPERATOR_T(-=, cv::subtract(a,b,a), Mat_<_Tp>, Scalar)
-CV_MAT_AUG_OPERATOR_T(-=, cv::subtract(a,b,a), Mat_<_Tp>, Mat_<_Tp>)
-CV_MAT_AUG_OPERATOR_TN(-=, cv::subtract(a,Mat(b),a), Mat)
-CV_MAT_AUG_OPERATOR_TN(-=, cv::subtract(a,Mat(b),a), Mat_<_Tp>)
+CV_MAT_AUG_OPERATOR  (-=, cv::subtract(a, b, (const Mat&)a), Mat, Mat)
+CV_MAT_AUG_OPERATOR  (-=, cv::subtract(a, b, (const Mat&)a), Mat, Scalar)
+CV_MAT_AUG_OPERATOR_T(-=, cv::subtract(a, b, (const Mat&)a), Mat_<_Tp>, Mat)
+CV_MAT_AUG_OPERATOR_T(-=, cv::subtract(a, b, (const Mat&)a), Mat_<_Tp>, Scalar)
+CV_MAT_AUG_OPERATOR_T(-=, cv::subtract(a, b, (const Mat&)a), Mat_<_Tp>, Mat_<_Tp>)
+CV_MAT_AUG_OPERATOR_TN(-=, cv::subtract(a, Mat(b), (const Mat&)a), Mat)
+CV_MAT_AUG_OPERATOR_TN(-=, cv::subtract(a, Mat(b), (const Mat&)a), Mat_<_Tp>)
 
 CV_MAT_AUG_OPERATOR  (*=, cv::gemm(a, b, 1, Mat(), 0, a, 0), Mat, Mat)
 CV_MAT_AUG_OPERATOR_T(*=, cv::gemm(a, b, 1, Mat(), 0, a, 0), Mat_<_Tp>, Mat)
@@ -290,37 +280,37 @@ CV_MAT_AUG_OPERATOR_T(*=, a.convertTo(a, -1, b), Mat_<_Tp>, double)
 CV_MAT_AUG_OPERATOR_TN(*=, cv::gemm(a, Mat(b), 1, Mat(), 0, a, 0), Mat)
 CV_MAT_AUG_OPERATOR_TN(*=, cv::gemm(a, Mat(b), 1, Mat(), 0, a, 0), Mat_<_Tp>)
 
-CV_MAT_AUG_OPERATOR  (/=, cv::divide(a,b,a), Mat, Mat)
-CV_MAT_AUG_OPERATOR_T(/=, cv::divide(a,b,a), Mat_<_Tp>, Mat)
-CV_MAT_AUG_OPERATOR_T(/=, cv::divide(a,b,a), Mat_<_Tp>, Mat_<_Tp>)
+CV_MAT_AUG_OPERATOR  (/=, cv::divide(a, b, (const Mat&)a), Mat, Mat)
+CV_MAT_AUG_OPERATOR_T(/=, cv::divide(a, b, (const Mat&)a), Mat_<_Tp>, Mat)
+CV_MAT_AUG_OPERATOR_T(/=, cv::divide(a, b, (const Mat&)a), Mat_<_Tp>, Mat_<_Tp>)
 CV_MAT_AUG_OPERATOR  (/=, a.convertTo((Mat&)a, -1, 1./b), Mat, double)
 CV_MAT_AUG_OPERATOR_T(/=, a.convertTo((Mat&)a, -1, 1./b), Mat_<_Tp>, double)
-CV_MAT_AUG_OPERATOR_TN(/=, cv::divide(a, Mat(b), a), Mat)
-CV_MAT_AUG_OPERATOR_TN(/=, cv::divide(a, Mat(b), a), Mat_<_Tp>)
+CV_MAT_AUG_OPERATOR_TN(/=, cv::divide(a, Mat(b), (const Mat&)a), Mat)
+CV_MAT_AUG_OPERATOR_TN(/=, cv::divide(a, Mat(b), (const Mat&)a), Mat_<_Tp>)
 
-CV_MAT_AUG_OPERATOR  (&=, cv::bitwise_and(a,b,a), Mat, Mat)
-CV_MAT_AUG_OPERATOR  (&=, cv::bitwise_and(a,b,a), Mat, Scalar)
-CV_MAT_AUG_OPERATOR_T(&=, cv::bitwise_and(a,b,a), Mat_<_Tp>, Mat)
-CV_MAT_AUG_OPERATOR_T(&=, cv::bitwise_and(a,b,a), Mat_<_Tp>, Scalar)
-CV_MAT_AUG_OPERATOR_T(&=, cv::bitwise_and(a,b,a), Mat_<_Tp>, Mat_<_Tp>)
-CV_MAT_AUG_OPERATOR_TN(&=, cv::bitwise_and(a, Mat(b), a), Mat)
-CV_MAT_AUG_OPERATOR_TN(&=, cv::bitwise_and(a, Mat(b), a), Mat_<_Tp>)
+CV_MAT_AUG_OPERATOR  (&=, cv::bitwise_and(a, b, (const Mat&)a), Mat, Mat)
+CV_MAT_AUG_OPERATOR  (&=, cv::bitwise_and(a, b, (const Mat&)a), Mat, Scalar)
+CV_MAT_AUG_OPERATOR_T(&=, cv::bitwise_and(a, b, (const Mat&)a), Mat_<_Tp>, Mat)
+CV_MAT_AUG_OPERATOR_T(&=, cv::bitwise_and(a, b, (const Mat&)a), Mat_<_Tp>, Scalar)
+CV_MAT_AUG_OPERATOR_T(&=, cv::bitwise_and(a, b, (const Mat&)a), Mat_<_Tp>, Mat_<_Tp>)
+CV_MAT_AUG_OPERATOR_TN(&=, cv::bitwise_and(a, Mat(b), (const Mat&)a), Mat)
+CV_MAT_AUG_OPERATOR_TN(&=, cv::bitwise_and(a, Mat(b), (const Mat&)a), Mat_<_Tp>)
 
-CV_MAT_AUG_OPERATOR  (|=, cv::bitwise_or(a,b,a), Mat, Mat)
-CV_MAT_AUG_OPERATOR  (|=, cv::bitwise_or(a,b,a), Mat, Scalar)
-CV_MAT_AUG_OPERATOR_T(|=, cv::bitwise_or(a,b,a), Mat_<_Tp>, Mat)
-CV_MAT_AUG_OPERATOR_T(|=, cv::bitwise_or(a,b,a), Mat_<_Tp>, Scalar)
-CV_MAT_AUG_OPERATOR_T(|=, cv::bitwise_or(a,b,a), Mat_<_Tp>, Mat_<_Tp>)
-CV_MAT_AUG_OPERATOR_TN(|=, cv::bitwise_or(a, Mat(b), a), Mat)
-CV_MAT_AUG_OPERATOR_TN(|=, cv::bitwise_or(a, Mat(b), a), Mat_<_Tp>)
+CV_MAT_AUG_OPERATOR  (|=, cv::bitwise_or(a, b, (const Mat&)a), Mat, Mat)
+CV_MAT_AUG_OPERATOR  (|=, cv::bitwise_or(a, b, (const Mat&)a), Mat, Scalar)
+CV_MAT_AUG_OPERATOR_T(|=, cv::bitwise_or(a, b, (const Mat&)a), Mat_<_Tp>, Mat)
+CV_MAT_AUG_OPERATOR_T(|=, cv::bitwise_or(a, b, (const Mat&)a), Mat_<_Tp>, Scalar)
+CV_MAT_AUG_OPERATOR_T(|=, cv::bitwise_or(a, b, (const Mat&)a), Mat_<_Tp>, Mat_<_Tp>)
+CV_MAT_AUG_OPERATOR_TN(|=, cv::bitwise_or(a, Mat(b), (const Mat&)a), Mat)
+CV_MAT_AUG_OPERATOR_TN(|=, cv::bitwise_or(a, Mat(b), (const Mat&)a), Mat_<_Tp>)
 
-CV_MAT_AUG_OPERATOR  (^=, cv::bitwise_xor(a,b,a), Mat, Mat)
-CV_MAT_AUG_OPERATOR  (^=, cv::bitwise_xor(a,b,a), Mat, Scalar)
-CV_MAT_AUG_OPERATOR_T(^=, cv::bitwise_xor(a,b,a), Mat_<_Tp>, Mat)
-CV_MAT_AUG_OPERATOR_T(^=, cv::bitwise_xor(a,b,a), Mat_<_Tp>, Scalar)
-CV_MAT_AUG_OPERATOR_T(^=, cv::bitwise_xor(a,b,a), Mat_<_Tp>, Mat_<_Tp>)
-CV_MAT_AUG_OPERATOR_TN(^=, cv::bitwise_xor(a, Mat(b), a), Mat)
-CV_MAT_AUG_OPERATOR_TN(^=, cv::bitwise_xor(a, Mat(b), a), Mat_<_Tp>)
+CV_MAT_AUG_OPERATOR  (^=, cv::bitwise_xor(a, b, (const Mat&)a), Mat, Mat)
+CV_MAT_AUG_OPERATOR  (^=, cv::bitwise_xor(a, b, (const Mat&)a), Mat, Scalar)
+CV_MAT_AUG_OPERATOR_T(^=, cv::bitwise_xor(a, b, (const Mat&)a), Mat_<_Tp>, Mat)
+CV_MAT_AUG_OPERATOR_T(^=, cv::bitwise_xor(a, b, (const Mat&)a), Mat_<_Tp>, Scalar)
+CV_MAT_AUG_OPERATOR_T(^=, cv::bitwise_xor(a, b, (const Mat&)a), Mat_<_Tp>, Mat_<_Tp>)
+CV_MAT_AUG_OPERATOR_TN(^=, cv::bitwise_xor(a, Mat(b), (const Mat&)a), Mat)
+CV_MAT_AUG_OPERATOR_TN(^=, cv::bitwise_xor(a, Mat(b), (const Mat&)a), Mat_<_Tp>)
 
 #undef CV_MAT_AUG_OPERATOR_TN
 #undef CV_MAT_AUG_OPERATOR_T
@@ -415,24 +405,13 @@ template<typename _Tp> static inline _Tp randu()
 The function acts like sprintf but forms and returns an STL string. It can be used to form an error
 message in the Exception constructor.
 @param fmt printf-compatible formatting specifiers.
-
-**Note**:
-|Type|Specifier|
-|-|-|
-|`const char*`|`%s`|
-|`char`|`%c`|
-|`float` / `double`|`%f`,`%g`|
-|`int`, `long`, `long long`|`%d`, `%ld`, ``%lld`|
-|`unsigned`, `unsigned long`, `unsigned long long`|`%u`, `%lu`, `%llu`|
-|`uint64` -> `uintmax_t`, `int64` -> `intmax_t`|`%ju`, `%jd`|
-|`size_t`|`%zu`|
  */
-CV_EXPORTS String format( const char* fmt, ... ) CV_FORMAT_PRINTF(1, 2);
+CV_EXPORTS String format( const char* fmt, ... );
 
 ///////////////////////////////// Formatted output of cv::Mat /////////////////////////////////
 
 static inline
-Ptr<Formatted> format(InputArray mtx, Formatter::FormatType fmt)
+Ptr<Formatted> format(InputArray mtx, int fmt)
 {
     return Formatter::get(fmt)->format(mtx.getMat());
 }

@@ -5,17 +5,23 @@
 #include <string>
 #include "../include/baipiaoocr_api.h"
 
-#define BPOCR_DET_MODEL "/ch_ppocr_mobile_v2.0_det_infer.onnx"
-#define BPOCR_CLS_MODEL "/ch_ppocr_mobile_v2.0_cls_infer.onnx"
-#define BPOCR_REC_MODEL "/ch_ppocr_mobile_v2.0_rec_infer.onnx"
-#define BPOCR_KEY_PATH  "/ppocr_keys_v1.txt"
+#define BPOCR_DET_MODEL "ch_ppocr_mobile_v2.0_det_infer.onnx"
+#define BPOCR_CLS_MODEL "ch_ppocr_mobile_v2.0_cls_infer.onnx"
+#define BPOCR_REC_MODEL "ch_ppocr_mobile_v2.0_rec_infer.onnx"
+#define BPOCR_KEY_PATH  "ppocr_keys_v1.txt"
 
 #define THREAD_NUM   3
 #define MAX_PATH    260
+#ifdef WIN32
 
+const  char* DEFAULT_MODEL_DIR = "E:\\bai-piao-ocr\\cpp\\BaiPiaoOcrOnnx\\models\\";
+
+const char* DEFAULT_TEST_IMG = "E:\\bai-piao-ocr\\cpp\\BaiPiaoOcrOnnx\\images\\1.jpg";
+#else
 const  char * DEFAULT_MODEL_DIR  ="/data/workprj/BaiPiaoOCR/models";
 
 const char *  DEFAULT_TEST_IMG  ="/data/workprj/BaiPiaoOCR/images/1.jpg";
+#endif
 int main(int argc, char * argv[])
 {
 
@@ -63,8 +69,24 @@ const char *szImagePath=NULL;
     }
 
     BPOCR_PARAM Param={0};
-    const char * strResult =BPOcrDoOcr(Handle,szImagePath,false,false,&Param);
-    printf("%s",strResult);
+    BOOL bRet =BPOcrDoOcr(Handle,szImagePath,false,false,&Param);
+    if (bRet)
+    {
+        int nLen = BPOcrGetLen(Handle);
+        if (nLen > 0)
+        {
+            char* szInfo =(char* )malloc(nLen);
+            if (szInfo)
+            {
+                if (BPOcrGetResult(Handle, szInfo, nLen))
+                {
+                    printf(szInfo);
+                }
+            }
+
+
+        }
+    }
 
     if(Handle)
     {

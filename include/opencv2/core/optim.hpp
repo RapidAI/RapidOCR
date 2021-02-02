@@ -165,7 +165,7 @@ public:
 
     /** @brief Sets the initial step that will be used in downhill simplex algorithm.
 
-    Step, together with initial point (givin in DownhillSolver::minimize) are two `n`-dimensional
+    Step, together with initial point (given in DownhillSolver::minimize) are two `n`-dimensional
     vectors that are used to determine the shape of initial simplex. Roughly said, initial point
     determines the position of a simplex (it will become simplex's centroid), while step determines the
     spread (size in each dimension) of a simplex. To be more precise, if \f$s,x_0\in\mathbb{R}^n\f$ are
@@ -293,7 +293,7 @@ and the remaining to \f$A\f$. It should contain 32- or 64-bit floating point num
 formulation above. It will contain 64-bit floating point numbers.
 @return One of cv::SolveLPResult
  */
-CV_EXPORTS_W int solveLP(InputArray Func, InputArray Constr, OutputArray z);
+CV_EXPORTS_W int solveLP(const Mat& Func, const Mat& Constr, Mat& z);
 
 //! @}
 

@@ -49,6 +49,7 @@
   @defgroup imgcodecs Image file reading and writing
   @{
     @defgroup imgcodecs_c C API
+    @defgroup imgcodecs_flags Flags used for image file reading and writing
     @defgroup imgcodecs_ios iOS glue
   @}
 */
@@ -60,9 +61,12 @@ namespace cv
 //! @addtogroup imgcodecs
 //! @{
 
+//! @addtogroup imgcodecs_flags
+//! @{
+
 //! Imread flags
 enum ImreadModes {
-       IMREAD_UNCHANGED            = -1, //!< If set, return the loaded image as is (with alpha channel, otherwise it gets cropped).
+       IMREAD_UNCHANGED            = -1, //!< If set, return the loaded image as is (with alpha channel, otherwise it gets cropped). Ignore EXIF orientation.
        IMREAD_GRAYSCALE            = 0,  //!< If set, always convert image to the single channel grayscale image (codec internal conversion).
        IMREAD_COLOR                = 1,  //!< If set, always convert image to the 3 channel BGR color image.
        IMREAD_ANYDEPTH             = 2,  //!< If set, return 16-bit/32-bit image when the input has the corresponding depth, otherwise convert it to 8-bit.
@@ -92,11 +96,10 @@ enum ImwriteFlags {
        IMWRITE_EXR_TYPE            = (3 << 4) + 0, /* 48 */ //!< override EXR storage type (FLOAT (FP32) is default)
        IMWRITE_WEBP_QUALITY        = 64, //!< For WEBP, it can be a quality from 1 to 100 (the higher is the better). By default (without any parameter) and for quality above 100 the lossless compression is used.
        IMWRITE_PAM_TUPLETYPE       = 128,//!< For PAM, sets the TUPLETYPE field to the corresponding string value that is defined for the format
-       IMWRITE_TIFF_RESUNIT = 256,//!< For TIFF, use to specify which DPI resolution unit to set; see libtiff documentation for valid values
-       IMWRITE_TIFF_XDPI = 257,//!< For TIFF, use to specify the X direction DPI
-       IMWRITE_TIFF_YDPI = 258, //!< For TIFF, use to specify the Y direction DPI
-       IMWRITE_TIFF_COMPRESSION = 259, //!< For TIFF, use to specify the image compression scheme. See libtiff for integer constants corresponding to compression formats. Note, for images whose depth is CV_32F, only libtiff's SGILOG compression scheme is used. For other supported depths, the compression scheme can be specified by this flag; LZW compression is the default.
-       IMWRITE_JPEG2000_COMPRESSION_X1000 = 272 //!< For JPEG2000, use to specify the target compression rate (multiplied by 1000). The value can be from 0 to 1000. Default is 1000.
+       IMWRITE_TIFF_RESUNIT = 256,//!< For TIFF, use to specify which DPI resolution unit to set; see libtiff documentation for valid values.
+       IMWRITE_TIFF_XDPI = 257,//!< For TIFF, use to specify the X direction DPI.
+       IMWRITE_TIFF_YDPI = 258, //!< For TIFF, use to specify the Y direction DPI.
+       IMWRITE_TIFF_COMPRESSION = 259 //!< For TIFF, use to specify the image compression scheme. See libtiff for integer constants corresponding to compression formats. Note, for images whose depth is CV_32F, only libtiff's SGILOG compression scheme is used. For other supported depths, the compression scheme can be specified by this flag; LZW compression is the default.
      };
 
 enum ImwriteEXRTypeFlags {
@@ -131,6 +134,8 @@ enum ImwritePAMFlags {
        IMWRITE_PAM_FORMAT_RGB_ALPHA = 5,
      };
 
+//! @} imgcodecs_flags
+
 /** @brief Loads an image from a file.
 
 @anchor imread
@@ -147,7 +152,6 @@ Currently, the following file formats are supported:
 -   Portable Network Graphics - \*.png (see the *Note* section)
 -   WebP - \*.webp (see the *Note* section)
 -   Portable image format - \*.pbm, \*.pgm, \*.ppm \*.pxm, \*.pnm (always supported)
--   PFM files - \*.pfm (see the *Note* section)
 -   Sun rasters - \*.sr, \*.ras (always supported)
 -   TIFF files - \*.tiff, \*.tif (see the *Note* section)
 -   OpenEXR Image files - \*.exr (see the *Note* section)
@@ -172,9 +176,9 @@ Currently, the following file formats are supported:
     then the [GDAL](http://www.gdal.org) driver will be used in order to decode the image, supporting
     the following formats: [Raster](http://www.gdal.org/formats_list.html),
     [Vector](http://www.gdal.org/ogr_formats.html).
--   If EXIF information are embedded in the image file, the EXIF orientation will be taken into account
-    and thus the image will be rotated accordingly except if the flag @ref IMREAD_IGNORE_ORIENTATION is passed.
--   Use the IMREAD_UNCHANGED flag to keep the floating point values from PFM image.
+-   If EXIF information is embedded in the image file, the EXIF orientation will be taken into account
+    and thus the image will be rotated accordingly except if the flags @ref IMREAD_IGNORE_ORIENTATION
+    or @ref IMREAD_UNCHANGED are passed.
 -   By default number of pixels must be less than 2^30. Limit can be set using system
     variable OPENCV_IO_MAX_IMAGE_PIXELS
 
@@ -201,26 +205,34 @@ single-channel or 3-channel (with 'BGR' channel order) images
 can be saved using this function, with these exceptions:
 
 - 16-bit unsigned (CV_16U) images can be saved in the case of PNG, JPEG 2000, and TIFF formats
-- 32-bit float (CV_32F) images can be saved in PFM, TIFF, OpenEXR, and Radiance HDR formats;
-  3-channel (CV_32FC3) TIFF images will be saved using the LogLuv high dynamic range encoding
-  (4 bytes per pixel)
+- 32-bit float (CV_32F) images can be saved in TIFF, OpenEXR, and Radiance HDR formats; 3-channel
+(CV_32FC3) TIFF images will be saved using the LogLuv high dynamic range encoding (4 bytes per pixel)
 - PNG images with an alpha channel can be saved using this function. To do this, create
 8-bit (or 16-bit) 4-channel image BGRA, where the alpha channel goes last. Fully transparent pixels
 should have alpha set to 0, fully opaque pixels should have alpha set to 255/65535 (see the code sample below).
+- Multiple images (vector of Mat) can be saved in TIFF format (see the code sample below).
 
 If the format, depth or channel order is different, use
 Mat::convertTo and cv::cvtColor to convert it before saving. Or, use the universal FileStorage I/O
 functions to save the image to XML or YAML format.
 
-The sample below shows how to create a BGRA image and save it to a PNG file. It also demonstrates how to set custom
-compression parameters:
+The sample below shows how to create a BGRA image, how to set custom compression parameters and save it to a PNG file.
+It also demonstrates how to save multiple images in a TIFF file:
 @include snippets/imgcodecs_imwrite.cpp
 @param filename Name of the file.
-@param img Image to be saved.
+@param img (Mat or vector of Mat) Image or Images to be saved.
 @param params Format-specific parameters encoded as pairs (paramId_1, paramValue_1, paramId_2, paramValue_2, ... .) see cv::ImwriteFlags
 */
 CV_EXPORTS_W bool imwrite( const String& filename, InputArray img,
               const std::vector<int>& params = std::vector<int>());
+
+/// @overload multi-image overload for bindings
+CV_WRAP static inline
+bool imwritemulti(const String& filename, InputArrayOfArrays img,
+                  const std::vector<int>& params = std::vector<int>())
+{
+    return imwrite(filename, img, params);
+}
 
 /** @brief Reads an image from a buffer in memory.
 
@@ -256,19 +268,6 @@ result. See cv::imwrite for the list of supported formats and flags description.
 CV_EXPORTS_W bool imencode( const String& ext, InputArray img,
                             CV_OUT std::vector<uchar>& buf,
                             const std::vector<int>& params = std::vector<int>());
-
-/** @brief Returns true if the specified image can be decoded by OpenCV
-
-@param filename File name of the image
-*/
-CV_EXPORTS_W bool haveImageReader( const String& filename );
-
-/** @brief Returns true if an image with the specified filename can be encoded by OpenCV
-
- @param filename File name of the image
- */
-CV_EXPORTS_W bool haveImageWriter( const String& filename );
-
 
 //! @} imgcodecs
 

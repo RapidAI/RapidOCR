@@ -45,7 +45,11 @@ By default, nThreads should be the number of threads
 */
 _QM_OCR_API BPHANDLE   BPOcrInit(const char * szDetModel, const char * szClsModel, const char * szRecModel,const char *szKeyPath,int nThreads);
 
-_QM_OCR_API const char*  BPOcrDoOcr(BPHANDLE handle, const char* szImgPath, BOOL bAutoParam,BOOL bLongPic, BPOCR_PARAM *pParam);
+_QM_OCR_API BOOL  BPOcrDoOcr(BPHANDLE handle, const char* szImgPath, BOOL bAutoParam,BOOL bLongPic, BPOCR_PARAM *pParam);
+
+_QM_OCR_API  int BPOcrGetLen(BPHANDLE handle);
+
+_QM_OCR_API  BOOL BPOcrGetResult(BPHANDLE handle, char* szBuf, int nLen);
 
 _QM_OCR_API void  BPOcrDeinit(BPHANDLE handle);
 

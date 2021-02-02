@@ -75,11 +75,11 @@ TextLine CrnnNet::scoreToTextLine(const std::vector<float> &outputData, int h, i
     float maxValue;
 
     for (int i = 0; i < h; i++) {
-        maxIndex = int(argmax(&outputData[i * w], &outputData[(i + 1) * w]));
-        maxValue = float(*std::max_element(&outputData[i * w], &outputData[(i + 1) * w]));
+        maxIndex = int(argmax(&outputData[i * w], &outputData[(i+1) * w-1]));
+        maxValue = float(*std::max_element(&outputData[i * w], &outputData[(i + 1) * w-1]));
 
         if (maxIndex > 0 && maxIndex < keySize && (!(i > 0 && maxIndex == lastIndex))) {
-            scores.emplace_back(maxValue);
+            scores.push_back(maxValue);
             strRes.append(keys[maxIndex]);
         }
         lastIndex = maxIndex;

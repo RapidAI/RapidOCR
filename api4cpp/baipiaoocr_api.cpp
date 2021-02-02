@@ -4,16 +4,22 @@ extern "C"
 {
 #endif 
 
+	typedef struct
+	{
+		OcrLite OcrObj;
+		std::string strRes;
+	}OCR_OBJ;
+
 	_QM_OCR_API BPHANDLE   BPOcrInit(const char* szDetModel, const char* szClsModel, const char* szRecModel,const char *szKeyPath, int nThreads)
 	{
 
 		omp_set_num_threads(nThreads);
-		OcrLite * pOcrObj=new OcrLite;
+		OCR_OBJ* pOcrObj=new OCR_OBJ;
 		if(pOcrObj)
 		{
-			pOcrObj->setNumThread(nThreads);
+			pOcrObj->OcrObj.setNumThread(nThreads);
 
-			 pOcrObj->initModels(szDetModel, szClsModel, szRecModel, szKeyPath);
+			 pOcrObj->OcrObj.initModels(szDetModel, szClsModel, szRecModel, szKeyPath);
 			 
 			return pOcrObj;
 		}
@@ -25,12 +31,12 @@ extern "C"
 	}
 
 	
-	_QM_OCR_API const char*  BPOcrDoOcr(BPHANDLE handle, const char* szImgPath, BOOL bAutoParam,BOOL bLongPic,BPOCR_PARAM *pParam)
+	_QM_OCR_API BOOL  BPOcrDoOcr(BPHANDLE handle, const char* szImgPath, BOOL bAutoParam,BOOL bLongPic,BPOCR_PARAM *pParam)
 	{
 
-		OcrLite * pOcrObj=(	OcrLite *)handle;
+		OCR_OBJ* pOcrObj=(OCR_OBJ*)handle;
 		if(!pOcrObj)
-			return NULL;
+			return FALSE;
 
 		BPOCR_PARAM Param = *pParam;
 		if(bAutoParam)
@@ -74,19 +80,48 @@ extern "C"
 		}
 		std::string imgPath,imgDir,imgName;
 		imgPath=szImgPath;
-		imgDir.assign(imgPath.substr(0, imgPath.find_last_of('/') + 1));
-		imgName.assign(imgPath.substr(imgPath.find_last_of('/') + 1));
-		OcrResult result=pOcrObj->detect(imgDir.c_str(),imgName.c_str(),Param.padding,Param.maxSideLen,Param.boxScoreThresh,Param.boxThresh,Param.unClipRatio,Param.flagDoAngle?true:false,Param.flagMostAngle?true:false);
-		if(result.strRes.length()>0)
-			return result.strRes.c_str();
+		imgDir.assign(imgPath.substr(0, imgPath.find_last_of('\\') + 1));
+		imgName.assign(imgPath.substr(imgPath.find_last_of('\\') + 1));
+		OcrResult result=pOcrObj->OcrObj.detect(imgDir.c_str(),imgName.c_str(),Param.padding,Param.maxSideLen,Param.boxScoreThresh,Param.boxThresh,Param.unClipRatio,Param.flagDoAngle?true:false,Param.flagMostAngle?true:false);
+		if (result.strRes.length() > 0)
+		{
+	
+			pOcrObj->strRes = result.strRes; 
+			return TRUE;
+		}
 		else
-		return "";
+			return FALSE;
+	}
+
+
+	_QM_OCR_API  int BPOcrGetLen(BPHANDLE handle)
+	{
+		OCR_OBJ* pOcrObj = (OCR_OBJ*)handle;
+		if (!pOcrObj)
+			return 0;
+		return pOcrObj->strRes.size()+1;
+	}
+
+	_QM_OCR_API  BOOL BPOcrGetResult(BPHANDLE handle, char* szBuf, int nLen)
+	{
+
+		OCR_OBJ* pOcrObj = (OCR_OBJ*)handle;
+		if (!pOcrObj)
+			return FALSE;
+
+		if (nLen > pOcrObj->strRes.size())
+		{
+			strncpy(szBuf, pOcrObj->strRes.c_str(), pOcrObj->strRes.size());
+			szBuf[pOcrObj->strRes.size() - 1] = 0;
+		}
+		
+		return pOcrObj->strRes.size();
 	}
 
 	_QM_OCR_API void  BPOcrDeinit(BPHANDLE handle)
 	{
 
-		OcrLite * pOcrObj=(	OcrLite *)handle;
+		OCR_OBJ* pOcrObj=(OCR_OBJ*)handle;
 		if(pOcrObj)
 			delete pOcrObj;
 
