@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# !/usr/bin/env python
-# -*- encoding: utf-8 -*-
 import argparse
 import time
 
@@ -49,13 +47,13 @@ class TextDetector(object):
                 'keep_keys': ['image', 'shape']
             }
         }]
-
         self.preprocess_op = create_operators(pre_process_list)
         self.postprocess_op = DBPostProcess(thresh=0.3,
                                             box_thresh=0.5,
                                             max_candidates=1000,
                                             unclip_ratio=1.6,
                                             use_dilation=True)
+
         self.session = onnxruntime.InferenceSession(det_model_path)
         self.input_name = self.session.get_inputs()[0].name
         self.output_name = self.session.get_outputs()[0].name

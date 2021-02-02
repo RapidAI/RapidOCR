@@ -9,11 +9,6 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-# from ch_ppocr_mobile_v1_det import TextDetector
-from ch_ppocr_mobile_v2_det import TextDetector
-from ch_ppocr_mobile_v2_cls import TextClassifier
-from ch_ppocr_mobile_v2_rec import TextRecognizer
-
 font_path = r'resources\simfang.ttf'
 drop_score = 0.5
 
@@ -221,10 +216,23 @@ class TextSystem(object):
 
 if __name__ == '__main__':
     # 文本检测+方向分类+文本识别
+
+    # v1.0
+    # from ch_ppocr_mobile_v1_det import TextDetector
+
+    # v2.0
+    from ch_ppocr_mobile_v2_cls import TextClassifier
+    from ch_ppocr_mobile_v2_det import TextDetector
+    from ch_ppocr_mobile_v2_rec import TextRecognizer
+
+    # 通用模型路径
+    # from ch_ppocr_server_v2_det import TextDetector
+    # det_model_path = 'models/ch_ppocr_server_v2.0_det_train.onnx'
+
     det_model_path = 'models/ch_ppocr_mobile_v2_det_train.onnx'
-    cls_model_path = 'models/ch_ppocr_mobile_v2.0_cls_infer.onnx'
-    rec_model_path = 'models/ch_ppocr_mobile_v2.0_rec_pre_infer.onnx'
-    image_path = r'test_images\long1.jpg'
+    cls_model_path = 'models/ch_ppocr_mobile_v2.0_cls_train.onnx'
+    rec_model_path = 'models/ch_ppocr_mobile_v2.0_rec_pre.onnx'
+    image_path = r'test_images/det_images/1.jpg'
 
     text_sys = TextSystem(det_model_path, rec_model_path,
                           use_angle_cls=True,
