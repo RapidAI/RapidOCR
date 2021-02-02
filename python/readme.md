@@ -32,6 +32,7 @@ visualize(image_path, dt_boxes, rec_res)
 ### 通用超轻量文本检测模型 ch_ppocr_mobile_v2_det_train
 
 - **Note: 支持任意尺寸输入**
+- **server版文本检测只是采用了ResNet18作为backbone,其他与超轻量无区别**
 - 详细见[ch_ppocr_mobile_v2_det/text_detect.py](./ch_ppocr_mobile_v2_det/text_detect.py)
 
 #### 简单示例
