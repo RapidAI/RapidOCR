@@ -13,9 +13,8 @@
 # limitations under the License.
 # !/usr/bin/env python
 # -*- encoding: utf-8 -*-
-import time
-from pathlib import Path
 import argparse
+import time
 
 import cv2
 import numpy as np
@@ -23,7 +22,7 @@ import onnxruntime
 
 try:
     from .utils import (DBPostProcess, check_and_read_gif, create_operators,
-                       draw_text_det_res, transform)
+                        draw_text_det_res, transform)
 except:
     from utils import (DBPostProcess, check_and_read_gif, create_operators,
                        draw_text_det_res, transform)
@@ -33,8 +32,8 @@ class TextDetector(object):
     def __init__(self, det_model_path):
         pre_process_list = [{
             'DetResizeForTest': {
-                'limit_side_len': 960,
-                'limit_type': 'max'
+                'limit_side_len': 736,
+                'limit_type': 'min'
             }
         }, {
             'NormalizeImage': {
@@ -114,11 +113,6 @@ class TextDetector(object):
         dt_boxes = np.array(dt_boxes_new)
         return dt_boxes
 
-    @staticmethod
-    def load_image(image_path):
-
-        return img
-
     def __call__(self, img):
         ori_im = img.copy()
         data = {'image': img}
@@ -143,9 +137,9 @@ class TextDetector(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('image_path', type=str, default=None,
+    parser.add_argument('--image_path', type=str, default=None,
                         help='image_path|image_dir')
-    parser.add_argument('model_path', type=str, default=None,
+    parser.add_argument('--model_path', type=str, default=None,
                         help='model_path')
     args = parser.parse_args()
 
