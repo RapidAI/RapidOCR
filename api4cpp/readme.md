@@ -29,7 +29,7 @@ Supported platform:
 
 gcc:  4.8.5 or above
 
-ms vs: vs2016
+ms vs: vs2015 or higher
 
 Onnxruntime: 1.6
 
