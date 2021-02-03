@@ -220,19 +220,25 @@ if __name__ == '__main__':
     # v1.0
     # from ch_ppocr_mobile_v1_det import TextDetector
 
-    # v2.0
+    # v2.0 超轻量
+    # from ch_ppocr_mobile_v2_cls import TextClassifier
+    # from ch_ppocr_mobile_v2_det import TextDetector
+    # from ch_ppocr_mobile_v2_rec import TextRecognizer
+
+    # det_model_path = 'models/ch_ppocr_mobile_v2_det_train.onnx'
+    # cls_model_path = 'models/ch_ppocr_mobile_v2.0_cls_train.onnx'
+    # rec_model_path = 'models/ch_ppocr_mobile_v2.0_rec_pre.onnx'
+
+    # v2.0 通用模型
+    from ch_ppocr_server_v2_det import TextDetector
+    from ch_ppocr_server_v2_rec import TextRecognizer
     from ch_ppocr_mobile_v2_cls import TextClassifier
-    from ch_ppocr_mobile_v2_det import TextDetector
-    from ch_ppocr_mobile_v2_rec import TextRecognizer
 
-    # 通用模型路径
-    # from ch_ppocr_server_v2_det import TextDetector
-    # det_model_path = 'models/ch_ppocr_server_v2.0_det_train.onnx'
-
-    det_model_path = 'models/ch_ppocr_mobile_v2_det_train.onnx'
+    det_model_path = 'models/ch_ppocr_server_v2.0_det_train.onnx'
     cls_model_path = 'models/ch_ppocr_mobile_v2.0_cls_train.onnx'
-    rec_model_path = 'models/ch_ppocr_mobile_v2.0_rec_pre.onnx'
-    image_path = r'test_images/det_images/1.jpg'
+    rec_model_path = 'models/ch_ppocr_server_v2.0_rec_pre.onnx'
+
+    image_path = r'test_images/long1.jpg'
 
     text_sys = TextSystem(det_model_path, rec_model_path,
                           use_angle_cls=True,
