@@ -2,7 +2,10 @@
 访问： [中文版](readme_cn.md)             Chinese Name: 捷智OCR
 
 Note:
+
 For PC (political correctness ), we changed our name from BaiPiaoOCR to AIOCR
+
+
 Special thanks to Channingss@baidu (the owner of project Paddle2Onnx)
 
 ### Directory structure
