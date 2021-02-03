@@ -3,7 +3,7 @@
 
 Note:
 
-For PC (political correctness ), we changed our name from BaiPiaoOCR to AIOCR
+For PC (political correctness ), we changed our name from BaiPiaoOCR to RapidOCR
 
 
 Special thanks to Channingss@baidu (the owner of project Paddle2Onnx)
