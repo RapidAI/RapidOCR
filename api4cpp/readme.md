@@ -16,15 +16,15 @@ bpocrapitest.cpp      : the tester
 
 Supported platform:
 
-Windows 32/64 bits
+1. Windows 32/64 bits
 
-Linux  64bits
+2. Linux  64bits
 
-Macos 
+3. Macos 
 
-IOS
+4. IOS
 
-Android
+5. Android
 
 
 gcc:  4.8.5 or above
