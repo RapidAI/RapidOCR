@@ -15,8 +15,15 @@ bpocrapitest.cpp      : the tester
 
 
 for:
+
 Windows 32/64 bits
+
 Linux  64bits
+
 Macos 
+
+IOS
+
+Android
 
 
