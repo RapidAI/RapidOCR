@@ -1,5 +1,5 @@
 
-访问： [中文版](readme_cn.md)             Chinese Name: 智能OCR
+访问： [中文版](readme_cn.md)             Chinese Name: 捷智OCR
 
 Note:
 For PC (political correctness ), we changed our name from BaiPiaoOCR to AIOCR
