@@ -28,7 +28,9 @@ Android
 
 
 gcc:  4.8.5 or above
+
 ms vs: vs2016
 
 Onnxruntime: 1.6
+
 opencv :  3.x
