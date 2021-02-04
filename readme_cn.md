@@ -18,12 +18,12 @@ benjaminwan, znsoftm
 
 ### 当前进展
 
-* C++范例(Windows/Linux/macOS): [demo](https://github.com/znsoftm/BaiPiaoOCR/tree/main/cpp)
-* Jvm范例(Java/Kotlin): [demo](https://github.com/znsoftm/BaiPiaoOCR/tree/main/jvm)
-* .Net范例(C#): [demo](https://github.com/znsoftm/BaiPiaoOCR/tree/main/dotnet)
-* Android范例: [demo](https://github.com/znsoftm/BaiPiaoOCR/tree/main/android)
+* C++范例(Windows/Linux/macOS): [demo](https://github.com/znsoftm/RapidOCR/tree/main/cpp)
+* Jvm范例(Java/Kotlin): [demo](https://github.com/znsoftm/RapidOCR/tree/main/jvm)
+* .Net范例(C#): [demo](https://github.com/znsoftm/RapidOCR/tree/main/dotnet)
+* Android范例: [demo](https://github.com/znsoftm/RapidOCR/tree/main/android)
 * IOS范例: 等待有缘人贡献代码
-* python范例: [demo](https://github.com/znsoftm/BaiPiaoOCR/tree/main/python)
+* python范例: [demo](https://github.com/znsoftm/RapidOCR/tree/main/python)
 
 ### 模型训练
 
@@ -31,7 +31,7 @@ https://zhuanlan.zhihu.com/p/268761718
 
 ### 模型转换
 * 目前转换脚本支持的模型：文本方向分类模型1个，检测模型2个，识别模型28个(简体中文2种，繁体中文等26种)，合计31个
-* [模型转换说明](https://github.com/znsoftm/BaiPiaoOCR/tree/main/models)
+* [模型转换说明](https://github.com/znsoftm/RapidOCR/tree/main/models)
 
 ## 授权：
 
