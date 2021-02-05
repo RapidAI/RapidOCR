@@ -1,4 +1,6 @@
 
+中文广告： 欢迎加入我们的QQ群下载模型及测试程序，qq群号：887298230
+
 访问： [中文版](readme_cn.md)             Chinese Name: 捷智OCR
 
 Note:
