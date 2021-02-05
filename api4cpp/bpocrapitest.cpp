@@ -82,6 +82,8 @@ const char *szImagePath=NULL;
                 {
                     printf(szInfo);
                 }
+
+                free(szInfo);
             }
 
 
