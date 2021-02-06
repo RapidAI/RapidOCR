@@ -11,7 +11,7 @@ rapidocr_api.cpp     : the implementation of APIs
 rapidocrtest.cpp    : the tester
 
 
-Supported platform:
+### Supported platform:
 
 1. Windows 32/64 bits
 
