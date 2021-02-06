@@ -18,9 +18,9 @@ const  char* DEFAULT_MODEL_DIR = "E:\\bai-piao-ocr\\cpp\\BaiPiaoOcrOnnx\\models\
 
 const char* DEFAULT_TEST_IMG = "E:\\bai-piao-ocr\\cpp\\BaiPiaoOcrOnnx\\images\\1.jpg";
 #else
-const  char * DEFAULT_MODEL_DIR  ="/data/workprj/BaiPiaoOCR/models";
+const  char * DEFAULT_MODEL_DIR  ="/data/workprj/RapidOCR/models/";
 
-const char *  DEFAULT_TEST_IMG  ="/data/workprj/BaiPiaoOCR/images/1.jpg";
+const char *  DEFAULT_TEST_IMG  ="/data/workprj/RapidOCR/images/1.jpg";
 #endif
 int main(int argc, char * argv[])
 {
