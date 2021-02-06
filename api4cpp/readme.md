@@ -23,7 +23,7 @@ rapidocrtest.cpp    : the tester
 
 5. Android
 
-
+### toolchains
 gcc:  4.8.5 or above
 
 ms vs: vs2015 or higher
