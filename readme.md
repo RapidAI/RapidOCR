@@ -51,7 +51,7 @@ Welcome to our Group on QQ: 887298230
 or visit: https://jq.qq.com/?_wv=1027&k=P9b3olx6 to join us.
 
 
-Download OCR　models:
+Download OCR　models or SDK
 ```
 Linkage ：https://pan.baidu.com/s/1UhDrC7iOMWiYaQiHk3acdw 
 
