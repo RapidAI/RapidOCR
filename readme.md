@@ -21,7 +21,7 @@ Special thanks to Channingss@baidu (the owner of project Paddle2Onnx)
 
 If you use or reference code or code snippet from the repository, please add our url 
 
-https://github.com/znsoftm/BaiPiaoOCR   in your prodouct derived from the repository.
+https://github.com/znsoftm/RapidOCR   in your prodouct derived from the repository.
 
 
 **Author:**
@@ -51,7 +51,7 @@ Welcome to our Group on QQ: 887298230
 or visit: https://jq.qq.com/?_wv=1027&k=P9b3olx6 to join us.
 
 
-Download OCR　models:
+Download OCR　models or SDK
 ```
 Linkage ：https://pan.baidu.com/s/1UhDrC7iOMWiYaQiHk3acdw 
 
