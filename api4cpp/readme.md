@@ -8,7 +8,7 @@ To start, you should open the CMakeLists.txt from the root directory with Visual
 About files in this directory:
 
 
-aipiaoocr_api.cpp      : the implementation of APIs
+rapidocr_api.cpp     : the implementation of APIs
 
 
 rapidocrtest.cpp    : the tester
