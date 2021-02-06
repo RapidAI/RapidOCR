@@ -3,7 +3,7 @@
 #include <iostream>
 #include <memory.h>
 #include <string>
-#include "../include/baipiaoocr_api.h"
+#include "../include/rapidocr_api.h"
 
 #define BPOCR_DET_MODEL "ch_ppocr_mobile_v2.0_det_infer.onnx"
 #define BPOCR_CLS_MODEL "ch_ppocr_mobile_v2.0_cls_infer.onnx"

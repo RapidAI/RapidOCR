@@ -54,14 +54,16 @@ endif()
 add_definitions(-D__OPENMP__)
 aux_source_directory(cpp/BaiPiaoOcrOnnx/src/ SRC_MAIN)
 list(REMOVE_ITEM SRC_MAIN "main.cpp") 
-set(OCR_SRC api4cpp/baipiaoocr_api.cpp ${SRC_MAIN}  )
+
+
+set(OCR_SRC api4cpp/rapidocr_api.cpp ${SRC_MAIN}  )
 
 add_library(rapidocrapi SHARED ${OCR_SRC})
 
 target_compile_definitions(rapidocrapi PUBLIC -D_BPOCR_LIB)
 
 # test program 
-set(BPOCRTESTSRC api4cpp/bpocrapitest.cpp)
+set(BPOCRTESTSRC api4cpp/rapidocrtest.cpp)
 add_executable(rapidocrtest ${BPOCRTESTSRC})
 
 
@@ -70,8 +72,8 @@ add_executable(rapidocrtest ${BPOCRTESTSRC})
 
 if(WIN32)
 
-target_link_directories(bpocrapi PUBLIC lib/win)
-target_link_libraries(bpocrtest bpocrapi)
+target_link_directories(rapidocrapi PUBLIC lib/win)
+target_link_libraries(rapidocrapi rapidocrapi)
 #INSTALL_NUGET(bpocrapi Microsoft.ML.OnnxRuntime 1.6.0)
 elseif(UNIX)
 
