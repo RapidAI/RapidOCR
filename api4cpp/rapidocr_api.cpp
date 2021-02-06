@@ -31,14 +31,14 @@ extern "C"
 	}
 
 	
-	_QM_OCR_API BOOL  BPOcrDoOcr(BPHANDLE handle, const char* szImgPath, BOOL bAutoParam,BOOL bLongPic,BPOCR_PARAM *pParam)
+	_QM_OCR_API BOOL  BPOcrDoOcr(BPHANDLE handle, const char* szImgPath, BOOL bAutoParam,BOOL bLongPic,RAPIDOCR_PARAM *pParam)
 	{
 
 		OCR_OBJ* pOcrObj=(OCR_OBJ*)handle;
 		if(!pOcrObj)
 			return FALSE;
 
-		BPOCR_PARAM Param = *pParam;
+		RAPIDOCR_PARAM Param = *pParam;
 		if(bAutoParam)
 		{
 

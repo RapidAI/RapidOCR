@@ -26,7 +26,7 @@ typedef  char BOOL;
 #define	FALSE	0
 
 
-typedef struct __bpocr_param
+typedef struct __rapidocr_param
 {
 	float unClipRatio;
 	int maxSideLen;
@@ -36,7 +36,7 @@ typedef struct __bpocr_param
 	int numThread;
 	int flagDoAngle; // 1 means do
 	int flagMostAngle; // 1 means true
-} BPOCR_PARAM;
+} RAPIDOCR_PARAM;
 
 
 
@@ -45,7 +45,7 @@ By default, nThreads should be the number of threads
 */
 _QM_OCR_API BPHANDLE   BPOcrInit(const char * szDetModel, const char * szClsModel, const char * szRecModel,const char *szKeyPath,int nThreads);
 
-_QM_OCR_API BOOL  BPOcrDoOcr(BPHANDLE handle, const char* szImgPath, BOOL bAutoParam,BOOL bLongPic, BPOCR_PARAM *pParam);
+_QM_OCR_API BOOL  BPOcrDoOcr(BPHANDLE handle, const char* szImgPath, BOOL bAutoParam,BOOL bLongPic, RAPIDOCR_PARAM *pParam);
 
 _QM_OCR_API  int BPOcrGetLen(BPHANDLE handle);
 

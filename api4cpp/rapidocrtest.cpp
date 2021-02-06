@@ -68,7 +68,7 @@ const char *szImagePath=NULL;
         return -1;
     }
 
-    BPOCR_PARAM Param={0};
+    RAPIDOCR_PARAM Param={0};
     BOOL bRet =BPOcrDoOcr(Handle,szImagePath,false,false,&Param);
     if (bRet)
     {
