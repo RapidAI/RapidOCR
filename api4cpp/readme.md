@@ -11,7 +11,7 @@ About files in this directory:
 aipiaoocr_api.cpp      : the implementation of APIs
 
 
-bpocrapitest.cpp      : the tester
+rapidocrtest.cpp    : the tester
 
 
 Supported platform:
