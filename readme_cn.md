@@ -1,5 +1,7 @@
 本项目欢迎提交issue, 欢迎PR.
 
+### 在线演示：  http://rapidocr.51pda.cn:9003/ocr 
+
 ### 版权声明
 
 如果你的产品使用了本仓库中的全部或部分代码、文字或材料， 请注明出处并包括我们的github url : https://github.com/znsoftm/RapidOCR
