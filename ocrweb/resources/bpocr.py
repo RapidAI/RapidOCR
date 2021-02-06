@@ -33,7 +33,7 @@ def draw_text_det_res(dt_boxes, raw_im):
         box = np.array(box).astype(np.int32).reshape(-1, 2)
         cv2.polylines(src_im, [box], True,
                       color=(0, 0, 255),
-                      thickness=2)
+                      thickness=1)
         cv2.putText(src_im, str(i), (int(box[0][0]), int(box[0][1])),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
     return src_im
