@@ -7,6 +7,20 @@
 
 访问： [中文版](readme_cn.md)             Chinese Name: 捷智OCR
 
+### 本仓库包括
+
+```
+1. 纯c／c＋＋ 接口，方便移植所有平台
+2. .NET测试程序　　演示在.NET程序中的使用方法
+3.  Android 测试程序
+4.  Java 测试程序
+5.  python 测试程序
+6.  WEB 演示   基于web的演示代码
+```
+
+
+----------------  For  English Users ----------------------
+
 Note:
 
 For PC (political correctness ), we changed our name from BaiPiaoOCR to RapidOCR
