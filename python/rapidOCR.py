@@ -3,15 +3,19 @@
 import copy
 import math
 import random
+import argparse
 from pathlib import Path
 
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-font_path = r'resources\simfang.ttf'
+
 drop_score = 0.5
 
+
+def str2bool(v):
+    return v.lower() in ("true", "t", "1")
 
 def check_and_read_gif(img_path):
     if Path(img_path).name[-3:] in ['gif', 'GIF']:
@@ -25,18 +29,6 @@ def check_and_read_gif(img_path):
         imgvalue = frame[:, :, ::-1]
         return imgvalue, True
     return None, False
-
-
-def draw_text_det_res(dt_boxes, raw_im):
-    src_im = copy.deepcopy(raw_im)
-    for i, box in enumerate(dt_boxes):
-        box = np.array(box).astype(np.int32).reshape(-1, 2)
-        cv2.polylines(src_im, [box], True,
-                      color=(255, 255, 0),
-                      thickness=2)
-        cv2.putText(src_im, str(i), (int(box[0][0]), int(box[0][1])),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
-    return src_im
 
 
 def draw_ocr_box_txt(image, boxes, txts,
@@ -91,16 +83,16 @@ def visualize(image_path, boxes, rec_res):
     txts = [rec_res[i][0] for i in range(len(rec_res))]
     scores = [rec_res[i][1] for i in range(len(rec_res))]
 
-    draw_img = draw_ocr_box_txt(image, boxes, txts, scores,
-                                drop_score=drop_score,
-                                font_path=font_path)
+    draw_img = draw_ocr_box_txt(image, boxes,
+                                txts, scores,
+                                drop_score=0.5)
 
-    draw_img_save = "./inference_results/"
-    if not Path(draw_img_save).exists():
-        Path(draw_img_save).mkdir(parents=True,
-                                  exist_ok=True)
+    draw_img_save = Path("./inference_results/")
+    if not draw_img_save.exists():
+        draw_img_save.mkdir(parents=True,
+                            exist_ok=True)
 
-    image_save = str(Path(draw_img_save) / f'infer_{Path(image_path).name}')
+    image_save = str(draw_img_save / f'infer_{Path(image_path).name}')
     cv2.imwrite(image_save, draw_img[:, :, ::-1])
     print(f'The infer result has saved in {image_save}')
 
@@ -214,34 +206,68 @@ class TextSystem(object):
         return filter_boxes, filter_rec_res
 
 
-if __name__ == '__main__':
-    # 文本检测+方向分类+文本识别
-
-    # v1.0
-    # from ch_ppocr_mobile_v1_det import TextDetector
-
-    # v2.0 超轻量
-    # from ch_ppocr_mobile_v2_cls import TextClassifier
-    # from ch_ppocr_mobile_v2_det import TextDetector
-    # from ch_ppocr_mobile_v2_rec import TextRecognizer
-
-    # det_model_path = 'models/ch_ppocr_mobile_v2_det_train.onnx'
-    # cls_model_path = 'models/ch_ppocr_mobile_v2.0_cls_train.onnx'
-    # rec_model_path = 'models/ch_ppocr_mobile_v2.0_rec_pre.onnx'
-
-    # v2.0 通用模型
-    from ch_ppocr_server_v2_det import TextDetector
-    from ch_ppocr_server_v2_rec import TextRecognizer
+def main():
     from ch_ppocr_mobile_v2_cls import TextClassifier
+    from ch_ppocr_mobile_v2_det import TextDetector
+    from ch_ppocr_mobile_v2_rec import TextRecognizer
 
-    det_model_path = 'models/ch_ppocr_server_v2.0_det_train.onnx'
-    cls_model_path = 'models/ch_ppocr_mobile_v2.0_cls_train.onnx'
-    rec_model_path = 'models/ch_ppocr_server_v2.0_rec_pre.onnx'
+    det_model_path = 'models/ch_ppocr_mobile_v2.0_det_infer.onnx'
+    cls_model_path = 'models/ch_ppocr_mobile_v2.0_cls_infer.onnx'
+    rec_model_path = 'models/ch_ppocr_mobile_v2.0_rec_infer.onnx'
+    image_path = r'test_images/det_images/1.jpg'
 
-    image_path = r'test_images/long1.jpg'
-
-    text_sys = TextSystem(det_model_path, rec_model_path,
+    text_sys = TextSystem(det_model_path,
+                          rec_model_path,
                           use_angle_cls=True,
                           cls_model_path=cls_model_path)
     dt_boxes, rec_res = text_sys(image_path)
     visualize(image_path, dt_boxes, rec_res)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--use_server', type=str2bool, default=False)
+
+    parser.add_argument('--det_model_path', type=str,
+                        default='models/ch_ppocr_mobile_v2.0_det_infer.onnx')
+    parser.add_argument('--cls_model_path', type=str,
+                        default='models/ch_ppocr_mobile_v2.0_cls_infer.onnx')
+    parser.add_argument('--rec_model_path', type=str,
+                        default='models/ch_ppocr_mobile_v2.0_rec_infer.onnx')
+
+    parser.add_argument('--image_path', type=str,
+                        default='test_images/det_images/1.jpg')
+    args = parser.parse_args()
+
+    if args.use_server:
+        from ch_ppocr_server_v2_det import TextDetector
+        from ch_ppocr_server_v2_rec import TextRecognizer
+        from ch_ppocr_mobile_v2_cls import TextClassifier
+
+        if not args.det_model_path.__contains__('server'):
+            raise ValueError(f'det模型{args.det_model_path}不是通用模型！')
+
+        if not args.rec_model_path.__contains__('server'):
+            raise ValueError(f'rec模型{args.rec_model_path}不是通用模型！')
+    else:
+        # v2.0 超轻量
+        from ch_ppocr_mobile_v2_cls import TextClassifier
+        from ch_ppocr_mobile_v2_det import TextDetector
+        from ch_ppocr_mobile_v2_rec import TextRecognizer
+
+    if args.det_model_path is None:
+        raise FileNotFoundError(f'{args.det_model_path} is not found!')
+
+    if args.cls_model_path is None:
+        raise FileNotFoundError(f'{args.cls_model_path} is not found!')
+
+    if args.rec_model_path is None:
+        raise FileNotFoundError(f'{args.rec_model_path} is not found!')
+
+    text_sys = TextSystem(args.det_model_path,
+                          args.rec_model_path,
+                          use_angle_cls=True,
+                          cls_model_path=args.cls_model_path)
+    dt_boxes, rec_res = text_sys(args.image_path)
+    visualize(args.image_path, dt_boxes, rec_res)

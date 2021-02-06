@@ -1,32 +1,29 @@
-#### TODO:
-
-- [x] 超轻量2.0方向分类器模型整理
-- [x] 通用2.0文本检测模型整理
-- [x] 通用2.0文本识别模型整理
-- [x] ~~通用2.0方向分类器模型整理~~ → 同**超轻量2.0方向分类器模型整理**
-
 ### 检测、方向分类和识别模型下载：
-
 - [链接](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
 - 提取码：30jv
 - 下载之后放在`models`目录即可
 
 ### 文本检测+方向分类+文本识别
-- 具体参见[bpocr.py](./bpocr.py)
+- 具体参见[rapidOCR.py](./rapidOCR.py)
 
 #### 简单示例
 ```python
-det_model_path = 'models/ch_ppocr_mobile_v2_det_train.onnx'
-cls_model_path = 'models/ch_ppocr_mobile_v2.0_cls_infer.onnx'
-rec_model_path = 'models/ch_ppocr_mobile_v2.0_rec_pre_infer.onnx'
-image_path = r'test_images\long1.jpg'
+from ch_ppocr_mobile_v2_cls import TextClassifier
+from ch_ppocr_mobile_v2_det import TextDetector
+from ch_ppocr_mobile_v2_rec import TextRecognizer
 
-text_sys = TextSystem(det_model_path, rec_model_path,
+det_model_path = 'models/ch_ppocr_mobile_v2.0_det_infer.onnx'
+cls_model_path = 'models/ch_ppocr_mobile_v2.0_cls_infer.onnx'
+rec_model_path = 'models/ch_ppocr_mobile_v2.0_rec_infer.onnx'
+
+image_path = r'test_images/det_images/1.jpg'
+
+text_sys = TextSystem(det_model_path,
+                        rec_model_path,
                         use_angle_cls=True,
                         cls_model_path=cls_model_path)
 dt_boxes, rec_res = text_sys(image_path)
 visualize(image_path, dt_boxes, rec_res)
-
 ```
 
 ### 通用超轻量文本检测模型 ch_ppocr_mobile_v2_det_train
@@ -82,29 +79,4 @@ text_recongnizer = TextRecognizer(rec_model_path)
 
 rec_res, elapse = text_recongnizer(image_path)
 print(f'识别结果：{rec_res}/tcost: {elapse}s')
-```
-
----
-
-### 通用超轻量文本检测模型 ch_ppocr_mobile_v1.1_det
-
-- **Note: 支持任意尺寸输入**
-- 详细见[ch_ppocr_mobile_v1_det/text_detect.py](./ch_ppocr_mobile_v1_det/text_detect.py)
-
-#### 简单示例
-
-```python
-text_detector = TextDetector(args.model_path)
-
-img, flag = check_and_read_gif(args.image_path)
-if not flag:
-    img = cv2.imread(args.image_path)
-if img is None:
-    raise ValueError(f"error in loading image:{args.image_path}")
-
-dt_boxes, elapse = text_detector(img)
-
-plot_img = draw_text_det_res(dt_boxes, img)
-cv2.imwrite('det_results.jpg', plot_img)
-print('图像已经保存为det_results.jpg了')
 ```
