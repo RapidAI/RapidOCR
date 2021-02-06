@@ -32,4 +32,4 @@ Onnxruntime: 1.6
 
 opencv :  3.x
 
-Mainly, it shoud link to library libopencv_imgcodecs 	libopencv_imgproc 	libopencv_core
+Mainly, it shoud be linked to library libopencv_imgcodecs 	libopencv_imgproc 	libopencv_core
