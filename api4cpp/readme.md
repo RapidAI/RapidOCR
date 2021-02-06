@@ -2,7 +2,7 @@ It's only a wrapper for the cpp version. We give it a set of pure C interface AP
 
 To start, you should open the CMakeLists.txt from the root directory with Visual studio 2019 or CMAKE directly.
 
-About files in this directory:
+### About files in this directory:
 
 
 rapidocr_api.cpp     : the implementation of APIs
