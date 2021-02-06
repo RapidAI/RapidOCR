@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<style type="text/css">
+    body{
+        background-color:#ebedef;
+    }
+    .area
+    {
+        text-align: center;
+        height: auto;
+        margin: auto;
+    }
+    .btn {
+        background: #2196f3;
+        border-color: #2196f3;
+        font-size: 14px;
+        padding-top: 6px;
+        color: #fff;
+        padding-bottom: 6px;
+    }
+    .upload {
+        font-size: 14px;
+    }
+</style>
+<head>
+    <meta charset="UTF-8">
+    <title>RapidOCR Demo</title>
+</head>
+<body>
+    <h1 align="center">RapidOCR Demo</h1>
+    <div class="area">
+        <form action="" enctype='multipart/form-data' method='POST'>
+            <input type="file" name="file" class="upload" style="margin-top:20px;"/>
+            <input type="submit" value="检测+识别" class="btn" style="margin-top:15px;cursor:pointer"/>
+        </form>
+    </div>
+</body>
+</html>

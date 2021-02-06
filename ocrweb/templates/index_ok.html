@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RapidOCR Demo</title>
+</head>
+<style type="text/css">
+     body{
+   background-color:#ebedef;
+}
+    .area{
+        text-align: center;
+        height: auto;
+        margin: auto;
+    }
+    .leftarea{
+        float: left;
+        width: 49%;
+        height: auto;
+    }
+
+    .rightarea{
+        float: left;
+        width: 49%;
+        height: auto;
+    }
+
+    .table{
+        margin: 0 auto;
+        /* border-spacing: 0px 15px; */
+    }
+    tr td{
+        border:1px solid black;
+        border-bottom-width: thin;
+        border-right-style: thin;
+        border-left-style: thin;
+        border-top-style: thin;
+    }
+
+    .btn {
+        margin-top: 4px;
+        line-height: 32px;
+        border-radius: 4px;
+        display: inline-block;
+        text-align: center;
+        transition: .3s;
+        box-sizing: border-box;
+    }
+
+    .upload{
+        font-size: 14px;
+    }
+    .span_title{
+        width: 98%;
+        height: 36px;
+        margin-top: 4px;
+        line-height: 32px;
+        background-color: #00a1d6;
+        border: 1px solid #00a1d6;
+        border-radius: 4px;
+        color: #fff;
+        display: inline-block;
+        text-align: center;
+        font-size: 26px;
+        transition: .3s;
+        box-sizing: border-box;
+    }
+    span{
+        font-size: 26px;
+    }
+</style>
+<body>
+    <h1 align="center">RapidOCR Demo</h1>
+    <div class="area">
+        <form action="" enctype='multipart/form-data' method='POST'>
+            <input type="file" name="file" class="upload" style="margin-top:20px;"/>
+            <input type="submit" value="检测+识别" class="btn" style="margin-top:15px;cursor:pointer"/>
+        </form>
+    <br>
+    </div>
+
+    <div class="area">
+        <div class="leftarea">
+            <span class="span_title">文本检测结果:</span>
+            <br/>
+            <br/>
+            <img src="{{ url_for('static', filename=det_img_path, _t=val1) }}" alt="文本检测图" width="{{width}}" height="{{height}}" title="文本检测图"/>
+        </div>
+
+        <div class="rightarea">
+                <span class="span_title">文本识别结果(耗时:{{time}}s):</span>
+                <br/> <br/>
+                <table class='table' cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td><strong>序号</strong></td>
+                        <td><strong>识别结果</strong></td>
+                        <td><strong>置信度</strong></td>
+                    </tr>
+                    {% for value in rec_res%}
+                        <tr>
+                            <td>{{value[0]}}</td>
+                            <td>{{value[1][0]}}</td>
+                            <td>{{value[1][1]}}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+        </div>
+    </div>
+
+</body>
+</html>
