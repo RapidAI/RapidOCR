@@ -18,6 +18,15 @@
 6.  WEB 演示   基于web的演示代码
 ```
 
+网盘下载测试SDK及转换好的多语言模型：
+
+```
+Download OCR　models or SDK
+
+Linkage ：https://pan.baidu.com/s/1UhDrC7iOMWiYaQiHk3acdw 
+
+code：yjgv 
+```
 
 ----------------  For  English Users ----------------------
 
