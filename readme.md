@@ -3,7 +3,7 @@
 
 征集志愿者编译集成SDK,请进群找群主联系。
 
-## 在线演示(online demo)：  http://rapidocr.51pda.cn:9003/ocr 
+## 在线演示(online demo)：  http://rapidocr.51pda.cn:9003/
 
 ### 演示模型组合说明： server det+mobile cls+mobile rec
 
