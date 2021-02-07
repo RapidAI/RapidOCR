@@ -1,6 +1,6 @@
 本项目欢迎提交issue, 欢迎PR.
 
-### 在线演示：  http://rapidocr.51pda.cn:9003/ocr 
+### 在线演示：  http://rapidocr.51pda.cn:9003/
 
 ### 版权声明
 
