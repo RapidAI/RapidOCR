@@ -1,38 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
-<style type="text/css">
-    body{
-        background-color:#ebedef;
-    }
-    .area
-    {
-        text-align: center;
-        height: auto;
-        margin: auto;
-    }
-    .btn {
-        background: #2196f3;
-        border-color: #2196f3;
-        font-size: 14px;
-        padding-top: 6px;
-        color: #fff;
-        padding-bottom: 6px;
-    }
-    .upload {
-        font-size: 14px;
-    }
-</style>
 <head>
     <meta charset="UTF-8">
     <title>RapidOCR Demo</title>
+    <style type="text/css">
+        body{
+            background-color:#ebedef;
+        }
+        .btn-gen {
+            /* position: absolute;top:540px; left: 500px; */
+            background-color: #00a1d6;
+            text-align: center;
+            border-radius: 20px;
+            margin-top: 5px;
+            font-size: 15px;
+            padding: 5px 5px;
+            height: 20px;
+            width: 120px;
+            text-transform: uppercase;
+            color: #fff;
+            border:none;
+        }
+        .btn-gen:hover,
+        .btn-gen:focus {
+            border-color: #23AAEE;
+            background-color: #23AAEE;
+            color: white;
+            cursor: pointer;
+        }
+        .area{
+            text-align: center;
+            height: auto;
+            margin: auto;
+        }
+        .leftarea{
+            float: left;
+            width: 50%;
+            height: auto;
+        }
+
+        .rightarea{
+            float: left;
+            width: 50%;
+            height: auto;
+        }
+        .table{
+            width: auto;
+            height: auto;
+            margin: 0 auto;
+            border: 0px solid #000;
+        }
+        .span_title{
+            width: 98%;
+            height: 36px;
+            margin-top: 4px;
+            line-height: 32px;
+            background-color: #00a1d6;
+            border: 1px solid #00a1d6;
+            border-radius: 20px;
+            color: #fff;
+            display: inline-block;
+            text-align: center;
+            font-size: 26px;
+            transition: .3s;
+            box-sizing: border-box;
+        }
+        .uplodNote{
+            font-size: 14px;
+            color:#000;
+            font-style: italic;
+        }
+        a{text-decoration:none}
+    </style>
 </head>
 <body>
-    <h1 align="center">RapidOCR Demo</h1>
-    <div class="area">
-        <form action="" enctype='multipart/form-data' method='POST'>
-            <input type="file" name="file" class="upload" style="margin-top:20px;"/>
-            <input type="submit" value="检测+识别" class="btn" style="margin-top:15px;cursor:pointer"/>
-        </form>
+    <h1 align="center">
+        RapidOCR Demo &nbsp;
+        <a href="https://github.com/znsoftm/RapidOCR" style="font-size: 14px;">欢迎Star</a>
+    </h1>
+    <div class='area'>
+        <span class="uplodNote">图片文件类型支持PNG、JPG、JPEG、BMP，图片大小不超过10M。</span>
+        <span class="btn-gen" onclick="javascript:$('#rapid_ocr').click();">试试你的图片？</span>
+        <input type="file" style="display: none;" name="pic" id="rapid_ocr"/>
     </div>
+    <br/>
+    <div class="area">
+        <div class="leftarea" id="detectDiv">
+            <span class="span_title">文本检测结果:</span><br/><br/>
+            <img id="detect_img" src=""/>
+        </div>
+
+        <div class="rightarea" id="recogDiv">
+                <span id="rec_res" class="span_title">文本识别结果:</span>
+                <br/> <br/>
+                <table id="locTable" border="1" class="table" cellspacing="0" cellpadding="5"></table>
+        </div>
+    </div>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script type="text/javascript">
+        // 页面加载时，执行
+        window.onload = function () {
+            $("#detectDiv").hide();
+            $("#recogDiv").hide();
+        }
+
+        $("#rapid_ocr").change(function(){
+            let file = document.getElementById("rapid_ocr").files[0];
+
+            // 判断图像格式是否匹配
+            let imageName = file.name;
+            let index = imageName.lastIndexOf('.');
+            let extName = imageName.substr(index + 1);
+            let imgArr = ['jpg', 'bmp', 'png', 'jpeg'];
+            if (!(imgArr.includes(extName.toLocaleLowerCase()))){
+                alert("图像文件格式不支持！");
+                return;
+            }
+
+            // 判断图像大小是否符合
+            let imageSize = file.size / 1024 / 1024;
+            if (imageSize >= 10) {
+                alert("图像大小超过10M！");
+                return;
+            }
+
+            var reader = new FileReader();
+            reader.onload = function(e){
+                var upload_data = {"file": reader.result,};
+                console.log(reader.result)
+                $.ajax(
+                {
+                    url:"/ocr",
+                    type:"POST",
+                    data: JSON.stringify(upload_data),
+                    contentType: 'application/json; charset=UTF-8',
+                    dataType: 'json',
+
+                    beforeSend:function(){
+                        $('#detect_img').attr("width", "");
+                        $('#detect_img').attr("height", "");
+                    },
+
+                    success:function (data) {
+                        $('#detect_img').attr("width", "95%");
+                        $('#detect_img').attr("height", "95%");
+                        $("#detectDiv").show();
+                        $("#recogDiv").show();
+
+                        if (data){
+                            if (data['image']){
+                                $("#detect_img").attr('src', 'data:image/jpeg;base64,'+ data['image']);
+                                $('#detect_img').show();
+                            }
+                            if (data["elapse"]){
+                                document.getElementById("rec_res").textContent = "文本识别结果(耗时:" + String(data['elapse']) + "s):"
+                            }
+                            if (data["rec_res"]){
+                                var rec_res = JSON.parse(data["rec_res"]);
+
+                                // 绘制整个结果表格
+                                var data = "";
+                                data += "<tr>" +
+                                            '<th bgcolor="#C0C0C0">序号</th>' +
+                                            '<th bgcolor="#C0C0C0">识别结果</th>' +
+                                            '<th bgcolor="#C0C0C0">置信度</th>' +
+                                        "</tr>"
+                                for (let i = 0; i < rec_res.length; i++) {
+                                    const element = rec_res[i];
+                                    let num = element[0];
+
+                                    let rec_result = element[1];
+
+                                    let score = Number(element[2]);
+                                    score = score.toFixed(4);
+
+                                    data += "<tr>"
+                                    data += "<td>" + num + "</td>";
+                                    data += "<td align='left'>" + rec_result + "</td>";
+                                    data += "<td>" + score + "</td>";
+                                    data += "</tr>"
+                                }
+                                document.getElementById("locTable").innerHTML = data;
+                            }
+                        }
+
+                    }
+                }
+            );
+            }
+            reader.readAsDataURL(this.files[0])
+        });
+    </script>
 </body>
 </html>

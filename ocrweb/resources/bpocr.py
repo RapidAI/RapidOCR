@@ -115,7 +115,8 @@ class TextSystem(object):
         return img
 
     def __call__(self, image_path):
-        img = self.load_image(image_path)
+        # img = self.load_image(image_path)
+        img = image_path
         dt_boxes, elapse = self.text_detector(img)
         print("dt_boxes num : {}, elapse : {}".format(
             len(dt_boxes), elapse))
@@ -166,6 +167,7 @@ if __name__ == '__main__':
     # v2.0 通用模型
     from ch_ppocr_server_v2_det import TextDetector
     from ch_ppocr_server_v2_rec import TextRecognizer
+
     from ch_ppocr_mobile_v2_cls import TextClassifier
 
     det_model_path = 'models/ch_ppocr_server_v2.0_det_train.onnx'
