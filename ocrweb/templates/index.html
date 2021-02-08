@@ -71,6 +71,33 @@
             font-style: italic;
         }
         a{text-decoration:none}
+
+        /* wrapper */
+        .leftarea>#wrapper {
+            position: absolute; top: 0px; left:0px;
+            width: 95%;
+            height: 95%;
+            background:
+            linear-gradient(#1a98ca, #1a98ca),
+            linear-gradient(90deg, #ffffff33 1px,transparent 0,transparent 19px),
+            linear-gradient( #ffffff33 1px,transparent 0,transparent 19px),
+            linear-gradient(transparent, #1a98ca);
+            background-size:100% 1.5%, 10% 100%,100% 8%, 100% 100%;
+            background-repeat:no-repeat, repeat, repeat, no-repeat;
+            background-position: 0% 0%, 0 0, 0 0, 0 0;
+            /* 初始位置 */
+            clip-path: polygon(0% 0%, 100% 0%, 100% 1.5%, 0% 1.5%);
+            /* 添加动画效果 */
+            animation: move 1s infinite linear;
+        }
+
+        @keyframes move{
+            to{
+                background-position: 0 100%,0 0, 0 0, 0 0;
+                /* 终止位置 */
+                clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+            }
+        }
     </style>
 </head>
 <body>
@@ -82,11 +109,14 @@
         <span class="uplodNote">图片文件类型支持PNG、JPG、JPEG、BMP，图片大小不超过10M。</span>
         <span class="btn-gen" onclick="javascript:$('#rapid_ocr').click();">试试你的图片？</span>
         <input type="file" style="display: none;" name="pic" id="rapid_ocr"/>
+        <span id="loading"></span>
     </div>
     <br/>
     <div class="area">
         <div class="leftarea" id="detectDiv">
             <span class="span_title">文本检测结果:</span><br/><br/>
+            <div class="wrapper" id="wrapper" hidden>
+            </div>
             <img id="detect_img" src=""/>
         </div>
 
@@ -100,8 +130,8 @@
     <script type="text/javascript">
         // 页面加载时，执行
         window.onload = function () {
-            $("#detectDiv").hide();
-            $("#recogDiv").hide();
+            $('#detect_img').attr("width", "");
+            $('#detect_img').attr("height", "");
         }
 
         $("#rapid_ocr").change(function(){
@@ -127,7 +157,6 @@
             var reader = new FileReader();
             reader.onload = function(e){
                 var upload_data = {"file": reader.result,};
-                console.log(reader.result)
                 $.ajax(
                 {
                     url:"/ocr",
@@ -137,15 +166,15 @@
                     dataType: 'json',
 
                     beforeSend:function(){
-                        $('#detect_img').attr("width", "");
-                        $('#detect_img').attr("height", "");
+                        $("#detect_img").attr('src', reader.result);
+                        $('#detect_img').attr("width", "95%");
+                        $('#detect_img').attr("height", "95%");
+
+                        $('#wrapper').show();
                     },
 
                     success:function (data) {
-                        $('#detect_img').attr("width", "95%");
-                        $('#detect_img').attr("height", "95%");
-                        $("#detectDiv").show();
-                        $("#recogDiv").show();
+                        $("#wrapper").hide();
 
                         if (data){
                             if (data['image']){
