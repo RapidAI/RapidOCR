@@ -120,8 +120,8 @@ class TextSystem(object):
         dt_boxes, elapse = self.text_detector(img)
         print("dt_boxes num : {}, elapse : {}".format(
             len(dt_boxes), elapse))
-        if dt_boxes is None:
-            return None, None
+        if dt_boxes is None or dt_boxes.size == 0:
+            return None, None, img
         img_crop_list = []
 
         dt_boxes = self.sorted_boxes(dt_boxes)

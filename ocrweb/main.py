@@ -45,20 +45,28 @@ def ocr():
         t1 = time.time()
         dt_boxes, rec_res, img = text_sys(image)
         t2 = time.time()
+        if dt_boxes is None or rec_res is None:
+            temp_rec_res = []
+            rec_res_data = json.dumps(temp_rec_res,
+                                      indent=2,
+                                      ensure_ascii=False)
+            elapse = 0
+            image = cv2.imencode('.jpg', img)[1]
+            img = str(base64.b64encode(image))[2:-1]
+        else:
+            temp_rec_res = []
+            for i, value in enumerate(rec_res):
+                temp_rec_res.append([i, value[0], value[1]])
+            temp_rec_res = np.array(temp_rec_res)
+            rec_res_data = json.dumps(temp_rec_res.tolist(),
+                                    indent=2,
+                                    ensure_ascii=False)
 
-        temp_rec_res = []
-        for i, value in enumerate(rec_res):
-            temp_rec_res.append([i, value[0], value[1]])
-        temp_rec_res = np.array(temp_rec_res)
-        rec_res_data = json.dumps(temp_rec_res.tolist(),
-                                  indent=2,
-                                  ensure_ascii=False)
+            det_im = draw_text_det_res(dt_boxes, img)
+            image = cv2.imencode('.jpg', det_im)[1]
+            img = str(base64.b64encode(image))[2:-1]
 
-        det_im = draw_text_det_res(dt_boxes, img)
-        image = cv2.imencode('.jpg', det_im)[1]
-        img = str(base64.b64encode(image))[2:-1]
-
-        elapse = f'{t2-t1:.3f}'
+            elapse = f'{t2-t1:.3f}'
         return json.dumps({'image': img,
                            'elapse': elapse,
                            'rec_res': rec_res_data})
