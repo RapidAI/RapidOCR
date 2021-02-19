@@ -20,25 +20,41 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/onnxruntime/)
 if(WIN32)
 
 	add_definitions(-D_BPOCR_EXPORT_API)
-    link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/win/x64/)
-	IF(CMAKE_BUILD_TYPE STREQUAL Debug)  #debug
-	   	link_libraries(opencv_world3413d.lib onnxruntime.lib)
-	else()
-	   	link_libraries(opencv_world3413.lib onnxruntime.lib)
-	endif()
+	IF(CMAKE_CL_64)
+		set(platform x64)
+		link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/win/x64/)
+	ELSE(CMAKE_CL_64)
+		set(platform x86)
+		link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/win/x86/)
+	ENDIF(CMAKE_CL_64)
+    
+
+
+	set(OpenCV_DIR E:/workprj/x-labs/opencv/opencv/build)  # 指向下载的opencv解开后的目录，下面会有bin/lib/include等目录
 
 elseif(UNIX)
 
 	# set（OpenCV_DIR  /path/to/opencv/build）
-	FIND_PACKAGE(OpenCV REQUIRED)
-	if(OPENCV_FOUND)
-		message("OpenCV FOUND")
-		include_directories(${OpenCV_INCLUDE_DIRS})
-		link_directories(${OpenCV_LIBRARY_DIRS})
-		link_libraries(${OpenCV_LIBS})
-		
-	endif()
 
+
+endif()
+
+#IF(CMAKE_BUILD_TYPE STREQUAL Debug)  #debug
+#   	
+#else()
+#   	link_libraries(opencv_world3413.lib onnxruntime.lib)
+#endif()
+
+# for onnxruntime
+
+link_libraries(onnxruntime)
+FIND_PACKAGE(OpenCV REQUIRED)
+if(OPENCV_FOUND)
+	message("OpenCV FOUND")
+	include_directories(${OpenCV_INCLUDE_DIRS})
+	link_directories(${OpenCV_LIBRARY_DIRS})
+	link_libraries(${OpenCV_LIBS})
+		
 endif()
 
 #  openmp 
@@ -50,6 +66,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 message(${CMAKE_EXE_LINKER_FLAGS})
 endif()
+
+#end of openmp
 
 add_definitions(-D__OPENMP__)
 aux_source_directory(cpp/BaiPiaoOcrOnnx/src/ SRC_MAIN)
@@ -67,22 +85,18 @@ set(BPOCRTESTSRC api4cpp/rapidocrtest.cpp)
 add_executable(rapidocrtest ${BPOCRTESTSRC})
 
 
-#opencv 
-#set(OPENCV_LIB opencv_core opencv_imgproc opencv_imgcodecs)
-
+target_link_libraries(rapidocrtest onnxruntime ${OPENCV_LIB} rapidocrapi)
 if(WIN32)
 
-target_link_directories(rapidocrapi PUBLIC lib/win)
-target_link_libraries(rapidocrapi rapidocrapi)
-#INSTALL_NUGET(bpocrapi Microsoft.ML.OnnxRuntime 1.6.0)
+	target_link_directories(rapidocrapi PUBLIC lib/win)
+
 elseif(UNIX)
 
 message(STATUS ${CMAKE_CURRENT_SOURCE_DIR}/lib/linux)
 target_link_directories(rapidocrapi PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/linux )
-target_link_libraries(rapidocrapi onnxruntime ${OPENCV_LIB})
-
+#target_link_libraries(rapidocrapi onnxruntime ${OPENCV_LIB})
 target_link_directories(rapidocrtest PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/linux)
-target_link_libraries(rapidocrtest onnxruntime ${OPENCV_LIB} rapidocrapi  gomp)
+
 
 
 endif()
