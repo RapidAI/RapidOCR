@@ -59,8 +59,8 @@ def ocr():
                 temp_rec_res.append([i, value[0], value[1]])
             temp_rec_res = np.array(temp_rec_res)
             rec_res_data = json.dumps(temp_rec_res.tolist(),
-                                    indent=2,
-                                    ensure_ascii=False)
+                                      indent=2,
+                                      ensure_ascii=False)
 
             det_im = draw_text_det_res(dt_boxes, img)
             image = cv2.imencode('.jpg', det_im)[1]
