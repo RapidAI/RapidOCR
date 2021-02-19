@@ -13,7 +13,7 @@ endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cpp/BaiPiaoOcrOnnx/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/onnxruntime/)
-#include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/)
 
 
 
@@ -36,7 +36,7 @@ elseif(UNIX)
 
 	# set（OpenCV_DIR  /path/to/opencv/build）
 
-
+	link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/linux)
 endif()
 
 #IF(CMAKE_BUILD_TYPE STREQUAL Debug)  #debug
@@ -86,19 +86,5 @@ add_executable(rapidocrtest ${BPOCRTESTSRC})
 
 
 target_link_libraries(rapidocrtest onnxruntime ${OPENCV_LIB} rapidocrapi)
-if(WIN32)
-
-	target_link_directories(rapidocrapi PUBLIC lib/win)
-
-elseif(UNIX)
-
-message(STATUS ${CMAKE_CURRENT_SOURCE_DIR}/lib/linux)
-target_link_directories(rapidocrapi PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/linux )
-#target_link_libraries(rapidocrapi onnxruntime ${OPENCV_LIB})
-target_link_directories(rapidocrtest PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/linux)
-
-
-
-endif()
 
 
