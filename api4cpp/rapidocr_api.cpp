@@ -31,7 +31,7 @@ extern "C"
 	}
 
 	
-	_QM_OCR_API BOOL  BPOcrDoOcr(BPHANDLE handle, const char* szImgPath, BOOL bAutoParam,BOOL bLongPic,RAPIDOCR_PARAM *pParam)
+	_QM_OCR_API BOOL  BPOcrDoOcr(BPHANDLE handle, const char* szImgPath, BOOL bAutoParam, BOOL bLongPic,RAPIDOCR_PARAM *pParam)
 	{
 
 		OCR_OBJ* pOcrObj=(OCR_OBJ*)handle;
@@ -39,13 +39,48 @@ extern "C"
 			return FALSE;
 
 		RAPIDOCR_PARAM Param = *pParam;
-		if(bAutoParam)
+		
+		if (Param.boxScoreThresh == 0)
+			Param.boxScoreThresh = 0.5;
+		if (Param.boxThresh == 0)
+			Param.boxThresh = 0.3;
+		if (Param.flagDoAngle == 0)
+			Param.flagDoAngle = 1;
+		if (Param.flagMostAngle == 0)
+			Param.flagMostAngle = 0;
+		
+
+
+		if (Param.maxSideLen == 0)
+			Param.maxSideLen = 1024;
+		if (Param.unClipRatio == 0)
+			Param.unClipRatio = 1.5;
+
+
+
+		if (bAutoParam)
 		{
 
+			cv::Mat oriImg = cv::imread(szImgPath);
+
+			int nMax = oriImg.rows > oriImg.cols ? oriImg.rows : oriImg.cols;
+			int nMin = oriImg.rows > oriImg.cols ? oriImg.cols: oriImg.rows ;
+
+			if (nMax > nMin * 5) // 5 times
+				bLongPic = true;
 		}
-		else
-		{
 
+
+		if (bLongPic)
+		{
+			
+				Param.maxSideLen = 0;
+			
+				Param.unClipRatio = 3.0;
+		}
+
+
+		
 		// 	-numThread %NUMBER_OF_PROCESSORS% ^
 		// --padding 0 ^
 		// --maxSideLen %MAX_SIDE_LEN% ^
@@ -54,34 +89,16 @@ extern "C"
 		// --unClipRatio %CLIP_RATE% ^
 		// --doAngle 1 ^
 		// --mostAngle 0
-			if(Param.boxScoreThresh ==0)
-				Param.boxScoreThresh = 0.5;
-			if(Param.boxThresh ==0)
-				Param.boxThresh =0.3;
-			if(Param.flagDoAngle ==0)
-				Param.flagDoAngle =1;
-			if(Param.flagMostAngle ==0)
-				Param.flagMostAngle =0;
+
+// 参数设置算法： https://github.com/znsoftm/RapidOCR/blob/219bf6295a9c3c5afa7f47bf5173ca02f1003521/python/ch_ppocr_mobile_v2_det/utils.py#L118
+
 			
-			if( bLongPic)
-			{
-				if(Param.maxSideLen ==0)
-					Param.maxSideLen =0;
-				if(Param.unClipRatio ==0)
-					Param.unClipRatio = 3.0;
-			}
-			else
-			{
-				if(Param.maxSideLen ==0)
-					Param.maxSideLen =1024;
-				if(Param.unClipRatio ==0)
-					Param.unClipRatio = 1.5;
-			}
-		}
+
+		
 		std::string imgPath,imgDir,imgName;
 		imgPath=szImgPath;
-		imgDir.assign(imgPath.substr(0, imgPath.find_last_of('\\') + 1));
-		imgName.assign(imgPath.substr(imgPath.find_last_of('\\') + 1));
+		imgDir=imgPath.substr(0, imgPath.find_last_of('\\') + 1);
+		imgName =imgPath.substr(imgPath.find_last_of('\\') + 1);
 		OcrResult result=pOcrObj->OcrObj.detect(imgDir.c_str(),imgName.c_str(),Param.padding,Param.maxSideLen,Param.boxScoreThresh,Param.boxThresh,Param.unClipRatio,Param.flagDoAngle?true:false,Param.flagMostAngle?true:false);
 		if (result.strRes.length() > 0)
 		{

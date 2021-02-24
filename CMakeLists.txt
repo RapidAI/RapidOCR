@@ -48,6 +48,7 @@ endif()
 # for onnxruntime
 
 link_libraries(onnxruntime)
+
 FIND_PACKAGE(OpenCV REQUIRED)
 if(OPENCV_FOUND)
 	message("OpenCV FOUND")

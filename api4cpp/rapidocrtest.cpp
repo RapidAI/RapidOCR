@@ -16,7 +16,7 @@
 
 const  char* DEFAULT_MODEL_DIR = "E:\\bai-piao-ocr\\cpp\\BaiPiaoOcrOnnx\\models\\";
 
-const char* DEFAULT_TEST_IMG = "E:\\bai-piao-ocr\\cpp\\BaiPiaoOcrOnnx\\images\\1.jpg";
+const char* DEFAULT_TEST_IMG = "E:\\bai-piao-ocr\\cpp\\BaiPiaoOcrOnnx\\images\\long1.jpg";
 #else
 const  char * DEFAULT_MODEL_DIR  ="/data/workprj/RapidOCR/models/";
 
@@ -69,7 +69,7 @@ const char *szImagePath=NULL;
     }
 
     RAPIDOCR_PARAM Param={0};
-    BOOL bRet =BPOcrDoOcr(Handle,szImagePath,false,false,&Param);
+    BOOL bRet =BPOcrDoOcr(Handle,szImagePath,true,false,&Param);
     if (bRet)
     {
         int nLen = BPOcrGetLen(Handle);

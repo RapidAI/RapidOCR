@@ -83,8 +83,7 @@ float boxScoreFast(const std::vector<cv::Point2f> &boxes, const cv::Mat &pred);
 
 cv::RotatedRect unClip(std::vector<cv::Point2f> box, float unClipRatio);
 
-std::vector<float>
-substractMeanNormalize(cv::Mat &src, const float *meanVals, const float *normVals);
+std::vector<float> substractMeanNormalize(cv::Mat &src, const float *meanVals, const float *normVals);
 
 std::vector<int> getAngleIndexes(std::vector<Angle> &angles);
 
