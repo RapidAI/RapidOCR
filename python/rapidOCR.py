@@ -1,15 +1,14 @@
 # !/usr/bin/env python
 # -*- encoding: utf-8 -*-
+import argparse
 import copy
 import math
 import random
-import argparse
 from pathlib import Path
 
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-
 
 drop_score = 0.5
 
@@ -184,6 +183,7 @@ class TextSystem(object):
         dt_boxes = self.sorted_boxes(dt_boxes)
 
         for bno in range(len(dt_boxes)):
+            import pdb;pdb.set_trace()
             tmp_box = copy.deepcopy(dt_boxes[bno])
             img_crop = self.get_rotate_crop_image(img, tmp_box)
             img_crop_list.append(img_crop)
@@ -241,9 +241,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.use_server:
+        from ch_ppocr_mobile_v2_cls import TextClassifier
         from ch_ppocr_server_v2_det import TextDetector
         from ch_ppocr_server_v2_rec import TextRecognizer
-        from ch_ppocr_mobile_v2_cls import TextClassifier
 
         if not args.det_model_path.__contains__('server'):
             raise ValueError(f'det模型{args.det_model_path}不是通用模型！')
