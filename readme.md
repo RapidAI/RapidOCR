@@ -8,7 +8,7 @@
 
 ### 演示模型组合说明： server det+mobile cls+mobile rec
 
-中文详细说明，请访问： [中文版](readme_cn.md)             Chinese Name: 捷智OCR
+中文详细说明，请访问： [中文版](readme_cn.md)      &nbsp       Chinese Name: 捷智OCR
 
 ### 本仓库包括
 
