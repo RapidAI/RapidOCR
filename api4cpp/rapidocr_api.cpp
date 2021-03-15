@@ -90,7 +90,7 @@ extern "C"
 		// --doAngle 1 ^
 		// --mostAngle 0
 
-// 参数设置算法： https://github.com/znsoftm/RapidOCR/blob/219bf6295a9c3c5afa7f47bf5173ca02f1003521/python/ch_ppocr_mobile_v2_det/utils.py#L118
+
 
 			
 
