@@ -4,11 +4,15 @@
 
 征集志愿者编译集成SDK,请进群找群主联系。
 
+#重要说明#
+
+由于paddle2onnx转换后的模型不完美的原因，暂时请不要使用onnxruntime 1.7或以上版本
+
 ## 在线演示(online demo)：  http://rapidocr.51pda.cn:9003/
 
 ### 演示模型组合说明： server det+mobile cls+mobile rec
 
-中文详细说明，请访问： [中文版](readme_cn.md)      &nbsp       Chinese Name: 捷智OCR
+中文详细说明，请访问： [中文版](readme_cn.md)           Chinese Name: 捷智OCR
 
 ### 本仓库包括
 
