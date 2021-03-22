@@ -31,7 +31,9 @@ jobs:
       # and build directories, but this is only available with CMake 3.13 and higher.  
       # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
       run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-
+    - name: Install Opencv
+      shell: bash
+      run: apt instal -y opencv-dev
     - name: Build
       working-directory: ${{github.workspace}}/build
       shell: bash
