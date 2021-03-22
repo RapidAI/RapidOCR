@@ -22,9 +22,9 @@ jobs:
       # We'll use this as our working directory for all subsequent commands
       run: cmake -E make_directory ${{github.workspace}}/build
       
-    - name: Install Opencv
-      shell: bash
-      run: apt install -y opencv-dev
+    - uses: Dovyski/setup-opencv-action@v1
+      with:
+        opencv-version: '4.0.0'
       
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
