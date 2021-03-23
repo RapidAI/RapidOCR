@@ -31,7 +31,7 @@ if(WIN32)
     
 
 
-	set(OpenCV_DIR c:/rapidocr/opencv/opencv/build)  # 指向下载的opencv解开后的目录，下面会有bin/lib/include等目录
+	set(OpenCV_DIR c:/rapidocr/opencv/build)  # 指向下载的opencv解开后的目录，下面会有bin/lib/include等目录
 
 elseif(UNIX)
 
