@@ -24,7 +24,7 @@ jobs:
     
     - id: downloadfile  # Remember to give an ID if you need the output filename
     - uses: suisei-cn/actions-download-file@v1
-      name: Download the file
+    - name: Download the file
       with:
        url: "https://github.com/microsoft/onnxruntime/releases/download/v1.6.0/onnxruntime-linux-x64-1.6.0.tgz"
        target: public/
