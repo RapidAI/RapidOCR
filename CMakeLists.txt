@@ -13,7 +13,7 @@ endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cpp/BaiPiaoOcrOnnx/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/onnxruntime/)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/ /rapidocr/include)
 
 
 
@@ -36,7 +36,7 @@ elseif(UNIX)
 
 	# set（OpenCV_DIR  /path/to/opencv/build）
 
-	link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/linux)
+	link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/linux /rapidocr/lib/)
 endif()
 
 #IF(CMAKE_BUILD_TYPE STREQUAL Debug)  #debug
