@@ -5,7 +5,9 @@
 征集志愿者编译集成SDK,请进群找群主联系。
 
 ## 编译状态
-[![Windows x64](https://github.com/znsoftm/RapidOCR/actions/workflows/windows-build.yml/badge.svg)](https://github.com/znsoftm/RapidOCR/actions/workflows/windows-build.yml)
+Windows X64: [![Windows x64](https://github.com/znsoftm/RapidOCR/actions/workflows/windows-build.yml/badge.svg)](https://github.com/znsoftm/RapidOCR/actions/workflows/windows-build.yml)
+
+Linux x64: [![CMake](https://github.com/znsoftm/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/znsoftm/RapidOCR/actions/workflows/make-linux.yml)
 ## 常见问题
  [FAQ](FAQ.md)
 
