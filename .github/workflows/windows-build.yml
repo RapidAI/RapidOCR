@@ -36,10 +36,14 @@ jobs:
     - name: setup working dir
       run: |
            mkdir c:\rapidocr
-     - name: Decompress
+    - name: Decompress
       uses: TonyBogdanov/zip@1.0
       with:
         args: unzip -qq public\onnxruntime-win-x64-1.6.0.zip" -d c:\rapidocr
+    
+    - name: opencv install
+      run: |
+         public/opencv-4.5.1-vc14_vc15.exe -o"c:\rapidocr" -y -gm2
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
       # access regardless of the host operating system
