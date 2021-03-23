@@ -29,9 +29,8 @@ jobs:
           target: public/
 
     
-    - uses: Dovyski/setup-opencv-action@v1
-      with:
-        opencv-version: '4.0.0'
+    - name: Installation depends
+      run: apt install -y opencv-dev
       
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
