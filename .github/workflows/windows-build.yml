@@ -33,6 +33,13 @@ jobs:
       with:
           url: "https://github.com/opencv/opencv/releases/download/4.5.1/opencv-4.5.1-vc14_vc15.exe"
           target: public/
+    - name: setup working dir
+      run: |
+           mkdir c:\rapidocr
+     - name: Decompress
+      uses: TonyBogdanov/zip@1.0
+      with:
+        args: unzip -qq public\onnxruntime-win-x64-1.6.0.zip" -d c:\rapidocr
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
       # access regardless of the host operating system
