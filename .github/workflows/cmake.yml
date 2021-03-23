@@ -30,7 +30,7 @@ jobs:
 
     
     - name: Installation depends
-      run: apt install -y opencv-dev
+      run: sudo apt install -y opencv-dev
       
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
