@@ -50,7 +50,9 @@ jobs:
          public/opencv-4.5.1-vc14_vc15.exe -o"c:\rapidocr" -y -gm2
     - name: list all file
       shell: cmd
-      run:   dir c:\rapidocr
+      run:  |
+            dir c:\rapidocr\opencv
+            dir c:\rapidocr\
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
       # access regardless of the host operating system
