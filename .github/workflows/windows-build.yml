@@ -21,7 +21,18 @@ jobs:
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
       run: cmake -E make_directory ${{github.workspace}}/build
-
+    - uses: suisei-cn/actions-download-file@v1
+      id: downloadfile1  # Remember to give an ID if you need the output filename
+      name: Download the file
+      with:
+          url: "https://github.com/microsoft/onnxruntime/releases/download/v1.6.0/onnxruntime-win-x64-1.6.0.zip"
+          target: public/
+    - uses: suisei-cn/actions-download-file@v1
+      id: downloadfile2  # Remember to give an ID if you need the output filename
+      name: Download the file
+      with:
+          url: "https://github.com/opencv/opencv/releases/download/4.5.1/opencv-4.5.1-vc14_vc15.exe"
+          target: public/
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
       # access regardless of the host operating system
