@@ -22,9 +22,9 @@ jobs:
       # We'll use this as our working directory for all subsequent commands
       run: cmake -E make_directory ${{github.workspace}}/build
     - uses: suisei-cn/actions-download-file@v1
-        id: downloadfile  # Remember to give an ID if you need the output filename
-        name: Download the file
-        with:
+      id: downloadfile  # Remember to give an ID if you need the output filename
+      name: Download the file
+      with:
           url: "https://github.com/microsoft/onnxruntime/releases/download/v1.6.0/onnxruntime-linux-x64-1.6.0.tgz"
           target: public/
 
