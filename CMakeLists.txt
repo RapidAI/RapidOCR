@@ -51,6 +51,7 @@ endif()
 link_libraries(onnxruntime)
 
 FIND_PACKAGE(OpenCV REQUIRED)
+set( OpenCV_FOUND 1 ) #force being compatible with current opencv
 if(OPENCV_FOUND)
 	message("OpenCV FOUND")
 	include_directories(${OpenCV_INCLUDE_DIRS})
