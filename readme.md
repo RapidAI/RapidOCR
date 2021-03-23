@@ -2,7 +2,6 @@
 
 中文广告： 欢迎加入我们的QQ群下载模型及测试程序，qq群号：887298230
 
-征集志愿者编译集成SDK,请进群找群主联系。
 
 ## 编译状态
 Windows X64: [![Windows x64](https://github.com/znsoftm/RapidOCR/actions/workflows/windows-build.yml/badge.svg)](https://github.com/znsoftm/RapidOCR/actions/workflows/windows-build.yml)
