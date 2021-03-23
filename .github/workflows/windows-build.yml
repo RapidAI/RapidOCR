@@ -18,6 +18,7 @@ jobs:
     - name: Install 7Zip PowerShell Module
       shell: powershell
       run: Install-Module 7Zip4PowerShell -Force -Verbose
+      
     - uses: actions/checkout@v2
     - name: Create Build Environment
       # Some projects don't allow in-source building, so create a separate build directory
@@ -39,13 +40,17 @@ jobs:
       run: |
            mkdir c:\rapidocr
     - name: Decompress
-      uses: TonyBogdanov/zip@1.0
-      with:
-        args: unzip -qq public\onnxruntime-win-x64-1.6.0.zip" -d c:\rapidocr
+      shell: powershell 
+      run: |
+            Expand-7Zip -ArchiveFileName public/onnxruntime-win-x64-1.6.0.zip -TargetPath c:\rapidocr\
+        
     
     - name: opencv install
       run: |
          public/opencv-4.5.1-vc14_vc15.exe -o"c:\rapidocr" -y -gm2
+    - name: list all file
+      shell: cmd
+      run:   dir c:\rapidocr
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
       # access regardless of the host operating system
