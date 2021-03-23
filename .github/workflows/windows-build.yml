@@ -51,7 +51,8 @@ jobs:
     - name: list all file
       shell: cmd
       run:  |
-            dir c:\rapidocr\opencv
+            dir c:\rapidocr\opencv\build\x64
+            dir c:\rapidocr\opencv\build\x64\vc15\bin
             dir c:\rapidocr\
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
