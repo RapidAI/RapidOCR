@@ -51,7 +51,9 @@ endif()
 link_libraries(onnxruntime)
 
 FIND_PACKAGE(OpenCV REQUIRED)
-set( OpenCV_FOUND 1 ) #force being compatible with current opencv
+if(WIN32)
+set(OpenCV_DIR c:/rapidocr/opencv/build) 
+endif()
 if(OPENCV_FOUND)
 	message("OpenCV FOUND")
 	include_directories(${OpenCV_INCLUDE_DIRS})
