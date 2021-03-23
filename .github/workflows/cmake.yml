@@ -28,7 +28,11 @@ jobs:
           url: "https://github.com/microsoft/onnxruntime/releases/download/v1.6.0/onnxruntime-linux-x64-1.6.0.tgz"
           target: public/
 
-    
+    - name: Setup OnnxRuntime
+      run:  sudo tar zxf public/onnxruntime-linux-x64-1.6.0.tgz -C/
+            mkdir /rapidocr
+            mv /onnxruntime-linux-x64-1.6.0/* /rapidocr
+            ls -l /rapidocr
     - name: Installation depends
       run: sudo apt install -y libopencv-dev
       
