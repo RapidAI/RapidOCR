@@ -47,7 +47,7 @@ jobs:
     
     - name: opencv install
       run: |
-         public/opencv-4.5.1-vc14_vc15.exe -o"c:\rapidocr" -y 
+         Expand-7Zip -ArchiveFileName public/opencv-4.5.1-vc14_vc15.exe -TargetPath c:\rapidocr\  
     - name: list all file
       shell: cmd
       run:  |
