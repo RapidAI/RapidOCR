@@ -12,7 +12,7 @@ Linux x64: [![CMake](https://github.com/znsoftm/RapidOCR/actions/workflows/make-
 
 # 重要说明 
 
-由于paddle2onnx转换后的模型不完美的原因，暂时请不要使用onnxruntime 1.7或以上版本。推荐推理引擎：onnxruntime 1.6.0
+转换工具已经更新，模型文件正在重建中。
 
 ## 在线演示(online demo)：  http://rapidocr.51pda.cn:9003/
 
