@@ -1,3 +1,6 @@
+### 2021-03-24 update:
+- 更改文本识别模型支持ort1.7,推理速度有着较大提升
+
 ### 检测、方向分类和识别模型下载：
 - [链接](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
 - 提取码：30jv

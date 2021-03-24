@@ -1,7 +1,6 @@
-onnxruntime==1.5.2
-opencv-python==4.2.0.32
-numpy
-pyclipper
-Shapely
-imghdr
-python==3.6.4
+onnxruntime       1.7.0
+opencv-python     4.4.0.46
+numpy             1.19.5
+pyclipper         1.2.1
+Shapely           1.7.1
+python            3.6.4
