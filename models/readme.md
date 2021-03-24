@@ -75,17 +75,11 @@ pip安装转换工具附加依赖: ```sudo pip3 install setuptools tqdm opencv-p
 
 ```shell
 #官方仓库已修复fix_adative_pool
-git clone https://github.com/PaddlePaddle/Paddle2ONNX.git
+git clone https://github.com/znsoftm/paddle2onnx-wild.git
 cd Paddle2ONNX
 git checkout develop
 sudo python3 setup.py install
 
-#以下为修复mobile rec转换错误的开发版
-#修复代码还未同步进官方仓库之前，先使用此版本
-#git clone https://github.com/Channingss/paddle2onnx.git
-#cd paddle2onnx
-#git checkout fix_adative_pool
-#sudo python3 setup.py install
 ```
 
 ### 三、开始转换
