@@ -77,7 +77,6 @@ pip安装转换工具附加依赖: ```sudo pip3 install setuptools tqdm opencv-p
 #官方仓库已修复fix_adative_pool
 git clone https://github.com/znsoftm/paddle2onnx-wild.git
 cd Paddle2ONNX
-git checkout develop
 sudo python3 setup.py install
 
 ```
