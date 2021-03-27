@@ -22,10 +22,10 @@
 |ch_ppocr_mobile_v2.0_rec|超轻量模型，简体中英文数字|rec_chinese_lite_train_v2.0.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_mobile_v2.0_rec_train.tar) |
 |ch_ppocr_server_v2.0_rec|通用模型，简体中英文数字|rec_chinese_common_train_v2.0.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_server_v2.0_rec_train.tar) |
 |en_number_mobile_v2.0_rec|英文数字|rec_en_number_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/en_number_mobile_v2.0_rec_train.tar) |
-| french_mobile_v2.0_rec |法语|[rec_french_lite_train.yml](../../configs/rec/multi_language/rec_french_lite_train.yml)|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/french_mobile_v2.0_rec_train.tar) |
-| german_mobile_v2.0_rec |德语|[rec_german_lite_train.yml](../../configs/rec/multi_language/rec_german_lite_train.yml)|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/german_mobile_v2.0_rec_train.tar) |
-| korean_mobile_v2.0_rec |韩语|[rec_korean_lite_train.yml](../../configs/rec/multi_language/rec_korean_lite_train.yml)| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/korean_mobile_v2.0_rec_train.tar) |
-| japan_mobile_v2.0_rec |日语|[rec_japan_lite_train.yml](../../configs/rec/multi_language/rec_japan_lite_train.yml)| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/japan_mobile_v2.0_rec_train.tar) |
+| french_mobile_v2.0_rec |法语|[rec_french_lite_train.yml]| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/french_mobile_v2.0_rec_train.tar) |
+| german_mobile_v2.0_rec |德语|[rec_german_lite_train.yml]| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/german_mobile_v2.0_rec_train.tar) |
+| korean_mobile_v2.0_rec |韩语|[rec_korean_lite_train.yml]| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/korean_mobile_v2.0_rec_train.tar) |
+| japan_mobile_v2.0_rec |日语|[rec_japan_lite_train.yml]| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/japan_mobile_v2.0_rec_train.tar) |
 | it_mobile_v2.0_rec |意大利语|rec_it_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/it_mobile_v2.0_rec_train.tar) |
 | es_mobile_v2.0_rec |西班牙语|rec_es_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/es_mobile_v2.0_rec_train.tar) |
 | pt_mobile_v2.0_rec |葡萄牙语|rec_pt_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/pt_mobile_v2.0_rec_train.tar) |
