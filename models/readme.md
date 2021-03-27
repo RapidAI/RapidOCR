@@ -100,26 +100,26 @@ sudo pip3 install pyyaml
 cd PaddleOCR/configs/rec/multi_language
 #生成多语言配置文件
 python3 generate_multi_language_configs.py -l it
-python3 generate_multi_language_configs.py -l xi
-python3 generate_multi_language_configs.py -l pu
+python3 generate_multi_language_configs.py -l es
+python3 generate_multi_language_configs.py -l pt
 python3 generate_multi_language_configs.py -l ru
 python3 generate_multi_language_configs.py -l ar
-python3 generate_multi_language_configs.py -l hi
-python3 generate_multi_language_configs.py -l chinese_cht
+python3 generate_multi_language_configs.py -l ta
 python3 generate_multi_language_configs.py -l ug
 python3 generate_multi_language_configs.py -l fa
 python3 generate_multi_language_configs.py -l ur
-python3 generate_multi_language_configs.py -l rs
+python3 generate_multi_language_configs.py -l rs_latin
 python3 generate_multi_language_configs.py -l oc
-python3 generate_multi_language_configs.py -l mr
-python3 generate_multi_language_configs.py -l ne
-python3 generate_multi_language_configs.py -l rsc
+python3 generate_multi_language_configs.py -l rs_cyrillic
 python3 generate_multi_language_configs.py -l bg
 python3 generate_multi_language_configs.py -l uk
 python3 generate_multi_language_configs.py -l be
 python3 generate_multi_language_configs.py -l te
-python3 generate_multi_language_configs.py -l ka
-python3 generate_multi_language_configs.py -l ta
+python3 generate_multi_language_configs.py -l kn
+python3 generate_multi_language_configs.py -l ch_tra
+python3 generate_multi_language_configs.py -l hi
+python3 generate_multi_language_configs.py -l mr
+python3 generate_multi_language_configs.py -l ne
 ```
 
 * 新建文件夹PaddleOCR/inference
