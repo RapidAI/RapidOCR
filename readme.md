@@ -90,11 +90,9 @@ Welcome to our Group on QQ: 887298230
 or visit: https://jq.qq.com/?_wv=1027&k=P9b3olx6 to join us.
 
 
-Download OCR　models or SDK
+Download OCR　models
 ```
-Linkage ：https://pan.baidu.com/s/1UhDrC7iOMWiYaQiHk3acdw 
-
-code：yjgv 
+Linkage ：https://github.com/znsoftm/RapidOCR/releases/download/V1.0/rapid-model.tgz
 ```
 Also you can download demonstration APPs and their projects from our baidu netdisk with the above link.
 
