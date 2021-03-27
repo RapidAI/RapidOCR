@@ -95,7 +95,6 @@ Download OCR　models
 ```
 Linkage ：https://github.com/znsoftm/RapidOCR/releases/download/V1.0/rapid-model.tgz
 ```
-Also you can download demonstration APPs and their projects from our baidu netdisk with the above link.
 
 ### Demonstration with C++/JVM
 
