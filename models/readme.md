@@ -132,7 +132,8 @@ PaddleOCR/inference
 |-- getmodels.sh 
 
 ```
-
+* 运行 getmodels.sh脚本： ./getmodels.sh
+*  运行完后将有如下的目录结构
 ```
 PaddleOCR/inference
 ├── ar_mobile_v2.0_rec_train
