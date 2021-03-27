@@ -9,4 +9,7 @@
    ~~由于模型转换原因，目前ORT 1.7在加载识别模型时会报错，请先使用1.6推理。经测试  ORT1.7性能优化很多，在相关工具更新后，我们也会立即更新模型文件。~~
    
    目前python模块下模型文件已经更新 (`python\readme.md`下相应下载链接)
+ 3. #### 模型下载地址
 
+   包括20种左右语言支持
+   https://github.com/znsoftm/RapidOCR/releases/download/V1.0/rapid-model.tgz
