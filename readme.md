@@ -15,6 +15,8 @@ Linux x64: [![CMake](https://github.com/znsoftm/RapidOCR/actions/workflows/make-
 
 新模型已经完全兼容ONNXRuntime 1.7 或更高版本。 特别感谢：@Channingss
 
+新版onnxruntime比1.6.0 性能提升40%以上。
+
 ## 在线演示(online demo)：  http://rapidocr.51pda.cn:9003/
 
 ### 演示模型组合说明： server det+mobile cls+mobile rec
