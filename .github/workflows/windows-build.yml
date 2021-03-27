@@ -85,9 +85,11 @@ jobs:
           cp ${{github.workspace}}/build/release/rapidocrtest.exe ${{github.workspace}}/release
           mkdir ${{github.workspace}}/release/lib
           mkdir ${{github.workspace}}/release/include
-          cp ${{github.workspace}}/build/release/rapidocrapi.lib ${{github.workspace}}/release/lib
-          cp ${{github.workspace}}/include/rapidocr_api.h ${{github.workspace}}/release/include/
-          cp c:\rapidocr\opencv\build\x64\vc15\bin\opencv_world451.dll ${{github.workspace}}/release
-          cp c:\rapidocr\opencv\build\x64\vc15\bin\opencv_world451.dll ${{github.workspace}}/release
-          cp c:/rapidocr/onnxruntime-win-x64-1.6.0/lib/onnxruntime.dll ${{github.workspace}}/release
-          dir /s ${{github.workspace}}/release
+          cp ${{github.workspace}}\build\release\rapidocrapi.lib ${{github.workspace}}\release\lib
+          cp ${{github.workspace}}\include\rapidocr_api.h ${{github.workspace}}\release\include\
+          cp c:\rapidocr\opencv\build\x64\vc15\bin\opencv_world451.dll ${{github.workspace}}\release
+          cp c:\rapidocr\opencv\build\x64\vc15\bin\opencv_world451.dll ${{github.workspace}}\release
+          cp c:/rapidocr/onnxruntime-win-x64-1.6.0/lib/onnxruntime.dll ${{github.workspace}}\release
+          dir /s ${{github.workspace}}\release
+          powershell compress-7zip -path ${{github.workspace}}\release -ArchiveFileName d:\rapidocr-win-x64.zip 
+          dir /s d:\
