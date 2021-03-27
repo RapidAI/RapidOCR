@@ -31,7 +31,7 @@ Linux x64: [![CMake](https://github.com/znsoftm/RapidOCR/actions/workflows/make-
 - [x]  WEB 演示   基于web的演示代码
 - [ ]  IOS演示   招贡献者
 - [ ]  使用TVM进行推理以加速
-
+- [ ]  依据python版本重写C++推理代码，以提升效果推理效果，并支持git/tga/webp 格式
 ### 网盘下载测试SDK及转换好的多语言模型：
 
 ```
