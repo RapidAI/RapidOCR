@@ -12,4 +12,5 @@
  3. #### 模型下载地址
 
    包括20种左右语言支持
+   
    https://github.com/znsoftm/RapidOCR/releases/download/V1.0/rapid-model.tgz
