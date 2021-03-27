@@ -47,7 +47,7 @@
 | te_mobile_v2.0_rec |泰卢固语|rec_te_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/te_mobile_v2.0_rec_train.tar) |
 | kn_mobile_v2.0_rec |卡纳达语|rec_kn_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/kn_mobile_v2.0_rec_train.tar) |
 | ta_mobile_v2.0_rec |泰米尔文|rec_ta_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ta_mobile_v2.0_rec_train.tar) |
-* 使用tools下的get-models.sh 脚本下载并准备。
+* 使用tools下的getmodels.sh 脚本下载并准备。
 
 ### 二、准备环境和工具
 
