@@ -76,8 +76,8 @@ pip安装转换工具附加依赖: ```sudo pip3 install setuptools tqdm opencv-p
 
 ```shell
 #转换工具修复，来自于官方仓库，包括未合并代码
-git clone https://github.com/znsoftm/paddle2onnx-wild.git
-cd Paddle2ONNX
+git clone https://github.com/RapidOCR/paddle2onnx-wild.git
+cd paddle2onnx-wild
 sudo python3 setup.py install
 
 ```
