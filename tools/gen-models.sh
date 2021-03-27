@@ -63,7 +63,7 @@ trainToOnnx 32 -1 configs/rec/multi_language/rec_ar_lite_train.yml ar_mobile_v2.
 trainToOnnx 32 -1 configs/rec/multi_language/rec_hi_lite_train.yml hi_mobile_v2.0_rec
 
 # chinese_cht_mobile_v2.0_rec
-trainToOnnx 32 -1 configs/rec/multi_language/rec_chinese_cht_lite_train.yml chinese_cht_mobile_v2.0_rec
+trainToOnnx 32 -1 configs/rec/multi_language/rec_chinese_cht_lite_train.yml ch_tra_mobile_v2.0_rec
 
 # ug_mobile_v2.0_rec
 trainToOnnx 32 -1 configs/rec/multi_language/rec_ug_lite_train.yml ug_mobile_v2.0_rec
