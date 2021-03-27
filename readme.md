@@ -12,7 +12,7 @@ Linux x64: [![CMake](https://github.com/znsoftm/RapidOCR/actions/workflows/make-
 
 # 重要说明 
 
-转换工具已经更新，模型文件正在重建中。
+新模型已经完全兼容ONNXRuntime 1.7 或更高版本。 特别感谢：@Channingss
 
 ## 在线演示(online demo)：  http://rapidocr.51pda.cn:9003/
 
