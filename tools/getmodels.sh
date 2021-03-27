@@ -53,7 +53,7 @@ tar xf  ./german_mobile_v2.0_rec_train.tar -C./german_mobile_v2.0_rec_train
 
 
 mkdir it_mobile_v2.0_rec_train
-tar xf  ./it_mobile_v2.0_rec_train.tar  -C./it_mobile_v2.0_rec_train.tar
+tar xf  ./it_mobile_v2.0_rec_train.tar  -C./it_mobile_v2.0_rec_train
 
 mkdir ru_mobile_v2.0_rec_train
 tar xf  ./ru_mobile_v2.0_rec_train.tar -C./ru_mobile_v2.0_rec_train
@@ -85,7 +85,6 @@ mkdir bg_mobile_v2.0_rec_train
 tar xf  ./bg_mobile_v2.0_rec_train.tar -C./bg_mobile_v2.0_rec_train
 
 mkdir uk_mobile_v2.0_rec_train
-
 tar xf  ./uk_mobile_v2.0_rec_train.tar -C./uk_mobile_v2.0_rec_train
 
 mkdir be_mobile_v2.0_rec_train
