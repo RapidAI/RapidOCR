@@ -22,31 +22,31 @@
 |ch_ppocr_mobile_v2.0_rec|超轻量模型，简体中英文数字|rec_chinese_lite_train_v2.0.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_mobile_v2.0_rec_train.tar) |
 |ch_ppocr_server_v2.0_rec|通用模型，简体中英文数字|rec_chinese_common_train_v2.0.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_server_v2.0_rec_train.tar) |
 |en_number_mobile_v2.0_rec|英文数字|rec_en_number_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/en_number_mobile_v2.0_rec_train.tar) |
-|french_mobile_v2.0_rec|法文|rec_french_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/french_mobile_v2.0_rec_train.tar) |
-|german_mobile_v2.0_rec|德文|rec_german_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/german_mobile_v2.0_rec_train.tar) |
-|korean_mobile_v2.0_rec|韩文|rec_korean_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/korean_mobile_v2.0_rec_train.tar) |
-|japan_mobile_v2.0_rec|日文|rec_japan_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/japan_mobile_v2.0_rec_train.tar) |
-|it_mobile_v2.0_rec|意大利文|rec_it_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/it_mobile_v2.0_rec_train.tar) |
-|xi_mobile_v2.0_rec|西班牙文|rec_xi_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/xi_mobile_v2.0_rec_train.tar) |
-|pu_mobile_v2.0_rec|葡萄牙文|rec_pu_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/pu_mobile_v2.0_rec_train.tar) |
-|ru_mobile_v2.0_rec|俄罗斯文|rec_ru_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ru_mobile_v2.0_rec_train.tar) |
-|ar_mobile_v2.0_rec|阿拉伯文|rec_ar_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ar_mobile_v2.0_rec_train.tar) |
-|hi_mobile_v2.0_rec|印地文|rec_hi_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/hi_mobile_v2.0_rec_train.tar) |
-|chinese_cht_mobile_v2.0_rec|繁体中文|rec_chinese_cht_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/chinese_cht_mobile_v2.0_rec_train.tar) |
-|ug_mobile_v2.0_rec|维吾尔文|rec_ug_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ug_mobile_v2.0_rec_train.tar) |
-|fa_mobile_v2.0_rec|波斯文|rec_fa_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/fa_mobile_v2.0_rec_train.tar) |
-|ur_mobile_v2.0_rec|乌尔都文|rec_ur_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ur_mobile_v2.0_rec_train.tar) |
-|rs_mobile_v2.0_rec|塞尔维亚文(latin)|rec_rs_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/rs_mobile_v2.0_rec_train.tar) |
-|oc_mobile_v2.0_rec|欧西坦文|rec_oc_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/oc_mobile_v2.0_rec_train.tar) |
-|mr_mobile_v2.0_rec|马拉地文|rec_mr_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/mr_mobile_v2.0_rec_train.tar) |
-|ne_mobile_v2.0_rec|尼泊尔文|rec_ne_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ne_mobile_v2.0_rec_train.tar) |
-|rsc_mobile_v2.0_rec|塞尔维亚文(cyrillic)|rec_rsc_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/rsc_mobile_v2.0_rec_train.tar) |
-|bg_mobile_v2.0_rec|保加利亚文|rec_bg_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/bg_mobile_v2.0_rec_train.tar) |
-|uk_mobile_v2.0_rec|乌克兰文|rec_uk_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/uk_mobile_v2.0_rec_train.tar) |
-|be_mobile_v2.0_rec|白俄罗斯文|rec_be_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/be_mobile_v2.0_rec_train.tar) |
-|te_mobile_v2.0_rec|泰卢固文|rec_te_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/te_mobile_v2.0_rec_train.tar) |
-|ka_mobile_v2.0_rec|卡纳达文|rec_ka_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ka_mobile_v2.0_rec_train.tar) |
-|ta_mobile_v2.0_rec|泰米尔文|rec_ta_lite_train.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ta_mobile_v2.0_rec_train.tar) |
+| french_mobile_v2.0_rec |法语|[rec_french_lite_train.yml](../../configs/rec/multi_language/rec_french_lite_train.yml)|2.65M|[trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/french_mobile_v2.0_rec_train.tar) |
+| german_mobile_v2.0_rec |德语|[rec_german_lite_train.yml](../../configs/rec/multi_language/rec_german_lite_train.yml)|2.65M|[trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/german_mobile_v2.0_rec_train.tar) |
+| korean_mobile_v2.0_rec |韩语|[rec_korean_lite_train.yml](../../configs/rec/multi_language/rec_korean_lite_train.yml)|3.9M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/korean_mobile_v2.0_rec_train.tar) |
+| japan_mobile_v2.0_rec |日语|[rec_japan_lite_train.yml](../../configs/rec/multi_language/rec_japan_lite_train.yml)|4.23M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/japan_mobile_v2.0_rec_train.tar) |
+| it_mobile_v2.0_rec |意大利语|rec_it_lite_train.yml|2.53M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/it_mobile_v2.0_rec_train.tar) |
+| es_mobile_v2.0_rec |西班牙语|rec_es_lite_train.yml|2.53M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/es_mobile_v2.0_rec_train.tar) |
+| pt_mobile_v2.0_rec |葡萄牙语|rec_pt_lite_train.yml|2.63M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/pt_mobile_v2.0_rec_train.tar) |
+| ru_mobile_v2.0_rec |俄语|rec_ru_lite_train.yml|2.63M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ru_mobile_v2.0_rec_train.tar) |
+| ar_mobile_v2.0_rec |阿拉伯语|rec_ar_lite_train.yml|2.53M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ar_mobile_v2.0_rec_train.tar) |
+| hi_mobile_v2.0_rec |印地语（印度）|rec_hi_lite_train.yml|2.63M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/hi_mobile_v2.0_rec_train.tar) |
+| ch_tra_mobile_v2.0_rec |繁体中文|rec_ch_tra_lite_train.yml|5.63M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ch_tra_mobile_v2.0_rec_train.tar) |
+| ug_mobile_v2.0_rec |维吾尔语|rec_ug_lite_train.yml|2.63M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ug_mobile_v2.0_rec_train.tar) |
+| fa_mobile_v2.0_rec |波斯语|rec_fa_lite_train.yml|2.63M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/fa_mobile_v2.0_rec_train.tar) |
+| ur_mobile_v2.0_rec |乌尔都语（巴铁)|rec_ur_lite_train.yml|2.63M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ur_mobile_v2.0_rec_train.tar) |
+| rs_latin_mobile_v2.0_rec |塞尔维亚(latin)|rec_rs_latin_lite_train.yml|2.53M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/rs_latin_mobile_v2.0_rec_train.tar) |
+| oc_mobile_v2.0_rec |欧西坦文|rec_oc_lite_train.yml|2.53M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/oc_mobile_v2.0_rec_train.tar) |
+| mr_mobile_v2.0_rec |马拉地文|rec_mr_lite_train.yml|2.63M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/mr_mobile_v2.0_rec_train.tar) |
+| ne_mobile_v2.0_rec |尼伯尔文|rec_ne_lite_train.yml|2.63M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ne_mobile_v2.0_rec_train.tar) |
+| rs_cyrillic_mobile_v2.0_rec |塞尔维亚(cyrillic) recognition|rec_rs_cyrillic_lite_train.yml|2.63M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/rs_cyrillic_mobile_v2.0_rec_train.tar) |
+| bg_mobile_v2.0_rec |保加利亚语|rec_bg_lite_train.yml|2.63M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/bg_mobile_v2.0_rec_train.tar) |
+| uk_mobile_v2.0_rec |乌克兰语|rec_uk_lite_train.yml|2.63M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/uk_mobile_v2.0_rec_train.tar) |
+| be_mobile_v2.0_rec |白俄罗期语|rec_be_lite_train.yml|2.63M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/be_mobile_v2.0_rec_train.tar) |
+| te_mobile_v2.0_rec |泰卢固语|rec_te_lite_train.yml|2.63M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/te_mobile_v2.0_rec_train.tar) |
+| kn_mobile_v2.0_rec |卡纳达语|rec_kn_lite_train.yml|2.63M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/kn_mobile_v2.0_rec_train.tar) |
+| ta_mobile_v2.0_rec |泰米尔文|rec_ta_lite_train.yml|2.63M| [trained model](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ta_mobile_v2.0_rec_train.tar) |
 
 * 先把这些模型通过训练或者下载的方式准备好备用。
 
