@@ -1,8 +1,8 @@
 ## Download models
 
-* from baiduNetDisk:
+* from github
 
-链接：https://pan.baidu.com/s/1UhDrC7iOMWiYaQiHk3acdw 提取码：yjgv
+链接：https://github.com/znsoftm/RapidOCR/releases/download/V1.0/rapid-model.tgz
 
 ## onnx模型转换说明
 
