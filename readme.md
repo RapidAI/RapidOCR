@@ -34,11 +34,10 @@ Linux x64: [![CMake](https://github.com/znsoftm/RapidOCR/actions/workflows/make-
 ### 网盘下载测试SDK及转换好的多语言模型：
 
 ```
-Download OCR　models or SDK
+Download OCR　models
 
-Linkage ：https://pan.baidu.com/s/1UhDrC7iOMWiYaQiHk3acdw 
+https://github.com/znsoftm/RapidOCR/releases/download/V1.0/rapid-model.tgz
 
-code：yjgv 
 ```
 
 ----------------  For  English Users ----------------------
