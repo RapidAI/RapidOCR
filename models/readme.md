@@ -60,8 +60,10 @@ wget https://bootstrap.pypa.io/get-pip.py
 sudo python3 get-pip.py
 ```
 
-* pip安装paddlepaddle(
-  2.0的模型需要2.0版): ```sudo python -m pip install paddlepaddle -i https://mirror.baidu.com/pypi/simple```
+* pip安装paddlepaddle( 2.0的模型需要2.0版): 
+
+```sudo python -m pip install paddlepaddle -i https://mirror.baidu.com/pypi/simple```
+
 
 
 pip安装转换工具附加依赖: ```sudo pip3 install setuptools tqdm opencv-python imgaug pyclipper -i https://mirror.baidu.com/pypi/simple```
@@ -133,7 +135,7 @@ PaddleOCR/inference
 
 ```
 * 运行 getmodels.sh脚本： ./getmodels.sh
-*  运行完后将有如下的目录结构
+*  运行完后将有如下的目录结构(大约是这样，有一些小的名字差异，懒得改了，不要太介意）
 ```
 PaddleOCR/inference
 ├── ar_mobile_v2.0_rec_train
