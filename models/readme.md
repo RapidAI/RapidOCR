@@ -61,7 +61,7 @@ sudo python3 get-pip.py
 ```
 
 * pip安装paddlepaddle(
-  2.0的模型需要2.0版): ```sudo pip3 install paddlepaddle==2.0.0rc1 -i https://mirror.baidu.com/pypi/simple```
+  2.0的模型需要2.0版): ```sudo python -m pip install paddlepaddle -i https://mirror.baidu.com/pypi/simple```
 
 
 pip安装转换工具附加依赖: ```sudo pip3 install setuptools tqdm opencv-python imgaug pyclipper -i https://mirror.baidu.com/pypi/simple```
