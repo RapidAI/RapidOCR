@@ -48,10 +48,10 @@ trainToOnnx 32 -1 configs/rec/multi_language/rec_japan_lite_train.yml japan_mobi
 trainToOnnx 32 -1 configs/rec/multi_language/rec_it_lite_train.yml it_mobile_v2.0_rec
 
 # xi_mobile_v2.0_rec
-trainToOnnx 32 -1 configs/rec/multi_language/rec_xi_lite_train.yml xi_mobile_v2.0_rec
+#trainToOnnx 32 -1 configs/rec/multi_language/rec_xi_lite_train.yml xi_mobile_v2.0_rec  ##
 
 # pu_mobile_v2.0_rec
-trainToOnnx 32 -1 configs/rec/multi_language/rec_pu_lite_train.yml pu_mobile_v2.0_rec
+trainToOnnx 32 -1 configs/rec/multi_language/rec_pt_lite_train.yml pt_mobile_v2.0_rec
 
 # ru_mobile_v2.0_rec
 trainToOnnx 32 -1 configs/rec/multi_language/rec_ru_lite_train.yml ru_mobile_v2.0_rec
@@ -63,7 +63,7 @@ trainToOnnx 32 -1 configs/rec/multi_language/rec_ar_lite_train.yml ar_mobile_v2.
 trainToOnnx 32 -1 configs/rec/multi_language/rec_hi_lite_train.yml hi_mobile_v2.0_rec
 
 # chinese_cht_mobile_v2.0_rec
-trainToOnnx 32 -1 configs/rec/multi_language/rec_chinese_cht_lite_train.yml ch_tra_mobile_v2.0_rec
+trainToOnnx 32 -1 configs/rec/multi_language/rec_ch_tra_lite_train.yml ch_tra_mobile_v2.0_rec
 
 # ug_mobile_v2.0_rec
 trainToOnnx 32 -1 configs/rec/multi_language/rec_ug_lite_train.yml ug_mobile_v2.0_rec
@@ -75,7 +75,8 @@ trainToOnnx 32 -1 configs/rec/multi_language/rec_fa_lite_train.yml fa_mobile_v2.
 trainToOnnx 32 -1 configs/rec/multi_language/rec_ur_lite_train.yml ur_mobile_v2.0_rec
 
 # rs_mobile_v2.0_rec
-trainToOnnx 32 -1 configs/rec/multi_language/rec_rs_lite_train.yml rs_mobile_v2.0_rec
+trainToOnnx 32 -1 configs/rec/multi_language/rec_rs_cyrillic_lite_train.yml rs_cyrillic_mobile_v2.0_rec
+trainToOnnx 32 -1 configs/rec/multi_language/rec_rs_latin_lite_train.yml rs_latin_mobile_v2.0_rec
 
 # oc_mobile_v2.0_rec
 trainToOnnx 32 -1 configs/rec/multi_language/rec_oc_lite_train.yml oc_mobile_v2.0_rec
@@ -86,8 +87,6 @@ trainToOnnx 32 -1 configs/rec/multi_language/rec_mr_lite_train.yml mr_mobile_v2.
 # ne_mobile_v2.0_rec
 trainToOnnx 32 -1 configs/rec/multi_language/rec_ne_lite_train.yml ne_mobile_v2.0_rec
 
-# rsc_mobile_v2.0_rec
-trainToOnnx 32 -1 configs/rec/multi_language/rec_rsc_lite_train.yml rsc_mobile_v2.0_rec
 
 # bg_mobile_v2.0_rec
 trainToOnnx 32 -1 configs/rec/multi_language/rec_bg_lite_train.yml bg_mobile_v2.0_rec
@@ -102,9 +101,10 @@ trainToOnnx 32 -1 configs/rec/multi_language/rec_be_lite_train.yml be_mobile_v2.
 trainToOnnx 32 -1 configs/rec/multi_language/rec_te_lite_train.yml te_mobile_v2.0_rec
 
 # ka_mobile_v2.0_rec
-trainToOnnx 32 -1 configs/rec/multi_language/rec_ka_lite_train.yml ka_mobile_v2.0_rec
+trainToOnnx 32 -1 configs/rec/multi_language/rec_kn_lite_train.yml kn_mobile_v2.0_rec
 
 # ta_mobile_v2.0_rec
 trainToOnnx 32 -1 configs/rec/multi_language/rec_ta_lite_train.yml ta_mobile_v2.0_rec
 
-
+# es_mobile_v2.0_rec
+trainToOnnx 32 -1 configs/rec/multi_language/rec_es_lite_train.yml es_mobile_v2.0_rec
