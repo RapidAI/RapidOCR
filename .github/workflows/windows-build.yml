@@ -119,8 +119,9 @@ jobs:
           # GitHub 会自动创建 GITHUB_TOKEN 密码以在工作流程中使用
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{steps.prepare_release.outputs.tag_name}}
-          release_name: Release ${{steps.prepare_release.outputs.tag_name}} by M.Y
+          tag_name: rapid_ocr_v1.0
+          # ${{steps.prepare_release.outputs.tag_name}}
+          release_name: Release rapid_ocr_v1.0 by M.Y
           draft: false
           prerelease: false
       - name: Upload Release Asset
