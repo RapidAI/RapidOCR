@@ -16,7 +16,7 @@
 
 |模型名称|模型简介|配置文件|下载地址|
 | --- | --- | --- | --- |
-|mobile cls train|文本方向分类|rec_chinese_lite_train_v2.0.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_mobile_v2.0_rec_train.tar) |
+|mobile cls train|文本方向分类|rec_chinese_lite_train_v2.0.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_mobile_v2.0_cls_train.tar) |
 |ch_ppocr_mobile_v2.0_det|超轻量模型，多语种文本检测|ch_det_mv3_db_v2.0.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_mobile_v2.0_det_train.tar)|
 |ch_ppocr_server_v2.0_det|通用模型，多语种文本检测|ch_det_res18_db_v2.0.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_server_v2.0_det_train.tar)|
 |ch_ppocr_mobile_v2.0_rec|超轻量模型，简体中英文数字|rec_chinese_lite_train_v2.0.yml|[训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_mobile_v2.0_rec_train.tar) |
