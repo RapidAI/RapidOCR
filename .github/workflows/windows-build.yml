@@ -101,37 +101,27 @@ jobs:
           dir /s ${{github.workspace}}\release
           powershell compress-7zip -path ${{github.workspace}}\release -ArchiveFileName d:\rapidocr-win-x64.zip 
           dir  d:\*.zip
-  deploy:
-    name: Upload Release Asset
-    # 依赖上一个job
-    needs: build
-    runs-on: windows-latest
-    # 只在tag时执行，即在自己终端运行以下代码后才会触发
-    # git tag -a v0.1.0 -m "release 0.1.0 version"
-    # git push origin –-tags
-    #if: contains(github.ref, 'tags/')
-    steps:
     
-      - name: create_release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
+    - name: create_release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
           # GitHub 会自动创建 GITHUB_TOKEN 密码以在工作流程中使用
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
+      with:
           tag_name: rapid_ocr_v1.0
           # ${{steps.prepare_release.outputs.tag_name}}
           release_name: Release rapid_ocr_v1.0 by M.Y
           draft: false
           prerelease: false
-      - name: Upload Release Asset
-        id: upload-release-asset 
+    - name: Upload Release Asset
+      id: upload-release-asset 
         # 只有create_release成功得到输出才继续
-        if: steps.create_release.outputs.upload_url
-        uses: actions/upload-release-asset@v1
-        env:
+      if: steps.create_release.outputs.upload_url
+      uses: actions/upload-release-asset@v1
+      env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
+      with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} 
           asset_path: d:\rapidocr-win-x64.zip 
           asset_name: rapidocr-win-x64.zip 
