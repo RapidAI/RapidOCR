@@ -43,7 +43,7 @@
 | rs_cyrillic_mobile_v2.0_rec |塞尔维亚(cyrillic) |rec_rs_cyrillic_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/rs_cyrillic_mobile_v2.0_rec_train.tar) |
 | bg_mobile_v2.0_rec |保加利亚语|rec_bg_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/bg_mobile_v2.0_rec_train.tar) |
 | uk_mobile_v2.0_rec |乌克兰语|rec_uk_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/uk_mobile_v2.0_rec_train.tar) |
-| be_mobile_v2.0_rec |白俄罗期语|rec_be_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/be_mobile_v2.0_rec_train.tar) |
+| be_mobile_v2.0_rec |白俄罗斯语|rec_be_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/be_mobile_v2.0_rec_train.tar) |
 | te_mobile_v2.0_rec |泰卢固语|rec_te_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/te_mobile_v2.0_rec_train.tar) |
 | kn_mobile_v2.0_rec |卡纳达语|rec_kn_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/kn_mobile_v2.0_rec_train.tar) |
 | ta_mobile_v2.0_rec |泰米尔文|rec_ta_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ta_mobile_v2.0_rec_train.tar) |
