@@ -124,7 +124,7 @@ python3 generate_multi_language_configs.py -l ne
 ```
 
 * 新建文件夹PaddleOCR/inference
-* 需要确认系统中有没有wget工具，运行下  wget 检查 确认。 （ubuntu下安装： apt install wget   centos安装： yum install wget )
+* 需要确认系统中有没有wget工具，运行下  wget 检查 确认。 （在ubuntu下安装： apt install wget   在centos安装： yum install wget )
 * 将本仓库tools目录下的getmodels.sh 放PaddleOCR/inference下
 * 执行 chmod +x getmodels.h
 应该是如下结构：
