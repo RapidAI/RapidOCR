@@ -46,6 +46,7 @@ tar xf  ./pt_mobile_v2.0_rec_train.tar
 tar xf  ./kn_mobile_v2.0_rec_train.tar
 tar xf  ./rs_cyrillic_mobile_v2.0_rec_train.tar
 tar xf  ./rs_latin_mobile_v2.0_rec_train.tar
+tar xf  ./es_mobile_v2.0_rec_train.tar
 
 mkdir  german_mobile_v2.0_rec_train
 tar xf  ./german_mobile_v2.0_rec_train.tar -C./german_mobile_v2.0_rec_train
@@ -53,9 +54,6 @@ tar xf  ./german_mobile_v2.0_rec_train.tar -C./german_mobile_v2.0_rec_train
 
 mkdir it_mobile_v2.0_rec_train
 tar xf  ./it_mobile_v2.0_rec_train.tar  -C./it_mobile_v2.0_rec_train.tar
-
-mkdir es_mobile_v2.0_rec_train -C./es_mobile_v2.0_rec_train
-tar xf  ./es_mobile_v2.0_rec_train.tar
 
 mkdir ru_mobile_v2.0_rec_train
 tar xf  ./ru_mobile_v2.0_rec_train.tar -C./ru_mobile_v2.0_rec_train
