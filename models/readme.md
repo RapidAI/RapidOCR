@@ -63,7 +63,7 @@ sudo python3 get-pip.py
 
 * pip安装paddlepaddle(
   2.0的模型需要2.0版): ```sudo pip3 install paddlepaddle==2.0.0rc1 -i https://mirror.baidu.com/pypi/simple```
-*
+
 
 pip安装转换工具附加依赖: ```sudo pip3 install setuptools tqdm opencv-python imgaug pyclipper -i https://mirror.baidu.com/pypi/simple```
 
@@ -74,7 +74,7 @@ pip安装转换工具附加依赖: ```sudo pip3 install setuptools tqdm opencv-p
 * 安装转换工具库Paddle2ONNX(develop分支,用于paddle推理模型转onnx模型):
 
 ```shell
-#官方仓库已修复fix_adative_pool
+#转换工具修复，来自于官方仓库，包括未合并代码
 git clone https://github.com/znsoftm/paddle2onnx-wild.git
 cd Paddle2ONNX
 sudo python3 setup.py install
