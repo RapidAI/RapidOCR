@@ -7,7 +7,7 @@
 ## 编译状态
 Windows X64: [![CMake-windows](https://github.com/RapidOCR/RapidOCR/actions/workflows/windows-build.yml/badge.svg)](https://github.com/RapidOCR/RapidOCR/actions/workflows/windows-build.yml)
 
-Linux x64: [![CMake](https://github.com/znsoftm/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/znsoftm/RapidOCR/actions/workflows/make-linux.yml)
+Linux x64: [![CMake-linux](https://github.com/RapidOCR/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidOCR/RapidOCR/actions/workflows/make-linux.yml)
 ## 常见问题
  [FAQ](FAQ.md)
 
