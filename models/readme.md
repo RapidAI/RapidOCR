@@ -47,7 +47,7 @@
 | te_mobile_v2.0_rec |泰卢固语|rec_te_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/te_mobile_v2.0_rec_train.tar) |
 | kn_mobile_v2.0_rec |卡纳达语|rec_kn_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/kn_mobile_v2.0_rec_train.tar) |
 | ta_mobile_v2.0_rec |泰米尔文|rec_ta_lite_train.yml| [训练模型](https://paddleocr.bj.bcebos.com/dygraph_v2.0/multilingual/ta_mobile_v2.0_rec_train.tar) |
-* 先把这些模型通过训练或者下载的方式准备好备用。
+* 使用tools下的get-models.sh 脚本下载并准备。
 
 ### 二、准备环境和工具
 
@@ -124,6 +124,7 @@ python3 generate_multi_language_configs.py -l ne
 ```
 
 * 新建文件夹PaddleOCR/inference
+* 需要确认系统中有没有wget工具，运行下  wget 检查 确认。 （ubuntu下安装： apt install wget   centos安装： yum install wget )
 * 将本仓库tools目录下的getmodels.sh 放PaddleOCR/inference下
 * 执行 chmod +x getmodels.h
 应该是如下结构：
