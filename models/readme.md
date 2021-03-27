@@ -122,7 +122,16 @@ python3 generate_multi_language_configs.py -l ne
 ```
 
 * 新建文件夹PaddleOCR/inference
-* 把预训练模型解压到inference目录，严格按照如下目录结构和文件名放置
+* 将tools目录下的getmodels.sh 放PaddleOCR/inference下
+* 执行 chmod +x getmodels.h
+应该是如下结构：
+
+```
+PaddleOCR/inference
+|
+|-- getmodels.sh 
+
+```
 
 ```
 PaddleOCR/inference
