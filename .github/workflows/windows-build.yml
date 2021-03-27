@@ -28,7 +28,7 @@ jobs:
       id: downloadfile1  # Remember to give an ID if you need the output filename
       name: Download the file
       with:
-          url: "https://github.com/microsoft/onnxruntime/releases/download/v1.6.0/onnxruntime-win-x64-1.7.0.zip"
+          url: "https://github.com/microsoft/onnxruntime/releases/download/v1.7.0/onnxruntime-win-x64-1.7.0.zip"
           target: public/
     - uses: suisei-cn/actions-download-file@v1
       id: downloadfile2  # Remember to give an ID if you need the output filename
