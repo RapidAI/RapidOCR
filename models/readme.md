@@ -1,6 +1,6 @@
-## Download models
+## Download models (已经转换好，支持ORT 1.7)
 
-* from github
+* from github  (2021.03.27)
 
 链接：https://github.com/znsoftm/RapidOCR/releases/download/V1.0/rapid-model.tgz
 
