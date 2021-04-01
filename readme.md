@@ -63,7 +63,7 @@ Special thanks to Channingss@baidu (the owner of project Paddle2Onnx)
 
 If you use or reference code or code snippet from the repository, please add our url 
 
-https://github.com/znsoftm/RapidOCR   in your prodouct derived from the repository.
+https://github.com/RapidOCR/RapidOCR  in your prodouct derived from the repository.
 
 
 **Author:**
