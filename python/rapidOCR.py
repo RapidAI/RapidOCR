@@ -183,7 +183,6 @@ class TextSystem(object):
         dt_boxes = self.sorted_boxes(dt_boxes)
 
         for bno in range(len(dt_boxes)):
-            import pdb;pdb.set_trace()
             tmp_box = copy.deepcopy(dt_boxes[bno])
             img_crop = self.get_rotate_crop_image(img, tmp_box)
             img_crop_list.append(img_crop)
