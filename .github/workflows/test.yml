@@ -15,16 +15,14 @@ jobs:
     runs-on: windows-latest
     #  echo "action_state=%date:~0,4%%date:~5,2%%date:~8,2%0%time:~1,1%%time:~3,2%%time:~6,2%" >> %GITHUB_ENV%
     steps:
-      - name: Set the value
-        id: step_one
-        run: |
-          echo "action_state=%date:~0,4%%date:~5,2%%date:~8,2%0%time:~1,1%%time:~3,2%%time:~6,2%" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append  
-         
       - name: Get current time
-        uses: gerred/actions/current-time@master
+        uses: srfrnk/current-time@master
         id: current-time
+        with:
+            format: YYYYMMDD
       - name: Use current time
         env:
-            TIME: "${{ steps.current-time.outputs.time }}"
-        run: echo $TIME
+          TIME: "${{ steps.current-time.outputs.time }}"
+          F_TIME: "${{ steps.current-time.outputs.formattedTime }}"
+        run: echo $TIME $F_TIME
       
