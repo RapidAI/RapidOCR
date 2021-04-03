@@ -103,11 +103,10 @@ jobs:
           dir  d:\*.zip
     
     - name: prepare_release
-      id: prepare_release
-      run: |
-           echo "tag_name=%date:~0,4%%date:~5,2%%date:~8,2%0%time:~1,1%%time:~3,2%%time:~6,2%" >> $GITHUB_ENV
-           
-       # echo "::set-output name=tag_name::%TAG_NAME%"
+      uses: srfrnk/current-time@master
+      id:  prepare_release
+      with:
+           format: YYYYMMDD_X
     - name: create_release
       id: create_release
       uses: actions/create-release@v1
@@ -115,9 +114,9 @@ jobs:
           # GitHub 会自动创建 GITHUB_TOKEN 密码以在工作流程中使用
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-          tag_name: ${{ env.tag_name}}
+          tag_name: V_${{ steps.prepare_release.outputs.formattedTime }}
           #${{steps.prepare_release.outputs.tag_name}}
-          release_name: Release rapid_ocr_v1.0_${{ env.tag_name}}
+          release_name: Release rapid_ocr_v1.0_${{ steps.prepare_release.outputs.formattedTime }}
           draft: false
           prerelease: false
     - name: Upload Release Asset
