@@ -41,7 +41,14 @@ jobs:
       id: downloadfile2  # Remember to give an ID if you need the output filename
       name: Download the file
       with:
-          url: "https://github.com/opencv/opencv/releases/download/4.5.1/opencv-4.5.1-vc14_vc15.exe"
+          url: "https://github.com/microsoft/onnxruntime/releases/download/v1.7.0/onnxruntime-win-x86-1.7.0.zip"
+          target: public/
+      
+    - uses: suisei-cn/actions-download-file@v1
+      id: downloadfile3  # Remember to give an ID if you need the output filename
+      name: Download the file
+      with:
+          url: "https://github.com/RapidOCR/OpenCVBuilder/releases/download/4.5.1/opencv-4.5.1-windows-vs2019.7z"
           target: public/
     - name: setup working dir
       run: |
@@ -50,16 +57,16 @@ jobs:
       shell: powershell 
       run: |
             Expand-7Zip -ArchiveFileName public/onnxruntime-win-x64-1.7.0.zip -TargetPath c:\rapidocr\
-        
+            Expand-7Zip -ArchiveFileName public/onnxruntime-win-x86-1.7.0.zip -TargetPath c:\rapidocr\
     
     - name: opencv install
       run: |
-         Expand-7Zip -ArchiveFileName public/opencv-4.5.1-vc14_vc15.exe -TargetPath c:\rapidocr\  
+           Expand-7Zip -ArchiveFileName public/opencv-4.5.1-windows-vs2019.7z -TargetPath c:\rapidocr\  
     - name: list all file
       shell: cmd
       run:  |
-            dir c:\rapidocr\opencv\build\x64
-            dir c:\rapidocr\opencv\build\x64\vc15\bin
+            dir c:\rapidocr\windows-x64
+            dir c:\rapidocr\windows-x86
             dir c:\rapidocr\
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
