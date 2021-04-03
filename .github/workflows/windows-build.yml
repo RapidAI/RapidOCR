@@ -105,8 +105,9 @@ jobs:
     - name: prepare_release
       id: prepare_release
       run: |
-           echo "tag_name=%date:~0,4%%date:~5,2%%date:~8,2%0%time:~1,1%%time:~3,2%%time:~6,2%" >> %GITHUB_ENV%
-           rem echo "::set-output name=tag_name::%TAG_NAME%"
+           echo "tag_name=%date:~0,4%%date:~5,2%%date:~8,2%0%time:~1,1%%time:~3,2%%time:~6,2%" >> $GITHUB_ENV
+           
+       # echo "::set-output name=tag_name::%TAG_NAME%"
     - name: create_release
       id: create_release
       uses: actions/create-release@v1
