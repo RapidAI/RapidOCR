@@ -43,7 +43,7 @@ extern "C"
 		if (Param.boxScoreThresh == 0)
 			Param.boxScoreThresh = 0.5;
 		if (Param.boxThresh == 0)
-			Param.boxThresh = 0.3;
+			Param.boxThresh = 0.3f;
 		if (Param.flagDoAngle == 0)
 			Param.flagDoAngle = 1;
 		if (Param.flagMostAngle == 0)

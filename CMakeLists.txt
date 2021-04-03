@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 project(RapidOCR)
 
 
@@ -12,10 +12,9 @@ endif()
 
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cpp/BaiPiaoOcrOnnx/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/onnxruntime/)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/ /rapidocr/include)
-
-
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/onnxruntime/)
 
 if(WIN32)
 
@@ -25,14 +24,25 @@ if(WIN32)
 		link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/win/x64/)
 		link_directories(c:/rapidocr/onnxruntime-win-x64-1.7.0/lib)
 		set(OpenCV_DIR c:/rapidocr/windows-x64) 
+		
 	ELSE(CMAKE_CL_64)
 		set(platform x86)
 		link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/win/x86/)
 		link_directories(c:/rapidocr/onnxruntime-win-x86-1.7.0/lib)
 		set(OpenCV_DIR c:/rapidocr/windows-x86) 
+	
 	ENDIF(CMAKE_CL_64)
     
+	set(OpenCV_STATIC 1)
 
+
+	if(MSVC)
+    add_compile_options(
+        $<$<CONFIG:>:/MT> #---------|
+        $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
+        $<$<CONFIG:Release>:/MT> #--|
+    )
+endif()
 
 	 # 指向下载的opencv解开后的目录，下面会有bin/lib/include等目录
 
@@ -84,6 +94,8 @@ set(OCR_SRC api4cpp/rapidocr_api.cpp ${SRC_MAIN}  )
 add_library(rapidocrapi SHARED ${OCR_SRC})
 
 target_compile_definitions(rapidocrapi PUBLIC -D_BPOCR_LIB)
+
+
 
 # test program 
 set(BPOCRTESTSRC api4cpp/rapidocrtest.cpp)
