@@ -102,7 +102,7 @@ jobs:
           powershell compress-7zip -path ${{github.workspace}}\release -ArchiveFileName d:\rapidocr-win-x64.zip 
           dir  d:\*.zip
     
-    - name：prepare_release
+    - name: prepare_release
       id: prepare_release
       run: |
            set TAG_NAME=%date:~0,4%%date:~5,2%%date:~8,2%0%time:~1,1%%time:~3,2%%time:~6,2%
