@@ -24,14 +24,17 @@ if(WIN32)
 		set(platform x64)
 		link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/win/x64/)
 		link_directories(c:/rapidocr/onnxruntime-win-x64-1.7.0/lib)
+		set(OpenCV_DIR c:/rapidocr/windows-x64) 
 	ELSE(CMAKE_CL_64)
 		set(platform x86)
 		link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/win/x86/)
+		link_directories(c:/rapidocr/onnxruntime-win-x86-1.7.0/lib)
+		set(OpenCV_DIR c:/rapidocr/windows-x86) 
 	ENDIF(CMAKE_CL_64)
     
 
 
-	set(OpenCV_DIR c:/rapidocr/opencv/build)  # 指向下载的opencv解开后的目录，下面会有bin/lib/include等目录
+	 # 指向下载的opencv解开后的目录，下面会有bin/lib/include等目录
 
 elseif(UNIX)
 
