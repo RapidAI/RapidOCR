@@ -24,7 +24,7 @@ jobs:
         uses: 1466587594/get-current-time@v2
         id: current-time
         with:
-          format: YYYYMMDD-HH
+          format: YYYYMMDD_X
           utcOffset: "+08:00"
       - name: Use the value
         id: step_two
