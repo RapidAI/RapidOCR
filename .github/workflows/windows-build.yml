@@ -106,7 +106,8 @@ jobs:
       id: prepare_release
       run: |
            set TAG_NAME=%date:~0,4%%date:~5,2%%date:~8,2%0%time:~1,1%%time:~3,2%%time:~6,2%
-           echo ::set-output name=tag_name::%TAG_NAME%
+           echo %TAG_NAME%
+           echo "::set-output name=tag_name::%TAG_NAME%"
     - name: create_release
       id: create_release
       uses: actions/create-release@v1
