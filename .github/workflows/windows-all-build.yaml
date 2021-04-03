@@ -33,20 +33,20 @@ jobs:
       run: cmake -E make_directory ${{github.workspace}}/build
     - uses: suisei-cn/actions-download-file@v1
       id: downloadfile1  # Remember to give an ID if you need the output filename
-      name: Download the file
+      name:  onnxruntime 1.7.0 x64
       with:
           url: "https://github.com/microsoft/onnxruntime/releases/download/v1.7.0/onnxruntime-win-x64-1.7.0.zip"
           target: public/
     - uses: suisei-cn/actions-download-file@v1
       id: downloadfile2  # Remember to give an ID if you need the output filename
-      name: Download the file
+      name: Download onnxruntime 1.7.0 x86
       with:
           url: "https://github.com/microsoft/onnxruntime/releases/download/v1.7.0/onnxruntime-win-x86-1.7.0.zip"
           target: public/
       
     - uses: suisei-cn/actions-download-file@v1
       id: downloadfile3  # Remember to give an ID if you need the output filename
-      name: Download the file
+      name: Download Opencv Library
       with:
           url: "https://github.com/RapidOCR/OpenCVBuilder/releases/download/4.5.1/opencv-4.5.1-windows-vs2019.7z"
           target: public/
@@ -68,7 +68,7 @@ jobs:
             dir c:\rapidocr\windows-x64
             dir c:\rapidocr\windows-x86
             dir c:\rapidocr\
-    - name: Configure CMake
+    - name: Configure CMake x64
       # Use a bash shell so we can use the same syntax for environment variable
       # access regardless of the host operating system
       shell: bash
@@ -76,14 +76,29 @@ jobs:
       # Note the current convention is to use the -S and -B options here to specify source 
       # and build directories, but this is only available with CMake 3.13 and higher.  
       # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE  -A x64
 
-    - name: Build
+    - name: Build-x64
       working-directory: ${{github.workspace}}/build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --build . --config $BUILD_TYPE
 
+    - name: Configure CMake for x86
+      # Use a bash shell so we can use the same syntax for environment variable
+      # access regardless of the host operating system
+      shell: bash
+      working-directory: ${{github.workspace}}/buildx86
+      # Note the current convention is to use the -S and -B options here to specify source 
+      # and build directories, but this is only available with CMake 3.13 and higher.  
+      # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -A win32
+    - name: Build-x64
+      working-directory: ${{github.workspace}}/buildx86
+      shell: bash
+      # Execute the build.  You can specify a specific target with "--target <NAME>"
+      run: cmake --build . --config $BUILD_TYPE
+      
     - name: Test
       working-directory: ${{github.workspace}}/build
       shell: bash
@@ -95,18 +110,22 @@ jobs:
       working-directory: ${{github.workspace}}/release
       shell: cmd
       run: |
-          mkdir ${{github.workspace}}/release
-          cp ${{github.workspace}}/build/release/rapidocrapi.dll ${{github.workspace}}/release
-          cp ${{github.workspace}}/build/release/rapidocrtest.exe ${{github.workspace}}/release
-          mkdir ${{github.workspace}}\release\lib
+          mkdir ${{github.workspace}}/release/x86
+          mkdir ${{github.workspace}}/release/x64
+          cp ${{github.workspace}}/build/release/rapidocrapi.dll ${{github.workspace}}/release/x64
+          cp ${{github.workspace}}/build/release/rapidocrtest.exe ${{github.workspace}}/release/x64
+          cp ${{github.workspace}}/buildx86/release/rapidocrapi.dll ${{github.workspace}}/release/x86
+          cp ${{github.workspace}}/buildx86/release/rapidocrtest.exe ${{github.workspace}}/release/x86
+          mkdir ${{github.workspace}}\release\libx86
+          mkdir ${{github.workspace}}\release\libx64
           mkdir ${{github.workspace}}\release\include
-          cp ${{github.workspace}}\build\release\rapidocrapi.lib ${{github.workspace}}\release\lib
+          cp ${{github.workspace}}\build\release\rapidocrapi.lib ${{github.workspace}}\release\libx64
+          cp ${{github.workspace}}\buildx86\release\rapidocrapi.lib ${{github.workspace}}\release\libx86
           cp ${{github.workspace}}\include\rapidocr_api.h ${{github.workspace}}\release\include\
-          cp c:\rapidocr\opencv\build\x64\vc15\bin\opencv_world451.dll ${{github.workspace}}\release
-          cp c:\rapidocr\opencv\build\x64\vc15\bin\opencv_world451.dll ${{github.workspace}}\release
-          cp c:/rapidocr/onnxruntime-win-x64-1.7.0/lib/onnxruntime.dll ${{github.workspace}}\release
+          cp c:/rapidocr/onnxruntime-win-x64-1.7.0/lib/onnxruntime.dll ${{github.workspace}}\release\x64
+          cp c:/rapidocr/onnxruntime-win-x86-1.7.0/lib/onnxruntime.dll ${{github.workspace}}\release\x86
           dir /s ${{github.workspace}}\release
-          powershell compress-7zip -path ${{github.workspace}}\release -ArchiveFileName d:\rapidocr-win-x64.zip 
+          powershell compress-7zip -path ${{github.workspace}}\release -ArchiveFileName d:\rapidocr-win-all.zip 
           dir  d:\*.zip
     
     - name: prepare_release
@@ -135,7 +154,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} 
-          asset_path: d:\rapidocr-win-x64.zip 
-          asset_name: rapidocr-win-x64.zip 
+          asset_path: d:\rapidocr-win-all.zip 
+          asset_name: rapidocr-win-all.zip 
           asset_content_type: application/zip
         
