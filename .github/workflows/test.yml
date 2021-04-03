@@ -21,9 +21,14 @@ jobs:
         run: |
           echo "action_state=%date:~0,4%%date:~5,2%%date:~8,2%0%time:~1,1%%time:~3,2%%time:~6,2%" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append  
          
-          
+      - name: Get current time
+        uses: 1466587594/get-current-time@v2
+        id: current-time
+        with:
+          format: YYYYMMDD-HH
+          utcOffset: "+08:00"
       - name: Use the value
         id: step_two
         run: |
-             echo "${{ env.action_state }}" # This will output 'yellow'
+             echo "${{ steps.current-time.outputs.time }}" # This will output 'yellow'
       
