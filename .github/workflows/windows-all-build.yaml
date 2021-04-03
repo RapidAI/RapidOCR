@@ -1,4 +1,4 @@
-name: CMake-windows
+name: CMake-windows-x86-x64
 
 on: 
   push:
@@ -144,7 +144,7 @@ jobs:
       with:
           tag_name: V_${{ steps.prepare_release.outputs.formattedTime }}
           #${{steps.prepare_release.outputs.tag_name}}
-          release_name: Release rapid_ocr_v1.0_${{ steps.prepare_release.outputs.formattedTime }}
+          release_name: Release Rapid_OCR_v1.0_x64_x86_${{ steps.prepare_release.outputs.formattedTime }}
           draft: false
           prerelease: false
     - name: Upload Release Asset
