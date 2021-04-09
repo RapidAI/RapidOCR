@@ -10,7 +10,6 @@ from flask import Flask, render_template, request
 
 from task import detect_recognize
 
-
 app = Flask(__name__)
 
 # 设置上传文件大小
@@ -34,4 +33,4 @@ def ocr():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=9003, debug=False, processes=True)
+    app.run(host='0.0.0.0', port=9005, debug=False, processes=True)
