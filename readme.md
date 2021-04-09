@@ -43,7 +43,7 @@
 ```
 Download OCR　models
 
-https://github.com/znsoftm/RapidOCR/releases/download/V1.0/rapid-model.tgz
+https://github.com/RapidOCR/RapidOCR/releases/download/V1.0/rapid-model.tgz
 
 ```
 
