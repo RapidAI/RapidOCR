@@ -7,7 +7,7 @@
 
 
 怎样添加provider 以支持gpu等，下面以cuda为例
-`
+
   OrtEnv* env;
   OrtInitialize(ORT_LOGGING_LEVEL_WARNING, "test", &env)
   OrtSessionOptions* session_option = OrtCreateSessionOptions();
