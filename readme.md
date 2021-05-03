@@ -99,7 +99,7 @@ or visit: https://jq.qq.com/?_wv=1027&k=P9b3olx6 to join us.
 
 Download OCR　models
 ```
-Linkage ：https://github.com/znsoftm/RapidOCR/releases/download/V1.0/rapid-model.tgz
+Linkage ：https://github.com/RapidOCR/RapidOCR/releases/download/V1.0/rapid-model.tg
 ```
 
 ### Demonstration with C++/JVM
