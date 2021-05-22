@@ -2,7 +2,7 @@
 
 * from github  (2021.03.27)
 
-链接：https://github.com/znsoftm/RapidOCR/releases/download/V1.0/rapid-model.tgz
+链接：https://github.com/RapidOCR/RapidOCR/releases/download/V1.0/rapid-model.tgz
 
 ## onnx模型转换说明
 

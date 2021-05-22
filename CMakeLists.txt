@@ -36,13 +36,13 @@ if(WIN32)
 	set(OpenCV_STATIC 1)
 
 
-	if(MSVC)
-    add_compile_options(
-        $<$<CONFIG:>:/MT> #---------|
-        $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
-        $<$<CONFIG:Release>:/MT> #--|
-    )
-endif()
+	#if(MSVC)
+    		#add_compile_options(
+        	#$<$<CONFIG:>:/MT> #---------|
+        	#$<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
+        	#$<$<CONFIG:Release>:/MT> #--|
+    		#)
+	#endif()
 
 	 # 指向下载的opencv解开后的目录，下面会有bin/lib/include等目录
 

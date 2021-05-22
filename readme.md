@@ -2,7 +2,7 @@
 
 中文广告： 欢迎加入我们的QQ群下载模型及测试程序，qq群号：887298230
 
-欢迎STAR, 欢迎PR, 欢迎转发
+欢迎STAR, 欢迎PR, 欢迎转发。
 
 ## SDK 编译状态
 
@@ -10,6 +10,8 @@
 | --------------- | -------- | -------- |
 | Windows x86/x64 |  [![CMake-windows-x86-x64](https://github.com/RapidOCR/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https://github.com/RapidOCR/RapidOCR/actions/workflows/windows-all-build.yaml)        |  右侧下载 |
 | Linux x64       |  [![CMake-linux](https://github.com/RapidOCR/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidOCR/RapidOCR/actions/workflows/make-linux.yml) |  暂不提供，自行编译 |
+
+鉴于ubuntu用户都是商业用户，也有编译能力，暂不提供预编译包使用，可自行编译。
 
 
 ## 常见问题
@@ -37,13 +39,13 @@
 - [x]  python 测试程序
 - [x]  WEB 演示   基于web的演示代码
 - [ ]  IOS演示   招贡献者
-- [ ]  依据python版本重写C++推理代码，以提升推理效果，并增加对git/tga/webp 格式图片的支持
+- [ ]  依据python版本重写C++推理代码，以提升推理效果，并增加对gif/tga/webp 格式图片的支持
 ### 下载转换好的多语言模型：
 
 ```
 Download OCR　models
 
-https://github.com/znsoftm/RapidOCR/releases/download/V1.0/rapid-model.tgz
+https://github.com/RapidOCR/RapidOCR/releases/download/V1.0/rapid-model.tgz
 
 ```
 
@@ -99,7 +101,7 @@ or visit: https://jq.qq.com/?_wv=1027&k=P9b3olx6 to join us.
 
 Download OCR　models
 ```
-Linkage ：https://github.com/znsoftm/RapidOCR/releases/download/V1.0/rapid-model.tgz
+Linkage ：https://github.com/RapidOCR/RapidOCR/releases/download/V1.0/rapid-model.tg
 ```
 
 ### Demonstration with C++/JVM

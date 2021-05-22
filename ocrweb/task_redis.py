@@ -3,17 +3,22 @@
 # @File: worker.py
 # @Time: 2021/03/07 20:29:32
 # @Author: Max
-import base64
 import json
-import time
-
+import base64
 import cv2
+import time
 import numpy as np
 
+import redis
+from rq import Worker, Queue, Connection
 from resources.bpocr import TextSystem, draw_text_det_res
 
+listen = ['default']
+redis_url = "redis://localhost:6379"  # redis server 默认地址
+conn = redis.from_url(redis_url)
+
 # 实例化模型
-det_model_path = 'resources/models/ch_ppocr_server_v2.0_det_train.onnx'
+det_model_path = 'resources/models/ch_ppocr_server_v2.0_det_infer.onnx'
 cls_model_path = 'resources/models/ch_ppocr_mobile_v2.0_cls_infer.onnx'
 rec_model_path = 'resources/models/ch_ppocr_mobile_v2.0_rec_infer.onnx'
 
@@ -58,3 +63,9 @@ def detect_recognize(image_path):
     return json.dumps({'image': img,
                        'elapse': elapse,
                        'rec_res': rec_res_data})
+
+
+if __name__ == '__main__':
+    with Connection(conn):  # 建立与redis server的连接
+        worker = Worker(list(map(Queue, listen)))  # 建立worker监听给定的队列
+        worker.work()

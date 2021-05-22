@@ -15,7 +15,7 @@ from rq import Queue
 from rq.job import Job
 
 
-from task import conn, detect_recognize
+from task_redis import conn, detect_recognize
 
 
 root_path = Path(__file__).resolve().parent
