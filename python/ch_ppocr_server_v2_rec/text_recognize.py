@@ -32,23 +32,19 @@ root_path = Path(__file__).parent
 class TextRecognizer(object):
     def __init__(self, rec_model_path):
         self.rec_image_shape = [3, 32, 320]
-        self.character_type = 'ch'
         self.rec_batch_num = 6
-        self.rec_algorithm = 'CRNN'
 
         self.character_dict_path = str(root_path / 'ppocr_keys_v1.txt')
-        self.use_space_char = True
-        self.postprocess_op = CTCLabelDecode(self.character_dict_path,
-                                             self.character_type,
-                                             self.use_space_char)
+        self.postprocess_op = CTCLabelDecode(self.character_dict_path)
         self.session = onnxruntime.InferenceSession(rec_model_path)
 
     def resize_norm_img(self, img, max_wh_ratio):
         img_channel, img_height, img_width = self.rec_image_shape
         assert img_channel == img.shape[2]
-        if self.character_type == "ch":
-            img_width = int((32 * max_wh_ratio))
-            max_wh_ratio = 1
+
+        img_width = int((32 * max_wh_ratio))
+        max_wh_ratio = 1
+
         h, w = img.shape[:2]
         ratio = w / float(h)
         if math.ceil(img_height * ratio) > img_width:
@@ -128,10 +124,10 @@ class TextRecognizer(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image_dir', type=str, help='image_dir|image_path')
+    parser.add_argument('--image_path', type=str, help='image_dir|image_path')
     parser.add_argument('--model_path', type=str, help='rec_model_path')
     args = parser.parse_args()
 
     text_recognizer = TextRecognizer(args.model_path)
-    rec_res, predict_time = text_recognizer(args.image_dir)
+    rec_res, predict_time = text_recognizer(args.image_path)
     print(f'识别结果: {rec_res}\t cost: {predict_time}s')

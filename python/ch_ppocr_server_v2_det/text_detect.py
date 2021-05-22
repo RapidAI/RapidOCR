@@ -135,10 +135,8 @@ class TextDetector(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image_path', type=str, default=None,
-                        help='image_path|image_dir')
-    parser.add_argument('--model_path', type=str, default=None,
-                        help='model_path')
+    parser.add_argument('--image_path', type=str, help='image_path|image_dir')
+    parser.add_argument('--model_path', type=str, help='model_path')
     args = parser.parse_args()
 
     text_detector = TextDetector(args.model_path)

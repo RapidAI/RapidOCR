@@ -121,12 +121,12 @@ class TextClassifier(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image_dir', type=str, help='image_dir|image_path')
-    parser.add_argument('--cls_model_dir', type=str, help='cls_model_dir')
+    parser.add_argument('--image_path', type=str, help='image_dir|image_path')
+    parser.add_argument('--model_path', type=str, help='model_path')
     args = parser.parse_args()
 
-    text_classifier = TextClassifier(args.cls_model_dir)
+    text_classifier = TextClassifier(args.model_path)
 
-    img_list, cls_res, predict_time = text_classifier(args.image_dir)
+    img_list, cls_res, predict_time = text_classifier(args.image_path)
     for ino in range(len(img_list)):
         print(f"分类结果:{cls_res[ino]}")
