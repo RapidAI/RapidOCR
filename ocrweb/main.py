@@ -14,7 +14,7 @@ from task import detect_recognize
 app = Flask(__name__)
 
 # 设置上传文件大小
-app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10M
+app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024  # 10M
 
 
 @app.route('/')
