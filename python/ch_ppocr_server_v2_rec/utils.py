@@ -53,6 +53,7 @@ class CTCLabelDecode(object):
             for line in lines:
                 line = line.decode('utf-8').strip("\n").strip("\r\n")
                 self.character_str.append(line)
+        self.character_str.append(' ')
         dict_character = self.character_str
 
         dict_character = self.add_special_char(dict_character)

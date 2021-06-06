@@ -53,6 +53,7 @@ class CTCLabelDecode(object):
             for line in lines:
                 line = line.decode('utf-8').strip("\n").strip("\r\n")
                 self.character_str.append(line)
+        self.character_str.append(' ')
         dict_character = self.character_str
 
         dict_character = self.add_special_char(dict_character)
@@ -64,7 +65,8 @@ class CTCLabelDecode(object):
     def __call__(self, preds, label=None, *args, **kwargs):
         preds_idx = preds.argmax(axis=2)
         preds_prob = preds.max(axis=2)
-        text = self.decode(preds_idx, preds_prob, is_remove_duplicate=True)
+        text = self.decode(preds_idx, preds_prob,
+                           is_remove_duplicate=True)
         if label is None:
             return text
         label = self.decode(label)
@@ -77,7 +79,9 @@ class CTCLabelDecode(object):
     def get_ignored_tokens(self):
         return [0]  # for ctc blank
 
-    def decode(self, text_index, text_prob=None, is_remove_duplicate=False):
+    def decode(self, text_index,
+               text_prob=None,
+               is_remove_duplicate=False):
         """ convert text-index into text-label. """
         result_list = []
         ignored_tokens = self.get_ignored_tokens()
