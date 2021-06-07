@@ -5,9 +5,6 @@
 
 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle 框架进行模型优化。
 
-### 原始发起者及初创作者
-- [benjaminwan](https://github.com/benjaminwan)
-- [znsoftm](https://github.com/znsoftm)
 
 ### 当前进展
 - [x] C++范例(Windows/Linux/macOS): [demo](./cpp)
@@ -18,7 +15,6 @@
 - [ ] IOS范例: 等待有缘人贡献代码
 
 ### [在线演示](http://rapidocr.51pda.cn:9003/)
-
 
 ### [模型训练相关问题](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
 
