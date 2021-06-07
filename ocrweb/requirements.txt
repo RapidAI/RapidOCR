@@ -1,11 +1,6 @@
-onnxruntime==1.5.2
-opencv-python==4.2.0.32
-numpy
-pyclipper
-Shapely
-imghdr
-python==3.6.4
-rq==1.7.0
-redis==3.5.3
-requests==2.25.1
-Flask==1.1.2
+onnxruntime==1.7.0
+opencv_python==4.5.1.48
+six==1.15.0
+pyclipper==1.2.1
+numpy==1.19.1
+Shapely==1.7.1

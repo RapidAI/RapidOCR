@@ -3,7 +3,6 @@
 ```text
 .
 ├── main.py
-├── main_redis.py
 ├── readme.md
 ├── resources
 │   ├── bpocr.py
@@ -17,10 +16,9 @@
 │   ├── css
 │   ├── images
 │   └── js
-├── task.py  # 单独开启rq worker时使用
+├── task.py
 └── templates
-    ├── index.html
-    └── index_redis.html  # 带有redis队列web界面
+    └── index.html
 ```
 
 #### Redis队列web界面使用步骤
