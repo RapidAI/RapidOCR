@@ -33,14 +33,13 @@
 ### [模型训练相关问题](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
 
 ### 当前进展
-- [x]  纯c／c＋＋ API 接口，方便移植所有平台 （网盘提供预编译SDK）
-- [x] .NET测试程序　　演示在.NET程序中的使用方法
-- [x]  Android 测试程序
-- [x] Java 测试程序
-- [x]  python 测试程序
-- [x]  WEB 演示   基于web的演示代码
-- [ ]  IOS演示   招贡献者
-- [ ]  依据python版本重写C++推理代码，以提升推理效果，并增加对gif/tga/webp 格式图片的支持
+- [x] C++范例(Windows/Linux/macOS): [demo](./cpp)
+- [x] Jvm范例(Java/Kotlin): [demo](./jvm)
+- [x] .Net范例(C#): [demo](./dotnet)
+- [x] Android范例: [demo](./android)
+- [x] python范例: [demo](.python)
+- [ ] IOS范例: 等待有缘人贡献代码
+- [ ] 依据python版本重写C++推理代码，以提升推理效果，并增加对gif/tga/webp 格式图片的支持
 
 ### 模型转换
 - 目前转换脚本支持的模型：
@@ -63,5 +62,8 @@
 ### 授权
 - OCR模型版权归百度所有，其它工程代码版权归本仓库所有者所有。
 - 本软件采用LGPL 授权方式，欢迎大家贡献代码，提交issue 甚至pr.
-- 您可以通过QQ群联系到我们： 887298230
+
+### 联系我们
+- 您可以通过QQ群联系到我们：**887298230**
 - 群号搜索不到时，请直接点此[**链接**](https://jq.qq.com/?_wv=1027&k=P9b3olx6)，找到组织
+- 扫描以下二维码
