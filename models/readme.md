@@ -129,6 +129,7 @@
 *  运行完后将有如下的目录结构(大约是这样，有一些小的名字差异，懒得改了，不要太介意）
      <details>
      <summary>PaddleOCR/inference目录结构 (click to expand)</summary>
+
           ```text
           PaddleOCR/inference
           ├── ar_mobile_v2.0_rec_train

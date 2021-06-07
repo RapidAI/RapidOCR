@@ -19,6 +19,7 @@
 
 ### [在线演示](http://rapidocr.51pda.cn:9003/)
 
+
 ### [模型训练相关问题](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
 
 ### 模型转换
@@ -42,7 +43,7 @@
 - 请注明出处并包括我们的github url: `https://github.com/RapidOCR/RapidOCR`
 
 ### 授权
-- OCR模型版权归百度所有，其它工程代码版权归本仓库所有者所有。 - 本软件采用LGPL 授权方式，欢迎大家贡献代码，提交issue 甚至pr.
-
+- OCR模型版权归百度所有，其它工程代码版权归本仓库所有者所有。
+- 本软件采用LGPL 授权方式，欢迎大家贡献代码，提交issue 甚至pr.
 - 您可以通过QQ群联系到我们： 887298230
 - 群号搜索不到时，请直接点此[**链接**](https://jq.qq.com/?_wv=1027&k=P9b3olx6)，找到组织

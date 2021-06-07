@@ -1,5 +1,5 @@
 ```
-BaiPiaoOCR
+RapidOCR
           |
           |--android     安卓工程目录
           |
@@ -24,7 +24,7 @@ BaiPiaoOCR
           |--lib          编译用库文件目录，用于编译c语言接口库用，默认并不上传二进制文件
           |
           |--models       放置可使用的模型文件下载信息，基于百度网盘
-          | 
+          |
           |--python       python推理代码目录
           |
           |--test_imgs    一些演示用的图片，不是测试集

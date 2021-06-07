@@ -17,7 +17,7 @@
 ## 常见问题
  [FAQ](FAQ.md)
 
-# 重要说明 
+# 重要说明
 
 新模型已经完全兼容ONNXRuntime 1.7 或更高版本。 特别感谢：@Channingss
 
@@ -40,6 +40,7 @@
 - [x]  WEB 演示   基于web的演示代码
 - [ ]  IOS演示   招贡献者
 - [ ]  依据python版本重写C++推理代码，以提升推理效果，并增加对gif/tga/webp 格式图片的支持
+
 ### 下载转换好的多语言模型：
 
 ```
@@ -62,12 +63,51 @@ Special thanks to Channingss@baidu (the owner of project Paddle2Onnx)
 
 ### Directory structure
 
-### [Click to see 目录结构](dir.md)    
+### 目录结构
+<details>
+    <summary>点击展开</summary>
+
+    ```text
+    RapidOCR
+            |
+            |--android     安卓工程目录
+            |
+            |--api4cpp      c语言跨平台接口库源码目录，直接用根下的CMakelists.txt 编译
+            |
+            |--build        编译脚本
+            |
+            |--cpp          基于c++的工程项目文件夹
+            |
+            |--datasets     额外的训练数据集，百度网盘下载地址
+            |
+            |--dotnet       .Net程序目录
+            |
+            |--include      编译c语言接口库时的头文件目录
+            |
+            |--ios          苹果手机平台工程目录
+            |
+            |--images        测试用图片，两张典型的测试图，一张是自然场景，另一个为长文本
+            |
+            |--jvm          基于java的工程目录
+            |
+            |--lib          编译用库文件目录，用于编译c语言接口库用，默认并不上传二进制文件
+            |
+            |--models       放置可使用的模型文件下载信息，基于百度网盘
+            |
+            |--python       python推理代码目录
+            |
+            |--test_imgs    一些演示用的图片，不是测试集
+            |
+            |--tools        一些转换脚本之类
+            |
+            |--training     训练自己的模型使用的脚本或程序。
+    ```
+</details>
 
 
 **Copyright announcement:**
 
-If you use or reference code or code snippet from the repository, please add our url 
+If you use or reference code or code snippet from the repository, please add our url
 
 https://github.com/RapidOCR/RapidOCR  in your prodouct derived from the repository.
 
