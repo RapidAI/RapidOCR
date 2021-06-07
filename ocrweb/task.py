@@ -10,7 +10,7 @@ import time
 import cv2
 import numpy as np
 
-from resources.bpocr import TextSystem, draw_text_det_res
+from resources.rapidOCR import TextSystem, draw_text_det_res
 
 # 实例化模型
 det_model_path = 'resources/models/ch_ppocr_server_v2.0_det_infer.onnx'

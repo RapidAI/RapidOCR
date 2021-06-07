@@ -1,27 +1,34 @@
+### 运行
+1. 安装`requirements.txt`下相关包
+    ```shell
+    pip install -r requirements.txt
+    ```
+2. 相关模型
+    - 下载链接：[提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
+    - 将模型放到`models`目录即可
 
-#### 目录结构
+3. 运行`main.py`
+    ```shell
+    python main.py
+    ```
+4. 打开`http://127.0.0.1:9005/`，即可
+
+### 目录结构
 ```text
 .
 ├── main.py
-├── readme.md
+├── README.md
 ├── resources
-│   ├── bpocr.py
+│   ├── rapidOCR.py
 │   ├── ch_ppocr_mobile_v2_cls
 │   ├── ch_ppocr_mobile_v2_det
 │   ├── ch_ppocr_mobile_v2_rec
 │   ├── __init__.py
-│   ├── models
-│   └── __pycache__
+│   └── models
 ├── static
 │   ├── css
-│   ├── images
 │   └── js
 ├── task.py
 └── templates
     └── index.html
 ```
-
-#### Redis队列web界面使用步骤
-- 安装redis,并开启redis服务
-- `rq worker` 启动工作进程，处理实际任务
-- `python main_redis.py` 开启前端接受数据界面
