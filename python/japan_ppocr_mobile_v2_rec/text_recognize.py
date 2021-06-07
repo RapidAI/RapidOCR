@@ -36,7 +36,11 @@ class TextRecognizer(object):
 
         self.character_dict_path = str(root_path / 'japan_dict.txt')
         self.postprocess_op = CTCLabelDecode(self.character_dict_path)
-        self.session = onnxruntime.InferenceSession(rec_model_path)
+
+        sess_opt = onnxruntime.SessionOptions()
+        sess_opt.log_severity_level = 4
+        sess_opt.enable_cpu_mem_arena = False
+        self.session = onnxruntime.InferenceSession(rec_model_path, sess_opt)
 
     def resize_norm_img(self, img, max_wh_ratio):
         img_channel, img_height, img_width = self.rec_image_shape

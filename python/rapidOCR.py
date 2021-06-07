@@ -16,6 +16,7 @@ drop_score = 0.5
 def str2bool(v):
     return v.lower() in ("true", "t", "1")
 
+
 def check_and_read_gif(img_path):
     if Path(img_path).name[-3:] in ['gif', 'GIF']:
         gif = cv2.VideoCapture(img_path)

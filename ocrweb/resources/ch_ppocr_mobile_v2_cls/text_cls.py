@@ -18,12 +18,12 @@ import time
 
 import cv2
 import numpy as np
-import onnxruntime as ort
+import onnxruntime
 
 try:
-    from .utils import check_and_read_gif, get_image_file_list, ClsPostProcess
+    from .utils import ClsPostProcess, check_and_read_gif, get_image_file_list
 except:
-    from utils import check_and_read_gif, get_image_file_list, ClsPostProcess
+    from utils import ClsPostProcess, check_and_read_gif, get_image_file_list
 
 
 class TextClassifier(object):
@@ -32,7 +32,11 @@ class TextClassifier(object):
         self.cls_batch_num = 6
         self.cls_thresh = 0.9
         self.postprocess_op = ClsPostProcess(label_list=['0', '180'])
-        self.session = ort.InferenceSession(cls_model_path)
+
+        sess_opt = onnxruntime.SessionOptions()
+        sess_opt.log_severity_level = 4
+        sess_opt.enable_cpu_mem_arena = False
+        self.session = onnxruntime.InferenceSession(cls_model_path, sess_opt)
 
     def resize_norm_img(self, img):
         imgC, imgH, imgW = self.cls_image_shape
