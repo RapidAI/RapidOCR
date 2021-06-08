@@ -96,4 +96,4 @@
 - 您可以通过QQ群联系到我们：**887298230**
 - 群号搜索不到时，请直接点此[**链接**](https://jq.qq.com/?_wv=1027&k=P9b3olx6)，找到组织
 - 扫描以下二维码:
-    <img scr="./assets/qq_team.bmp" with="70%" height="70%" align="center">
+    <img scr="./assets/qq_team.bmp" width="70%" height="70%" align="center">
