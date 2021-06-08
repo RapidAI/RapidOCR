@@ -13,6 +13,7 @@
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle 框架进行模型优化。
 
 ## 重要说明
+
 - 新模型已经完全兼容ONNXRuntime 1.7 或更高版本。 特别感谢：@Channingss
 - 新版onnxruntime比1.6.0 性能提升40%以上。
 
@@ -95,5 +96,7 @@
 ### 联系我们
 - 您可以通过QQ群联系到我们：**887298230**
 - 群号搜索不到时，请直接点此[**链接**](https://jq.qq.com/?_wv=1027&k=P9b3olx6)，找到组织
-- 扫描以下二维码:
-    <img src="./assets/qq_team.bmp" width="70%" height="70%" align="center">
+- 用QQ扫描以下二维码:
+    <p>
+        <img src="./assets/qq_team.bmp" width="10%" height="10%" align="center">
+    </p>
