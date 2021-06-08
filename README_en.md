@@ -30,8 +30,8 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 
 | Platform | Compilation Status | Offer Status |
 | --------------- | -------- | -------- |
-| Windows x86/x64 | [![CMake-windows-x86-x64](https://github.com/RapidOCR/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https: //github.com/RapidOCR/RapidOCR/actions/workflows/windows-all-build.yaml) | Download on the right |
-| Linux x64 | [![CMake-linux](https://github.com/RapidOCR/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidOCR/ RapidOCR/actions/workflows/make-linux.yml) | Not available yet, compile by yourself |
+| Windows x86/x64 | [![CMake-windows-x86-x64](https://github.com/RapidOCR/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https://github.com/RapidOCR/RapidOCR/actions/workflows/windows-all-build.yaml) | Download on the right |
+| Linux x64 | [![CMake-linux](https://github.com/RapidOCR/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidOCR/RapidOCR/actions/workflows/make-linux.yml) | Not available yet, compile by yourself |
 
 ### Online demo
 - [Web demo](http://rapidocr.51pda.cn:9003/)
