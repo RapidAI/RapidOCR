@@ -1,6 +1,6 @@
 
 <div align="center">
-  <img src="./assets/RapidOCR_LOGO.png" width="80%"/>
+  <img src="./assets/RapidOCR_LOGO.png" width="60%" height="60%"/>
 </div>
 
 # RapidOCR (捷智OCR)
