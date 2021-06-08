@@ -98,5 +98,5 @@
 - 群号搜索不到时，请直接点此[**链接**](https://jq.qq.com/?_wv=1027&k=P9b3olx6)，找到组织
 - 用QQ扫描以下二维码:
     <p>
-        <img src="./assets/qq_team.bmp" width="10%" height="10%" align="center">
+        <img src="./assets/qq_team.bmp" width="30%" height="30%" align="center">
     </p>
