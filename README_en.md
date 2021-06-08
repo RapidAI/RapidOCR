@@ -1,72 +1,121 @@
+
+<div align="center">
+  <img src="./assets/RapidOCR_LOGO.png" width="45%" height="45%"/>
+</div>
+
 # RapidOCR
 
-### Note:
-- For PC (political correctness ), we changed our name from BaiPiaoOCR to RapidOCR
-- Special thanks to Channingss@baidu (the owner of project Paddle2Onnx)
+## Introduction
+- Completely open source, free and support offline deployment of multi-platform and multi-language OCR SDK
+- **Chinese Advertising**: Welcome to join our QQ group to download the model and test program, QQ group number: 887298230
+- **Cause**: Baidu paddlepaddle engineering is not very good, in order to facilitate everyone to perform OCR reasoning on various terminals, we convert it to onnx format, use ``python/c++/java/swift/c#'' to change It is ported to various platforms.
+
+- **Name Source**: Light, fast, economical and smart. OCR technology based on deep learning technology focuses on artificial intelligence advantages and small models, with speed as the mission and effect as the leading role.
+
+- Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
+
+## Recent updates
+#### 2021-06-08 update
+- Organize the warehouse and unify the model download path
+- Improve related documentation
+
+#### 2021-04-18 update
+- The new model is fully compatible with ONNXRuntime 1.7 or higher. Special thanks: @Channingss
+- The performance of the new version of onnxruntime is improved by more than 40% compared to 1.6.0.
+
+## [FAQ](FAQ.md)
+
+## SDK compilation status
+Since ubuntu users are all commercial users and have the ability to compile, pre-compiled packages are not provided for the time being, and they can be compiled by themselves.
+
+| Platform | Compilation Status | Offer Status |
+| --------------- | -------- | -------- |
+| Windows x86/x64 | [![CMake-windows-x86-x64](https://github.com/RapidOCR/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https: //github.com/RapidOCR/RapidOCR/actions/workflows/windows-all-build.yaml) | Download on the right |
+| Linux x64 | [![CMake-linux](https://github.com/RapidOCR/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidOCR/ RapidOCR/actions/workflows/make-linux.yml) | Not available yet, compile by yourself |
+
+### Online demo
+- [Web demo](http://rapidocr.51pda.cn:9003/)
+- The model combination used in the demo is: **server det** + **mobile cls** + **mobile rec**
+
+### [The question about the training of model](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
 
 ### Directory structure
 <details>
     <summary>click to expand</summary>
 
-    RapidOCR
-    ├── android             # 安卓工程目录
-    ├── api4cpp             # c语言跨平台接口库源码目录，直接用根下的CMakelists.txt 编译
-    ├── assets              # 一些演示用的图片，不是测试集
-    ├── commonlib           # 通用库
-    ├── cpp                 # 基于c++的工程项目文件夹
-    ├── datasets            # 额外的训练数据集，百度网盘下载地址
-    ├── dotnet              # .Net程序目录
-    ├── FAQ.md              # 一些问答整理
-    ├── images              # 测试用图片，两张典型的测试图，一张是自然场景，另一个为长文本
-    ├── include             # 编译c语言接口库时的头文件目录
-    ├── ios                 # 苹果手机平台工程目录
-    ├── jvm                 # 基于java的工程目录
-    ├── lib                 # 编译用库文件目录，用于编译c语言接口库用，默认并不上传二进制文件
-    ├── models              # 放置可使用的模型文件下载信息，基于百度网盘
-    ├── ocrweb              # 基于python和Flask web
-    ├── python              # python推理代码目录
-    ├── release             #
-    ├── tools               #  一些转换脚本之类
-    └── training            # 训练自己的模型使用的脚本或程序
+   RapidOCR
+    ├── android         # Android project directory
+    ├── api4cpp         # C language cross-platform interface library source code directory, directly compile with CMakelists.txt under the root
+    ├── assets          # Some pictures for demonstration, not a test set
+    ├── commonlib       # common library
+    ├── cpp             # C++-based project folder
+    ├── datasets        # Additional training datasets, Baidu SkyDrive download address
+    ├── dotnet          # .Net program directory
+    ├── FAQ.md          # Some questions and answers
+    ├── images          # Test pictures, two typical test pictures, one is a natural scene, the other is a long text
+    ├── include         # The header file directory when compiling the c language interface library
+    ├── ios             # Apple mobile phone platform project directory
+    ├── jvm             # java-based project directory
+    ├── lib             # Compilation library file directory, used to compile the C language interface library. Binary files are not uploaded by default
+    ├── models          # Place available model file download information, based on Baidu network disk
+    ├── ocrweb          # Based on python and Flask web
+    ├── python          # python reasoning code directory
+    ├── release         #
+    ├── tools           # Some conversion scripts and the like
+    └── training        # Script or program used to train your own model
 </details>
 
 
-### **Copyright announcement:**
+### Current Progress
+- [x] C++ example (Windows/Linux/macOS): [demo](./cpp)
+- [x] Jvm example (Java/Kotlin): [demo](./jvm)
+- [x] .Net example (C#): [demo](./dotnet)
+- [x] Android example: [demo](./android)
+- [x] python example: [demo](./python)
+- [ ] IOS example: waiting for someone to contribute code
+- [ ] Rewrite the C++ reasoning code according to the python version to improve the reasoning effect, and add support for gif/tga/webp format pictures
 
-- If you use or reference code or code snippet from the repository, please add our url https://github.com/RapidOCR/RapidOCR  in your prodouct derived from the repository.
 
-### **Author:**
+### Model Conversion
+- The models currently supported by the conversion script:
+     - 1 text direction classification model,
+     - 2 detection models,
+     - 28 recognition models (2 in simplified Chinese, 26 in traditional Chinese, etc.), totaling 31
+-[Model Conversion Instructions](./models)
+
+### onnx model download
+- [Extraction code: 30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
+
+### Original initiator and start-up author
 - [benjaminwan](https://github.com/benjaminwan)
 - [znsoftm](https://github.com/znsoftm)
 
-All contributors is in the contributor list on the right side of this page.
 
-### **Description**
-RapidOCR means an  OCR Engine who is fair-skinned, rich and beautiful from Baidu, it's based on PaddleOCR & OnnxRuntime.
+### Authorization
+-The copyright of the OCR model belongs to Baidu, and the copyright of other engineering codes belongs to the owner of this warehouse.
+-This software is licensed under LGPL. You are welcome to contribute code, submit an issue or even pr.
 
-**Note**： The project is derived from [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)
+### contact us
+- You can contact us through QQ group: **887298230**
+- If you can’t find the group number, please click here [**link**](https://jq.qq.com/?_wv=1027&k=P9b3olx6) to find the organization
+- Scan the following QR code with QQ:
 
-We create the project to transfer PaddleOCR's model into the version of Onnx model to deploy the model on almost every devices, such as x86 PC, Android & IOS.
+    <div align="center">
+        <img src="./assets/qq_team.bmp" width="25%" height="25%" align="center">
+     </div>
 
-We are using [Paddle2ONNX](https://github.com/PaddlePaddle/Paddle2ONNX) to transform it to Onnx format.
+### Demo
+#### Demonstration with C++/JVM
+<div align="center">
+    <img src="./assets/demo_cpp.png" width="100%" height="100%">
+</div>
 
-You can visualize the model by [netron](https://github.com/lutzroeder/netron/)
+#### Demonstration with .Net
+<div align="center">
+    <img src="./assets/demo_cs.png" width="100%" height="100%">
+</div>
 
-Welcome to our Group on **QQ: 887298230**
-or visit [this link](https://jq.qq.com/?_wv=1027&k=P9b3olx6) to join us.
-
-### Download OCR models
-- [Extract Code：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
-
-### Demonstration with C++/JVM
-![avatar](./assets/demo_cpp.png)
-
-### Demonstration with .Net
-
-![avatar](./assets/demo_cs.png)
-
-### Demonstratioin with multi_language
-<img src="./assets/demo_multi_language.png" width="80%" height="80%" align="center">
-
-### LICENSE:
-- Apache License 2.0
+#### Demonstratioin with multi_language
+<div align="center">
+    <img src="./assets/demo_multi_language.png" width="80%" height="80%">
+</div>

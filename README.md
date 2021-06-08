@@ -1,6 +1,6 @@
 
 <div align="center">
-  <img src="./assets/RapidOCR_LOGO.png" width="60%" height="60%"/>
+  <img src="./assets/RapidOCR_LOGO.png" width="45%" height="45%"/>
 </div>
 
 # RapidOCR (捷智OCR)
@@ -105,6 +105,23 @@
 - 您可以通过QQ群联系到我们：**887298230**
 - 群号搜索不到时，请直接点此[**链接**](https://jq.qq.com/?_wv=1027&k=P9b3olx6)，找到组织
 - 用QQ扫描以下二维码:
-    <p>
-        <img src="./assets/qq_team.bmp" width="30%" height="30%" align="center">
-    </p>
+
+    <div align="center">
+    <img src="./assets/qq_team.bmp" width="25%" height="25%" align="center">
+    </div>
+
+### 示例图
+#### C++/JVM示例图像
+<div align="center">
+    <img src="./assets/demo_cpp.png" width="100%" height="100%">
+</div>
+
+#### .Net示例图像
+<div align="center">
+    <img src="./assets/demo_cs.png" width="100%" height="100%">
+</div>
+
+#### 多语言示例图像
+<div align="center">
+    <img src="./assets/demo_multi_language.png" width="80%" height="80%">
+</div>
