@@ -74,11 +74,14 @@ or visit [this link](https://jq.qq.com/?_wv=1027&k=P9b3olx6) to join us.
 - [Extract Code：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
 
 ### Demonstration with C++/JVM
-![avatar](./test_imgs/test_cpp.png)
+![avatar](./assets/demo_cpp.png)
 
 ### Demonstration with .Net
 
-![avatar](./test_imgs/test_cs.png)
+![avatar](./assets/demo_cs.png)
+
+### Demonstratioin with multi_language
+<img src="./assets/demo_multi_language.png" width="80%" height="80%" align="center">
 
 ### LICENSE:
 - Apache License 2.0

@@ -18,7 +18,7 @@
 
 ## 常见问题  [FAQ](FAQ.md)
 
-## c++ SDK 编译状态
+## SDK 编译状态
 鉴于ubuntu用户都是商业用户，也有编译能力，暂不提供预编译包使用，可自行编译。
 
 | 平台            | 编译状态 |   提供状态 |
@@ -28,7 +28,7 @@
 
 ## 在线demo
 - [Web demo](http://rapidocr.51pda.cn:9003/)
-- demo所用模型组合为: `server det+mobile cls+mobile rec`
+- demo所用模型组合为: **server det** + **mobile cls** + **mobile rec**
 
 ### [模型训练相关问题](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
 
@@ -67,3 +67,4 @@
 - 您可以通过QQ群联系到我们：**887298230**
 - 群号搜索不到时，请直接点此[**链接**](https://jq.qq.com/?_wv=1027&k=P9b3olx6)，找到组织
 - 扫描以下二维码
+    ![](./assets/qq_team.bmp)
