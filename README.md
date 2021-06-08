@@ -1,4 +1,8 @@
 
+<div align="center">
+  <img src="./assets/RapidOCR_LOGO.png" width="80%"/>
+</div>
+
 # RapidOCR (捷智OCR)
 
 简体中文 | [English](README_en.md)
