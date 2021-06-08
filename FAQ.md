@@ -6,7 +6,7 @@
 
 #### Q2: onnxruntime 1.7 下出错
 
-**A:** 由于模型只支持`onnxruntime=1.5.0`导致，请更新模型(`python\README.md`下相应下载链接)
+**A:** 由于模型只支持`onnxruntime=1.5.0`导致，请更新模型,下载地址见`Q3`
 
 #### Q3: 模型下载地址
 
