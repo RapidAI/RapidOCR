@@ -5,6 +5,7 @@
 
 # RapidOCR
 
+English | [Chinese](README.md)
 <details open>
     <summary>Contents</summary>
 
@@ -16,7 +17,6 @@
   - [FAQ](#faq)
   - [SDK compilation status](#sdk-compilation-status)
   - [Online demo](#online-demo)
-  - [The question about the training of model](#the-question-about-the-training-of-model)
   - [Directory structure](#directory-structure)
   - [Current Progress](#current-progress)
   - [Model Conversion](#model-conversion)
@@ -63,8 +63,6 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 ## Online demo
 - [Web demo](http://rapidocr.51pda.cn:9003/)
 - The model combination used in the demo is: **server det** + **mobile cls** + **mobile rec**
-
-## [The question about the training of model](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
 
 ## Directory structure
 <details>
