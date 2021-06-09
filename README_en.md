@@ -19,7 +19,7 @@
 - Organize the warehouse and unify the model download path
 - Improve related documentation
 
-#### 2021-04-18 update
+#### 2021-03-24 update
 - The new model is fully compatible with ONNXRuntime 1.7 or higher. Special thanks: @Channingss
 - The performance of the new version of onnxruntime is improved by more than 40% compared to 1.6.0.
 
