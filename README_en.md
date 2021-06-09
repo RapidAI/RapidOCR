@@ -21,7 +21,8 @@ English | [Chinese](README.md)
   - [Current Progress](#current-progress)
   - [Model Conversion](#model-conversion)
     - [Model Conversion Instructions](#model-conversion-instructions)
-    - [onnx model download](#onnx-model-download)
+    - [ONNX model download](#onnx-model-download)
+    - [PaddleOCR-FAQ](#paddleocr-faq)
   - [Original initiator and start-up author](#original-initiator-and-start-up-author)
   - [Authorization](#authorization)
   - [Contact us](#contact-us)
@@ -108,8 +109,10 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
      - 28 recognition models (2 in simplified Chinese, 26 in traditional Chinese, etc.), totaling 31
 ### [Model Conversion Instructions](./models)
 
-### onnx model download
+### ONNX model download
 - [Extraction code: 30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
+
+### [PaddleOCR-FAQ](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
 
 ## Original initiator and start-up author
 - [benjaminwan](https://github.com/benjaminwan)

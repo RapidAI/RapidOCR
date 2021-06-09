@@ -18,12 +18,12 @@
   - [常见问题  FAQ](#常见问题--faq)
   - [SDK 编译状态](#sdk-编译状态)
   - [在线demo](#在线demo)
-  - [模型训练相关问题](#模型训练相关问题)
   - [项目结构](#项目结构)
   - [当前进展](#当前进展)
-  - [模型转换](#模型转换)
+  - [模型相关](#模型相关)
     - [模型转换说明](#模型转换说明)
-    - [onnx模型下载](#onnx模型下载)
+    - [ONNX模型下载](#onnx模型下载)
+    - [PaddleOCR-FAQ](#paddleocr-faq)
   - [原始发起者及初创作者](#原始发起者及初创作者)
   - [版权声明](#版权声明)
   - [授权](#授权)
@@ -67,9 +67,6 @@
 - [Web demo](http://rapidocr.51pda.cn:9003/)
 - demo所用模型组合为: **server det** + **mobile cls** + **mobile rec**
 
-## [模型训练相关问题](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
-
-
 ## 项目结构
 <details>
     <summary>(点击展开)</summary>
@@ -107,15 +104,17 @@
 - [ ] IOS范例: 等待有缘人贡献代码
 - [ ] 依据python版本重写C++推理代码，以提升推理效果，并增加对gif/tga/webp 格式图片的支持
 
-## 模型转换
+## 模型相关
 - 目前转换脚本支持的模型：
     - 文本方向分类模型1个，
     - 检测模型2个，
     - 识别模型28个(简体中文2种，繁体中文等26种)，合计31个
 ### [模型转换说明](./models)
 
-### onnx模型下载
+### ONNX模型下载
 - [提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
+
+### [PaddleOCR-FAQ](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
 
 ## 原始发起者及初创作者
 - [benjaminwan](https://github.com/benjaminwan)
