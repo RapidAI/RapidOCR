@@ -15,6 +15,7 @@
   - [近期更新](#近期更新)
       - [2021-06-08 update](#2021-06-08-update)
       - [2021-03-24 update](#2021-03-24-update)
+  - [整个框架](#整个框架)
   - [常见问题  FAQ](#常见问题--faq)
   - [SDK 编译状态](#sdk-编译状态)
   - [在线demo](#在线demo)
@@ -53,6 +54,11 @@
 - 新模型已经完全兼容ONNXRuntime 1.7 或更高版本。 特别感谢：@Channingss
 - 新版onnxruntime比1.6.0 性能提升40%以上。
 
+## 整个框架
+<div align="center">
+    <img src="./assets/RapidOCR_system.png">
+</div>
+
 ## 常见问题  [FAQ](FAQ.md)
 
 ## SDK 编译状态
@@ -89,8 +95,7 @@
     ├── ocrweb              # 基于python和Flask web
     ├── python              # python推理代码目录
     ├── release             #
-    ├── tools               #  一些转换脚本之类
-    └── training            # 训练自己的模型使用的脚本或程序
+    └── tools               #  一些转换脚本之类
 
 </details>
 

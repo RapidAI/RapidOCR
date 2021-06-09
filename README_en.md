@@ -87,8 +87,7 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
     ├── ocrweb          # Based on python and Flask web
     ├── python          # python reasoning code directory
     ├── release         #
-    ├── tools           # Some conversion scripts and the like
-    └── training        # Script or program used to train your own model
+    └── tools           # Some conversion scripts and the like
 </details>
 
 
