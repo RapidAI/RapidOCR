@@ -33,7 +33,7 @@ def check_and_read_gif(img_path):
 
 def draw_ocr_box_txt(image, boxes, txts,
                      scores=None, drop_score=0.5,
-                     font_path="./doc/simfang.ttf"):
+                     font_path="./models/msyh.ttc"):
     h, w = image.height, image.width
     img_left = image.copy()
     img_right = Image.new('RGB', (w, h), (255, 255, 255))
