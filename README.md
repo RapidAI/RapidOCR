@@ -22,8 +22,8 @@
   - [当前进展](#当前进展)
   - [模型相关](#模型相关)
     - [模型转换说明](#模型转换说明)
-    - [ONNX模型下载](#onnx模型下载)
     - [PaddleOCR-FAQ](#paddleocr-faq)
+    - [ONNX模型下载](#onnx模型下载)
   - [原始发起者及初创作者](#原始发起者及初创作者)
   - [版权声明](#版权声明)
   - [授权](#授权)
@@ -111,10 +111,10 @@
     - 识别模型28个(简体中文2种，繁体中文等26种)，合计31个
 ### [模型转换说明](./models)
 
+### [PaddleOCR-FAQ](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
+
 ### ONNX模型下载
 - [提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
-
-### [PaddleOCR-FAQ](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
 
 ## 原始发起者及初创作者
 - [benjaminwan](https://github.com/benjaminwan)
