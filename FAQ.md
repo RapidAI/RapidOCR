@@ -1,5 +1,11 @@
 ## 常见问题
 
+#### Q11： RapidOCR和PaddleOCR是什么关系呢？
+**A:** RapidOCR是将PaddleOCR的预训练模型转为onnx模型，不依赖paddle框架，方便各个平台部署
+
+#### Q10: onnxruntime arm32 有人编译过吗？ 我编译成功了，但是使用的时候libonnxruntime.so:-1: error: file not recognized: File format not recognized  应该是版本不匹配
+**A:** 没遇到过。我是直接在当前平台编译的，我们用的是arm。估计是平台不兼容,建议在本身平台上编译。没遇到过问题。通常出在交叉编译方式下。
+
 #### Q9: 请问一下c++ demo必须要vs2017及以上版本吗?
 **A:** 最好用vs2019
 
@@ -18,14 +24,14 @@
 #### Q4: 目前简单测试环境是  Win10 + Cygwin + gcc + 纯C编程，可以在C程序中直接接入简单OCR功能吗？
 **A:** 直接使用API就行，API就是由c导出的
 
-#### Q1: 边缘总有一行文字无法识别，怎么办？
+#### Q3: 模型下载地址
 
-**A:** 在 padding 参数中添加一个值 ，默认是0,你可以添加5或10, 甚至更大，直到能识别为止。注意不要添加过大，会浪费内存。
+**A:** [提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
 
 #### Q2: onnxruntime 1.7 下出错：onnxruntime::SequentialExecutor::Execute] Non-zero status code returned while running ScatterND node. Name:'ScatterND@1' Status Message: updates
 
 **A:** 由于模型只支持`onnxruntime=1.5.0`导致，请更新模型,下载地址见`Q3`
 
-#### Q3: 模型下载地址
+#### Q1: 边缘总有一行文字无法识别，怎么办？
 
-**A:** [提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
+**A:** 在 padding 参数中添加一个值 ，默认是0,你可以添加5或10, 甚至更大，直到能识别为止。注意不要添加过大，会浪费内存。
