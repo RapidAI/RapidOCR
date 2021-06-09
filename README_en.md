@@ -5,6 +5,33 @@
 
 # RapidOCR
 
+<details open>
+    <summary>Contents</summary>
+
+- [RapidOCR](#rapidocr)
+  - [Introduction](#introduction)
+  - [Recent updates](#recent-updates)
+      - [2021-06-08 update](#2021-06-08-update)
+      - [2021-03-24 update](#2021-03-24-update)
+  - [FAQ](#faq)
+  - [SDK compilation status](#sdk-compilation-status)
+  - [Online demo](#online-demo)
+  - [The question about the training of model](#the-question-about-the-training-of-model)
+  - [Directory structure](#directory-structure)
+  - [Current Progress](#current-progress)
+  - [Model Conversion](#model-conversion)
+    - [Model Conversion Instructions](#model-conversion-instructions)
+    - [onnx model download](#onnx-model-download)
+  - [Original initiator and start-up author](#original-initiator-and-start-up-author)
+  - [Authorization](#authorization)
+  - [Contact us](#contact-us)
+  - [Demo](#demo)
+      - [Demonstration with C++/JVM](#demonstration-with-cjvm)
+      - [Demonstration with .Net](#demonstration-with-net)
+      - [Demonstratioin with multi_language](#demonstratioin-with-multi_language)
+</details>
+
+
 ## Introduction
 - Completely open source, free and support offline deployment of multi-platform and multi-language OCR SDK
 - **Chinese Advertising**: Welcome to join our QQ group to download the model and test program, QQ group number: 887298230
@@ -33,13 +60,13 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 | Windows x86/x64 | [![CMake-windows-x86-x64](https://github.com/RapidOCR/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https://github.com/RapidOCR/RapidOCR/actions/workflows/windows-all-build.yaml) | Download on the right |
 | Linux x64 | [![CMake-linux](https://github.com/RapidOCR/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidOCR/RapidOCR/actions/workflows/make-linux.yml) | Not available yet, compile by yourself |
 
-### Online demo
+## Online demo
 - [Web demo](http://rapidocr.51pda.cn:9003/)
 - The model combination used in the demo is: **server det** + **mobile cls** + **mobile rec**
 
-### [The question about the training of model](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
+## [The question about the training of model](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
 
-### Directory structure
+## Directory structure
 <details>
     <summary>click to expand</summary>
 
@@ -66,7 +93,7 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 </details>
 
 
-### Current Progress
+## Current Progress
 - [x] C++ example (Windows/Linux/macOS): [demo](./cpp)
 - [x] Jvm example (Java/Kotlin): [demo](./jvm)
 - [x] .Net example (C#): [demo](./dotnet)
@@ -76,26 +103,25 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 - [ ] Rewrite the C++ reasoning code according to the python version to improve the reasoning effect, and add support for gif/tga/webp format pictures
 
 
-### Model Conversion
+## Model Conversion
 - The models currently supported by the conversion script:
      - 1 text direction classification model,
      - 2 detection models,
      - 28 recognition models (2 in simplified Chinese, 26 in traditional Chinese, etc.), totaling 31
--[Model Conversion Instructions](./models)
+### [Model Conversion Instructions](./models)
 
 ### onnx model download
 - [Extraction code: 30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
 
-### Original initiator and start-up author
+## Original initiator and start-up author
 - [benjaminwan](https://github.com/benjaminwan)
 - [znsoftm](https://github.com/znsoftm)
 
+## Authorization
+- The copyright of the OCR model belongs to Baidu, and the copyright of other engineering codes belongs to the owner of this warehouse.
+- This software is licensed under LGPL. You are welcome to contribute code, submit an issue or even pr.
 
-### Authorization
--The copyright of the OCR model belongs to Baidu, and the copyright of other engineering codes belongs to the owner of this warehouse.
--This software is licensed under LGPL. You are welcome to contribute code, submit an issue or even pr.
-
-### contact us
+## Contact us
 - You can contact us through QQ group: **887298230**
 - If you can’t find the group number, please click here [**link**](https://jq.qq.com/?_wv=1027&k=P9b3olx6) to find the organization
 - Scan the following QR code with QQ:
@@ -104,7 +130,7 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
         <img src="./assets/qq_team.bmp" width="25%" height="25%" align="center">
      </div>
 
-### Demo
+## Demo
 #### Demonstration with C++/JVM
 <div align="center">
     <img src="./assets/demo_cpp.png" width="100%" height="100%">

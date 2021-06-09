@@ -5,6 +5,8 @@
 
 # RapidOCR (捷智OCR)
 
+简体中文 | [English](README_en.md)
+
 <details open>
     <summary>目录</summary>
 
@@ -32,7 +34,6 @@
       - [多语言示例图像](#多语言示例图像)
 </details>
 
-简体中文 | [English](README_en.md)
 
 ## 简介
 - 完全开源免费并支持离线部署的多平台多语言OCR SDK
