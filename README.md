@@ -5,7 +5,8 @@
 
 # RapidOCR (捷智OCR)
 
-简体中文 | [English](README_en.md)
+<details open>
+    <summary>目录</summary>
 
 - [RapidOCR (捷智OCR)](#rapidocr-捷智ocr)
   - [简介](#简介)
@@ -15,19 +16,23 @@
   - [常见问题  FAQ](#常见问题--faq)
   - [SDK 编译状态](#sdk-编译状态)
   - [在线demo](#在线demo)
-    - [模型训练相关问题](#模型训练相关问题)
-    - [目录结构](#目录结构)
-    - [当前进展](#当前进展)
-    - [模型转换](#模型转换)
+  - [模型训练相关问题](#模型训练相关问题)
+  - [项目结构](#项目结构)
+  - [当前进展](#当前进展)
+  - [模型转换](#模型转换)
+    - [模型转换说明](#模型转换说明)
     - [onnx模型下载](#onnx模型下载)
-    - [原始发起者及初创作者](#原始发起者及初创作者)
-    - [版权声明](#版权声明)
-    - [授权](#授权)
-    - [联系我们](#联系我们)
-    - [示例图](#示例图)
+  - [原始发起者及初创作者](#原始发起者及初创作者)
+  - [版权声明](#版权声明)
+  - [授权](#授权)
+  - [联系我们](#联系我们)
+  - [示例图](#示例图)
       - [C++/JVM示例图像](#cjvm示例图像)
       - [.Net示例图像](#net示例图像)
       - [多语言示例图像](#多语言示例图像)
+</details>
+
+简体中文 | [English](README_en.md)
 
 ## 简介
 - 完全开源免费并支持离线部署的多平台多语言OCR SDK
@@ -61,10 +66,10 @@
 - [Web demo](http://rapidocr.51pda.cn:9003/)
 - demo所用模型组合为: **server det** + **mobile cls** + **mobile rec**
 
-### [模型训练相关问题](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
+## [模型训练相关问题](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
 
 
-### 目录结构
+## 项目结构
 <details>
     <summary>(点击展开)</summary>
 
@@ -92,7 +97,7 @@
 </details>
 
 
-### 当前进展
+## 当前进展
 - [x] C++范例(Windows/Linux/macOS): [demo](./cpp)
 - [x] Jvm范例(Java/Kotlin): [demo](./jvm)
 - [x] .Net范例(C#): [demo](./dotnet)
@@ -101,29 +106,29 @@
 - [ ] IOS范例: 等待有缘人贡献代码
 - [ ] 依据python版本重写C++推理代码，以提升推理效果，并增加对gif/tga/webp 格式图片的支持
 
-### 模型转换
+## 模型转换
 - 目前转换脚本支持的模型：
     - 文本方向分类模型1个，
     - 检测模型2个，
     - 识别模型28个(简体中文2种，繁体中文等26种)，合计31个
-- [模型转换说明](./models)
+### [模型转换说明](./models)
 
 ### onnx模型下载
 - [提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
 
-### 原始发起者及初创作者
+## 原始发起者及初创作者
 - [benjaminwan](https://github.com/benjaminwan)
 - [znsoftm](https://github.com/znsoftm)
 
-### 版权声明
+## 版权声明
 - 如果你的产品使用了本仓库中的全部或部分代码、文字或材料
 - 请注明出处并包括我们的github url: `https://github.com/RapidOCR/RapidOCR`
 
-### 授权
+## 授权
 - OCR模型版权归百度所有，其它工程代码版权归本仓库所有者所有。
 - 本软件采用LGPL 授权方式，欢迎大家贡献代码，提交issue 甚至pr.
 
-### 联系我们
+## 联系我们
 - 您可以通过QQ群联系到我们：**887298230**
 - 群号搜索不到时，请直接点此[**链接**](https://jq.qq.com/?_wv=1027&k=P9b3olx6)，找到组织
 - 用QQ扫描以下二维码:
@@ -132,7 +137,7 @@
     <img src="./assets/qq_team.bmp" width="25%" height="25%" align="center">
     </div>
 
-### 示例图
+## 示例图
 #### C++/JVM示例图像
 <div align="center">
     <img src="./assets/demo_cpp.png" width="100%" height="100%">
