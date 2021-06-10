@@ -227,8 +227,6 @@ def main():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--use_server', type=str2bool, default=False)
-
     parser.add_argument('--det_model_path', type=str,
                         default='models/ch_ppocr_mobile_v2.0_det_infer.onnx')
     parser.add_argument('--cls_model_path', type=str,
@@ -240,30 +238,17 @@ if __name__ == '__main__':
                         default='test_images/det_images/1.jpg')
     args = parser.parse_args()
 
-    if args.use_server:
-        from ch_ppocr_mobile_v2_cls import TextClassifier
+    from ch_ppocr_mobile_v2_cls import TextClassifier
+
+    if args.det_model_path.find('server') != -1:
         from ch_ppocr_server_v2_det import TextDetector
-        from ch_ppocr_server_v2_rec import TextRecognizer
-
-        if not args.det_model_path.__contains__('server'):
-            raise ValueError(f'det模型{args.det_model_path}不是通用模型！')
-
-        if not args.rec_model_path.__contains__('server'):
-            raise ValueError(f'rec模型{args.rec_model_path}不是通用模型！')
     else:
-        # v2.0 超轻量
-        from ch_ppocr_mobile_v2_cls import TextClassifier
         from ch_ppocr_mobile_v2_det import TextDetector
+
+    if args.rec_model_path.find('server') != -1:
+        from ch_ppocr_server_v2_rec import TextRecognizer
+    else:
         from ch_ppocr_mobile_v2_rec import TextRecognizer
-
-    if args.det_model_path is None:
-        raise FileNotFoundError(f'{args.det_model_path} is not found!')
-
-    if args.cls_model_path is None:
-        raise FileNotFoundError(f'{args.cls_model_path} is not found!')
-
-    if args.rec_model_path is None:
-        raise FileNotFoundError(f'{args.rec_model_path} is not found!')
 
     text_sys = TextSystem(args.det_model_path,
                           args.rec_model_path,
