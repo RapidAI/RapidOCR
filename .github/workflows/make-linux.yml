@@ -28,14 +28,14 @@ jobs:
       id: downloadfile  # Remember to give an ID if you need the output filename
       name: Download the file
       with:
-          url: "https://github.com/microsoft/onnxruntime/releases/download/v1.6.0/onnxruntime-linux-x64-1.6.0.tgz"
+          url: "https://github.com/microsoft/onnxruntime/releases/download/v1.8.0/onnxruntime-linux-x64-1.8.0.tgz"
           target: public/
 
     - name: Setup OnnxRuntime
       run: |
-            sudo tar zxf public/onnxruntime-linux-x64-1.6.0.tgz -C/
+            sudo tar zxf public/onnxruntime-linux-x64-1.8.0.tgz -C/
             sudo mkdir /rapidocr
-            sudo mv /onnxruntime-linux-x64-1.6.0/* /rapidocr
+            sudo mv /onnxruntime-linux-x64-1.8.0/* /rapidocr
             sudo ls -l /rapidocr
     - name: Installation depends
       run: sudo apt install -y libopencv-dev
