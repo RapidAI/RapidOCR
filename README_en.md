@@ -12,6 +12,8 @@ English | [Chinese](README.md)
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
   - [Recent updates](#recent-updates)
+      - [🍺 2021-06-20 update](#-2021-06-20-update)
+      - [2021-06-10 update](#2021-06-10-update)
       - [2021-06-08 update](#2021-06-08-update)
       - [2021-03-24 update](#2021-03-24-update)
   - [FAQ](#faq)
@@ -43,6 +45,13 @@ English | [Chinese](README.md)
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
 ## Recent updates
+#### 🍺 2021-06-20 update
+- Optimize the display of recognition results in ocrweb, and add recognition animations to demonstrate at the same time
+- Update the `datasets` directory, add some commonly used database links
+
+#### 2021-06-10 update
+- Add server version text recognition model, see details [Extract code：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
+
 #### 2021-06-08 update
 - Organize the warehouse and unify the model download path
 - Improve related documentation
@@ -75,7 +84,7 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
     ├── assets          # Some pictures for demonstration, not a test set
     ├── commonlib       # common library
     ├── cpp             # C++-based project folder
-    ├── datasets        # Additional training datasets, Baidu SkyDrive download address
+    ├── datasets        # Additional training datasets
     ├── dotnet          # .Net program directory
     ├── FAQ.md          # Some questions and answers
     ├── images          # Test pictures, two typical test pictures, one is a natural scene, the other is a long text

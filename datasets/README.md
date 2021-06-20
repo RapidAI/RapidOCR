@@ -1,7 +1,9 @@
-如果你有兴趣，可以继续对本模型进行finetune，数据集如下：
+## 简单汇总OCR相关数据集
+#### [From PaddleOCR: 通用中英文OCR数据集](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/datasets.md)
 
-链接: https://pan.baidu.com/s/1rR4gD9mPquvbPir0bDzGtQ 
-提取码: de9b 
+#### [From PaddleOCR: 手写OCR数据集](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/handwritten_datasets.md)
 
-本数据集来源于　ChineseOCR 开源项目：　https://github.com/chineseocr/darknet-ocr
+#### [From PaddleOCR: 垂类多语言OCR数据集](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/vertical_and_multilingual_datasets.md)
+
+#### [WenmuZhou/OCR_DataSet](https://github.com/WenmuZhou/OCR_DataSet)
 
