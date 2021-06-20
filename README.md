@@ -24,9 +24,6 @@
   - [项目结构](#项目结构)
   - [当前进展](#当前进展)
   - [模型相关](#模型相关)
-    - [模型转换说明](#模型转换说明)
-    - [PaddleOCR-FAQ](#paddleocr-faq)
-    - [ONNX模型下载](#onnx模型下载)
   - [原始发起者及初创作者](#原始发起者及初创作者)
   - [版权声明](#版权声明)
   - [授权](#授权)
@@ -124,16 +121,20 @@
 - [ ] 依据python版本重写C++推理代码，以提升推理效果，并增加对gif/tga/webp 格式图片的支持
 
 ## 模型相关
-- 目前转换脚本支持的模型：
-    - 文本方向分类模型1个，
-    - 检测模型2个，
-    - 识别模型28个(简体中文2种，繁体中文等26种)，合计31个
-### [模型转换说明](./models)
+- 可以直接下载使用的模型 (下载链接：[提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)）
+    ```text
+    ch_ppocr_mobile_v2.0_det_infer.onnx
+    ch_ppocr_mobile_v2.0_cls_infer.onnx
+    ch_ppocr_mobile_v2.0_rec_infer.onnx
 
-### [PaddleOCR-FAQ](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
+    ch_ppocr_server_v2.0_det_infer.onnx
+    ch_ppocr_server_v2.0_rec_infer.onnx
 
-### ONNX模型下载
-- [提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
+    japan_rec_crnn.onnx
+    ```
+
+- [模型转换说明](./models)
+
 
 ## 原始发起者及初创作者
 - [benjaminwan](https://github.com/benjaminwan)
