@@ -1,6 +1,11 @@
 ## 常见问题
+#### Q13: 询问下，我编译出来的进程在win7下面通过cmd调用，发生了崩溃的情况?
+**A:**: 不支持win7 (by @如果我有時光機)
 
-#### Q11： RapidOCR和PaddleOCR是什么关系呢？
+#### Q12: 能不能搞个openmmlab类似的那个提取信息的?
+**A:** 这个目前正在调研测试当中，如果mmocr中关键信息提取效果还可以，后期会考虑整合进来
+
+#### Q11: RapidOCR和PaddleOCR是什么关系呢？
 **A:** RapidOCR是将PaddleOCR的预训练模型转为onnx模型，不依赖paddle框架，方便各个平台部署
 
 #### Q10: onnxruntime arm32 有人编译过吗？ 我编译成功了，但是使用的时候libonnxruntime.so:-1: error: file not recognized: File format not recognized  应该是版本不匹配
