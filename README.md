@@ -77,10 +77,10 @@
 | Windows x86/x64 |  [![CMake-windows-x86-x64](https://github.com/RapidOCR/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https://github.com/RapidOCR/RapidOCR/actions/workflows/windows-all-build.yaml)        |  右侧下载 |
 | Linux x64       |  [![CMake-linux](https://github.com/RapidOCR/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidOCR/RapidOCR/actions/workflows/make-linux.yml) |  暂不提供，自行编译 |
 
-## 在线demo
-- [Web demo](http://rapidocr.51pda.cn:9003/)
-- demo所用模型组合为: **server det** + **mobile cls** + **mobile rec**
-- 示例图：
+## [在线demo](http://rapidocr.51pda.cn:9003/)
+- **说明**: 本在线demo不存储小伙伴们上传测试的任何图像数据
+- **demo所用模型组合为**: `server det` + `mobile cls` + `mobile rec`
+- **示例图**:
     <div align="center">
         <img src="./assets/demo.gif" width="100%" height="100%">
     </div>
@@ -135,6 +135,7 @@
     ```
 
 - [模型转换说明](./models)
+- [手把手教你使用ONNXRunTime部署PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0) by @Channingss
 
 
 ## 原始发起者及初创作者
