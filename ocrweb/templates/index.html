@@ -11,20 +11,20 @@
         <a href="https://github.com/znsoftm/RapidOCR" style="font-size: 14px;">欢迎Star</a>
     </h1>
     <div class='area'>
-        <span class="uplodNote">图片文件类型支持PNG、JPG、JPEG、BMP，图片大小不超过10M。</span>
+        <span class="uplodNote">图片文件类型支持PNG、JPG、JPEG、BMP，图片大小不超过3M。</span>
         <span class="btn-gen" onclick="javascript:$('#rapid_ocr').click();">试试你的图片？</span>
         <input type="file" style="display: none;" name="pic" id="rapid_ocr"/>
     </div>
     <br/>
     <div class="area">
         <div class="leftarea" id="detectDiv">
-            <span class="span_title">文本检测结果:</span><br/><br/>
+            <span class="span_title">文本检测结果</span><br/><br/>
             <div class="wrapper" id="wrapper" hidden></div>
             <img id="detect_img" src=""/>
         </div>
 
         <div class="rightarea" id="recogDiv">
-            <span id="rec_res" class="span_title">文本识别结果:</span>
+            <span id="rec_res" class="span_title">文本识别结果</span>
             <br/> <br/>
             <table id="locTable" class="table" cellspacing="0" cellpadding="5"></table>
         </div>
@@ -52,8 +52,8 @@
 
             // 判断图像大小是否符合
             let imageSize = file.size / 1024 / 1024;
-            if (imageSize >= 10) {
-                alert("图像大小超过10M！");
+            if (imageSize >= 3) {
+                alert("图像大小超过3M！");
                 return;
             }
 
@@ -75,7 +75,7 @@
 
                         $("#wrapper").show();
                         $("#locTable").hide();
-                        $("#rec_res").html("文本识别结果:");
+                        $("#rec_res").html("文本识别结果");
                     },
 
                     success:function (data) {
@@ -86,7 +86,7 @@
                                 $('#detect_img').show();
                             }
                             if (data["elapse"]){
-                                document.getElementById("rec_res").textContent = "文本识别结果(耗时:" + String(data['elapse']) + "s):"
+                                document.getElementById("rec_res").textContent = "文本识别结果(耗时:" + String(data['elapse']) + "s)"
                                 $("#rec_res").show();
                             }
                             if (data["rec_res"]){
