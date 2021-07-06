@@ -2,6 +2,7 @@
 # -*- encoding: utf-8 -*-
 import argparse
 import copy
+import imghdr
 import math
 import random
 from pathlib import Path
@@ -13,8 +14,50 @@ from PIL import Image, ImageDraw, ImageFont
 drop_score = 0.5
 
 
-def str2bool(v):
-    return v.lower() in ("true", "t", "1")
+def get_image_file_list(img_file):
+    if img_file is None or not Path(img_file).exists():
+        raise FileExistsError(f"not found any img file in {img_file}")
+
+    imgs_lists = []
+    img_end = ['jpg', 'bmp', 'png', 'jpeg', 'rgb', 'tif', 'tiff', 'gif']
+
+    def _get_img_path(img_file):
+        # 真实后缀
+        real_img_suffix = imghdr.what(img_file)
+
+        # 现在后缀
+        now_img_suffix = img_file.suffix[1:].lower()
+
+        if real_img_suffix in img_end:
+            # 真实后缀与现有后缀不一致
+            if now_img_suffix in img_end:
+                return img_file
+            else:
+                # 按照真实后缀重命名
+                new_img_file = img_file.with_suffix(f'.{real_img_suffix}')
+                img_file.rename(new_img_file)
+                return new_img_file
+        else:
+            return None
+
+    img_file = Path(img_file)
+    if img_file.is_file():
+        tmp_img_path = _get_img_path(img_file)
+        if tmp_img_path is not None:
+            imgs_lists.append(str(tmp_img_path))
+
+    elif img_file.is_dir():
+        for img_path in img_file.iterdir():
+            tmp_file_path = _get_img_path(img_path)
+            if tmp_file_path is not None:
+                imgs_lists.append(str(tmp_file_path))
+    else:
+        raise ValueError(f"The {img_file}'s format is not support!")
+
+    if len(imgs_lists) == 0:
+        raise FileExistsError(f"not found any img file in {img_file}")
+
+    return imgs_lists
 
 
 def check_and_read_gif(img_path):
@@ -206,24 +249,6 @@ class TextSystem(object):
         return filter_boxes, filter_rec_res
 
 
-def main():
-    from ch_ppocr_mobile_v2_cls import TextClassifier
-    from ch_ppocr_mobile_v2_det import TextDetector
-    from ch_ppocr_mobile_v2_rec import TextRecognizer
-
-    det_model_path = 'models/ch_ppocr_mobile_v2.0_det_infer.onnx'
-    cls_model_path = 'models/ch_ppocr_mobile_v2.0_cls_infer.onnx'
-    rec_model_path = 'models/ch_ppocr_mobile_v2.0_rec_infer.onnx'
-    image_path = r'test_images/det_images/1.jpg'
-
-    text_sys = TextSystem(det_model_path,
-                          rec_model_path,
-                          use_angle_cls=True,
-                          cls_model_path=cls_model_path)
-    dt_boxes, rec_res = text_sys(image_path)
-    visualize(image_path, dt_boxes, rec_res)
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
@@ -235,7 +260,7 @@ if __name__ == '__main__':
                         default='models/ch_ppocr_mobile_v2.0_rec_infer.onnx')
 
     parser.add_argument('--image_path', type=str,
-                        default='test_images/det_images/1.jpg')
+                        default='test_images/det_images/')
     args = parser.parse_args()
 
     from ch_ppocr_mobile_v2_cls import TextClassifier
@@ -254,5 +279,9 @@ if __name__ == '__main__':
                           args.rec_model_path,
                           use_angle_cls=True,
                           cls_model_path=args.cls_model_path)
-    dt_boxes, rec_res = text_sys(args.image_path)
-    visualize(args.image_path, dt_boxes, rec_res)
+
+    image_file_list = get_image_file_list(args.image_path)
+    for image_path in image_file_list:
+        dt_boxes, rec_res = text_sys(image_path)
+        visualize(image_path, dt_boxes, rec_res)
+        print('=' * 10)
