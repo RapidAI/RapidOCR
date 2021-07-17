@@ -26,6 +26,8 @@
   - [项目结构](#项目结构)
   - [当前进展](#当前进展)
   - [模型相关](#模型相关)
+      - [可以直接下载使用的模型 (下载链接：提取码：30jv）](#可以直接下载使用的模型-下载链接提取码30jv)
+      - [模型转onnx](#模型转onnx)
   - [原始发起者及初创作者](#原始发起者及初创作者)
   - [版权声明](#版权声明)
   - [授权](#授权)
@@ -50,6 +52,7 @@
 #### 🎵 2021-07-17 update
 - 完善README文档
 - 增加**英文、数字识别**onnx模型，具体参见`python/en_number_ppocr_mobile_v2_rec`，用法同其他
+- 整理一下[模型转onnx](#模型转onnx)
 
 <details>
     <summary>之前更新记录</summary>
@@ -117,7 +120,6 @@
     ├── ios                 # 苹果手机平台工程目录
     ├── jvm                 # 基于java的工程目录
     ├── lib                 # 编译用库文件目录，用于编译c语言接口库用，默认并不上传二进制文件
-    ├── models              # 放置可使用的模型文件下载信息，基于百度网盘
     ├── ocrweb              # 基于python和Flask web
     ├── python              # python推理代码目录
     ├── release             #
@@ -136,7 +138,7 @@
 - [ ] 依据python版本重写C++推理代码，以提升推理效果，并增加对gif/tga/webp 格式图片的支持
 
 ## 模型相关
-- 可以直接下载使用的模型 (下载链接：[提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)）
+#### 可以直接下载使用的模型 (下载链接：[提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)）
     ```text
     ch_ppocr_mobile_v2.0_det_infer.onnx
     ch_ppocr_mobile_v2.0_cls_infer.onnx
@@ -146,10 +148,12 @@
     ch_ppocr_server_v2.0_rec_infer.onnx
 
     japan_rec_crnn.onnx
+    en_number_mobile_v2.0_rec_infer.onnx
     ```
-
-- [模型转换说明](./models)
-- [手把手教你使用ONNXRunTime部署PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0) by @Channingss
+#### 模型转onnx
+  - [手把手教你使用ONNXRunTime部署PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0) by @Channingss
+  - [✧✧PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter) by @[SWHL](https://github.com/SWHL)
+  - [Paddle2OnnxConvertor](https://github.com/RapidAI/Paddle2OnnxConvertor) by @[benjaminwan](https://github.com/benjaminwan)
 
 
 ## 原始发起者及初创作者

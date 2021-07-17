@@ -23,10 +23,10 @@ English | [Chinese](README.md)
   - [Online demo](#online-demo)
   - [Directory structure](#directory-structure)
   - [Current Progress](#current-progress)
-  - [Model Conversion](#model-conversion)
-    - [Model Conversion Instructions](#model-conversion-instructions)
-    - [PaddleOCR-FAQ](#paddleocr-faq)
-    - [ONNX model download](#onnx-model-download)
+  - [Model related](#model-related)
+      - [Download models](#download-models)
+      - [Model to onnx](#model-to-onnx)
+  - [PaddleOCR-FAQ](#paddleocr-faq)
   - [Original initiator and start-up author](#original-initiator-and-start-up-author)
   - [Authorization](#authorization)
   - [Contact us](#contact-us)
@@ -50,6 +50,7 @@ English | [Chinese](README.md)
 #### 🎵 2021-07-17 update
 - Improve the README document
 - Add **English, number recognition**onnx model, please refer to `python/en_number_ppocr_mobile_v2_rec` for details, the usage is the same as others
+- Organize [Model to onnx](#model-related)
 
 <details>
     <summary>Previous update logs</summary>
@@ -112,7 +113,6 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
     ├── ios             # Apple mobile phone platform project directory
     ├── jvm             # java-based project directory
     ├── lib             # Compilation library file directory, used to compile the C language interface library. Binary files are not uploaded by default
-    ├── models          # Place available model file download information, based on Baidu network disk
     ├── ocrweb          # Based on python and Flask web
     ├── python          # python reasoning code directory
     ├── release         #
@@ -129,17 +129,26 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 - [ ] IOS example: waiting for someone to contribute code
 - [ ] Rewrite the C++ reasoning code according to the python version to improve the reasoning effect, and add support for gif/tga/webp format pictures
 
-## Model Conversion
-- The models currently supported by the conversion script:
-     - 1 text direction classification model,
-     - 2 detection models,
-     - 28 recognition models (2 in simplified Chinese, 26 in traditional Chinese, etc.), totaling 31
-### [Model Conversion Instructions](./models)
+## Model related
+#### Download models
+   - (download link: [extract code: 30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg))
+     ```text
+     ch_ppocr_mobile_v2.0_det_infer.onnx
+     ch_ppocr_mobile_v2.0_cls_infer.onnx
+     ch_ppocr_mobile_v2.0_rec_infer.onnx
 
-### [PaddleOCR-FAQ](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
+     ch_ppocr_server_v2.0_det_infer.onnx
+     ch_ppocr_server_v2.0_rec_infer.onnx
 
-### ONNX model download
-- [Extraction code: 30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
+     japan_rec_crnn.onnx
+     en_number_mobile_v2.0_rec_infer.onnx
+     ```
+#### Model to onnx
+   - [Teach you to use ONNXRunTime to deploy PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0) by @Channingss
+   - [✧✧PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter) by @[SWHL](https://github.com/SWHL)
+   - [Paddle2OnnxConvertor](https://github.com/RapidAI/Paddle2OnnxConvertor) by @[benjaminwan](https://github.com/benjaminwan)
+
+## [PaddleOCR-FAQ](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
 
 ## Original initiator and start-up author
 - [benjaminwan](https://github.com/benjaminwan)
