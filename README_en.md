@@ -11,8 +11,10 @@ English | [Chinese](README.md)
 
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
-  - [Recent updates](#recent-updates)
-      - [🍺 2021-06-20 update](#-2021-06-20-update)
+  - [Recently updates](#recently-updates)
+      - [🎵 2021-07-17 update](#-2021-07-17-update)
+      - [2021-07-04 update](#2021-07-04-update)
+      - [2021-06-20 update](#2021-06-20-update)
       - [2021-06-10 update](#2021-06-10-update)
       - [2021-06-08 update](#2021-06-08-update)
       - [2021-03-24 update](#2021-03-24-update)
@@ -44,8 +46,19 @@ English | [Chinese](README.md)
 
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
-## Recent updates
-#### 🍺 2021-06-20 update
+## Recently updates
+#### 🎵 2021-07-17 update
+- Improve the README document
+- Add **English, number recognition**onnx model, please refer to `python/en_number_ppocr_mobile_v2_rec` for details, the usage is the same as others
+
+<details>
+    <summary>Previous update logs</summary>
+
+#### 2021-07-04 update
+- The python program under the repository can be successfully run on the Raspberry Pi 4B. For more information, please enter the QQ group and ask the group owner
+- Update the overall structure diagram and add support for Raspberry Pi
+
+#### 2021-06-20 update
 - Optimize the display of recognition results in ocrweb, and add recognition animations to demonstrate at the same time
 - Update the `datasets` directory, add some commonly used database links
 
@@ -60,6 +73,9 @@ English | [Chinese](README.md)
 - The new model is fully compatible with ONNXRuntime 1.7 or higher. Special thanks: @Channingss
 - The performance of the new version of onnxruntime is improved by more than 40% compared to 1.6.0.
 
+</details>
+
+
 ## [FAQ](FAQ.md)
 
 ## SDK compilation status
@@ -67,12 +83,16 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 
 | Platform | Compilation Status | Offer Status |
 | --------------- | -------- | -------- |
-| Windows x86/x64 | [![CMake-windows-x86-x64](https://github.com/RapidOCR/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https://github.com/RapidOCR/RapidOCR/actions/workflows/windows-all-build.yaml) | Download on the right |
+| Windows x86/x64 | [![CMake-windows-x86-x64](https://github.com/RapidOCR/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https://github.com/RapidOCR/RapidOCR/actions/workflows/windows-all-build.yaml) | [Download Link](https://github.com/RapidAI/RapidOCR/releases) |
 | Linux x64 | [![CMake-linux](https://github.com/RapidOCR/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidOCR/RapidOCR/actions/workflows/make-linux.yml) | Not available yet, compile by yourself |
 
 ## Online demo
 - [Web demo](http://rapidocr.51pda.cn:9003/)
 - The model combination used in the demo is: **server det** + **mobile cls** + **mobile rec**
+- **Gif Demo**:
+    <div align="center">
+        <img src="./assets/demo.gif" width="100%" height="100%">
+    </div>
 
 ## Directory structure
 <details>
