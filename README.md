@@ -71,7 +71,6 @@
 - 新版onnxruntime比1.6.0 性能提升40%以上。
 
 </details>
-<br/>
 
 ## 整个框架
 <div align="center">
