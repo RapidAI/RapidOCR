@@ -51,6 +51,9 @@
 - 目前仓库下的python程序已经可以在树莓派4B上，成功运行，详细信息请进群，询问群主
 - 更新整体结构图，添加树莓派的支持
 
+<details>
+    <summary>之前更新记录</summary>
+
 #### 2021-06-20 update
 - 优化ocrweb中识别结果显示，同时添加识别动图演示
 - 更新`datasets`目录，添加一些常用数据库链接(搬运一下^-^)
@@ -67,6 +70,9 @@
 - 新模型已经完全兼容ONNXRuntime 1.7 或更高版本。 特别感谢：@Channingss
 - 新版onnxruntime比1.6.0 性能提升40%以上。
 
+</details>
+<br/>
+
 ## 整个框架
 <div align="center">
     <img src="./assets/RapidOCR_system.png">
@@ -79,7 +85,7 @@
 
 | 平台            | 编译状态 |   提供状态 |
 | --------------- | -------- | -------- |
-| Windows x86/x64 |  [![CMake-windows-x86-x64](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml)        |  右侧下载 |
+| Windows x86/x64 |  [![CMake-windows-x86-x64](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml)        |  [下载链接](https://github.com/RapidAI/RapidOCR/releases) |
 | Linux x64       |  [![CMake-linux](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml) |  暂不提供，自行编译 |
 
 ## [在线demo](http://rapidocr.51pda.cn:9003/)
