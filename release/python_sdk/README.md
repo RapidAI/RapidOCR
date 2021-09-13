@@ -1,5 +1,11 @@
 ### sdk_rapidocr_v1.0.0
 
+#### 使用方法
+1. 下载`sdk_rapidocr_v1.0.0`目录
+2. `pip install rapidocr-1.0.0-py3-none-any.whl`
+3. 下载模型和字典文件 [提取码:drf1](https://pan.baidu.com/s/103kx0ABtU7Lif57cv397oQ)
+4. 运行`test_demo.py`
+
 #### 目录结构
 ```text
 sdk_rapidocr_v1.0.0
@@ -15,6 +21,3 @@ sdk_rapidocr_v1.0.0
 │   └── ppocr_keys_v1.txt
 └── test_demo.py
 ```
-
-#### 说明
-- 因模型文件较大，需要手动下载模型到`resources/models`下

@@ -11,50 +11,50 @@ FATAL: In-source builds are not allowed.
 endif()
 
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cpp/BaiPiaoOcrOnnx/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cpp/RapidOCRCPP/include)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/ /rapidocr/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/onnxruntime/)
 
 if(WIN32)
 
-	add_definitions(-D_BPOCR_EXPORT_API)
-	IF(CMAKE_CL_64)
-		set(platform x64)
-		link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/win/x64/)
-		link_directories(c:/rapidocr/onnxruntime-win-x64-1.7.0/lib)
-		set(OpenCV_DIR c:/rapidocr/windows-x64) 
-		
-	ELSE(CMAKE_CL_64)
-		set(platform x86)
-		link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/win/x86/)
-		link_directories(c:/rapidocr/onnxruntime-win-x86-1.7.0/lib)
-		set(OpenCV_DIR c:/rapidocr/windows-x86) 
-	
-	ENDIF(CMAKE_CL_64)
-    
-	set(OpenCV_STATIC 1)
+    add_definitions(-D_BPOCR_EXPORT_API)
+    IF(CMAKE_CL_64)
+        set(platform x64)
+        link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/win/x64/)
+        link_directories(c:/rapidocr/onnxruntime-win-x64-1.7.0/lib)
+        set(OpenCV_DIR c:/rapidocr/windows-x64)
+
+    ELSE(CMAKE_CL_64)
+        set(platform x86)
+        link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/win/x86/)
+        link_directories(c:/rapidocr/onnxruntime-win-x86-1.7.0/lib)
+        set(OpenCV_DIR c:/rapidocr/windows-x86)
+
+    ENDIF(CMAKE_CL_64)
+
+    set(OpenCV_STATIC 1)
 
 
-	#if(MSVC)
-    		#add_compile_options(
-        	#$<$<CONFIG:>:/MT> #---------|
-        	#$<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
-        	#$<$<CONFIG:Release>:/MT> #--|
-    		#)
-	#endif()
+    #if(MSVC)
+            #add_compile_options(
+            #$<$<CONFIG:>:/MT> #---------|
+            #$<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
+            #$<$<CONFIG:Release>:/MT> #--|
+            #)
+    #endif()
 
-	 # 指向下载的opencv解开后的目录，下面会有bin/lib/include等目录
+     # 指向下载的opencv解开后的目录，下面会有bin/lib/include等目录
 
 elseif(UNIX)
 
-	# set（OpenCV_DIR  /path/to/opencv/build）
+    # set（OpenCV_DIR  /path/to/opencv/build）
 
-	link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/linux /rapidocr/lib/)
+    link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/linux /rapidocr/lib/)
 endif()
 
 #IF(CMAKE_BUILD_TYPE STREQUAL Debug)  #debug
-#   	
+#
 #else()
 #   	link_libraries(opencv_world3413.lib onnxruntime.lib)
 #endif()
@@ -65,14 +65,14 @@ link_libraries(onnxruntime)
 
 FIND_PACKAGE(OpenCV REQUIRED)
 if(OPENCV_FOUND)
-	message("OpenCV FOUND")
-	include_directories(${OpenCV_INCLUDE_DIRS})
-	link_directories(${OpenCV_LIBRARY_DIRS})
-	link_libraries(${OpenCV_LIBS})
-		
+    message("OpenCV FOUND")
+    include_directories(${OpenCV_INCLUDE_DIRS})
+    link_directories(${OpenCV_LIBRARY_DIRS})
+    link_libraries(${OpenCV_LIBS})
+
 endif()
 
-#  openmp 
+#  openmp
 FIND_PACKAGE( OpenMP REQUIRED)
 if(OPENMP_FOUND)
 message("OPENMP FOUND")
@@ -85,8 +85,8 @@ endif()
 #end of openmp
 
 add_definitions(-D__OPENMP__)
-aux_source_directory(cpp/BaiPiaoOcrOnnx/src/ SRC_MAIN)
-list(REMOVE_ITEM SRC_MAIN "main.cpp") 
+aux_source_directory(cpp/RapidOCRCPP/src/ SRC_MAIN)
+list(REMOVE_ITEM SRC_MAIN "main.cpp")
 
 
 set(OCR_SRC api4cpp/rapidocr_api.cpp ${SRC_MAIN}  )
@@ -97,7 +97,7 @@ target_compile_definitions(rapidocrapi PUBLIC -D_BPOCR_LIB)
 
 
 
-# test program 
+# test program
 set(BPOCRTESTSRC api4cpp/rapidocrtest.cpp)
 add_executable(rapidocrtest ${BPOCRTESTSRC})
 
