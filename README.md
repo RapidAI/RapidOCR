@@ -13,6 +13,7 @@
 - [RapidOCR (捷智OCR)](#rapidocr-捷智ocr)
   - [简介](#简介)
   - [近期更新](#近期更新)
+      - [🎉2021-09-13 update](#2021-09-13-update)
       - [✨2021-09-11 update](#2021-09-11-update)
       - [2021-08-07 update](#2021-08-07-update)
       - [之前更新记录](#之前更新记录)
@@ -52,6 +53,9 @@
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。
 
 ## 近期更新
+#### 🎉2021-09-13 update
+- 添加基于`python`的whl文件，便于使用，详情参见`release/python_sdk`
+
 #### ✨2021-09-11 update
 - 添加PP-OCRv2新增模型onnx版本
   - 使用方法推理代码不变，直接替换对应模型即可。
@@ -142,7 +146,7 @@
     ├── lib                 # 编译用库文件目录，用于编译c语言接口库用，默认并不上传二进制文件
     ├── ocrweb              # 基于python和Flask web
     ├── python              # python推理代码目录
-    ├── release             #
+    ├── release             # 发布的sdk
     └── tools               #  一些转换脚本之类
 
 </details>
