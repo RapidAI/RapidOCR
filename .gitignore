@@ -136,7 +136,6 @@ dmypy.json
 .idea
 /images
 /models
-/release
 
 #models
 *.onnx
