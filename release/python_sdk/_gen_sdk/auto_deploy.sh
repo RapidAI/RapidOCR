@@ -13,3 +13,5 @@ cp "requirements.txt" "${sdk_dir}/"
 cp -r resources ${sdk_dir}/
 cp -r images ${sdk_dir}/
 cp test_demo.py ${sdk_dir}/
+
+mv ${sdk_dir} ../
