@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'release/python_sdk/**'
 
 jobs:
   build:
