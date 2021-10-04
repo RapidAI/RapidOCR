@@ -1,14 +1,30 @@
-name: 'GitHub Actions Mirror'
+name: Sync Gitee code
 
-on: [push, delete]
+on:
+  push:
+    branches: [ main ]
 
 jobs:
-  sync:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: wearerequired/git-mirror-action@master
-          env:
-            SSH_PRIVATE_KEY: ${{ secrets.GEN_PYTHON_SDK }}
-          with:
-            source-repo: "git@github.com:RapidAI/RapidOCR.git"
-            destination-repo: "git@gitee.com:RapidAI/RapidOCR.git"
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set SSH Environment
+        env:
+          DEPLOY_KEYS: ${{ secrets.GEN_PYTHON_SDK }}
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$DEPLOY_KEYS" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          chmod 700 ~/.ssh && chmod 600 ~/.ssh/*
+
+      - name: Submit code to repository
+        run: |
+         git config --global user.name "SWHL"
+         git config --global user.email "liekkaskono@163.com"
+         git remote add origin https://gitee.com/RapidAI/RapidOCR.git
+         git add .
+         git commit -m 'Auto sync Gitee code'
+         git push origin main
