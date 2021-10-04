@@ -24,6 +24,7 @@ jobs:
         run: |
          git config --global user.name "SWHL"
          git config --global user.email "liekkaskono@163.com"
+         git remote remove orgin
          git remote add origin https://gitee.com/RapidAI/RapidOCR.git
          git add .
          git commit -m 'Auto sync Gitee code'
