@@ -1,27 +1,31 @@
-name: Gitee repos mirror periodic sync job
+name: Auto deploy gitee
 
 on:
-  # push推送时触发
   push:
+    branches: [ main ]
 
 jobs:
-  sync:
-    # 前置步骤和环境
-    needs: pages
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      # 直接调别人的轮子
-      # 功能是把这个 Github 仓库和 Gitee 仓库同步
-      - name: Sync to Gitee
-        uses: wearerequired/git-mirror-action@master
+      - uses: actions/checkout@v2
+
+      - name: Set SSH Environment
         env:
-          # 注意在 Settings->Secrets 配置 GITEE_RSA_PRIVATE_KEY
-          # 配置就不多说了，解释一下原因
-          # 因为这步骤功能是从 GitHub 推更新到 Gitee
-          # 所以需要 Gitee 持有私钥，Github 持有公钥
-          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_SSH_KEY }}
-        with:
-          # 注意替换为你的 GitHub 源仓库地址
-          source-repo: "git@github.com:RapidAI/RapidOCR.git"
-          # 注意替换为你的 Gitee 目标仓库地址
-          destination-repo: "git@gitee.com:RapidAI/RapidOCR.git"
+          DEPLOY_KEYS: ${{ secrets.GITEE_PRIVATE_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$DEPLOY_KEYS" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          chmod 700 ~/.ssh && chmod 600 ~/.ssh/*
+
+      - name: Submit code to repository
+        run: |
+         git config --global user.name "SWHL"
+         git config --global user.email "liekkaskono@163.com"
+         git remote remove origin
+         git remote add origin git@gitee.com:RapidAI/RapidOCR.git
+         git add .
+         git commit -m 'Auto deploy gitee'
+         git push origin main
