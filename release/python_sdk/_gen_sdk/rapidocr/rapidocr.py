@@ -238,10 +238,7 @@ class TextSystem(object):
                  det_model_path,
                  rec_model_path,
                  direct_cls_model_path,
-                 dict_path,
-                 is_crop_image=True,
-                 limit_char_nums=100,
-                 is_filter_letter=True) -> None:
+                 dict_path) -> None:
         super(TextSystem).__init__()
 
         # 验证模型是否存在
