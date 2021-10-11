@@ -1,4 +1,4 @@
-name: CI
+name: Auto generate python whl
 
 on:
   push:

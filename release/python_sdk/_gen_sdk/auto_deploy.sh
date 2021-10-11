@@ -1,9 +1,9 @@
 #! /bin/bash
 
 sdk_dir="sdk_rapidocr_v1.0.0"
-if [ -d "${sdk_dir}" ]; then
+if [ -d "../${sdk_dir}" ]; then
     echo "存在，删除掉"
-    rm -r ${sdk_dir}
+    rm -r "../${sdk_dir}"
 fi
 mkdir ${sdk_dir}
 
