@@ -314,7 +314,8 @@ class DBPostProcess(object):
         bitmap = _bitmap
         height, width = bitmap.shape
 
-        outs = cv2.findContours((bitmap * 255).astype(np.uint8), cv2.RETR_LIST,
+        outs = cv2.findContours((bitmap * 255).astype(np.uint8),
+                                cv2.RETR_LIST,
                                 cv2.CHAIN_APPROX_SIMPLE)
         if len(outs) == 3:
             img, contours, _ = outs[0], outs[1], outs[2]
