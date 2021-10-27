@@ -32,7 +32,7 @@ visualize(image_path, dt_boxes, rec_res)
 
 ### onnxruntime-gpu版推理配置
 1. 安装GPU版的onnxruntime: `pip install onnxruntime-gpu`
-2. 推理代码中，加载onnx模型部分，用以下对应语言代码替换即可
+2. 推理代码中，加载onnx模型部分，用以下对应语言代码替换即可,详细参见：[官方教程](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)
    - python版本
       ```python
       import onnxruntime as ort
