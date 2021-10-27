@@ -8,6 +8,7 @@
    python rapidOCR.py
    ```
 
+
 ### 文本检测+方向分类+文本识别
 
 ```python
@@ -28,3 +29,39 @@ text_sys = TextSystem(det_model_path,
 dt_boxes, rec_res = text_sys(image_path)
 visualize(image_path, dt_boxes, rec_res)
 ```
+
+### onnxruntime-gpu版推理配置
+1. 安装GPU版的onnxruntime: `pip install onnxruntime-gpu`
+2. 推理代码中，加载onnx模型部分，用以下对应语言代码替换即可
+   - python版本
+      ```python
+      import onnxruntime as ort
+
+      model_path = '<path to model>'
+
+      providers = [
+         ('CUDAExecutionProvider', {
+            'device_id': 0,
+            'arena_extend_strategy': 'kNextPowerOfTwo',
+            'gpu_mem_limit': 2 * 1024 * 1024 * 1024,
+            'cudnn_conv_algo_search': 'EXHAUSTIVE',
+            'do_copy_in_default_stream': True,
+         }),
+         'CPUExecutionProvider',
+      ]
+
+      session = ort.InferenceSession(model_path, providers=providers)
+      ```
+   - C/C++版本
+      ```c++
+      OrtSessionOptions* session_options = /* ... */;
+
+      OrtCUDAProviderOptions options;
+      options.device_id = 0;
+      options.arena_extend_strategy = 0;
+      options.gpu_mem_limit = 2 * 1024 * 1024 * 1024;
+      options.cudnn_conv_algo_search = OrtCudnnConvAlgoSearch::EXHAUSTIVE;
+      options.do_copy_in_default_stream = 1;
+
+      SessionOptionsAppendExecutionProvider_CUDA(session_options, &options);
+      ```
