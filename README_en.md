@@ -131,7 +131,8 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 
 ## Model related
 #### Download models
-   - (download link: [extract code: 30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg))
+   - [Google Drive link](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
+   - (download link: [Baidu extract code: 30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg))
      ```text
      ch_ppocr_mobile_v2.0_det_infer.onnx
      ch_ppocr_mobile_v2.0_cls_infer.onnx
