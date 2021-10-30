@@ -12,12 +12,17 @@ English | [Chinese](README.md)
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
   - [Recently updates](#recently-updates)
-      - [🎵 2021-07-17 update](#-2021-07-17-update)
-      - [2021-07-04 update](#2021-07-04-update)
-      - [2021-06-20 update](#2021-06-20-update)
-      - [2021-06-10 update](#2021-06-10-update)
-      - [2021-06-08 update](#2021-06-08-update)
-      - [2021-03-24 update](#2021-03-24-update)
+      - [🎃2021-10-27 update](#2021-10-27-update)
+      - [2021-09-13 update](#2021-09-13-update)
+      - [2021-09-11 update](#2021-09-11-update)
+      - [2021-08-07 update](#2021-08-07-update)
+      - [Recently updates](#Recently-updates)
+        - [2021-07-17 update](#2021-07-17-update)
+        - [2021-07-04 update](#2021-07-04-update)
+        - [2021-06-20 update](#2021-06-20-update)
+        - [2021-06-10 update](#2021-06-10-update)
+        - [2021-06-08 update](#2021-06-08-update)
+        - [2021-03-24 update](#2021-03-24-update)
   - [FAQ](#faq)
   - [SDK compilation status](#sdk-compilation-status)
   - [Online demo](#online-demo)
@@ -47,13 +52,40 @@ English | [Chinese](README.md)
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
 ## Recently updates
-#### 🎵 2021-07-17 update
-- Improve the README document
-- Add **English, number recognition**onnx model, please refer to `python/en_number_ppocr_mobile_v2_rec` for details, the usage is the same as others
-- Organize [Model to onnx](#model-related)
+
+#### 🎃 2021-10-27 update
+- Add the code that uses the onnxruntime GPU version of infering follow the [official tutorial](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html) Configuration. (however, the onnxruntime GPU version is not stable to use) 
+
+- See: [onnxruntime GPU inference configuration](#Python/README.md) for specific steps.
+
+#### 2021-09-13 update
+- Add a whl file based on `Python` for ease of use. See [release/python](#release/python) for details.
+
+#### 2021-09-11 update
+- Add `PP-OCRv2` new model onnx version.
+- The infering code of the method is unchanged, and the corresponding model can be directly replaced.
+- After evaluation on its own test set:
+    - The effect of `PP-OCRv2` detection model has been greatly improved, and the model size has not changed.
+    - The effect of `PP-OCRv2` recognition model was not significantly improved, and the model size increased by 3.58M.
+
+- Upload the model to [Baidu online disk extraction code: 30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg) or [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
+
+#### 2021-08-07 update
+- TODO:
+    - [ ] PP structure table structure and cell coordinate prediction are being sorted out.
+
+- Previously done, unfinished, welcome to PR
+    - [ ] make dokcer image
+    - [x] try onnxruntime GPU reasoning
+
 
 <details>
     <summary>Previous update logs</summary>
+
+#### 2021-07-17 update
+- Improve the README document
+- Add **English, number recognition**onnx model, please refer to `python/en_number_ppocr_mobile_v2_rec` for details, the usage is the same as others
+- Organize [Model to onnx](#model-related)
 
 #### 2021-07-04 update
 - The python program under the repository can be successfully run on the Raspberry Pi 4B. For more information, please enter the QQ group and ask the group owner
@@ -99,24 +131,25 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 <details>
     <summary>click to expand</summary>
 
-   RapidOCR
-    ├── android         # Android project directory
-    ├── api4cpp         # C language cross-platform interface library source code directory, directly compile with CMakelists.txt under the root
-    ├── assets          # Some pictures for demonstration, not a test set
-    ├── commonlib       # common library
-    ├── cpp             # C++-based project folder
-    ├── datasets        # Additional training datasets
-    ├── dotnet          # .Net program directory
-    ├── FAQ.md          # Some questions and answers
-    ├── images          # Test pictures, two typical test pictures, one is a natural scene, the other is a long text
-    ├── include         # The header file directory when compiling the c language interface library
-    ├── ios             # Apple mobile phone platform project directory
-    ├── jvm             # java-based project directory
-    ├── lib             # Compilation library file directory, used to compile the C language interface library. Binary files are not uploaded by default
-    ├── ocrweb          # Based on python and Flask web
-    ├── python          # python reasoning code directory
-    ├── release         #
-    └── tools           # Some conversion scripts and the like
+    RapidOCR
+        ├── android         # Android project directory
+        ├── api4cpp         # C language cross-platform interface library source code directory, directly compile with CMakelists.txt under the root
+        ├── assets          # Some pictures for demonstration, not a test set
+        ├── commonlib       # common library
+        ├── cpp             # C++-based project folder
+        ├── datasets        # Additional training datasets
+        ├── dotnet          # .Net program directory
+        ├── FAQ.md          # Some questions and answers
+        ├── images          # Test pictures, two typical test pictures, one is a natural scene, the other is a long text
+        ├── include         # The header file directory when compiling the c language interface library
+        ├── ios             # Apple mobile phone platform project directory
+        ├── jvm             # java-based project directory
+        ├── lib             # Compilation library file directory, used to compile the C language interface library. Binary files are not uploaded by default
+        ├── ocrweb          # Based on python and Flask web
+        ├── python          # python reasoning code directory
+        ├── release         #
+        └── tools           # Some conversion scripts and the like
+
 </details>
 
 
