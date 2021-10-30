@@ -56,10 +56,10 @@ English | [Chinese](README.md)
 #### 🎃 2021-10-27 update
 - Add the code that uses the onnxruntime GPU version of infering follow the [official tutorial](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html) Configuration. (however, the onnxruntime GPU version is not stable to use) 
 
-- See: [onnxruntime GPU inference configuration](#Python/README.md) for specific steps.
+- See: `python/README.md` for specific steps.
 
 #### 2021-09-13 update
-- Add a whl file based on `Python` for ease of use. See [release/python](#release/python) for details.
+- Add a whl file based on `Python` for ease of use. See `release/python` for details.
 
 #### 2021-09-11 update
 - Add `PP-OCRv2` new model onnx version.
