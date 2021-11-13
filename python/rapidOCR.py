@@ -11,8 +11,6 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-drop_score = 0.5
-
 
 def get_image_file_list(img_file):
     if img_file is None or not Path(img_file).exists():
@@ -75,7 +73,7 @@ def check_and_read_gif(img_path):
 
 
 def draw_ocr_box_txt(image, boxes, txts,
-                     scores=None, drop_score=0.5,
+                     scores=None, text_score=0.5,
                      font_path="./models/msyh.ttc"):
     h, w = image.height, image.width
     img_left = image.copy()
@@ -85,7 +83,7 @@ def draw_ocr_box_txt(image, boxes, txts,
     draw_left = ImageDraw.Draw(img_left)
     draw_right = ImageDraw.Draw(img_right)
     for idx, (box, txt) in enumerate(zip(boxes, txts)):
-        if scores is not None and scores[idx] < drop_score:
+        if scores is not None and scores[idx] < text_score:
             continue
 
         color = (random.randint(0, 255),
@@ -135,7 +133,7 @@ def visualize(image_path, boxes, rec_res):
 
     draw_img = draw_ocr_box_txt(image, boxes,
                                 txts, scores,
-                                drop_score=0.5)
+                                text_score=0.5)
 
     draw_img_save = Path("./inference_results/")
     if not draw_img_save.exists():
@@ -249,7 +247,7 @@ class TextSystem(object):
         filter_boxes, filter_rec_res = [], []
         for box, rec_reuslt in zip(dt_boxes, rec_res):
             text, score = rec_reuslt
-            if score >= drop_score:
+            if score >= text_score:
                 filter_boxes.append(box)
                 filter_rec_res.append(rec_reuslt)
         return filter_boxes, filter_rec_res
@@ -267,7 +265,9 @@ if __name__ == '__main__':
 
     parser.add_argument('--image_path', type=str,
                         default='test_images/det_images/')
+    parser.add_argument('--text_score', type=float, default=0.5)
     args = parser.parse_args()
+    text_score = args.text_score
 
     from ch_ppocr_mobile_v2_cls import TextClassifier
 

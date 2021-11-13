@@ -30,6 +30,14 @@ dt_boxes, rec_res = text_sys(image_path)
 visualize(image_path, dt_boxes, rec_res)
 ```
 
+#### 相关调节参数如下
+|参数名称|作用|建议取值范围|默认值|代码位置|
+|:---:|:---:|:---:|:---:|:---:|
+|box_thresh|文本检测所得框是否保留的阈值，值越大，召回率越低|[0, 1]|0.5||
+|unclip_ratio|控制文本检测框的大小，值越大，检测框整体越大|[1.6, 2.0]|1.6||
+|text_score|文本识别结果置信度，值越大，把握越大|[0, 1]|0.5||
+
+
 ### onnxruntime-gpu版推理配置
 1. 安装GPU版的onnxruntime: `pip install onnxruntime-gpu`
 2. 推理代码中，加载onnx模型部分，用以下对应语言代码替换即可,详细参见：[官方教程](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)
