@@ -30,11 +30,14 @@ root_path = Path(__file__).parent
 
 
 class TextRecognizer(object):
-    def __init__(self, rec_model_path):
+    def __init__(self, rec_model_path, keys_path=None):
         self.rec_image_shape = [3, 32, 320]
         self.rec_batch_num = 6
 
-        self.character_dict_path = str(root_path / 'ppocr_keys_v1.txt')
+        if keys_path is not None:
+            self.character_dict_path = keys_path
+        else:
+            self.character_dict_path = str(root_path / 'ppocr_keys_v1.txt')
         self.postprocess_op = CTCLabelDecode(self.character_dict_path)
 
         sess_opt = onnxruntime.SessionOptions()

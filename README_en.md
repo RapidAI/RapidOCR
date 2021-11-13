@@ -12,11 +12,12 @@ English | [Chinese](README.md)
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
   - [Recently updates](#recently-updates)
-      - [🎃2021-10-27 update](#2021-10-27-update)
+      - [✨2021-11-13 update](#2021-11-13-update)
+      - [2021-10-27 update](#2021-10-27-update)
       - [2021-09-13 update](#2021-09-13-update)
       - [2021-09-11 update](#2021-09-11-update)
-      - [2021-08-07 update](#2021-08-07-update)
       - [Recently updates](#Recently-updates)
+        - [2021-08-07 update](#2021-08-07-update)
         - [2021-07-17 update](#2021-07-17-update)
         - [2021-07-04 update](#2021-07-04-update)
         - [2021-06-20 update](#2021-06-20-update)
@@ -52,8 +53,11 @@ English | [Chinese](README.md)
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
 ## Recently updates
+#### ✨2021-11-13 update
+- Add adjustable super parameters for text detection and recognition in Python version, mainly `box_thresh|unclip_ratio|text_score`, see [parameter adjustment](python/README.md#相关调节参数) for details
+- The dictionary position in text recognition is given in parameter mode to facilitate flexible configuration. See [keys_path](python/rapidOCR.sh) for details
 
-#### 🎃 2021-10-27 update
+#### 2021-10-27 update
 - Add the code that uses the onnxruntime GPU version of infering follow the [official tutorial](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html) Configuration. (however, the onnxruntime GPU version is not stable to use) 
 
 - See: `python/README.md` for specific steps.
@@ -70,6 +74,9 @@ English | [Chinese](README.md)
 
 - Upload the model to [Baidu online disk extraction code: 30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg) or [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
 
+<details>
+    <summary>Previous update logs</summary>
+
 #### 2021-08-07 update
 - TODO:
     - [ ] PP structure table structure and cell coordinate prediction are being sorted out.
@@ -77,10 +84,6 @@ English | [Chinese](README.md)
 - Previously done, unfinished, welcome to PR
     - [ ] make dokcer image
     - [x] try onnxruntime GPU reasoning
-
-
-<details>
-    <summary>Previous update logs</summary>
 
 #### 2021-07-17 update
 - Improve the README document

@@ -148,10 +148,11 @@ class TextSystem(object):
     def __init__(self, det_model_path,
                  rec_model_path,
                  use_angle_cls=False,
-                 cls_model_path=None) -> None:
+                 cls_model_path=None,
+                 keys_path=None):
         super(TextSystem).__init__()
         self.text_detector = TextDetector(det_model_path)
-        self.text_recognizer = TextRecognizer(rec_model_path)
+        self.text_recognizer = TextRecognizer(rec_model_path, keys_path)
         self.use_angle_cls = use_angle_cls
         if self.use_angle_cls:
             self.text_classifier = TextClassifier(cls_model_path)
@@ -266,6 +267,9 @@ if __name__ == '__main__':
     parser.add_argument('--image_path', type=str,
                         default='test_images/det_images/')
     parser.add_argument('--text_score', type=float, default=0.5)
+    
+    parser.add_argument('--keys_path', type=str, 
+                        default="ch_ppocr_mobile_v2_rec/ppocr_keys_v1.txt")
     args = parser.parse_args()
     text_score = args.text_score
 
@@ -284,7 +288,8 @@ if __name__ == '__main__':
     text_sys = TextSystem(args.det_model_path,
                           args.rec_model_path,
                           use_angle_cls=True,
-                          cls_model_path=args.cls_model_path)
+                          cls_model_path=args.cls_model_path,
+                          keys_path=args.keys_path)
 
     image_file_list = get_image_file_list(args.image_path)
     for image_path in image_file_list:
