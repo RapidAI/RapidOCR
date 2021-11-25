@@ -89,6 +89,7 @@ def draw_ocr_box_txt(image, boxes, txts,
         color = (random.randint(0, 255),
                  random.randint(0, 255),
                  random.randint(0, 255))
+        print(box)
         draw_left.polygon(box, fill=color)
         draw_right.polygon([box[0][0], box[0][1],
                             box[1][0], box[1][1],
@@ -96,10 +97,10 @@ def draw_ocr_box_txt(image, boxes, txts,
                             box[3][0], box[3][1]],
                            outline=color)
 
-        box_height = math.sqrt((box[0][0] - box[3][0])**2 \
+        box_height = math.sqrt((box[0][0] - box[3][0])**2
                                + (box[0][1] - box[3][1])**2)
 
-        box_width = math.sqrt((box[0][0] - box[1][0])**2 \
+        box_width = math.sqrt((box[0][0] - box[1][0])**2
                               + (box[0][1] - box[1][1])**2)
 
         if box_height > 2 * box_width:
@@ -267,8 +268,8 @@ if __name__ == '__main__':
     parser.add_argument('--image_path', type=str,
                         default='test_images/det_images/')
     parser.add_argument('--text_score', type=float, default=0.5)
-    
-    parser.add_argument('--keys_path', type=str, 
+
+    parser.add_argument('--keys_path', type=str,
                         default="ch_ppocr_mobile_v2_rec/ppocr_keys_v1.txt")
     args = parser.parse_args()
     text_score = args.text_score
@@ -283,7 +284,10 @@ if __name__ == '__main__':
     if args.rec_model_path.find('server') != -1:
         from ch_ppocr_server_v2_rec import TextRecognizer
     else:
-        from ch_ppocr_mobile_v2_rec import TextRecognizer
+        if args.rec_model_path.find('en') != -1:
+            from en_number_ppocr_mobile_v2_rec import TextRecognizer
+        else:
+            from ch_ppocr_mobile_v2_rec import TextRecognizer
 
     text_sys = TextSystem(args.det_model_path,
                           args.rec_model_path,
