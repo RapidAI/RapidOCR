@@ -19,6 +19,6 @@ setuptools.setup(
     include_package_data=True,
     install_requires=["pyclipper==1.2.1", "onnxruntime==1.7.0",
                       "opencv_python==4.5.1.48", "numpy==1.19.5",
-                      "six==1.15.0", "Shapely==1.7.1"],
+                      "six==1.15.0", "Shapely>=1.7.1"],
     packages=setuptools.find_packages()
 )
