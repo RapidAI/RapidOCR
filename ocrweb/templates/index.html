@@ -8,8 +8,9 @@
 </head>
 <body>
     <h1 align="center">
-        RapidOCR Demo &nbsp;
-        <a href="https://github.com/RapidAI/RapidOCR" style="font-size: 14px;">欢迎Star</a>
+        <b><i>Rapid🗲OCR Demo</i></b>&nbsp;
+        <a href="https://github.com/RapidAI/RapidOCR" style="font-size: 14px;">欢迎Star</a>&thinsp;
+        <a href="https://github.com/RapidAI/RapidOCR/tree/main/ocrweb#readme" style="font-size:14px">了解Demo</a>
     </h1>
     <div class='area'>
         <span class="uplodNote">图片文件类型支持PNG、JPG、JPEG、BMP，图片大小不超过3M。</span>
@@ -26,7 +27,7 @@
 
         <div class="rightarea" id="recogDiv">
             <span id="rec_res" class="span_title">文本识别结果</span>
-            <br/> <br/>
+            <br/><br/>
             <table id="locTable" class="table" cellspacing="0" cellpadding="5"></table>
         </div>
     </div>
@@ -86,15 +87,27 @@
                                 $("#detect_img").attr('src', 'data:image/jpeg;base64,'+ data['image']);
                                 $('#detect_img').show();
                             }
-                            if (data["elapse"]){
-                                document.getElementById("rec_res").textContent = "文本识别结果(耗时:" + String(data['elapse']) + "s)"
+
+                            if (data["total_elapse"]){
+                                document.getElementById("rec_res").textContent = "文本识别结果(Total:" + String(data["total_elapse"]) + "s)"
                                 $("#rec_res").show();
                             }
+
                             if (data["rec_res"]){
                                 var rec_res = JSON.parse(data["rec_res"]);
 
-                                // 绘制整个结果表格
+                                console.log(data['elapse_part']);
+                                if (data['elapse_part']){
+                                    var elapse_list = data['elapse_part'].split(',');
+                                }else{
+                                    var elapse_list = [0, 0, 0];
+                                }
                                 var data = "";
+                                data += "<tr>" +
+                                            '<th align="right">Det: ' + elapse_list[0] + 's</th>' +
+                                            '<th align="center">Cls: ' + elapse_list[1] + 's</th>' +
+                                            '<th align="left">Rec: ' + elapse_list[2] + 's</th>' +
+                                        "</tr>"
                                 data += "<tr>" +
                                             '<th bgcolor="#C0C0C0">序号</th>' +
                                             '<th bgcolor="#C0C0C0">识别结果</th>' +

@@ -76,6 +76,7 @@ class TextClassifier(object):
         return img_list
 
     def __call__(self, image_dir):
+        elapse = 0
         if isinstance(image_dir[0], (list, str)):
             img_list = self.load_image(image_dir)
         else:
@@ -83,16 +84,17 @@ class TextClassifier(object):
 
         img_list = copy.deepcopy(img_list)
         img_num = len(img_list)
+
         # Calculate the aspect ratio of all text bars
         width_list = []
         for img in img_list:
             width_list.append(img.shape[1] / float(img.shape[0]))
+
         # Sorting can speed up the cls process
         indices = np.argsort(np.array(width_list))
 
         cls_res = [['', 0.0]] * img_num
         batch_num = self.cls_batch_num
-        elapse = 0
         for beg_img_no in range(0, img_num, batch_num):
             end_img_no = min(img_num, beg_img_no + batch_num)
             norm_img_batch = []
@@ -112,7 +114,6 @@ class TextClassifier(object):
             prob_out = self.session.run(None, onnx_inputs)[0]
 
             cls_result = self.postprocess_op(prob_out)
-            elapse += time.time() - starttime
 
             for rno in range(len(cls_result)):
                 label, score = cls_result[rno]
@@ -120,6 +121,8 @@ class TextClassifier(object):
                 if '180' in label and score > self.cls_thresh:
                     img_list[indices[beg_img_no + rno]] = cv2.rotate(
                         img_list[indices[beg_img_no + rno]], 1)
+
+            elapse += time.time() - starttime
         return img_list, cls_res, elapse
 
 

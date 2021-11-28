@@ -86,21 +86,23 @@ class TextRecognizer(object):
         return img_list
 
     def __call__(self, image_dir):
+        elapse = 0
         if not isinstance(image_dir, list):
             img_list = self.load_image(image_dir)
         else:
             img_list = image_dir
         img_num = len(img_list)
+
         # Calculate the aspect ratio of all text bars
         width_list = []
         for img in img_list:
             width_list.append(img.shape[1] / float(img.shape[0]))
+
         # Sorting can speed up the recognition process
         indices = np.argsort(np.array(width_list))
 
         rec_res = [['', 0.0]] * img_num
         batch_num = self.rec_batch_num
-        elapse = 0
         for beg_img_no in range(0, img_num, batch_num):
             end_img_no = min(img_num, beg_img_no + batch_num)
             norm_img_batch = []

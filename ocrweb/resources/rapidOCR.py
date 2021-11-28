@@ -2,6 +2,7 @@
 # -*- encoding: utf-8 -*-
 import copy
 from pathlib import Path
+import time
 
 import cv2
 import numpy as np
@@ -46,7 +47,9 @@ class TextSystem(object):
                  cls_model_path=None) -> None:
         super(TextSystem).__init__()
         self.text_detector = TextDetector(det_model_path)
+
         self.text_recognizer = TextRecognizer(rec_model_path)
+
         self.use_angle_cls = use_angle_cls
         if self.use_angle_cls:
             self.text_classifier = TextClassifier(cls_model_path)
@@ -105,79 +108,39 @@ class TextSystem(object):
                 _boxes[i + 1] = tmp
         return _boxes
 
-    @staticmethod
-    def load_image(image_path):
-        img, flag = check_and_read_gif(image_path)
-        if not flag:
-            img = cv2.imread(image_path)
-        if img is None:
-            raise ValueError(f"error in loading image:{image_path}")
-        return img
-
-    def __call__(self, image_path):
-        # img = self.load_image(image_path)
-        img = image_path
-        dt_boxes, elapse = self.text_detector(img)
-        print("dt_boxes num : {}, elapse : {}".format(
-            len(dt_boxes), elapse))
+    def __call__(self, img):
+        dt_boxes, det_elapse = self.text_detector(img)
+        print(f"dt_boxes num: {len(dt_boxes)}, elapse: {det_elapse}")
         if dt_boxes is None or dt_boxes.size == 0:
             return None, None, img
+
+        start_time = time.time()
         img_crop_list = []
-
         dt_boxes = self.sorted_boxes(dt_boxes)
-
         for bno in range(len(dt_boxes)):
             tmp_box = copy.deepcopy(dt_boxes[bno])
             img_crop = self.get_rotate_crop_image(img, tmp_box)
             img_crop_list.append(img_crop)
-        if self.use_angle_cls:
-            img_crop_list, angle_list, elapse = self.text_classifier(
-                img_crop_list)
-            print("cls num  : {}, elapse : {}".format(
-                len(img_crop_list), elapse))
+        crop_elapse = time.time() - start_time
 
-        rec_res, elapse = self.text_recognizer(img_crop_list)
-        print("rec_res num  : {}, elapse : {}".format(
-            len(rec_res), elapse))
-        # self.print_draw_crop_rec_res(img_crop_list, rec_res)
+        if self.use_angle_cls:
+            img_crop_list, _, cls_elapse = self.text_classifier(img_crop_list)
+            print(f"cls num : {len(img_crop_list)}, elapse: {cls_elapse}")
+
+        rec_res, rec_elapse = self.text_recognizer(img_crop_list)
+        print(f"rec_res num: {len(rec_res)}, elapse: {rec_elapse}")
+
+        start_time = time.time()
         filter_boxes, filter_rec_res = [], []
         for box, rec_reuslt in zip(dt_boxes, rec_res):
             text, score = rec_reuslt
             if score >= drop_score:
                 filter_boxes.append(box)
                 filter_rec_res.append(rec_reuslt)
-        return filter_boxes, filter_rec_res, img
+        filter_elapse = time.time() - start_time
 
-
-if __name__ == '__main__':
-    # 文本检测+方向分类+文本识别
-
-    # v1.0
-    # from ch_ppocr_mobile_v1_det import TextDetector
-
-    # v2.0 超轻量
-    # from ch_ppocr_mobile_v2_cls import TextClassifier
-    # from ch_ppocr_mobile_v2_det import TextDetector
-    # from ch_ppocr_mobile_v2_rec import TextRecognizer
-
-    # det_model_path = 'models/ch_ppocr_mobile_v2_det_train.onnx'
-    # cls_model_path = 'models/ch_ppocr_mobile_v2.0_cls_train.onnx'
-    # rec_model_path = 'models/ch_ppocr_mobile_v2.0_rec_pre.onnx'
-
-    # v2.0 通用模型
-    from ch_ppocr_server_v2_det import TextDetector
-    from ch_ppocr_server_v2_rec import TextRecognizer
-
-    from ch_ppocr_mobile_v2_cls import TextClassifier
-
-    det_model_path = 'models/ch_ppocr_server_v2.0_det_train.onnx'
-    cls_model_path = 'models/ch_ppocr_mobile_v2.0_cls_train.onnx'
-    rec_model_path = 'models/ch_ppocr_server_v2.0_rec_pre.onnx'
-
-    image_path = r'test_images/long1.jpg'
-
-    text_sys = TextSystem(det_model_path, rec_model_path,
-                          use_angle_cls=True,
-                          cls_model_path=cls_model_path)
-    dt_boxes, rec_res = text_sys(image_path)
-    visualize(image_path, dt_boxes, rec_res)
+        elapse_part = [f'{det_elapse:.4f}',
+                       f'{(cls_elapse+crop_elapse):.4f}',
+                       f'{(rec_elapse+filter_elapse):.4f}'
+        ]
+        return filter_boxes, filter_rec_res, img, elapse_part

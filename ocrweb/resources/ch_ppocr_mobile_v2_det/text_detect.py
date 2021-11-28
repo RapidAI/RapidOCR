@@ -94,7 +94,7 @@ class TextDetector(object):
         return points
 
     def filter_tag_det_res(self, dt_boxes, image_shape):
-        img_height, img_width = image_shape[0:2]
+        img_height, img_width = image_shape[:2]
         dt_boxes_new = []
         for box in dt_boxes:
             box = self.order_points_clockwise(box)
@@ -107,17 +107,11 @@ class TextDetector(object):
         dt_boxes = np.array(dt_boxes_new)
         return dt_boxes
 
-    def filter_tag_det_res_only_clip(self, dt_boxes, image_shape):
-        img_height, img_width = image_shape[0:2]
-        dt_boxes_new = []
-        for box in dt_boxes:
-            box = self.clip_det_res(box, img_height, img_width)
-            dt_boxes_new.append(box)
-        dt_boxes = np.array(dt_boxes_new)
-        return dt_boxes
-
     def __call__(self, img):
-        ori_im = img.copy()
+        starttime = time.time()
+
+        ori_shape = img.shape[:2]
+
         data = {'image': img}
         data = transform(data, self.preprocess_op)
         img, shape_list = data
@@ -127,13 +121,13 @@ class TextDetector(object):
         img = img.astype(np.float32)
         shape_list = np.expand_dims(shape_list, axis=0)
 
-        starttime = time.time()
         preds = self.session.run([self.output_name],
                                  {self.input_name: img})
 
         post_result = self.postprocess_op(preds[0], shape_list)
         dt_boxes = post_result[0]['points']
-        dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im.shape)
+        dt_boxes = self.filter_tag_det_res(dt_boxes, ori_shape)
+
         elapse = time.time() - starttime
         return dt_boxes, elapse
 

@@ -1,19 +1,20 @@
 # !/usr/bin/env python
 # -*- encoding: utf-8 -*-
-# @File: worker.py
+# @File: task.py
 # @Time: 2021/03/07 20:29:32
-# @Author: Max
+# @Author: SWHL
+# @Contact: liekkaskono@163.com
 import base64
+from functools import reduce
 import json
 import time
 
 import cv2
 import numpy as np
 
-from resources.rapidOCR import TextSystem, draw_text_det_res
+from resources.rapidOCR import TextSystem, draw_text_det_res, check_and_read_gif
 
-# 实例化模型
-det_model_path = 'resources/models/ch_ppocr_server_v2.0_det_infer.onnx'
+det_model_path = 'resources/models/ch_PP-OCRv2_det_infer.onnx'
 cls_model_path = 'resources/models/ch_ppocr_mobile_v2.0_cls_infer.onnx'
 rec_model_path = 'resources/models/ch_ppocr_mobile_v2.0_rec_infer.onnx'
 
@@ -28,10 +29,10 @@ def detect_recognize(image_path):
         image = cv2.imread(image_path)
     elif isinstance(image_path, np.ndarray):
         image = image_path
+    else:
+        raise TypeError(f'{image_path} is not str or ndarray.')
 
-    t1 = time.time()
-    dt_boxes, rec_res, img = text_sys(image)
-    t2 = time.time()
+    dt_boxes, rec_res, img, elapse_part = text_sys(image)
 
     if dt_boxes is None or rec_res is None:
         temp_rec_res = []
@@ -39,6 +40,7 @@ def detect_recognize(image_path):
                                   indent=2,
                                   ensure_ascii=False)
         elapse = 0
+        elapse_part = ''
         image = cv2.imencode('.jpg', img)[1]
         img = str(base64.b64encode(image))[2:-1]
     else:
@@ -54,7 +56,9 @@ def detect_recognize(image_path):
         image = cv2.imencode('.jpg', det_im)[1]
         img = str(base64.b64encode(image))[2:-1]
 
-        elapse = f'{t2-t1:.3f}'
+        elapse = reduce(lambda x, y: float(x)+float(y), elapse_part)
+        elapse_part = ','.join([str(x) for x in elapse_part])
     return json.dumps({'image': img,
-                       'elapse': elapse,
+                       'total_elapse': f'{elapse:.4f}',
+                       'elapse_part': elapse_part,
                        'rec_res': rec_res_data})
