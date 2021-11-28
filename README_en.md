@@ -12,18 +12,18 @@ English | [Chinese](README.md)
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
   - [Recently updates](#recently-updates)
-      - [✨2021-11-13 update](#2021-11-13-update)
+      - [🍺2021-11-28 update](#2021-11-28-update)
+      - [2021-11-13 update](#2021-11-13-update)
       - [2021-10-27 update](#2021-10-27-update)
       - [2021-09-13 update](#2021-09-13-update)
       - [2021-09-11 update](#2021-09-11-update)
-      - [Recently updates](#Recently-updates)
-        - [2021-08-07 update](#2021-08-07-update)
-        - [2021-07-17 update](#2021-07-17-update)
-        - [2021-07-04 update](#2021-07-04-update)
-        - [2021-06-20 update](#2021-06-20-update)
-        - [2021-06-10 update](#2021-06-10-update)
-        - [2021-06-08 update](#2021-06-08-update)
-        - [2021-03-24 update](#2021-03-24-update)
+      - [2021-08-07 update](#2021-08-07-update)
+      - [2021-07-17 update](#2021-07-17-update)
+      - [2021-07-04 update](#2021-07-04-update)
+      - [2021-06-20 update](#2021-06-20-update)
+      - [2021-06-10 update](#2021-06-10-update)
+      - [2021-06-08 update](#2021-06-08-update)
+      - [2021-03-24 update](#2021-03-24-update)
   - [FAQ](#faq)
   - [SDK compilation status](#sdk-compilation-status)
   - [Online demo](#online-demo)
@@ -53,12 +53,18 @@ English | [Chinese](README.md)
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
 ## Recently updates
-#### ✨2021-11-13 update
+#### 🍺2021-11-28 update
+- Update the ocrweb part
+  - Add the display of the inference time of each stage.
+  - Add docs of the ocrweb.
+  - Change the det model(`ch_PP-OCRv2_det_infer.onnx`), faster and more accurate.
+
+#### 2021-11-13 update
 - Add adjustable super parameters for text detection and recognition in Python version, mainly `box_thresh|unclip_ratio|text_score`, see [parameter adjustment](python/README.md#相关调节参数) for details
 - The dictionary position in text recognition is given in parameter mode to facilitate flexible configuration. See [keys_path](python/rapidOCR.sh) for details
 
 #### 2021-10-27 update
-- Add the code that uses the onnxruntime GPU version of infering follow the [official tutorial](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html) Configuration. (however, the onnxruntime GPU version is not stable to use) 
+- Add the code that uses the onnxruntime GPU version of infering follow the [official tutorial](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html) Configuration. (however, the onnxruntime GPU version is not stable to use)
 
 - See: `python/README.md` for specific steps.
 

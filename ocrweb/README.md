@@ -8,7 +8,7 @@
    ```
 2. 网页上显示的推理时间可以具体解释一下吗？
     <div align="center">
-        <img src="../assets/ocrweb_time.jpg" width="80%" height="80%">
+        <img src="../assets/ocrweb_time.jpg" width="100%" height="100%">
     </div>
 3. OCR各个阶段的参数值都从哪里可以看到？
     - 从各个阶段的目录下对应类的初始化函数可以看到
