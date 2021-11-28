@@ -13,10 +13,12 @@
 - [RapidOCR (捷智OCR)](#rapidocr-捷智ocr)
   - [简介](#简介)
   - [近期更新](#近期更新)
-      - [🎉2021-09-13 update](#2021-09-13-update)
-      - [✨2021-09-11 update](#2021-09-11-update)
-      - [2021-08-07 update](#2021-08-07-update)
+      - [✨2021-11-13 update](#2021-11-13-update)
+      - [2021-10-27 update](#2021-10-27-update)
+      - [2021-09-13 update](#2021-09-13-update)
+      - [2021-09-11 update](#2021-09-11-update)
       - [之前更新记录](#之前更新记录)
+        - [2021-08-07 update](#2021-08-07-update)
         - [2021-07-17 update](#2021-07-17-update)
         - [2021-07-04 update](#2021-07-04-update)
         - [2021-06-20 update](#2021-06-20-update)
@@ -53,10 +55,18 @@
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。
 
 ## 近期更新
-#### 🎉2021-09-13 update
+#### ✨2021-11-13 update
+- 添加python版本中文本检测和识别可调节的超参数，主要有`box_thresh|unclip_ratio|text_score`，详情见[参数调节](python/README.md#相关调节参数)
+- 将文本识别中字典位置以参数方式给出，便于灵活配置，详情见[keys_path](python/rapidOCR.sh)
+
+#### 2021-10-27 update
+- 添加使用onnxruntime-gpu版推理的代码（不过gpu版本的onnxruntime不太好用，按照[官方教程](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)配置，感觉没有调用起来GPU）
+- 具体使用步骤参见: [onnxruntime-gpu推理配置](python/README.md)
+
+#### 2021-09-13 update
 - 添加基于`python`的whl文件，便于使用，详情参见`release/python_sdk`
 
-#### ✨2021-09-11 update
+#### 2021-09-11 update
 - 添加PP-OCRv2新增模型onnx版本
   - 使用方法推理代码不变，直接替换对应模型即可。
 - 经过在自有测试集上评测：
@@ -64,17 +74,17 @@
   - PP-OCRv2识别模型效果无明显提升，模型大小增加了3.58M。
 - 模型上传到[百度网盘 提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
 
+#### 之前更新记录
+<details>
+    <summary>点击查看</summary>
+
 #### 2021-08-07 update
 - 现在正在做的
   - [ ] PP-Structure 表格结构和cell坐标预测 正在整理中
 
 - 之前做的,未完成的，欢迎提PR
   - [ ] 打Dokcer镜像
-  - [ ] 尝试onnxruntime-gpu推理
-
-#### 之前更新记录
-<details>
-    <summary>点击查看</summary>
+  - [x] 尝试onnxruntime-gpu推理
 
 ##### 2021-07-17 update
 - 完善README文档
@@ -162,7 +172,7 @@
 - [ ] 依据python版本重写C++推理代码，以提升推理效果，并增加对gif/tga/webp 格式图片的支持
 
 ## 模型相关
-#### 可以直接下载使用的模型 (下载链接：[提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)）
+- 可以直接下载使用的模型 (百度云下载链接：[提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)） 或者 [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
 
 |模型名称|模型简介|模型大小|备注|
 |:---:|:---:|:---:|:---:|
@@ -191,7 +201,7 @@
 
 ## 版权声明
 - 如果你的产品使用了本仓库中的全部或部分代码、文字或材料
-- 请注明出处并包括我们的github url: `https://github.com/RapidOCR/RapidOCR`
+- 请注明出处并包括我们的github url: `https://github.com/RapidAI/RapidOCR`
 
 ## 授权
 - OCR模型版权归百度所有，其它工程代码版权归本仓库所有者所有。

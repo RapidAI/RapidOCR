@@ -11,8 +11,6 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-drop_score = 0.5
-
 
 def get_image_file_list(img_file):
     if img_file is None or not Path(img_file).exists():
@@ -75,7 +73,7 @@ def check_and_read_gif(img_path):
 
 
 def draw_ocr_box_txt(image, boxes, txts,
-                     scores=None, drop_score=0.5,
+                     scores=None, text_score=0.5,
                      font_path="./models/msyh.ttc"):
     h, w = image.height, image.width
     img_left = image.copy()
@@ -85,12 +83,13 @@ def draw_ocr_box_txt(image, boxes, txts,
     draw_left = ImageDraw.Draw(img_left)
     draw_right = ImageDraw.Draw(img_right)
     for idx, (box, txt) in enumerate(zip(boxes, txts)):
-        if scores is not None and scores[idx] < drop_score:
+        if scores is not None and scores[idx] < text_score:
             continue
 
         color = (random.randint(0, 255),
                  random.randint(0, 255),
                  random.randint(0, 255))
+        print(box)
         draw_left.polygon(box, fill=color)
         draw_right.polygon([box[0][0], box[0][1],
                             box[1][0], box[1][1],
@@ -98,10 +97,10 @@ def draw_ocr_box_txt(image, boxes, txts,
                             box[3][0], box[3][1]],
                            outline=color)
 
-        box_height = math.sqrt((box[0][0] - box[3][0])**2 \
+        box_height = math.sqrt((box[0][0] - box[3][0])**2
                                + (box[0][1] - box[3][1])**2)
 
-        box_width = math.sqrt((box[0][0] - box[1][0])**2 \
+        box_width = math.sqrt((box[0][0] - box[1][0])**2
                               + (box[0][1] - box[1][1])**2)
 
         if box_height > 2 * box_width:
@@ -135,7 +134,7 @@ def visualize(image_path, boxes, rec_res):
 
     draw_img = draw_ocr_box_txt(image, boxes,
                                 txts, scores,
-                                drop_score=0.5)
+                                text_score=0.5)
 
     draw_img_save = Path("./inference_results/")
     if not draw_img_save.exists():
@@ -150,10 +149,11 @@ class TextSystem(object):
     def __init__(self, det_model_path,
                  rec_model_path,
                  use_angle_cls=False,
-                 cls_model_path=None) -> None:
+                 cls_model_path=None,
+                 keys_path=None):
         super(TextSystem).__init__()
         self.text_detector = TextDetector(det_model_path)
-        self.text_recognizer = TextRecognizer(rec_model_path)
+        self.text_recognizer = TextRecognizer(rec_model_path, keys_path)
         self.use_angle_cls = use_angle_cls
         if self.use_angle_cls:
             self.text_classifier = TextClassifier(cls_model_path)
@@ -249,7 +249,7 @@ class TextSystem(object):
         filter_boxes, filter_rec_res = [], []
         for box, rec_reuslt in zip(dt_boxes, rec_res):
             text, score = rec_reuslt
-            if score >= drop_score:
+            if score >= text_score:
                 filter_boxes.append(box)
                 filter_rec_res.append(rec_reuslt)
         return filter_boxes, filter_rec_res
@@ -267,7 +267,12 @@ if __name__ == '__main__':
 
     parser.add_argument('--image_path', type=str,
                         default='test_images/det_images/')
+    parser.add_argument('--text_score', type=float, default=0.5)
+
+    parser.add_argument('--keys_path', type=str,
+                        default="ch_ppocr_mobile_v2_rec/ppocr_keys_v1.txt")
     args = parser.parse_args()
+    text_score = args.text_score
 
     from ch_ppocr_mobile_v2_cls import TextClassifier
 
@@ -279,12 +284,16 @@ if __name__ == '__main__':
     if args.rec_model_path.find('server') != -1:
         from ch_ppocr_server_v2_rec import TextRecognizer
     else:
-        from ch_ppocr_mobile_v2_rec import TextRecognizer
+        if args.rec_model_path.find('en') != -1:
+            from en_number_ppocr_mobile_v2_rec import TextRecognizer
+        else:
+            from ch_ppocr_mobile_v2_rec import TextRecognizer
 
     text_sys = TextSystem(args.det_model_path,
                           args.rec_model_path,
                           use_angle_cls=True,
-                          cls_model_path=args.cls_model_path)
+                          cls_model_path=args.cls_model_path,
+                          keys_path=args.keys_path)
 
     image_file_list = get_image_file_list(args.image_path)
     for image_path in image_file_list:
