@@ -56,7 +56,7 @@
 
 ## 近期更新
 #### 🍺2021-11-28 update
-- 更新ocrweb部分
+- 更新[ocrweb](http://rapidocr.51pda.cn:9003/)部分
   - 添加显示各个阶段处理时间
   - 更新说明文档
   - 更换文本检测模型为`ch_PP-OCRv2_det_infer.onnx`,推理更快，更准

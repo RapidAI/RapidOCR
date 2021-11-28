@@ -54,7 +54,7 @@ English | [Chinese](README.md)
 
 ## Recently updates
 #### 🍺2021-11-28 update
-- Update the ocrweb part
+- Update the [ocrweb](http://rapidocr.51pda.cn:9003/) part
   - Add the display of the inference time of each stage.
   - Add docs of the ocrweb.
   - Change the det model(`ch_PP-OCRv2_det_infer.onnx`), faster and more accurate.
