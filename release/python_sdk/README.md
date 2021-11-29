@@ -1,5 +1,9 @@
 ### sdk_rapidocr_v1.0.0
 
+#### 说明
+- whl安装时，只是确定是否安装onnxruntime，并未强制到指定版本
+- 不过建议安装`onnxruntime>=1.7.0`,推理更快一些
+
 #### 使用方法
 1. 下载`sdk_rapidocr_v1.0.0`目录
 2. `pip install rapidocr-1.0.0-py3-none-any.whl`
