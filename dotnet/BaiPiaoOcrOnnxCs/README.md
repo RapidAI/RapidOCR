@@ -33,4 +33,4 @@
 
 ### 其它
 * 修改模型路径，模型名称，线程数，必须“重新初始化”才能生效
-* 输入参数说明请参考[BaiPiaoOcrOnnx项目](https://github.com/znsoftm/BaiPiaoOCR/tree/main/cpp/BaiPiaoOcrOnnx)
+* 输入参数说明请参考[BaiPiaoOcrOnnx项目](https://github.com/RapidAI/RapidOCR/blob/main/cpp/README.md)
