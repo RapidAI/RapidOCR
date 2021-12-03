@@ -38,7 +38,9 @@ jobs:
             sudo mv /onnxruntime-linux-x64-1.8.0/* /rapidocr
             sudo ls -l /rapidocr
     - name: Installation depends
-      run: sudo apt install -y libopencv-dev
+      run: |
+            sudo apt-get update
+            sudo apt install -y libopencv-dev
 
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
