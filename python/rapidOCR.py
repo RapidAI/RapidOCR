@@ -89,7 +89,6 @@ def draw_ocr_box_txt(image, boxes, txts,
         color = (random.randint(0, 255),
                  random.randint(0, 255),
                  random.randint(0, 255))
-        print(box)
         draw_left.polygon(box, fill=color)
         draw_right.polygon([box[0][0], box[0][1],
                             box[1][0], box[1][1],
