@@ -8,7 +8,7 @@
 简体中文 | [English](README_en.md)
 
 <p align="left">
-    <a href="https://colab.research.google.com/github/SWHL/RapidVideOCR/blob/main/RapidVideOCR.ipynb" target="_blank"><img src="./assets/colab-badge.svg" alt="Open in Colab"></a>
+    <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/RapidOCRDemo.ipynb" target="_blank"><img src="./assets/colab-badge.svg" alt="Open in Colab"></a>
     <a href="./LICENSE"><img src="https://img.shields.io/badge/License-Apache%202-dfd.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/Python-3.6+-aff.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
@@ -23,7 +23,8 @@
 - [RapidOCR (捷智OCR)](#rapidocr-捷智ocr)
   - [简介](#简介)
   - [近期更新](#近期更新)
-      - [🍺2021-11-28 update](#2021-11-28-update)
+      - [2021-12-18 update](#2021-12-18-update)
+      - [2021-11-28 update](#2021-11-28-update)
       - [2021-11-13 update](#2021-11-13-update)
       - [2021-10-27 update](#2021-10-27-update)
       - [2021-09-13 update](#2021-09-13-update)
@@ -65,7 +66,11 @@
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。
 
 ## 近期更新
-#### 🍺2021-11-28 update
+#### 2021-12-18 update
+- 添加[Google Colab Demo](https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/RapidOCRDemo.ipynb)
+- 更改`python/rapidOCR.sh`中默认det模型
+
+#### 2021-11-28 update
 - 更新[ocrweb](http://rapidocr.51pda.cn:9003/)部分
   - 添加显示各个阶段处理时间
   - 更新说明文档

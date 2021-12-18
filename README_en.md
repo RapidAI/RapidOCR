@@ -5,14 +5,25 @@
 
 # RapidOCR
 
-English | [Chinese](README.md)
-<details open>
+[简体中文](README.md) | English
+
+<p align="left">
+    <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/RapidOCRDemo.ipynb" target="_blank"><img src="./assets/colab-badge.svg" alt="Open in Colab"></a>
+    <a href="./LICENSE"><img src="https://img.shields.io/badge/License-Apache%202-dfd.svg"></a>
+    <a href=""><img src="https://img.shields.io/badge/Python-3.6+-aff.svg"></a>
+    <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
+    <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors"><img src="https://img.shields.io/github/contributors/RapidAI/RapidOCR?color=9ea"></a>
+    <a href="https://github.com/RapidAI/RapidOCR/stargazers"><img src="https://img.shields.io/github/stars/RapidAI/RapidOCR?color=ccf"></a>
+</p>
+
+<details>
     <summary>Contents</summary>
 
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
-  - [Recently updates](#recently-updates)
-      - [🍺2021-11-28 update](#2021-11-28-update)
+  - [Recently updates、](#recently-updates)
+      - [🎄2021-12-18 update](#2021-12-18-update)
+      - [2021-11-28 update](#2021-11-28-update)
       - [2021-11-13 update](#2021-11-13-update)
       - [2021-10-27 update](#2021-10-27-update)
       - [2021-09-13 update](#2021-09-13-update)
@@ -52,8 +63,12 @@ English | [Chinese](README.md)
 
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
-## Recently updates
-#### 🍺2021-11-28 update
+## Recently updates、
+#### 🎄2021-12-18 update
+- Add [Google Colab Demo](https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/RapidOCRDemo.ipynb).
+- Change the default det model of the `python/rapidOCR.sh`
+
+#### 2021-11-28 update
 - Update the [ocrweb](http://rapidocr.51pda.cn:9003/) part
   - Add the display of the inference time of each stage.
   - Add docs of the ocrweb.
