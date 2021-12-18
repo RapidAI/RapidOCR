@@ -23,7 +23,7 @@
 - [RapidOCR (捷智OCR)](#rapidocr-捷智ocr)
   - [简介](#简介)
   - [近期更新](#近期更新)
-      - [2021-12-18 update](#2021-12-18-update)
+      - [🎄2021-12-18 update](#2021-12-18-update)
       - [2021-11-28 update](#2021-11-28-update)
       - [2021-11-13 update](#2021-11-13-update)
       - [2021-10-27 update](#2021-10-27-update)
@@ -66,7 +66,7 @@
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。
 
 ## 近期更新
-#### 2021-12-18 update
+#### 🎄2021-12-18 update
 - 添加[Google Colab Demo](https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/RapidOCRDemo.ipynb)
 - 更改`python/rapidOCR.sh`中默认det模型
 
