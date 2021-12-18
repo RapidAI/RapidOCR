@@ -11,6 +11,10 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
+from ch_ppocr_mobile_v2_cls import TextClassifier
+from ch_ppocr_mobile_v2_det import TextDetector
+from ch_ppocr_mobile_v2_rec import TextRecognizer
+
 
 def get_image_file_list(img_file):
     if img_file is None or not Path(img_file).exists():
@@ -272,8 +276,6 @@ if __name__ == '__main__':
                         default="ch_ppocr_mobile_v2_rec/ppocr_keys_v1.txt")
     args = parser.parse_args()
     text_score = args.text_score
-
-    from ch_ppocr_mobile_v2_cls import TextClassifier
 
     if args.det_model_path.find('server') != -1:
         from ch_ppocr_server_v2_det import TextDetector
