@@ -145,7 +145,8 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 
 ## Online demo
 - [Web demo](http://rapidocr.51pda.cn:9003/)
-- The model combination used in the demo is: **server det** + **mobile cls** + **mobile rec**
+- The model combination used in the demo is: **ch_PP-OCRv2 det** + **mobile cls** + **mobile rec**
+- Environment: `4 Core AMD EPYC 7K62 48-Core Processor `
 - **Gif Demo**:
     <div align="center">
         <img src="./assets/demo.gif" width="100%" height="100%">

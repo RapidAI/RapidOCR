@@ -151,7 +151,8 @@
 
 ## [在线demo](http://rapidocr.51pda.cn:9003/)
 - **说明**: 本在线demo不存储小伙伴们上传测试的任何图像数据
-- **demo所用模型组合为**: `server det` + `mobile cls` + `mobile rec`
+- **demo所用模型组合为**: `ch_PP-OCRv2 det` + `mobile cls` + `mobile rec`
+- **运行机器配置**: `4核 AMD EPYC 7K62 48-Core Processor `
 - **示例图**:
     <div align="center">
         <img src="./assets/demo.gif" width="100%" height="100%">
