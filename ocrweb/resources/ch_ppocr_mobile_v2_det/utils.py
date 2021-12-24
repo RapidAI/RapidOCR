@@ -25,6 +25,8 @@ import numpy as np
 import pyclipper
 import six
 from shapely.geometry import Polygon
+        from PIL import Image
+
 
 
 class DecodeImage(object):
@@ -77,7 +79,6 @@ class NormalizeImage(object):
 
     def __call__(self, data):
         img = data['image']
-        from PIL import Image
         if isinstance(img, Image.Image):
             img = np.array(img)
 

@@ -1,4 +1,10 @@
 ## 常见问题
+#### Q14: Linux部署python的程序时，import cv2,会报`ImportError: ligGL.so.1: cannot open shared object file: No such file or directory`?
+**A:**: [解决方法](https://stackoverflow.com/a/63978454/3335415
+) 有两个(来自群友ddeef)：
+  1. 安装`opencv-python-headless`取代`opencv-python`;
+  2. 运行`sudo apt-get install -y libgl1-mesa-dev`
+
 #### Q13: 询问下，我编译出来的进程在win7下面通过cmd调用，发生了崩溃的情况?
 **A:**: 不支持win7 (by @如果我有時光機)
 
