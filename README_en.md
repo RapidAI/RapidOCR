@@ -21,8 +21,9 @@
 
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
-  - [Recently updates、](#recently-updates)
-      - [🎄2021-12-18 update](#2021-12-18-update)
+  - [Recently updates](#recently-updates)
+      - [🔉2022-02-24 update](#2022-02-24-update)
+      - [2021-12-18 update](#2021-12-18-update)
       - [2021-11-28 update](#2021-11-28-update)
       - [2021-11-13 update](#2021-11-13-update)
       - [2021-10-27 update](#2021-10-27-update)
@@ -63,8 +64,13 @@
 
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
-## Recently updates、
-#### 🎄2021-12-18 update
+## Recently updates
+#### 🔉2022-02-24 update
+- Optimize the inference code of the python part.
+- Add inference code examples that use the different language models.
+- For details, see: [python/README](./python/README.md)
+
+#### 2021-12-18 update
 - Add [Google Colab Demo](https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/RapidOCRDemo.ipynb).
 - Change the default det model of the `python/rapidOCR.sh`
 
@@ -73,6 +79,10 @@
   - Add the display of the inference time of each stage.
   - Add docs of the ocrweb.
   - Change the det model(`ch_PP-OCRv2_det_infer.onnx`), faster and more accurate.
+
+
+<details>
+    <summary>Previous update logs</summary>
 
 #### 2021-11-13 update
 - Add adjustable super parameters for text detection and recognition in Python version, mainly `box_thresh|unclip_ratio|text_score`, see [parameter adjustment](python/README.md#相关调节参数) for details
@@ -94,9 +104,6 @@
     - The effect of `PP-OCRv2` recognition model was not significantly improved, and the model size increased by 3.58M.
 
 - Upload the model to [Baidu online disk extraction code: 30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg) or [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
-
-<details>
-    <summary>Previous update logs</summary>
 
 #### 2021-08-07 update
 - TODO:

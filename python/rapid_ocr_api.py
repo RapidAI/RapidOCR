@@ -79,6 +79,10 @@ def check_and_read_gif(img_path):
 def draw_ocr_box_txt(image, boxes, txts,
                      scores=None, text_score=0.5,
                      font_path="./models/msyh.ttc"):
+    if not Path(font_path).exists():
+        raise FileNotFoundError(f'The {font_path} does not exists! \n'
+                                f'Please download the file in the https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY')
+
     h, w = image.height, image.width
     img_left = image.copy()
     img_right = Image.new('RGB', (w, h), (255, 255, 255))
@@ -118,8 +122,7 @@ def draw_ocr_box_txt(image, boxes, txts,
                 cur_y += char_size[1]
         else:
             font_size = max(int(box_height * 0.8), 10)
-            font = ImageFont.truetype(font_path, font_size,
-                                      encoding="utf-8")
+            font = ImageFont.truetype(font_path, font_size, encoding="utf-8")
             draw_right.text([box[0][0], box[0][1]], txt,
                             fill=(0, 0, 0), font=font)
 
@@ -155,6 +158,8 @@ class TextSystem(object):
                  cls_model_path=None,
                  keys_path=None):
         super(TextSystem).__init__()
+        self.text_score = 0.5
+
         self.text_detector = TextDetector(det_model_path)
         self.text_recognizer = TextRecognizer(rec_model_path, keys_path)
         self.use_angle_cls = use_angle_cls
@@ -252,7 +257,7 @@ class TextSystem(object):
         filter_boxes, filter_rec_res = [], []
         for box, rec_reuslt in zip(dt_boxes, rec_res):
             text, score = rec_reuslt
-            if score >= text_score:
+            if score >= self.text_score:
                 filter_boxes.append(box)
                 filter_rec_res.append(rec_reuslt)
         return filter_boxes, filter_rec_res
@@ -270,12 +275,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--image_path', type=str,
                         default='test_images/det_images/')
-    parser.add_argument('--text_score', type=float, default=0.5)
 
     parser.add_argument('--keys_path', type=str,
                         default="ch_ppocr_mobile_v2_rec/ppocr_keys_v1.txt")
     args = parser.parse_args()
-    text_score = args.text_score
 
     if args.det_model_path.find('server') != -1:
         from ch_ppocr_server_v2_det import TextDetector
@@ -287,6 +290,8 @@ if __name__ == '__main__':
     else:
         if args.rec_model_path.find('en') != -1:
             from en_number_ppocr_mobile_v2_rec import TextRecognizer
+        elif args.rec_model_path.find('japan') != -1:
+            from japan_ppocr_mobile_v2_rec import TextRecognizer
         else:
             from ch_ppocr_mobile_v2_rec import TextRecognizer
 
