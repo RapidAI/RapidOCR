@@ -2,7 +2,7 @@
 1. 下载相应模型和用于显示的字体文件
    - [百度网盘 提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
 
-   - 下载之后放在`models`目录即可，最终`models`目录结构如下：
+   - 下载之后模型和相应字体文件放在`fonts`和`models`下，最终目录结构如下：
        ```text
        models
          |-- ch_PP-OCRv2_det_infer.onnx
@@ -11,8 +11,12 @@
          |-- ch_ppocr_server_v2.0_det_infer.onnx
          |-- ch_ppocr_server_v2.0_rec_infer.onnx
          |-- en_number_mobile_v2.0_rec_infer.onnx
-         |-- japan_rec_crnn.onnx
-         `-- msyh.ttc
+         |-- korean_mobile_v2.0_rec_infer.onnx
+         `-- japan_rec_crnn.onnx
+
+       fonts
+         |-- msyh.ttc
+         `-- korean.ttf
        ```
 
 2. 运行
@@ -27,7 +31,7 @@
 
         # 中英文识别
         rec_model_path = 'models/ch_ppocr_mobile_v2.0_rec_infer.onnx'
-        keys_path = 'ch_ppocr_mobile_v2_rec/ppocr_keys_v1.txt'
+        keys_path = 'rec_dict/ppocr_keys_v1.txt'
 
         text_sys = TextSystem(det_model_path,
                             rec_model_path,
@@ -39,9 +43,10 @@
         dt_boxes, rec_res = text_sys(image_path)
         visualize(image_path, dt_boxes, rec_res)
 
+
         # 只有中英文和数字识别
         rec_model_path = 'models/en_number_mobile_v2.0_rec_infer.onnx'
-        keys_path = 'en_number_ppocr_mobile_v2_rec/en_dict.txt'
+        keys_path = 'rec_dict/en_dict.txt'
 
         text_sys = TextSystem(det_model_path,
                             rec_model_path,
@@ -53,9 +58,10 @@
         dt_boxes, rec_res = text_sys(image_path)
         visualize(image_path, dt_boxes, rec_res)
 
+
         # 日语识别
         rec_model_path = 'models/japan_rec_crnn.onnx'
-        keys_path = 'japan_ppocr_mobile_v2_rec/japan_dict.txt'
+        keys_path = 'rec_dict/japan_dict.txt'
 
         text_sys = TextSystem(det_model_path,
                             rec_model_path,
@@ -66,6 +72,22 @@
         image_path = r'test_images/det_images/japan.png'
         dt_boxes, rec_res = text_sys(image_path)
         visualize(image_path, dt_boxes, rec_res)
+
+
+        # 韩语识别
+        rec_model_path = 'models/korean_mobile_v2.0_rec_infer.onnx'
+        keys_path = 'rec_dict/korean_dict.txt'
+        font_path = 'fonts/korean.ttf'
+
+        text_sys = TextSystem(det_model_path,
+                            rec_model_path,
+                            use_angle_cls=True,
+                            cls_model_path=cls_model_path,
+                            keys_path=keys_path)
+
+        image_path = r'test_images/det_images/korean_1.jpg'
+        dt_boxes, rec_res = text_sys(image_path)
+        visualize(image_path, dt_boxes, rec_res, font_path)
         ```
 
     - 命令行运行

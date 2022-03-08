@@ -76,9 +76,9 @@ def check_and_read_gif(img_path):
     return None, False
 
 
-def draw_ocr_box_txt(image, boxes, txts,
+def draw_ocr_box_txt(image, boxes, txts, font_path,
                      scores=None, text_score=0.5,
-                     font_path="./models/msyh.ttc"):
+                     ):
     if not Path(font_path).exists():
         raise FileNotFoundError(f'The {font_path} does not exists! \n'
                                 f'Please download the file in the https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY')
@@ -133,13 +133,15 @@ def draw_ocr_box_txt(image, boxes, txts,
     return np.array(img_show)
 
 
-def visualize(image_path, boxes, rec_res):
+def visualize(image_path, boxes, rec_res,
+              font_path="models/msyh.ttc"):
     image = Image.open(image_path)
     txts = [rec_res[i][0] for i in range(len(rec_res))]
     scores = [rec_res[i][1] for i in range(len(rec_res))]
 
     draw_img = draw_ocr_box_txt(image, boxes,
-                                txts, scores,
+                                txts, font_path,
+                                scores,
                                 text_score=0.5)
 
     draw_img_save = Path("./inference_results/")

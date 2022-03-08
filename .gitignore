@@ -139,3 +139,6 @@ dmypy.json
 
 #models
 *.onnx
+
+*.ttf
+*.ttc
