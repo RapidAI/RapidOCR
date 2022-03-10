@@ -134,7 +134,7 @@ def draw_ocr_box_txt(image, boxes, txts, font_path,
 
 
 def visualize(image_path, boxes, rec_res,
-              font_path="models/msyh.ttc"):
+              font_path="fonts/msyh.ttc"):
     image = Image.open(image_path)
     txts = [rec_res[i][0] for i in range(len(rec_res))]
     scores = [rec_res[i][1] for i in range(len(rec_res))]
