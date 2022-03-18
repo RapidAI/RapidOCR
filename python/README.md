@@ -139,3 +139,10 @@
 
       SessionOptionsAppendExecutionProvider_CUDA(session_options, &options);
       ```
+3. 推理时间粗略对比(跑完RapidOCR整个项目)
+
+   |推理方式|推理图像数目|耗费时间|
+   |:---:|:---:|:---:|
+   |CPU|46张图像|191 s|
+   |GPU|46张图像|52.38 s|
+   ||||
