@@ -195,6 +195,7 @@
 - [x] .Net范例(C#): [demo](./dotnet)
 - [x] Android范例: [demo](./android)
 - [x] python范例: [demo](./python)
+- [ ] OpenVINO加速版本，进行中
 - [ ] IOS范例: 等待有缘人贡献代码
 - [ ] 依据python版本重写C++推理代码，以提升推理效果，并增加对gif/tga/webp 格式图片的支持
 
