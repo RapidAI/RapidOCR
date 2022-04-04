@@ -80,12 +80,12 @@ https://blog.csdn.net/weixin_47567401/article/details/123525014
 #### 🎧2022-04-04 update
 - 增加python下的基于OpenVINO推理引擎的支持
 - 给出OpenVINO和ONNXRuntime的性能对比表格
-- 详情参加[python/onnxruntime/README](./python/README.md)
+- 详情参加[python/README](./python/README.md)
 
 #### 2022-02-24 update
 - 优化python目录下的推理代码
 - 添加调用不同语言模型的推理代码示例
-- 详情参见：[python/README](./python/onnxruntime_infer/README.md)
+- 详情参见：[python/onnxruntime_infer/README](./python/onnxruntime_infer/README.md)
 
 #### 2021-12-18 update
 - 添加[Google Colab Demo](https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/RapidOCRDemo.ipynb)
