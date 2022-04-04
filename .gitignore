@@ -142,3 +142,13 @@ dmypy.json
 
 *.ttf
 *.ttc
+
+long1.jpg
+
+*.bin
+*.mapping
+*.xml
+
+*.pdiparams
+*.pdiparams.info
+*.pdmodel

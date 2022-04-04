@@ -1,148 +1,60 @@
-### 使用步骤
-1. 下载相应模型和用于显示的字体文件
-   - [百度网盘 提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
+### 目录说明
+- `onnxruntime_infer`: 基于ONNXRuntime推理引擎推理
+- `openvino_infer`: 基于OpenVINO推理引擎推理
 
-   - 下载之后模型和相应字体文件放在`fonts`和`models`下，最终目录结构如下：
-       ```text
-       models
-         |-- ch_PP-OCRv2_det_infer.onnx
-         |-- ch_ppocr_mobile_v2.0_cls_infer.onnx
-         |-- ch_ppocr_mobile_v2.0_det_infer.onnx
-         |-- ch_ppocr_server_v2.0_det_infer.onnx
-         |-- ch_ppocr_server_v2.0_rec_infer.onnx
-         |-- en_number_mobile_v2.0_rec_infer.onnx
-         |-- korean_mobile_v2.0_rec_infer.onnx
-         `-- japan_rec_crnn.onnx
+### TODO
+- [ ] 模型转INT8，尚未找到转换代码
+- [ ] 其他推理模型代码整理
+- [ ] 模型转换代码整理
 
-       fonts
-         |-- msyh.ttc
-         `-- korean.ttf
-       ```
+### 关于OpenVINO
+- OpenVINO可以直接推理ONNX模型，可以不用转换直接使用之前ONNX模型
+- OpenVINO推理速度更快，但是从对比来看，占用内存更多，目前正在排查原因
 
-2. 运行
-   - 接口调用方式运行
-     - 如果想要使用其他语言的识别模型，可以只对`rec_model_path`和`keys_path`作对应更改即可
-     - **!!!各个不同语言的推理代码区别只在于模型和字典文件!!!**
-        ```python
-        from rapid_ocr_api import TextSystem, visualize
+### OpenVINO与ONNXRuntime性能对比
+- 推理设备：`Windows 64位 Intel(R) Core(TM) i5-4210M CPU @ 2.60GHz   2.59 GHz`
+- 测试图像宽高: `12119x810`
 
-        det_model_path = 'models/ch_ppocr_mobile_v2.0_det_infer.onnx'
-        cls_model_path = 'models/ch_ppocr_mobile_v2.0_cls_infer.onnx'
-
-        # 中英文识别
-        rec_model_path = 'models/ch_ppocr_mobile_v2.0_rec_infer.onnx'
-        keys_path = 'rec_dict/ppocr_keys_v1.txt'
-
-        text_sys = TextSystem(det_model_path,
-                            rec_model_path,
-                            use_angle_cls=True,
-                            cls_model_path=cls_model_path,
-                            keys_path=keys_path)
-
-        image_path = r'test_images/det_images/ch_en_num.jpg'
-        dt_boxes, rec_res = text_sys(image_path)
-        visualize(image_path, dt_boxes, rec_res)
+| 测试模型                             | 推理框架             | 占用内存(3次平均) | 推理时间(3次平均) |
+| ------------------------------------ | -------------------- | ----------------- | ----------------- |
+| `ch_PP-OCRv2_det_infer.onnx`         | `ONNXRuntime=1.10.0` | 0.8G              | 5.354s            |
+| `ch_PP-OCRv2_det_infer.onnx`         | `openvino=2022.1.0`  | 3.225G            | 2.53s             |
+| `ch_PP-OCRv2_det_infer.xml` FP32 | `openvino=2022.1.0`  | 3.175G            | 2.0455s           |
 
 
-        # 只有中英文和数字识别
-        rec_model_path = 'models/en_number_mobile_v2.0_rec_infer.onnx'
-        keys_path = 'rec_dict/en_dict.txt'
+### OpenVINO与ONNXRuntime推理代码写法对比
+NOTE: 以`ch_ppocr_mobile_v2_det`中推理代码为例子
 
-        text_sys = TextSystem(det_model_path,
-                            rec_model_path,
-                            use_angle_cls=True,
-                            cls_model_path=cls_model_path,
-                            keys_path=keys_path)
+- ONNXRuntime
+```python
+import onnxruntime
 
-        image_path = r'test_images/det_images/en_num.png'
-        dt_boxes, rec_res = text_sys(image_path)
-        visualize(image_path, dt_boxes, rec_res)
+# 声明
+sess_opt = onnxruntime.SessionOptions()
+sess_opt.log_severity_level = 4
+sess_opt.enable_cpu_mem_arena = False
+self.session = onnxruntime.InferenceSession(det_model_path, sess_opt)
+self.input_name = self.session.get_inputs()[0].name
+self.output_name = self.session.get_outputs()[0].name
 
+# 推理
+preds = self.session.run([self.output_name],
+                            {self.input_name: img})
+```
 
-        # 日语识别
-        rec_model_path = 'models/japan_rec_crnn.onnx'
-        keys_path = 'rec_dict/japan_dict.txt'
+- OpenVINO
+```python
+from openvino.runtime import Core
 
-        text_sys = TextSystem(det_model_path,
-                            rec_model_path,
-                            use_angle_cls=True,
-                            cls_model_path=cls_model_path,
-                            keys_path=keys_path)
+# 初始化
+ie = Core()
+model_onnx = ie.read_model(det_model_path)
+compile_model = ie.compile_model(model=model_onnx,
+                                    device_name='CPU')
+self.vino_session = compile_model.create_infer_request()
 
-        image_path = r'test_images/det_images/japan.png'
-        dt_boxes, rec_res = text_sys(image_path)
-        visualize(image_path, dt_boxes, rec_res)
+# 推理
+self.vino_session.infer(inputs=[img])
+vino_preds = self.vino_session.get_output_tensor().data
+```
 
-
-        # 韩语识别
-        rec_model_path = 'models/korean_mobile_v2.0_rec_infer.onnx'
-        keys_path = 'rec_dict/korean_dict.txt'
-        font_path = 'fonts/korean.ttf'
-
-        text_sys = TextSystem(det_model_path,
-                            rec_model_path,
-                            use_angle_cls=True,
-                            cls_model_path=cls_model_path,
-                            keys_path=keys_path)
-
-        image_path = r'test_images/det_images/korean_1.jpg'
-        dt_boxes, rec_res = text_sys(image_path)
-        visualize(image_path, dt_boxes, rec_res, font_path)
-        ```
-
-    - 命令行运行
-        ```shell
-        $ bash test_demo.sh
-        ```
-
-### 相关调节参数
-|参数名称|作用|建议取值范围|默认值|代码位置|
-|:---:|:---:|:---:|:---:|:---:|
-|box_thresh|文本检测所得框是否保留的阈值，值越大，召回率越低|[0, 1]|0.5|[text_detect.py](https://github.com/RapidAI/RapidOCR/blob/6aa79aa390c9c9e8f41df0f0c35f3dca97e6dc93/python/ch_ppocr_mobile_v2_det/text_detect.py?_pjax=%23js-repo-pjax-container%2C%20div%5Bitemtype%3D%22http%3A%2F%2Fschema.org%2FSoftwareSourceCode%22%5D%20main%2C%20%5Bdata-pjax-container%5D#L55)|
-|unclip_ratio|控制文本检测框的大小，值越大，检测框整体越大|[1.6, 2.0]|1.6|[text_detect.py](https://github.com/RapidAI/RapidOCR/blob/6aa79aa390c9c9e8f41df0f0c35f3dca97e6dc93/python/ch_ppocr_mobile_v2_det/text_detect.py?_pjax=%23js-repo-pjax-container%2C%20div%5Bitemtype%3D%22http%3A%2F%2Fschema.org%2FSoftwareSourceCode%22%5D%20main%2C%20%5Bdata-pjax-container%5D#L57)|
-|text_score|文本识别结果置信度，值越大，把握越大|[0, 1]|0.5|[rapidOCR.py](https://github.com/RapidAI/RapidOCR/blob/6aa79aa390c9c9e8f41df0f0c35f3dca97e6dc93/python/rapidOCR.py?_pjax=%23js-repo-pjax-container%2C%20div%5Bitemtype%3D%22http%3A%2F%2Fschema.org%2FSoftwareSourceCode%22%5D%20main%2C%20%5Bdata-pjax-container%5D#L270)|
-
-
-### onnxruntime-gpu版推理配置
-
-1. ONNXRuntime-gpu需要严格按照与cuda、cudnn版本对应来安装，具体参考[文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements), **这一步关乎后面是否可以成功调用GPU**
-2. 推理代码中，加载onnx模型部分，用以下对应语言代码替换即可,详细参见：[官方教程](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)
-   - python版本
-      ```python
-      import onnxruntime as ort
-
-      model_path = '<path to model>'
-
-      providers = [
-         ('CUDAExecutionProvider', {
-            'device_id': 0,
-            'arena_extend_strategy': 'kNextPowerOfTwo',
-            'gpu_mem_limit': 2 * 1024 * 1024 * 1024,
-            'cudnn_conv_algo_search': 'EXHAUSTIVE',
-            'do_copy_in_default_stream': True,
-         }),
-         'CPUExecutionProvider',
-      ]
-
-      session = ort.InferenceSession(model_path, providers=providers)
-      ```
-   - C/C++版本
-      ```c++
-      OrtSessionOptions* session_options = /* ... */;
-
-      OrtCUDAProviderOptions options;
-      options.device_id = 0;
-      options.arena_extend_strategy = 0;
-      options.gpu_mem_limit = 2 * 1024 * 1024 * 1024;
-      options.cudnn_conv_algo_search = OrtCudnnConvAlgoSearch::EXHAUSTIVE;
-      options.do_copy_in_default_stream = 1;
-
-      SessionOptionsAppendExecutionProvider_CUDA(session_options, &options);
-      ```
-3. 推理时间粗略对比(跑完RapidOCR整个项目)
-
-   |推理方式|推理图像数目|耗费时间|
-   |:---:|:---:|:---:|
-   |CPU|46张图像|191 s|
-   |GPU|46张图像|52.38 s|
-   ||||
