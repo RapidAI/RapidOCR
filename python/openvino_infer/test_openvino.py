@@ -36,7 +36,7 @@ import numpy as np
 import cv2
 from ch_ppocr_mobile_v2_det_openvino_ir import TextDetector as TextDetectorIR
 
-det_model_path = 'models/IR/FP16/ch_PP-OCRv2_det_infer.xml'
+det_model_path = 'models/IR/static/ch_PP-OCRv2_det_infer.xml'
 img_path = 'test_images/long1.jpg'
 img = cv2.imread(img_path)
 

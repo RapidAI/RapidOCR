@@ -118,6 +118,7 @@ class TextDetector(object):
         shape_list = np.expand_dims(shape_list, axis=0)
 
         start_time = time.time()
+        print(img.shape)
         self.vino_session.infer(inputs=[img])
         vino_preds = self.vino_session.get_output_tensor().data
 
@@ -125,9 +126,6 @@ class TextDetector(object):
         dt_boxes = post_result[0]['points']
         dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im.shape)
         elapse = time.time() - start_time
-
-        src_im = draw_text_det_res(dt_boxes, r'E:\PythonProjects\RapidOCR\python\test_images\long1.jpg')
-        cv2.imwrite('det_results.jpg', src_im)
         return dt_boxes, elapse
 
 
