@@ -80,7 +80,7 @@ https://blog.csdn.net/weixin_47567401/article/details/123525014
 #### 🎧2022-04-04 update
 - 增加python下的基于OpenVINO推理引擎的支持
 - 给出OpenVINO和ONNXRuntime的性能对比表格
-- 详情参加[python/README](./python/README.md)
+- 详情参见:[python/README](./python/README.md)
 
 #### 2022-02-24 update
 - 优化python目录下的推理代码
