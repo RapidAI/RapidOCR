@@ -2,6 +2,8 @@
 ```bash
 # Windows端
 pip install openvino==2022.1.0
+
+# 里面含有mo
 pip install openvino-dev==2022.1.0
 ```
 
@@ -13,7 +15,7 @@ mo --input_model models/ch_PP-OCRv2_det_infer.onnx --output_dir models/IR/
 # 转静态模型 推理时占用内存平均为1G左右
 mo --input_model models/ch_PP-OCRv2_det_infer.onnx \
    --output_dir models/IR/static \
-   --input_shape 1,3, 12128,800
+   --input_shape "[1,3,12128,800]"
 ```
 
 #### 测试图像下载

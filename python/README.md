@@ -3,23 +3,36 @@
 - `openvino_infer`: 基于OpenVINO推理引擎推理
 
 ### TODO
-- [ ] 模型转INT8，尚未找到转换代码
+- [ ] 模型转INT8，正在尝试
 - [ ] 其他推理模型代码整理
 - [ ] 模型转换代码整理
 
 ### 关于OpenVINO
-- OpenVINO可以直接推理ONNX模型，可以不用转换直接使用之前ONNX模型
-- OpenVINO推理速度更快，但是从对比来看，占用内存更多，目前正在排查原因
+- OpenVINO可以直接推理IR、ONNX和PaddlePaddle模型，具体如下(图来源:[link](https://docs.openvino.ai/latest/openvino_docs_OV_UG_OV_Runtime_User_Guide.html#doxid-openvino-docs-o-v-u-g-o-v-runtime-user-guide))：
+
+    <div align="center">
+        <img src="../assets/BASIC_FLOW_IE_C.svg">
+    </div>
+
+- 和ONNXRuntime同时推理同一个ONNX模型，OpenVINO推理速度更快
+- 但是从对比来看，OpenVINO占用内存更大，其原因是拿空间换的时间
+  - 当指定`input_shape`在一个区间范围时，推理时内存占用会减少一些
+  - 示例命令:
+    ```bash
+    mo --input_model models/ch_PP-OCRv2_det_infer.onnx \
+    --output_dir models/IR/static \
+    --input_shape "[1,3,960:1200,800]"
+    ```
 
 ### OpenVINO与ONNXRuntime性能对比
 - 推理设备：`Windows 64位 Intel(R) Core(TM) i5-4210M CPU @ 2.60GHz   2.59 GHz`
-- 测试图像宽高: `12119x810`
+- [测试图像宽高](https://drive.google.com/file/d/1iJcGvOVIdUlyOS52bBdvO8uzx8QORo5M/view?usp=sharing): `12119x810`
 
 | 测试模型                             | 推理框架             | 占用内存(3次平均) | 推理时间(3次平均) |
 | ------------------------------------ | -------------------- | ----------------- | ----------------- |
 | `ch_PP-OCRv2_det_infer.onnx`         | `ONNXRuntime=1.10.0` | 0.8G              | 5.354s            |
 | `ch_PP-OCRv2_det_infer.onnx`         | `openvino=2022.1.0`  | 3.225G            | 2.53s             |
-| `ch_PP-OCRv2_det_infer.xml` FP32 | `openvino=2022.1.0`  | 3.175G            | 2.0455s           |
+| `ch_PP-OCRv2_det_infer.xml` FP32 动态图 | `openvino=2022.1.0`  | 3.175G            | 2.0455s           |
 
 
 ### OpenVINO与ONNXRuntime推理代码写法对比
@@ -57,4 +70,3 @@ self.vino_session = compile_model.create_infer_request()
 self.vino_session.infer(inputs=[img])
 vino_preds = self.vino_session.get_output_tensor().data
 ```
-
