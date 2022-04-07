@@ -22,7 +22,8 @@
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
   - [Recently updates](#recently-updates)
-      - [🔉2022-02-24 update](#2022-02-24-update)
+      - [🎧2022-04-04 update](#2022-04-04-update)
+      - [2022-02-24 update](#2022-02-24-update)
       - [2021-12-18 update](#2021-12-18-update)
       - [2021-11-28 update](#2021-11-28-update)
       - [2021-11-13 update](#2021-11-13-update)
@@ -65,7 +66,12 @@
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
 ## Recently updates
-#### 🔉2022-02-24 update
+#### 🎧2022-04-04 update
+- Add suport for OpenVINO under python
+- Give the performance comparison table of OpenVINO and ONNXRuntime
+- For details:[python/README](./python/README.md)
+
+#### 2022-02-24 update
 - Optimize the inference code of the python part.
 - Add inference code examples that use the different language models.
 - For details, see: [python/README](./python/README.md)

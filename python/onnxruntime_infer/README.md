@@ -1,5 +1,6 @@
 ### 使用步骤
-1. 下载相应模型和用于显示的字体文件
+1. 下载`python/onnxruntime_infer`目录到本地
+2. 下载相应模型和用于显示的字体文件
    - [百度网盘 提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
 
    - 下载之后模型和相应字体文件放在`fonts`和`models`下，最终目录结构如下：
@@ -19,7 +20,7 @@
          `-- korean.ttf
        ```
 
-2. 运行
+3. 运行
    - 接口调用方式运行
      - 如果想要使用其他语言的识别模型，可以只对`rec_model_path`和`keys_path`作对应更改即可
      - **!!!各个不同语言的推理代码区别只在于模型和字典文件!!!**
@@ -105,7 +106,7 @@
 
 ### onnxruntime-gpu版推理配置
 
-1. ONNXRuntime-gpu需要严格按照与cuda、cudnn版本对应来安装，具体参考[文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements), **这一步关乎后面是否可以成功调用GPU**
+1. onnxruntime-gpu需要严格按照与cuda、cudnn版本对应来安装，具体参考[文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements)，**这一步关乎后面是否可以成功调用GPU**
 2. 推理代码中，加载onnx模型部分，用以下对应语言代码替换即可,详细参见：[官方教程](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)
    - python版本
       ```python
@@ -139,7 +140,7 @@
 
       SessionOptionsAppendExecutionProvider_CUDA(session_options, &options);
       ```
-3. 推理时间粗略对比(跑完RapidOCR整个项目)
+3. 推理时间粗略对比(完整跑完一张图像)
 
    |推理方式|推理图像数目|耗费时间|
    |:---:|:---:|:---:|
