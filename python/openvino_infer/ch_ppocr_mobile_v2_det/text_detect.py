@@ -147,4 +147,3 @@ if __name__ == "__main__":
     src_im = draw_text_det_res(dt_boxes, args.image_path)
     cv2.imwrite('det_results.jpg', src_im)
     print(f'图像已经保存为det_results.jpg了\t{elapse:.6f}s')
-
