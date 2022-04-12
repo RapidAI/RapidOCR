@@ -1,7 +1,7 @@
 pyclipper==1.2.0
 Shapely==1.7.1
-onnxruntime>=1.7.0
 opencv_python==4.5.1.48
 six==1.15.0
 numpy>=1.19.2
 Pillow==8.3.0
+openvino==2022.1.0

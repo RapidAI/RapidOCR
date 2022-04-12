@@ -7,16 +7,16 @@ pip install openvino==2022.1.0
 pip install openvino-dev==2022.1.0
 ```
 
-#### 模型转换为IR
-```bash
-# 转动态模型 推理时占用内存平均为3.5G左右
-mo --input_model models/ch_PP-OCRv2_det_infer.onnx --output_dir models/IR/
+#### 模型问题
+- 因为OpenVINO可以直接推理ONNX模型，故这里暂时不作转换，直接推理之前ONNX模型即可
+- 这里仍然给出转换的代码，用作参考:
+    ```bash
+    mo --input_model models/ch_PP-OCRv2_det_infer.onnx --output_dir models/IR/
 
-# 转静态模型 推理时占用内存平均为1G左右
-mo --input_model models/ch_PP-OCRv2_det_infer.onnx \
-   --output_dir models/IR/static \
-   --input_shape "[1,3,12128,800]"
-```
+    mo --input_model models/ch_PP-OCRv2_det_infer.onnx \
+    --output_dir models/IR/static \
+    --input_shape "[1,3,12128,800]"
+    ```
 
-#### 测试图像下载
-- [long1.jpg](https://drive.google.com/file/d/1iJcGvOVIdUlyOS52bBdvO8uzx8QORo5M/view?usp=sharing)
+#### 使用步骤
+同[onnxruntime_infer](../onnxruntime_infer/README.md)

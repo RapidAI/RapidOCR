@@ -4,6 +4,13 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import numpy as np
+from openvino.runtime import Core
+
+cls_model_path = r'models/ch_ppocr_mobile_v2.0_cls_infer.onnx'
+ie = Core()
+model_onnx = ie.read_model(cls_model_path)
+compile_model = ie.compile_model(model_onnx, device_name='CPU')
+pass
 
 # Infer ONNXRuntime
 # import cv2
@@ -32,17 +39,17 @@ import numpy as np
 # dt_boxes, elapse = text_detect_vino(img)
 # print(f'openvino ONNX: {elapse}\tdt_boxes:{np.mean(dt_boxes)}')
 
-# # Infer IR
-import cv2
-from ch_ppocr_mobile_v2_det_openvino_ir import TextDetector as TextDetectorIR
+# # # Infer IR
+# import cv2
+# from ch_ppocr_mobile_v2_det_openvino_ir import TextDetector as TextDetectorIR
 
-det_model_path = 'models/IR/static/ch_PP-OCRv2_det_infer.xml'
-img_path = 'test_images/long1.jpg'
-img = cv2.imread(img_path)
+# det_model_path = 'models/IR/static/ch_PP-OCRv2_det_infer.xml'
+# img_path = 'test_images/long1.jpg'
+# img = cv2.imread(img_path)
 
-text_detect_ir = TextDetectorIR(det_model_path)
-dt_boxes, elapse = text_detect_ir(img)
-print(f'FP16 openvino IR: {elapse}\tdt_boxes:{np.mean(dt_boxes)}')
+# text_detect_ir = TextDetectorIR(det_model_path)
+# dt_boxes, elapse = text_detect_ir(img)
+# print(f'FP16 openvino IR: {elapse}\tdt_boxes:{np.mean(dt_boxes)}')
 
 # Infer paddle 有误
 # RuntimeError: Can't SetBlob with name: x, because model input (shape={?,3,960,960}) and blob (shape=(1.3.12128.800)) are incompatible
@@ -56,4 +63,3 @@ print(f'FP16 openvino IR: {elapse}\tdt_boxes:{np.mean(dt_boxes)}')
 # text_detect_ir = TextDetectorPaddle(det_model_path)
 # dt_boxes, elapse = text_detect_ir(img)
 # print(f'openvino IR: {elapse}')
-

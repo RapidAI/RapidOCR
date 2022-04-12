@@ -4,8 +4,9 @@
 
 ### TODO
 - [ ] 模型转INT8，正在尝试
-- [ ] 其他推理模型代码整理
-- [ ] 模型转换代码整理
+- [ ] OpenVINO推理方向分类模型有误，已经提了[issue](https://github.com/openvinotoolkit/openvino/issues/11501)
+- [x] 其他推理模型代码整理
+- [x] 模型转换代码整理
 
 ### 关于OpenVINO
 - OpenVINO可以直接推理IR、ONNX和PaddlePaddle模型，具体如下(图来源:[link](https://docs.openvino.ai/latest/openvino_docs_OV_UG_OV_Runtime_User_Guide.html#doxid-openvino-docs-o-v-u-g-o-v-runtime-user-guide))：

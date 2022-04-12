@@ -106,9 +106,9 @@ class TextClassifier(object):
                 norm_img = norm_img[np.newaxis, :]
                 norm_img_batch.append(norm_img)
             norm_img_batch = np.concatenate(norm_img_batch)
-            onnx_inputs = {self.session.get_inputs()[0].name: norm_img_batch}
 
             starttime = time.time()
+            onnx_inputs = {self.session.get_inputs()[0].name: norm_img_batch}
             prob_out = self.session.run(None, onnx_inputs)[0]
 
             cls_result = self.postprocess_op(prob_out)

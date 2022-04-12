@@ -18,6 +18,7 @@ import time
 
 import cv2
 import numpy as np
+import onnxruntime as ort
 from openvino.runtime import Core
 
 try:
@@ -33,10 +34,15 @@ class TextClassifier(object):
         self.cls_thresh = 0.9
         self.postprocess_op = ClsPostProcess(label_list=['0', '180'])
 
-        ie = Core()
-        model_onnx = ie.read_model(cls_model_path)
-        compile_model = ie.compile_model(model=model_onnx, device_name='CPU')
-        self.session = compile_model.create_infer_request()
+        # ie = Core()
+        # model_onnx = ie.read_model(cls_model_path)
+        # compile_model = ie.compile_model(model=model_onnx, device_name='CPU')
+        # self.session = compile_model.create_infer_request()
+
+        sess_opt = ort.SessionOptions()
+        sess_opt.log_severity_level = 4
+        sess_opt.enable_cpu_mem_arena = False
+        self.session = ort.InferenceSession(cls_model_path, sess_opt)
 
     def resize_norm_img(self, img):
         imgC, imgH, imgW = self.cls_image_shape
@@ -110,8 +116,11 @@ class TextClassifier(object):
             norm_img_batch = np.concatenate(norm_img_batch)
 
             starttime = time.time()
-            self.session.infer(inputs=[norm_img_batch])
-            prob_out = self.session.get_output_tensor().data
+            onnx_inputs = {self.session.get_inputs()[0].name: norm_img_batch}
+            prob_out = self.session.run(None, onnx_inputs)[0]
+
+            # self.session.infer(inputs=[norm_img_batch])
+            # prob_out = self.session.get_output_tensor().data
 
             cls_result = self.postprocess_op(prob_out)
             elapse += time.time() - starttime

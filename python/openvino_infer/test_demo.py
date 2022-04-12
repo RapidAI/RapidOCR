@@ -16,7 +16,7 @@ text_sys = TextSystem(det_model_path,
                       cls_model_path=cls_model_path,
                       keys_path=keys_path)
 
-image_path = r'test_images/det_images/ch_en_num.jpg'
+image_path = r'test_images/ch_en_num.jpg'
 dt_boxes, rec_res = text_sys(image_path)
 visualize(image_path, dt_boxes, rec_res)
 
