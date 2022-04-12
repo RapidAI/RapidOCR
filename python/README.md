@@ -1,6 +1,6 @@
 ### 目录说明
-- `onnxruntime_infer`: 基于ONNXRuntime推理引擎推理
-- `openvino_infer`: 基于OpenVINO推理引擎推理
+- [onnxruntime_infer](./onnxruntime_infer): 基于ONNXRuntime推理引擎推理
+- [openvino_infer](./openvino_infer): 基于OpenVINO推理引擎推理
 
 ### TODO
 - [ ] 模型转INT8，正在尝试
