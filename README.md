@@ -21,7 +21,6 @@
     <summary>目录</summary>
 
 - [RapidOCR (捷智OCR)](#rapidocr-捷智ocr)
-  - [TODO](#todo)
   - [Openvino](#openvino)
   - [简介](#简介)
   - [近期更新](#近期更新)
@@ -59,10 +58,6 @@
       - [多语言示例图像](#多语言示例图像)
 </details>
 
-## TODO
-- [x] 测试openvino推理速度，给出详细设备上推理性能对比表格
-- [ ] 基于openvino的推理部署方案
-
 ## Openvino
 
 https://blog.csdn.net/weixin_47567401/article/details/123525014
@@ -77,6 +72,7 @@ https://blog.csdn.net/weixin_47567401/article/details/123525014
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。
 
 ## 近期更新
+
 #### 🎧2022-04-04 update
 - 增加python下的基于OpenVINO推理引擎的支持
 - 给出OpenVINO和ONNXRuntime的性能对比表格
