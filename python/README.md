@@ -4,7 +4,7 @@
 
 ### TODO
 - [ ] 模型转INT8，正在尝试
-- [ ] OpenVINO推理方向分类模型有误，已经提了[issue](https://github.com/openvinotoolkit/openvino/issues/11501)
+- [x] OpenVINO推理方向分类模型有误，已经提了[issue](https://github.com/openvinotoolkit/openvino/issues/11501)→ 问题有已经解决，但是需要自己编译OpenVINO，参见[Answer](https://github.com/openvinotoolkit/openvino/issues/11501#issuecomment-1096366363)
 - [x] 其他推理模型代码整理
 - [x] 模型转换代码整理
 
