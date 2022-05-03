@@ -101,8 +101,8 @@ https://blog.csdn.net/weixin_47567401/article/details/123525014
 - 将文本识别中字典位置以参数方式给出，便于灵活配置，详情见[keys_path](python/rapidOCR.sh)
 
 #### 2021-10-27 update
-- 添加使用onnxruntime-gpu版推理的代码（不过gpu版本的onnxruntime不太好用，按照[官方教程](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)配置，感觉没有调用起来GPU）
-- 具体使用步骤参见: [onnxruntime-gpu推理配置](python/README.md)
+- 添加使用onnxruntime-gpu版推理的代码
+- 具体使用步骤参见: [onnxruntime-gpu推理配置](https://github.com/RapidAI/RapidOCR/tree/main/python/onnxruntime_infer#onnxruntime-gpu%E7%89%88%E6%8E%A8%E7%90%86%E9%85%8D%E7%BD%AE)
 
 #### 2021-09-13 update
 - 添加基于`python`的whl文件，便于使用，详情参见`release/python_sdk`
