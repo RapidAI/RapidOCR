@@ -58,9 +58,6 @@
       - [多语言示例图像](#多语言示例图像)
 </details>
 
-## Openvino
-
-https://blog.csdn.net/weixin_47567401/article/details/123525014
 
 ## 简介
 - 💖目前已知**运行速度最快、支持最广**，完全开源免费并支持离线部署的多平台多语言OCR SDK
