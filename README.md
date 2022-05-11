@@ -59,7 +59,7 @@
 </details>
 
 ## TODO
-- [] 适配PaddleOCR v3
+- [ ] 适配PaddleOCR v3
 
 ## 简介
 - 💖目前已知**运行速度最快、支持最广**，完全开源免费并支持离线部署的多平台多语言OCR SDK
