@@ -1,7 +1,7 @@
 ### 使用步骤
 1. 下载`python/onnxruntime_infer`目录到本地
 2. 下载相应模型和用于显示的字体文件
-   - [百度网盘 提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
+   - 网盘下对应模型可直接替换([百度网盘](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing))
 
    - 下载之后模型和相应字体文件放在`fonts`和`models`下，最终目录结构如下：
        ```text
@@ -20,7 +20,7 @@
          `-- korean.ttf
        ```
 
-3. 运行
+1. 运行
    - 接口调用方式运行
      - 如果想要使用其他语言的识别模型，可以只对`rec_model_path`和`keys_path`作对应更改即可
      - **!!!各个不同语言的推理代码区别只在于模型和字典文件!!!**
@@ -112,7 +112,7 @@
       ```python
       # 根据机器配置，安装对应版本的onnxruntime-gpu
       # pip install onnxruntime-gpu==xxxx
-            
+
       import onnxruntime as ort
 
       model_path = '<path to model>'

@@ -3,7 +3,7 @@
 # @Contact: liekkaskono@163.com
 from rapid_ocr_api import TextSystem, visualize
 
-det_model_path = 'models/ch_ppocr_mobile_v2.0_det_infer.onnx'
+det_model_path = 'models/PPOCRv3/ch_PP-OCRv3_det_infer.onnx'
 cls_model_path = 'models/ch_ppocr_mobile_v2.0_cls_infer.onnx'
 
 # 中英文识别

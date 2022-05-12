@@ -21,25 +21,11 @@
     <summary>目录</summary>
 
 - [RapidOCR (捷智OCR)](#rapidocr-捷智ocr)
-  - [Openvino](#openvino)
+  - [TODO](#todo)
   - [简介](#简介)
-  - [近期更新](#近期更新)
+  - [近期更新(more)](#近期更新more)
+      - [😀2022-05-12 upadte](#2022-05-12-upadte)
       - [🎧2022-04-04 update](#2022-04-04-update)
-      - [2022-02-24 update](#2022-02-24-update)
-      - [2021-12-18 update](#2021-12-18-update)
-      - [2021-11-28 update](#2021-11-28-update)
-      - [之前更新记录](#之前更新记录)
-      - [2021-11-13 update](#2021-11-13-update)
-      - [2021-10-27 update](#2021-10-27-update)
-      - [2021-09-13 update](#2021-09-13-update)
-      - [2021-09-11 update](#2021-09-11-update)
-      - [2021-08-07 update](#2021-08-07-update)
-        - [2021-07-17 update](#2021-07-17-update)
-        - [2021-07-04 update](#2021-07-04-update)
-        - [2021-06-20 update](#2021-06-20-update)
-        - [2021-06-10 update](#2021-06-10-update)
-        - [2021-06-08 update](#2021-06-08-update)
-        - [2021-03-24 update](#2021-03-24-update)
   - [整个框架](#整个框架)
   - [常见问题  FAQ](#常见问题--faq)
   - [SDK 编译状态](#sdk-编译状态)
@@ -47,6 +33,9 @@
   - [项目结构](#项目结构)
   - [当前进展](#当前进展)
   - [模型相关](#模型相关)
+    - [各个版本ONNX模型效果对比](#各个版本onnx模型效果对比)
+      - [文本检测模型](#文本检测模型)
+      - [文本识别模型](#文本识别模型)
       - [模型转onnx](#模型转onnx)
   - [原始发起者及初创作者](#原始发起者及初创作者)
   - [版权声明](#版权声明)
@@ -59,7 +48,8 @@
 </details>
 
 ## TODO
-- [ ] 适配PaddleOCR v3
+- [x] 适配PaddleOCR det
+- [ ] 适配PaddleOCR rec
 
 ## 简介
 - 💖目前已知**运行速度最快、支持最广**，完全开源免费并支持离线部署的多平台多语言OCR SDK
@@ -70,84 +60,16 @@
 
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。
 
-## 近期更新
+## 近期更新([more](./change_log.md))
+#### 😀2022-05-12 upadte
+- 增加PaddleOCR v3 det模型转换的ONNX模型，直接去网盘下载，替换即可。([百度网盘](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing))
+- 增加各个版本文本检测模型效果对比表格，详情点击[各个版本ONNX模型效果对比](#各个版本onnx模型效果对比)。v3的文本检测模型从指标来看是好于之前的v2的，推荐使用。
 
 #### 🎧2022-04-04 update
 - 增加python下的基于OpenVINO推理引擎的支持
 - 给出OpenVINO和ONNXRuntime的性能对比表格
 - 详情参见:[python/README](./python/README.md)
 
-#### 2022-02-24 update
-- 优化python目录下的推理代码
-- 添加调用不同语言模型的推理代码示例
-- 详情参见：[python/onnxruntime_infer/README](./python/onnxruntime_infer/README.md)
-
-#### 2021-12-18 update
-- 添加[Google Colab Demo](https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/RapidOCRDemo.ipynb)
-
-#### 2021-11-28 update
-- 更新[ocrweb](http://rapidocr.51pda.cn:9003/)部分
-  - 添加显示各个阶段处理时间
-  - 更新说明文档
-  - 更换文本检测模型为`ch_PP-OCRv2_det_infer.onnx`,推理更快，更准
-
-#### 之前更新记录
-<details>
-    <summary>点击查看</summary>
-
-#### 2021-11-13 update
-- 添加python版本中文本检测和识别可调节的超参数，主要有`box_thresh|unclip_ratio|text_score`，详情见[参数调节](python/README.md#相关调节参数)
-- 将文本识别中字典位置以参数方式给出，便于灵活配置，详情见[keys_path](python/rapidOCR.sh)
-
-#### 2021-10-27 update
-- 添加使用onnxruntime-gpu版推理的代码
-- 具体使用步骤参见: [onnxruntime-gpu推理配置](https://github.com/RapidAI/RapidOCR/tree/main/python/onnxruntime_infer#onnxruntime-gpu%E7%89%88%E6%8E%A8%E7%90%86%E9%85%8D%E7%BD%AE)
-
-#### 2021-09-13 update
-- 添加基于`python`的whl文件，便于使用，详情参见`release/python_sdk`
-
-#### 2021-09-11 update
-- 添加PP-OCRv2新增模型onnx版本
-  - 使用方法推理代码不变，直接替换对应模型即可。
-- 经过在自有测试集上评测：
-  - PP-OCRv2检测模型效果有大幅度提升，模型大小没变。
-  - PP-OCRv2识别模型效果无明显提升，模型大小增加了3.58M。
-- 模型上传到[百度网盘 提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
-
-#### 2021-08-07 update
-- 现在正在做的
-  - [ ] PP-Structure 表格结构和cell坐标预测 正在整理中
-
-- 之前做的,未完成的，欢迎提PR
-  - [ ] 打Dokcer镜像
-  - [x] 尝试onnxruntime-gpu推理
-
-##### 2021-07-17 update
-- 完善README文档
-- 增加**英文、数字识别**onnx模型，具体参见`python/en_number_ppocr_mobile_v2_rec`，用法同其他
-- 整理一下[模型转onnx](#模型转onnx)
-
-##### 2021-07-04 update
-- 目前仓库下的python程序已经可以在树莓派4B上，成功运行，详细信息请进群，询问群主
-- 更新整体结构图，添加树莓派的支持
-
-##### 2021-06-20 update
-- 优化ocrweb中识别结果显示，同时添加识别动图演示
-- 更新`datasets`目录，添加一些常用数据库链接(搬运一下^-^)
-- 更新[FAQ](./FAQ.md)
-
-##### 2021-06-10 update
-- 添加server版文本识别模型，详情见[提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
-
-##### 2021-06-08 update
-- 整理仓库，统一模型下载路径
-- 完善相关说明文档
-
-##### 2021-03-24 update
-- 新模型已经完全兼容ONNXRuntime 1.7 或更高版本。 特别感谢：@Channingss
-- 新版onnxruntime比1.6.0 性能提升40%以上。
-
-</details>
 
 ## 整个框架
 <div align="center">
@@ -183,7 +105,6 @@
     ├── assets              # 一些演示用的图片，不是测试集
     ├── commonlib           # 通用库
     ├── cpp                 # 基于c++的工程项目文件夹
-    ├── datasets            # 常用OCR相关数据集汇总
     ├── dotnet              # .Net程序目录
     ├── FAQ.md              # 一些问答整理
     ├── images              # 测试用图片，两张典型的测试图，一张是自然场景，另一个为长文本
@@ -210,27 +131,29 @@
 - [ ] 依据python版本重写C++推理代码，以提升推理效果，并增加对gif/tga/webp 格式图片的支持
 
 ## 模型相关
-- 可以直接下载使用的模型 (百度云下载链接：[提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)） 或者 [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
+- 可以直接下载使用的模型 ([百度网盘](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)）
 
 |模型名称|模型简介|模型大小|备注|
 |:---:|:---:|:---:|:---:|
 |⭐ ch_PP-OCRv2_det_infer.onnx|轻量文本检测模型|2.23M|较v1轻量检测，精度有较大提升 from [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.4/README_ch.md#pp-ocr%E7%B3%BB%E5%88%97%E6%A8%A1%E5%9E%8B%E5%88%97%E8%A1%A8%E6%9B%B4%E6%96%B0%E4%B8%AD)|
 |⭐ ch_PP-OCRv2_rec_infer.onnx|轻量文本识别模型|7.79M||
-|||||
-|ch_ppocr_mobile_v2.0_det_infer.onnx|轻量文本检测模型|2.23M|PP-OCRv1|
-|ch_ppocr_mobile_v2.0_cls_infer.onnx|轻量文本方向分类模型|571KB|PP-OCRv1|
-|ch_ppocr_mobile_v2.0_rec_infer.onnx|轻量文本识别模型|4.21M|PP-OCRv1|
-|||||
-|ch_ppocr_server_v2.0_det_infer.onnx|服务器版文本检测模型|46.60M|PP-OCRv1|
-|ch_ppocr_server_v2.0_rec_infer.onnx|服务器版文本识别模型|106M|PP-OCRv1|
-|||||
-|japan_rec_crnn.onnx|轻量日语识别模型|3.38M|PP-OCRv1|
-|en_number_mobile_v2.0_rec_infer.onnx|轻量英文和数字识别模型|1.79M|PP-OCRv1|
+
+### 各个版本ONNX模型效果对比
+#### 文本检测模型
+- 测试集：自己构建`中英文(111个，包含卡证、文档和自然图像)`
+
+|模型|avg_Det_Speed(s/img)|avg_precision|avg_recall|avg_hmean|模型大小|
+|:---:|:---:|:---:|:---:|:---:|:---:|
+|ch_ppocr_mobile_v2.0_det_infer.onnx|0.4345742|0.7277|0.8413|0.7785|2.3M|
+|ch_PP-OCRv2_det_infer.onnx|0.5116553|0.7817|0.8472|0.8123|2.3M|
+|ch_PP-OCRv3_det_infer.onnx|0.5723512|0.7740|0.8837|0.8237|2.4M|
+
+#### 文本识别模型
 
 #### 模型转onnx
-  - [手把手教你使用ONNXRunTime部署PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0) by @[Channingss](https://github.com/Channingss)
-  - [✧✧PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter) by @[SWHL](https://github.com/SWHL)
+  - ⭐[PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter) by @[SWHL](https://github.com/SWHL)
   - [Paddle2OnnxConvertor](https://github.com/RapidAI/Paddle2OnnxConvertor) by @[benjaminwan](https://github.com/benjaminwan)
+  - [手把手教你使用ONNXRunTime部署PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0) by @[Channingss](https://github.com/Channingss)
 
 
 ## 原始发起者及初创作者
