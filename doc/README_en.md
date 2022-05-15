@@ -5,7 +5,7 @@
 
 # RapidOCR
 
-[简体中文](README.md) | English
+[简体中文](../README.md) | English
 
 <p align="left">
     <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="./assets/colab-badge.svg" alt="Open in Colab"></a>

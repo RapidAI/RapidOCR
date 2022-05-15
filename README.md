@@ -5,7 +5,7 @@
 
 # RapidOCR (捷智OCR)
 
-简体中文 | [English](README_en.md)
+简体中文 | [English](./doc/README_en.md)
 
 <p align="left">
     <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="./assets/colab-badge.svg" alt="Open in Colab"></a>
