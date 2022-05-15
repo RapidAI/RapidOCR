@@ -21,9 +21,9 @@
     <summary>目录</summary>
 
 - [RapidOCR (捷智OCR)](#rapidocr-捷智ocr)
-  - [TODO](#todo)
   - [简介](#简介)
   - [近期更新(more)](#近期更新more)
+      - [🍿2022-05-15 update](#2022-05-15-update)
       - [😀2022-05-12 upadte](#2022-05-12-upadte)
       - [🎧2022-04-04 update](#2022-04-04-update)
   - [整个框架](#整个框架)
@@ -47,9 +47,6 @@
       - [多语言示例图像](#多语言示例图像)
 </details>
 
-## TODO
-- [x] 适配PaddleOCR det
-- [ ] 适配PaddleOCR rec
 
 ## 简介
 - 💖目前已知**运行速度最快、支持最广**，完全开源免费并支持离线部署的多平台多语言OCR SDK
@@ -61,9 +58,13 @@
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。
 
 ## 近期更新([more](./change_log.md))
+#### 🍿2022-05-15 update
+- 增加PaddleOCR v3 rec模型转换后的ONNX模型，直接去网盘下载替换即可。([百度网盘](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing))
+- 增加文本识别模型各个版本效果对比表格，详情点击[各个版本ONNX模型效果对比](#各个版本onnx模型效果对比)。v3的文本识别模型从自己构建测试集上的指标来看不如之前的好。
+
 #### 😀2022-05-12 upadte
 - 增加PaddleOCR v3 det模型转换的ONNX模型，直接去网盘下载，替换即可。([百度网盘](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing))
-- 增加各个版本文本检测模型效果对比表格，详情点击[各个版本ONNX模型效果对比](#各个版本onnx模型效果对比)。v3的文本检测模型从指标来看是好于之前的v2的，推荐使用。
+- 增加各个版本文本检测模型效果对比表格，详情点击[各个版本ONNX模型效果对比](#各个版本onnx模型效果对比)。v3的文本检测模型从自己构建测试集上的指标来看是好于之前的v2的，推荐使用。
 
 #### 🎧2022-04-04 update
 - 增加python下的基于OpenVINO推理引擎的支持
@@ -126,7 +127,7 @@
 - [x] .Net范例(C#): [demo](./dotnet)
 - [x] Android范例: [demo](./android)
 - [x] python范例: [demo](./python)
-- [ ] OpenVINO加速版本，进行中
+- [x] OpenVINO加速版本，进行中
 - [ ] IOS范例: 等待有缘人贡献代码
 - [ ] 依据python版本重写C++推理代码，以提升推理效果，并增加对gif/tga/webp 格式图片的支持
 
@@ -142,13 +143,23 @@
 #### 文本检测模型
 - 测试集：自己构建`中英文(111个，包含卡证、文档和自然图像)`
 
-|模型|avg_Det_Speed(s/img)|avg_precision|avg_recall|avg_hmean|模型大小|
-|:---:|:---:|:---:|:---:|:---:|:---:|
-|ch_ppocr_mobile_v2.0_det_infer.onnx|0.4345742|0.7277|0.8413|0.7785|2.3M|
-|ch_PP-OCRv2_det_infer.onnx|0.5116553|0.7817|0.8472|0.8123|2.3M|
-|ch_PP-OCRv3_det_infer.onnx|0.5723512|0.7740|0.8837|0.8237|2.4M|
+|                模型                  | infer_Speed(s/img) | precision | recall | hmean  | 模型大小 |
+| :---------------------------------: | :----------------: | :-------: | :----: | :----: | :------: |
+| ch_ppocr_mobile_v2.0_det_infer.onnx |     0.4345742      |  0.7277   | 0.8413 | 0.7785 |   2.3M   |
+|     ch_PP-OCRv2_det_infer.onnx      |     0.5116553      |  0.7817   | 0.8472 | 0.8123 |   2.3M   |
+|     ch_PP-OCRv3_det_infer.onnx      |     0.5723512      |  **0.7740**   | **0.8837** | **0.8237** |   2.4M   |
 
 #### 文本识别模型
+- 测试集: 自己构建`中英文(168个)`
+
+|                模型                 | infer_speed(s/img)   | Score     |    Exact_Match   |   Char_Match | 模型大小 |
+| :---------------------------------: | ------------------: | :-------: | :--------------: | :-------------: | :--: |
+| ch_ppocr_mobile_v2.0_rec_infer.onnx |       0.0111        |  **0.7287**   |      **0.5595**      |     0.8979      | 4.3M |
+|     ch_PP-OCRv2_rec_infer.onnx      |       0.0193        |  0.6955   |      0.4881      |     **0.9029**      | 8.0M |
+|     ch_PP-OCRv3_rec_infer.onnx      |       0.0145        |  0.5537   |      0.3274      |     0.7800      |  11M |
+| ch_PP-OCRv3_rec_train_student.onnx  |       0.0157        |  0.5537   |      0.3274      |     0.7800      | 11M  |
+| ch_PP-OCRv3_rec_train_teacher.onnx  |       0.0140        |  0.5381   |      0.3095      |     0.7667      | 11M  |
+
 
 #### 模型转onnx
   - ⭐[PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter) by @[SWHL](https://github.com/SWHL)
@@ -157,9 +168,11 @@
 
 
 ## 原始发起者及初创作者
-- [benjaminwan](https://github.com/benjaminwan)
-- [znsoftm](https://github.com/znsoftm)
-- [SWHL](https://github.com/SWHL)
+<p align="center">
+    <a href="https://github.com/benjaminwan"><img src="https://avatars.githubusercontent.com/u/2362051?v=4" width=75 height=75></a>
+    <a href="https://github.com/znsoftm"><img src="https://avatars.githubusercontent.com/u/15354249?v=4" width=75 height=75></a>
+    <a href="https://github.com/SWHL"><img src="https://avatars.githubusercontent.com/u/28639377?v=4" width=75 height=75></a>
+</p>
 
 ## 版权声明
 - 如果你的产品使用了本仓库中的全部或部分代码、文字或材料
