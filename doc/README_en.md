@@ -8,7 +8,7 @@
 [简体中文](README.md) | English
 
 <p align="left">
-    <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/RapidOCRDemo.ipynb" target="_blank"><img src="./assets/colab-badge.svg" alt="Open in Colab"></a>
+    <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="./assets/colab-badge.svg" alt="Open in Colab"></a>
     <a href="./LICENSE"><img src="https://img.shields.io/badge/License-Apache%202-dfd.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/Python-3.6+-aff.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
@@ -21,30 +21,21 @@
 
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
-  - [Recently updates](#recently-updates)
+  - [Recently updates(more)](#recently-updatesmore)
+      - [🍿2022-05-15 update](#2022-05-15-update)
+      - [😀2022-05-12 upadte](#2022-05-12-upadte)
       - [🎧2022-04-04 update](#2022-04-04-update)
-      - [2022-02-24 update](#2022-02-24-update)
-      - [2021-12-18 update](#2021-12-18-update)
-      - [2021-11-28 update](#2021-11-28-update)
-      - [2021-11-13 update](#2021-11-13-update)
-      - [2021-10-27 update](#2021-10-27-update)
-      - [2021-09-13 update](#2021-09-13-update)
-      - [2021-09-11 update](#2021-09-11-update)
-      - [2021-08-07 update](#2021-08-07-update)
-      - [2021-07-17 update](#2021-07-17-update)
-      - [2021-07-04 update](#2021-07-04-update)
-      - [2021-06-20 update](#2021-06-20-update)
-      - [2021-06-10 update](#2021-06-10-update)
-      - [2021-06-08 update](#2021-06-08-update)
-      - [2021-03-24 update](#2021-03-24-update)
   - [FAQ](#faq)
   - [SDK compilation status](#sdk-compilation-status)
   - [Online demo](#online-demo)
   - [Directory structure](#directory-structure)
   - [Current Progress](#current-progress)
   - [Model related](#model-related)
-      - [Download models](#download-models)
+      - [Download models( Google Drive|[Baidu NetDisk](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) )](#download-models-google-drivebaidu-netdisk-)
       - [Model to onnx](#model-to-onnx)
+    - [Compared](#compared)
+      - [Text Det](#text-det)
+      - [Text Recognition](#text-recognition)
   - [PaddleOCR-FAQ](#paddleocr-faq)
   - [Original initiator and start-up author](#original-initiator-and-start-up-author)
   - [Authorization](#authorization)
@@ -65,88 +56,21 @@
 
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
-## Recently updates
+## Recently updates([more](./change_log_en.md))
+#### 🍿2022-05-15 update
+- Add the ONNX model converted from the PaddleOCR v3 rec model, just go to the network disk to download and replace it. ([Baidu Netdisk](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing ))
+- Added a comparison table of the effects of each version of the text recognition model. For details, click [Comparison of the effects of various versions of ONNX models] (#Comparison of the effects of various versions of onnx models). The text recognition model of v3 is not as good as the previous one in terms of the indicators on the test set constructed by itself.
+
+#### 😀2022-05-12 upadte
+- Add the ONNX model converted from the PaddleOCR v3 det model, download it directly from the network disk, and replace it. ([Baidu Netdisk](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing ))
+- Added a comparison table of text detection model effects of various versions. For details, click [Comparison of the effects of various versions of ONNX models] (#Comparison of the effects of various versions of onnx models). The text detection model of v3 is better than the previous v2 in terms of the indicators on the test set constructed by itself, and it is recommended to use it.
+
 #### 🎧2022-04-04 update
 - Add suport for OpenVINO under python
 - Give the performance comparison table of OpenVINO and ONNXRuntime
 - For details:[python/README](./python/README.md)
 
-#### 2022-02-24 update
-- Optimize the inference code of the python part.
-- Add inference code examples that use the different language models.
-- For details, see: [python/README](./python/README.md)
-
-#### 2021-12-18 update
-- Add [Google Colab Demo](https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/RapidOCRDemo.ipynb).
-- Change the default det model of the `python/rapidOCR.sh`
-
-#### 2021-11-28 update
-- Update the [ocrweb](http://rapidocr.51pda.cn:9003/) part
-  - Add the display of the inference time of each stage.
-  - Add docs of the ocrweb.
-  - Change the det model(`ch_PP-OCRv2_det_infer.onnx`), faster and more accurate.
-
-
-<details>
-    <summary>Previous update logs</summary>
-
-#### 2021-11-13 update
-- Add adjustable super parameters for text detection and recognition in Python version, mainly `box_thresh|unclip_ratio|text_score`, see [parameter adjustment](python/README.md#相关调节参数) for details
-- The dictionary position in text recognition is given in parameter mode to facilitate flexible configuration. See [keys_path](python/rapidOCR.sh) for details
-
-#### 2021-10-27 update
-- Add the code that uses the onnxruntime GPU version of infering follow the [official tutorial](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html) Configuration. (however, the onnxruntime GPU version is not stable to use)
-
-- See: `python/README.md` for specific steps.
-
-#### 2021-09-13 update
-- Add a whl file based on `Python` for ease of use. See `release/python` for details.
-
-#### 2021-09-11 update
-- Add `PP-OCRv2` new model onnx version.
-- The infering code of the method is unchanged, and the corresponding model can be directly replaced.
-- After evaluation on its own test set:
-    - The effect of `PP-OCRv2` detection model has been greatly improved, and the model size has not changed.
-    - The effect of `PP-OCRv2` recognition model was not significantly improved, and the model size increased by 3.58M.
-
-- Upload the model to [Baidu online disk extraction code: 30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg) or [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
-
-#### 2021-08-07 update
-- TODO:
-    - [ ] PP structure table structure and cell coordinate prediction are being sorted out.
-
-- Previously done, unfinished, welcome to PR
-    - [ ] make dokcer image
-    - [x] try onnxruntime GPU reasoning
-
-#### 2021-07-17 update
-- Improve the README document
-- Add **English, number recognition**onnx model, please refer to `python/en_number_ppocr_mobile_v2_rec` for details, the usage is the same as others
-- Organize [Model to onnx](#model-related)
-
-#### 2021-07-04 update
-- The python program under the repository can be successfully run on the Raspberry Pi 4B. For more information, please enter the QQ group and ask the group owner
-- Update the overall structure diagram and add support for Raspberry Pi
-
-#### 2021-06-20 update
-- Optimize the display of recognition results in ocrweb, and add recognition animations to demonstrate at the same time
-- Update the `datasets` directory, add some commonly used database links
-
-#### 2021-06-10 update
-- Add server version text recognition model, see details [Extract code：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
-
-#### 2021-06-08 update
-- Organize the warehouse and unify the model download path
-- Improve related documentation
-
-#### 2021-03-24 update
-- The new model is fully compatible with ONNXRuntime 1.7 or higher. Special thanks: @Channingss
-- The performance of the new version of onnxruntime is improved by more than 40% compared to 1.6.0.
-
-</details>
-
-
-## [FAQ](FAQ.md)
+## [FAQ](./doc/FAQ.md)
 
 ## SDK compilation status
 Since ubuntu users are all commercial users and have the ability to compile, pre-compiled packages are not provided for the time being, and they can be compiled by themselves.
@@ -201,30 +125,42 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 - [ ] Rewrite the C++ reasoning code according to the python version to improve the reasoning effect, and add support for gif/tga/webp format pictures
 
 ## Model related
-#### Download models
-   - [Google Drive link](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
-   - (download link: [Baidu extract code: 30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg))
-     ```text
-     ch_ppocr_mobile_v2.0_det_infer.onnx
-     ch_ppocr_mobile_v2.0_cls_infer.onnx
-     ch_ppocr_mobile_v2.0_rec_infer.onnx
+#### Download models( [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)|[Baidu NetDisk](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) )
 
-     ch_ppocr_server_v2.0_det_infer.onnx
-     ch_ppocr_server_v2.0_rec_infer.onnx
-
-     japan_rec_crnn.onnx
-     en_number_mobile_v2.0_rec_infer.onnx
-     ```
 #### Model to onnx
-   - [Teach you to use ONNXRunTime to deploy PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0) by @Channingss
-   - [✧✧PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter) by @[SWHL](https://github.com/SWHL)
+   - ⭐[PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter) by @[SWHL](https://github.com/SWHL)
    - [Paddle2OnnxConvertor](https://github.com/RapidAI/Paddle2OnnxConvertor) by @[benjaminwan](https://github.com/benjaminwan)
+   - [Teach you to use ONNXRunTime to deploy PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0) by @Channingss
+
+### Compared
+#### Text Det
+- test dataset: `Chinese and English (111, including cards, documents and natural images)`
+
+|                Model                  | infer_Speed(s/img) | precision | recall | hmean  | Model Size |
+| :---------------------------------: | :----------------: | :-------: | :----: | :----: | :------: |
+| ch_ppocr_mobile_v2.0_det_infer.onnx |     0.4345742      |  0.7277   | 0.8413 | 0.7785 |   2.3M   |
+|     ch_PP-OCRv2_det_infer.onnx      |     0.5116553      |  0.7817   | 0.8472 | 0.8123 |   2.3M   |
+|     ch_PP-OCRv3_det_infer.onnx      |     0.5723512      |  **0.7740**   | **0.8837** | **0.8237** |   2.4M   |
+
+#### Text Recognition
+- test dataset: `Chinese and English (168)`
+
+|                Model                 | infer_speed(s/img)   | Score     |    Exact_Match   |   Char_Match | Model Size |
+| :---------------------------------: | ------------------: | :-------: | :--------------: | :-------------: | :--: |
+| ch_ppocr_mobile_v2.0_rec_infer.onnx |       0.0111        |  **0.7287**   |      **0.5595**      |     0.8979      | 4.3M |
+|     ch_PP-OCRv2_rec_infer.onnx      |       0.0193        |  0.6955   |      0.4881      |     **0.9029**      | 8.0M |
+|     ch_PP-OCRv3_rec_infer.onnx      |       0.0145        |  0.5537   |      0.3274      |     0.7800      |  11M |
+| ch_PP-OCRv3_rec_train_student.onnx  |       0.0157        |  0.5537   |      0.3274      |     0.7800      | 11M  |
+| ch_PP-OCRv3_rec_train_teacher.onnx  |       0.0140        |  0.5381   |      0.3095      |     0.7667      | 11M  |
 
 ## [PaddleOCR-FAQ](https://github.com/PaddlePaddle/PaddleOCR/blob/release/2.1/doc/doc_ch/FAQ.md)
 
 ## Original initiator and start-up author
-- [benjaminwan](https://github.com/benjaminwan)
-- [znsoftm](https://github.com/znsoftm)
+<p align="left">
+    <a href="https://github.com/benjaminwan"><img src="https://avatars.githubusercontent.com/u/2362051?v=4" width=65 height=65></a>
+    <a href="https://github.com/znsoftm"><img src="https://avatars.githubusercontent.com/u/15354249?v=4" width=65 height=65></a>
+    <a href="https://github.com/SWHL"><img src="https://avatars.githubusercontent.com/u/28639377?v=4" width=65 height=65></a>
+</p>
 
 ## Authorization
 - The copyright of the OCR model belongs to Baidu, and the copyright of other engineering codes belongs to the owner of this warehouse.
