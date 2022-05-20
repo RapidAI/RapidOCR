@@ -106,8 +106,11 @@
 
 ### onnxruntime-gpu版推理配置
 
-1. onnxruntime-gpu需要严格按照与cuda、cudnn版本对应来安装，具体参考[文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements)，**这一步关乎后面是否可以成功调用GPU**
-2. 推理代码中，加载onnx模型部分，用以下对应语言代码替换即可,详细参见：[官方教程](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)
+1. **onnxruntime-gpu**需要严格按照与cuda、cudnn版本对应来安装，具体参考[文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements)，**这一步关乎后面是否可以成功调用GPU**
+   ```bash
+   $ pip install onnxruntime-gpu==1.xxx
+   ```
+3. 推理代码中，加载onnx模型部分，用以下对应语言代码替换即可,详细参见：[官方教程](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)
    - python版本
       ```python
       # 根据机器配置，安装对应版本的onnxruntime-gpu
@@ -139,4 +142,3 @@
    |:---:|:---:|:---:|
    |CPU|46张图像|191 s|
    |GPU|46张图像|52.38 s|
-   ||||
