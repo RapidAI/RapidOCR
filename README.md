@@ -140,7 +140,7 @@
 |⭐ ch_PP-OCRv2_rec_infer.onnx|轻量文本识别模型|7.79M||
 
 ### 各个版本ONNX模型效果对比
-#### 文本检测模型
+#### 文本检测模型(仅供参考)
 - 测试集：自己构建`中英文(111个，包含卡证、文档和自然图像)`
 
 |                模型                  | infer_Speed(s/img) | precision | recall | hmean  | 模型大小 |
@@ -149,7 +149,7 @@
 |     ch_PP-OCRv2_det_infer.onnx      |     0.5116553      |  0.7817   | 0.8472 | 0.8123 |   2.3M   |
 |     ch_PP-OCRv3_det_infer.onnx      |     0.5723512      |  **0.7740**   | **0.8837** | **0.8237** |   2.4M   |
 
-#### 文本识别模型
+#### 文本识别模型(仅供参考)
 - 测试集: 自己构建`中英文(168个)`
 
 |                模型                 | infer_Speed(s/img)   | Score     |    Exact_Match   |   Char_Match | 模型大小 |
