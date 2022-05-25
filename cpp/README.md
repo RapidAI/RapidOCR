@@ -27,7 +27,7 @@
 
 
 ### 模型下载 (下载链接：[提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)）
-
+- 打开网盘链接，可以选择下载**PP-OCRv1/2/3**目录下的各个模型文件，字典文件可以在**rec_dict**目录下载
 ```text
 RapidOCRCPP/models
     ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
