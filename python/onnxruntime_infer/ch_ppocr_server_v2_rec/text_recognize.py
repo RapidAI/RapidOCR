@@ -34,10 +34,11 @@ class TextRecognizer(object):
         self.rec_image_shape = [3, 32, 320]
         self.rec_batch_num = 6
 
-        if keys_path is not None:
-            self.character_dict_path = keys_path
-        else:
+        if keys_path is None:
             self.character_dict_path = str(root_path / 'ppocr_keys_v1.txt')
+        else:
+            self.character_dict_path = keys_path
+
         self.postprocess_op = CTCLabelDecode(self.character_dict_path)
 
         sess_opt = onnxruntime.SessionOptions()

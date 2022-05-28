@@ -290,7 +290,10 @@ if __name__ == '__main__':
     if args.rec_model_path.find('server') != -1:
         from ch_ppocr_server_v2_rec import TextRecognizer
     else:
-        from ch_ppocr_mobile_v2_rec import TextRecognizer
+        if args.rec_model_path.find('v2') != -1:
+            from ch_ppocr_mobile_v2_rec import TextRecognizer
+        elif args.rec_model_path.find('v3') != -1:
+            from ch_ppocr_mobile_v3_rec import TextRecognizer
 
     text_sys = TextSystem(args.det_model_path,
                           args.rec_model_path,

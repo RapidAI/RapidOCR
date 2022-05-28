@@ -30,12 +30,16 @@ root_path = Path(__file__).parent
 
 
 class TextRecognizer(object):
-    def __init__(self, rec_model_path):
+    def __init__(self, rec_model_path, keys_path=None):
         self.rec_image_shape = [3, 48, 320]
         self.character_type = 'ch'
         self.rec_batch_num = 6
 
-        self.character_dict_path = str(root_path / 'ppocr_keys_v1.txt')
+        if keys_path is None:
+            self.character_dict_path = str(root_path / 'ppocr_keys_v1.txt')
+        else:
+            self.character_dict_path = keys_path
+
         self.use_space_char = True
         self.postprocess_op = CTCLabelDecode(self.character_dict_path,
                                              self.character_type,
