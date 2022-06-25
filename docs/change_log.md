@@ -1,3 +1,7 @@
+### 📌2022-06-25 update:
+- 重新整理python部分推理代码，将常用调节参数全部放到yaml文件中，便于调节，更加容易使用
+- 详情参见：[README](./python/README.md)
+
 #### 🍿2022-05-15 update
 - 增加PaddleOCR v3 rec模型转换后的ONNX模型，直接去网盘下载替换即可。([百度网盘](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing))
 - 增加文本识别模型各个版本效果对比表格，详情点击[各个版本ONNX模型效果对比](#各个版本onnx模型效果对比)。v3的文本识别模型从自己构建测试集上的指标来看不如之前的好。
