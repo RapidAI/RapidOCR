@@ -19,7 +19,7 @@ from typing import List
 
 import cv2
 import numpy as np
-import onnxruntime
+from openvino.runtime import Core
 
 try:
     from .utils import CTCLabelDecode, read_yaml
@@ -34,12 +34,10 @@ class TextRecognizer(object):
         self.character_dict_path =  config['keys_path']
         self.postprocess_op = CTCLabelDecode(self.character_dict_path)
 
-        sess_opt = onnxruntime.SessionOptions()
-        sess_opt.log_severity_level = 4
-        sess_opt.enable_cpu_mem_arena = False
-        self.session = onnxruntime.InferenceSession(config['model_path'],
-                                                    sess_opt)
-        self.input_name = self.session.get_inputs()[0].name
+        ie = Core()
+        model_onnx = ie.read_model(config['model_path'])
+        compile_model = ie.compile_model(model=model_onnx, device_name='CPU')
+        self.session = compile_model.create_infer_request()
 
     def resize_norm_img(self, img, max_wh_ratio):
         img_channel, img_height, img_width = self.rec_image_shape
@@ -97,10 +95,10 @@ class TextRecognizer(object):
             norm_img_batch = np.concatenate(norm_img_batch).astype(np.float32)
 
             starttime = time.time()
-            onnx_inputs = {self.input_name: norm_img_batch}
-            preds = self.session.run(None, onnx_inputs)[0]
-            rec_result = self.postprocess_op(preds)
+            self.session.infer(inputs=[norm_img_batch])
+            preds = self.session.get_output_tensor().data
 
+            rec_result = self.postprocess_op(preds)
             for rno in range(len(rec_result)):
                 rec_res[indices[beg_img_no + rno]] = rec_result[rno]
             elapse += time.time() - starttime

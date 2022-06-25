@@ -1,8 +1,8 @@
 ## 常见问题
-#### Q15: 装完环境之后，运行python main.py之后，报错OSError: [WinError 126] 找不到指定的模組
+#### Q15: Windows系统下，装完环境之后，运行示例程序之后，报错OSError: [WinError 126] 找不到指定的模組
 **A**: 原因是Shapely库没有正确安装，如果是在Windows，可以在[Shapely whl](https://www.lfd.uci.edu/~gohlke/pythonlibs/#shapely)下载对应的whl包，离线安装即可；另外一种解决办法是用conda安装也可。
 
-#### Q14: Linux部署python的程序时，import cv2,会报`ImportError: ligGL.so.1: cannot open shared object file: No such file or directory`?
+#### Q14: Linux部署python的程序时，`import cv2`时会报`ImportError: ligGL.so.1: cannot open shared object file: No such file or directory`?
 **A:**: [解决方法](https://stackoverflow.com/a/63978454/3335415
 ) 有两个(来自群友ddeef)：
   1. 安装`opencv-python-headless`取代`opencv-python`;

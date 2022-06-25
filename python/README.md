@@ -8,6 +8,15 @@
 - 每个独立的模块下均有独立的`config.yaml`配置文件，可以单独使用
 - `det`的`mobile`和`server`版，共用一个推理代码，直接更改配置文件中模型路径即可
 - `rec`的`mobile`和`server`版本，共用一个推理代码，直接更改配置文件中模型路径即可
+- onnxruntime和OpenVINO调用方式如下:
+    ```python
+    # 基于onnxruntime引擎推理
+    from rapidocr_onnxruntime import TextSystem
+
+    # 基于openvin引擎推理
+    from rapidocr_openvino import TextSystem
+    ```
+- 值得说明的是，基于openvino推理部分中`ch_ppocr_v2_cls`部分仍然是基于onnxruntime的，原因是openvino有bug，详情见[openvino/issue](https://github.com/openvinotoolkit/openvino/issues/11501)
 
 ### 使用步骤
 1. 下载当前下的`rapidocr_onnxruntime`目录到本地
@@ -44,15 +53,27 @@
             └── rec_images
         ```
 3. 安装运行环境
-   ```bash
-   pip install -r requirements.txt -i https://pypi.douban.com/simple/
-   ```
+   - 基于onnxruntime推理所需环境安装：
+        ```bash
+        pip install onnxruntime>=1.7.0
+        ```
+   - 基于OpenVINO推理所需环境安装：
+        ```bash
+        # Windows端
+        pip install openvino==2022.1.0
+
+        pip install -r requirements.txt -i https://pypi.douban.com/simple/
+        ```
    - Note: 在Windows端，Shapely库可能自动安装会有问题，解决方案参见[Q15](../docs/FAQ.md#q15-装完环境之后运行python-mainpy之后报错oserror-winerror-126-找不到指定的模組)
 
 4. 运行示例
     - 接口调用
         ```python
+        # 基于onnxruntime引擎推理
         from rapidocr_onnxruntime import TextSystem
+
+        # 基于OpenVINO引擎推理
+        # from rapidocr_openvino import TextSystem
 
         config_path = 'config.yaml'
         text_sys = TextSystem(config_path)

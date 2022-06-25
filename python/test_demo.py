@@ -9,7 +9,8 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from rapidocr_onnxruntime import TextSystem
+# from rapidocr_onnxruntime import TextSystem
+from rapidocr_openvino import TextSystem
 
 
 def draw_ocr_box_txt(image, boxes, txts, font_path,
