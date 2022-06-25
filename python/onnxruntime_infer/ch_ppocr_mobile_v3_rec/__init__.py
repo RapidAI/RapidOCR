@@ -1,1 +1,0 @@
-from .text_recognize import TextRecognizer
