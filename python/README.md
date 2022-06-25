@@ -65,7 +65,16 @@
         ```bash
         python test_demp.py
         ```
+    - `rec`部分，如果想要使用`PPOCR-v3`的话，需要将`config.yaml`中的`Rec`部分改为如下:
+        ```yaml
+        module_name: ch_ppocr_v3_rec
+        class_name: TextRecognizer
+        model_path: resources/models/PPOCRv3/ch_PP-OCRv3_rec_infer.onnx
 
+        rec_img_shape: [3, 48, 320]
+        rec_batch_num: 6
+        keys_path: resources/rec_dict/ppocr_keys_v1.txt
+        ```
 
 ### [`config.yaml`](./config.yaml)中常用参数介绍
 |参数名称|作用|建议取值范围|默认值|
