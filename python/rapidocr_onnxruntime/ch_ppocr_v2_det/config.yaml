@@ -1,4 +1,4 @@
-model_path: E:\PythonProjects\RapidOCR\python\onnxruntime_infer\models\ch_ppocr_server_v2.0_det_infer.onnx
+model_path: resources/models/ch_ppocr_server_v2.0_det_infer.onnx
 
 pre_process:
     DetResizeForTest:

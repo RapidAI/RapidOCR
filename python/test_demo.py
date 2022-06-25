@@ -1,3 +1,6 @@
+# -*- encoding: utf-8 -*-
+# @Author: SWHL
+# @Contact: liekkaskono@163.com
 import math
 import random
 from pathlib import Path
@@ -85,11 +88,12 @@ def visualize(image_path, boxes, rec_res, font_path="fonts/msyh.ttc"):
 
 
 if __name__ == '__main__':
-    config_path = 'resources/config.yaml'
+    config_path = 'config.yaml'
     text_sys = TextSystem(config_path)
 
-    image_path = r'resources/test_images/det_images/ch_en_num.jpg'
+    image_path = r'test_images/det_images/ch_en_num.jpg'
     img = cv2.imread(image_path)
     dt_boxes, rec_res = text_sys(img)
+
     visualize(image_path, dt_boxes, rec_res,
               font_path='resources/fonts/msyh.ttc')
