@@ -5,7 +5,7 @@
 
 # RapidOCR (捷智OCR)
 
-简体中文 | [English](./doc/README_en.md)
+简体中文 | [English](./docs/README_en.md)
 
 <p align="left">
     <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="./assets/colab-badge.svg" alt="Open in Colab"></a>
@@ -58,12 +58,12 @@
 
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。
 
-## 近期更新([more](./doc/change_log.md))
+## 近期更新([more](./docs/change_log.md))
 #### 🥟2022-05-25 update
-- 增加基于PaddleOCR v3 rec的python版本推理代码，详情参见[v3 rec](./python/onnxruntime_infer/ch_ppocr_mobile_v3_rec/)
+- 增加基于PaddleOCR v3 rec的python版本推理代码，详情参见[v3 rec](./python/rapidocr_onnxruntime/ch_ppocr_v3_rec)
 
 #### 🍿2022-05-15 update
-- 增加PaddleOCR v3 rec模型转换后的ONNX模型，直接去网盘下载替换即可。([百度网盘](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing))
+- 增加PaddleOCR v3 rec模型转换后的ONNX模型，直接去网盘下载替换即可。([百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing))
 - 增加文本识别模型各个版本效果对比表格，详情点击[各个版本ONNX模型效果对比](#各个版本onnx模型效果对比)。v3的文本识别模型从自己构建测试集上的指标来看不如之前的好。
 
 #### 😀2022-05-12 upadte
@@ -72,8 +72,7 @@
 
 #### 🎧2022-04-04 update
 - 增加python下的基于OpenVINO推理引擎的支持
-- 给出OpenVINO和ONNXRuntime的性能对比表格
-- 详情参见:[python/README](./python/README.md)
+- 给出OpenVINO和ONNXRuntime的性能对比表格，详情参见:[python/rapidocr_openvino/README](./python/rapidocr_openvino/README.md)
 
 
 ## 整个框架
@@ -81,7 +80,7 @@
     <img src="./assets/RapidOCR_system.png">
 </div>
 
-## 常见问题  [FAQ](./doc/FAQ.md)
+## 常见问题  [FAQ](./docs/FAQ.md)
 
 ## SDK 编译状态
 鉴于ubuntu用户都是商业用户，也有编译能力，暂不提供预编译包使用，可自行编译。
@@ -136,7 +135,7 @@
 - [ ] 依据python版本重写C++推理代码，以提升推理效果，并增加对gif/tga/webp 格式图片的支持
 
 ## 模型相关
-- 可以直接下载使用的模型 ([百度网盘](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)）
+- 可以直接下载使用的模型 ([百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)）
 
 |模型名称|模型简介|模型大小|备注|
 |:---:|:---:|:---:|:---:|
@@ -166,7 +165,7 @@
 
 
 #### 模型转onnx
-  - ⭐[PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter) by @[SWHL](https://github.com/SWHL)
+  - [PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter) by @[SWHL](https://github.com/SWHL)
   - [Paddle2OnnxConvertor](https://github.com/RapidAI/Paddle2OnnxConvertor) by @[benjaminwan](https://github.com/benjaminwan)
   - [手把手教你使用ONNXRunTime部署PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0) by @[Channingss](https://github.com/Channingss)
 

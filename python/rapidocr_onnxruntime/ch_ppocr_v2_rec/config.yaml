@@ -1,0 +1,5 @@
+model_path: resources/models/ch_ppocr_server_v2.0_rec_infer.onnx
+
+rec_img_shape: [3, 32, 320]
+rec_batch_num: 6
+keys_path: resources/rec_dict/ppocr_keys_v1.txt
