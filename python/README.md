@@ -19,7 +19,7 @@
 - 值得说明的是，基于openvino推理部分中`ch_ppocr_v2_cls`部分仍然是基于onnxruntime的，原因是openvino有bug，详情见[openvino/issue](https://github.com/openvinotoolkit/openvino/issues/11501)
 
 ### 使用步骤
-1. 下载当前下的`rapidocr_onnxruntime`目录到本地
+1. 下载当前下的`rapidocr_onnxruntime`/`rapidocr_openvino`目录到本地
 2. 下载链接下的`resources`目录（包含模型和显示的字体文件）
    - [百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
    - 最终目录如下:
@@ -56,6 +56,8 @@
    - 基于onnxruntime推理所需环境安装：
         ```bash
         pip install onnxruntime>=1.7.0
+
+        pip install -r requirements.txt -i https://pypi.douban.com/simple/
         ```
    - 基于OpenVINO推理所需环境安装：
         ```bash
@@ -111,7 +113,7 @@
    ```bash
    $ pip install onnxruntime-gpu==1.xxx
    ```
-3. 推理代码中，加载onnx模型部分，用以下对应语言代码替换即可,详细参见：[官方教程](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)
+3. 推理代码中，加载onnx模型部分，用以下对应语言代码替换即可，详细参见：[官方教程](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)
    - python版本
       ```python
       # 根据机器配置，安装对应版本的onnxruntime-gpu
@@ -137,9 +139,9 @@
 
       SessionOptionsAppendExecutionProvider_CUDA(session_options, &options);
       ```
-3. 推理时间粗略对比(完整跑完一张图像)
+3. 推理时间粗略对比
 
-   |推理方式|推理图像数目|耗费时间|
+   |推理方式|推理图像数目|耗费时间(s/张)|
    |:---:|:---:|:---:|
    |CPU|46张图像|191 s|
    |GPU|46张图像|52.38 s|
