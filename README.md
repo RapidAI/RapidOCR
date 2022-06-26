@@ -82,7 +82,7 @@
 
 ## 整个框架
 <div align="center">
-    <img src="./assets/RapidOCR_system.png">
+    <img src="./assets/RapidOCR_system.jpg">
 </div>
 
 ## 常见问题  [FAQ](./docs/FAQ.md)
