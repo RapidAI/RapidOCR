@@ -20,45 +20,23 @@ import numpy as np
 import onnxruntime
 
 try:
-    from .utils import (DBPostProcess, check_and_read_gif, create_operators,
-                        draw_text_det_res, transform)
+    from .utils import (DBPostProcess, create_operators,
+                        draw_text_det_res, transform, read_yaml)
 except:
-    from utils import (DBPostProcess, check_and_read_gif, create_operators,
-                       draw_text_det_res, transform)
+    from utils import (DBPostProcess, create_operators,
+                       draw_text_det_res, transform, read_yaml)
 
 
 class TextDetector(object):
-    def __init__(self, det_model_path):
-        pre_process_list = [{
-            'DetResizeForTest': {
-                'limit_side_len': 736,
-                'limit_type': 'min'
-            }
-        }, {
-            'NormalizeImage': {
-                'std': [0.229, 0.224, 0.225],
-                'mean': [0.485, 0.456, 0.406],
-                'scale': '1./255.',
-                'order': 'hwc'
-            }
-        }, {
-            'ToCHWImage': None
-        }, {
-            'KeepKeys': {
-                'keep_keys': ['image', 'shape']
-            }
-        }]
+    def __init__(self, config):
+        self.preprocess_op = create_operators(config['pre_process'])
+        self.postprocess_op = DBPostProcess(**config['post_process'])
 
-        self.preprocess_op = create_operators(pre_process_list)
-        self.postprocess_op = DBPostProcess(thresh=0.3,
-                                            box_thresh=0.5,
-                                            max_candidates=1000,
-                                            unclip_ratio=2.0,
-                                            use_dilation=True)
         sess_opt = onnxruntime.SessionOptions()
         sess_opt.log_severity_level = 4
         sess_opt.enable_cpu_mem_arena = False
-        self.session = onnxruntime.InferenceSession(det_model_path, sess_opt)
+        self.session = onnxruntime.InferenceSession(config['model_path'],
+                                                    sess_opt)
         self.input_name = self.session.get_inputs()[0].name
         self.output_name = self.session.get_outputs()[0].name
 
@@ -107,48 +85,40 @@ class TextDetector(object):
         return dt_boxes
 
     def __call__(self, img):
-        starttime = time.time()
-
-        ori_shape = img.shape[:2]
-
+        ori_im = img.copy()
         data = {'image': img}
         data = transform(data, self.preprocess_op)
         img, shape_list = data
         if img is None:
             return None, 0
-        img = np.expand_dims(img, axis=0)
-        img = img.astype(np.float32)
+
+        img = np.expand_dims(img, axis=0).astype(np.float32)
         shape_list = np.expand_dims(shape_list, axis=0)
 
+        starttime = time.time()
         preds = self.session.run([self.output_name],
                                  {self.input_name: img})
 
         post_result = self.postprocess_op(preds[0], shape_list)
-        dt_boxes = post_result[0]['points']
-        dt_boxes = self.filter_tag_det_res(dt_boxes, ori_shape)
 
+        dt_boxes = post_result[0]['points']
+        dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im.shape)
         elapse = time.time() - starttime
         return dt_boxes, elapse
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image_path', type=str, default=None,
-                        help='image_path|image_dir')
-    parser.add_argument('--model_path', type=str, default=None,
-                        help='model_path')
+    parser.add_argument('--config_path', type=str, default='config.yaml')
+    parser.add_argument('--image_path', type=str, default=None)
     args = parser.parse_args()
 
-    text_detector = TextDetector(args.model_path)
+    config = read_yaml(args.config_path)
 
-    img, flag = check_and_read_gif(args.image_path)
-    if not flag:
-        img = cv2.imread(args.image_path)
-    if img is None:
-        raise ValueError(f"error in loading image:{args.image_path}")
+    text_detector = TextDetector(config)
 
+    img = cv2.imread(args.image_path)
     dt_boxes, elapse = text_detector(img)
-
     src_im = draw_text_det_res(dt_boxes, args.image_path)
     cv2.imwrite('det_results.jpg', src_im)
     print('图像已经保存为det_results.jpg了')

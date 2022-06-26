@@ -1,0 +1,6 @@
+model_path: resources/models/ch_ppocr_mobile_v2.0_cls_infer.onnx
+
+cls_image_shape: [3, 48, 192]
+cls_batch_num: 6
+cls_thresh: 0.9
+label_list: ['0', '180']

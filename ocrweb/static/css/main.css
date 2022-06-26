@@ -8,7 +8,7 @@ body{
     border-radius: 18px;
     margin-top: 5px;
     font-size: 15px;
-    padding: 5px 5px;
+    padding: 5px 10px;
     height: 20px;
     width: 120px;
     text-transform: uppercase;
@@ -61,17 +61,17 @@ body{
     box-sizing: border-box;
 }
 .uplodNote{
-    font-size: 14px;
-    color:#000;
-    font-style: italic;
+    font-size: 10px;
+    color:#A1A1A1;
 }
+
 a{
     text-decoration:none;
 }
 
 /* wrapper */
 .leftarea>#wrapper {
-    position: absolute; top: 36px; left:0px;
+    position: absolute; top: 34px; left:0px;
     width: 98%;
     height: 100%;
     background:
@@ -81,7 +81,7 @@ a{
     linear-gradient(transparent, #1a98ca);
     background-size:100% 1.5%, 10% 100%,100% 8%, 100% 100%;
     background-repeat:no-repeat, repeat, repeat, no-repeat;
-    background-position: 0% 0%, 0 0, 0 0, 0 0;
+    background-position: 0% 100%, 0 0, 0 0, 0 0;
     /* 初始位置 */
     clip-path: polygon(0% 0%, 100% 0%, 100% 1.5%, 0% 1.5%);
     /* 添加动画效果 */

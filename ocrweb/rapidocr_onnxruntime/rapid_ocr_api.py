@@ -1,58 +1,51 @@
 # !/usr/bin/env python
 # -*- encoding: utf-8 -*-
 import copy
-from pathlib import Path
+import importlib
 import time
+import sys
+from pathlib import Path
 
 import cv2
 import numpy as np
+import yaml
 
-drop_score = 0.5
-
-from .ch_ppocr_mobile_v2_cls import TextClassifier
-from .ch_ppocr_mobile_v2_det import TextDetector
-from .ch_ppocr_mobile_v2_rec import TextRecognizer
-
-
-def check_and_read_gif(img_path):
-    if Path(img_path).name[-3:] in ['gif', 'GIF']:
-        gif = cv2.VideoCapture(img_path)
-        ret, frame = gif.read()
-        if not ret:
-            print("Cannot read {}. This gif image maybe corrupted.")
-            return None, False
-        if len(frame.shape) == 2 or frame.shape[-1] == 1:
-            frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
-        imgvalue = frame[:, :, ::-1]
-        return imgvalue, True
-    return None, False
-
-
-def draw_text_det_res(dt_boxes, raw_im):
-    src_im = copy.deepcopy(raw_im)
-    for i, box in enumerate(dt_boxes):
-        box = np.array(box).astype(np.int32).reshape(-1, 2)
-        cv2.polylines(src_im, [box], True,
-                      color=(0, 0, 255),
-                      thickness=1)
-        cv2.putText(src_im, str(i), (int(box[0][0]), int(box[0][1])),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
-    return src_im
+root_dir = Path(__file__).resolve().parent
+sys.path.append(str(root_dir))
 
 
 class TextSystem(object):
-    def __init__(self, det_model_path,
-                 rec_model_path,
-                 use_angle_cls=False,
-                 cls_model_path=None) -> None:
+    def __init__(self, config_path=str(root_dir / 'config.yaml')):
         super(TextSystem).__init__()
-        self.text_detector = TextDetector(det_model_path)
+        config = self.read_yaml(config_path)
 
-        self.text_recognizer = TextRecognizer(rec_model_path)
+        self.print_verbose = config['Global']['print_verbose']
+        self.text_score = config['Global']['text_score']
 
-        self.use_angle_cls = use_angle_cls
+        TextDetector = self.init_module(config['Det']['module_name'],
+                                        config['Det']['class_name'])
+        self.text_detector = TextDetector(config['Det'])
+
+        TextRecognizer = self.init_module(config['Rec']['module_name'],
+                                          config['Rec']['class_name'])
+        self.text_recognizer = TextRecognizer(config['Rec'])
+
+        self.use_angle_cls = config['Global']['use_angle_cls']
         if self.use_angle_cls:
-            self.text_classifier = TextClassifier(cls_model_path)
+            TextClassifier = self.init_module(config['Cls']['module_name'],
+                                              config['Cls']['class_name'])
+            self.text_cls = TextClassifier(config['Cls'])
+
+    @staticmethod
+    def read_yaml(yaml_path):
+        with open(yaml_path, 'rb') as f:
+            data = yaml.load(f, Loader=yaml.Loader)
+        return data
+
+    @staticmethod
+    def init_module(module_name, class_name):
+        module_part = importlib.import_module(module_name)
+        return getattr(module_part, class_name)
 
     def get_rotate_crop_image(self, img, points):
         '''
@@ -108,11 +101,13 @@ class TextSystem(object):
                 _boxes[i + 1] = tmp
         return _boxes
 
-    def __call__(self, img):
+    def __call__(self, img: np.ndarray):
         dt_boxes, det_elapse = self.text_detector(img)
-        print(f"dt_boxes num: {len(dt_boxes)}, elapse: {det_elapse}")
-        if dt_boxes is None or dt_boxes.size == 0:
-            return None, None, img
+        if self.print_verbose:
+            print(f'dt_boxes num: { len(dt_boxes)}, elapse: {det_elapse}')
+
+        if dt_boxes is None or len(dt_boxes) < 1:
+            return None, None
 
         start_time = time.time()
         img_crop_list = []
@@ -124,23 +119,34 @@ class TextSystem(object):
         crop_elapse = time.time() - start_time
 
         if self.use_angle_cls:
-            img_crop_list, _, cls_elapse = self.text_classifier(img_crop_list)
-            print(f"cls num : {len(img_crop_list)}, elapse: {cls_elapse}")
+            img_crop_list, _, cls_elapse = self.text_cls(img_crop_list)
+            if self.print_verbose:
+                print(f'cls num: {len(img_crop_list)}, elapse: {cls_elapse}')
 
         rec_res, rec_elapse = self.text_recognizer(img_crop_list)
-        print(f"rec_res num: {len(rec_res)}, elapse: {rec_elapse}")
+        if self.print_verbose:
+            print(f'rec_res num: {len(rec_res)}, elapse: {rec_elapse}')
 
         start_time = time.time()
         filter_boxes, filter_rec_res = [], []
         for box, rec_reuslt in zip(dt_boxes, rec_res):
             text, score = rec_reuslt
-            if score >= drop_score:
+            if score >= self.text_score:
                 filter_boxes.append(box)
                 filter_rec_res.append(rec_reuslt)
         filter_elapse = time.time() - start_time
-
         elapse_part = [f'{det_elapse:.4f}',
                        f'{(cls_elapse+crop_elapse):.4f}',
                        f'{(rec_elapse+filter_elapse):.4f}'
         ]
         return filter_boxes, filter_rec_res, img, elapse_part
+
+
+if __name__ == '__main__':
+    text_sys = TextSystem('config.yaml')
+
+    import cv2
+    img = cv2.imread('resources/test_images/det_images/ch_en_num.jpg')
+
+    result = text_sys(img)
+    print(result)

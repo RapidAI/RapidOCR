@@ -1,0 +1,21 @@
+model_path: resources/models/ch_ppocr_server_v2.0_det_infer.onnx
+
+pre_process:
+    DetResizeForTest:
+        limit_side_len: 736
+        limit_type: min
+    NormalizeImage:
+        std: [0.229, 0.224, 0.225]
+        mean: [0.485, 0.456, 0.406]
+        scale: 1./255.
+        order: hwc
+    ToCHWImage:
+    KeepKeys:
+        keep_keys: ['image', 'shape']
+
+post_process:
+    thresh: 0.3
+    box_thresh: 0.5
+    max_candidates: 1000
+    unclip_ratio: 1.6
+    use_dilation: true

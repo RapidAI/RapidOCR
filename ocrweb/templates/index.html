@@ -13,9 +13,9 @@
         <a href="https://github.com/RapidAI/RapidOCR/tree/main/ocrweb#readme" style="font-size:14px">了解Demo</a>
     </h1>
     <div class='area'>
-        <span class="uplodNote">图片文件类型支持PNG、JPG、JPEG、BMP，图片大小不超过3M。</span>
-        <span class="btn-gen" onclick="javascript:$('#rapid_ocr').click();">试试你的图片？</span>
+        <span class="btn-gen" onclick="javascript:$('#rapid_ocr').click();">试试你的图片?</span>
         <input type="file" style="display: none;" name="pic" id="rapid_ocr"/>
+        <span class="uplodNote">支持PNG、JPG、JPEG、BMP，图片大小不超过3M。</span>
     </div>
     <br/>
     <div class="area">
@@ -96,7 +96,7 @@
                             if (data["rec_res"]){
                                 var rec_res = JSON.parse(data["rec_res"]);
 
-                                console.log(data['elapse_part']);
+                                // console.log(data['elapse_part']);
                                 if (data['elapse_part']){
                                     var elapse_list = data['elapse_part'].split(',');
                                 }else{

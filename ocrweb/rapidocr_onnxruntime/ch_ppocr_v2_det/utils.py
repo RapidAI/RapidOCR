@@ -25,47 +25,50 @@ import numpy as np
 import pyclipper
 import six
 from shapely.geometry import Polygon
-from PIL import Image
+import yaml
+
+
+def read_yaml(yaml_path):
+    with open(yaml_path, 'rb') as f:
+        data = yaml.load(f, Loader=yaml.Loader)
+    return data
 
 
 class DecodeImage(object):
     """ decode image """
 
-    def __init__(self, img_mode='RGB', channel_first=False, **kwargs):
+    def __init__(self, img_mode='RGB', channel_first=False):
         self.img_mode = img_mode
         self.channel_first = channel_first
 
     def __call__(self, data):
         img = data['image']
         if six.PY2:
-            assert type(img) is str and len(
-                img) > 0, "invalid input 'img' in DecodeImage"
+            assert type(img) is str and len(img) > 0, "invalid input 'img' in DecodeImage"
         else:
-            assert type(img) is bytes and len(
-                img) > 0, "invalid input 'img' in DecodeImage"
+            assert type(img) is bytes and len(img) > 0, "invalid input 'img' in DecodeImage"
+
         img = np.frombuffer(img, dtype='uint8')
         img = cv2.imdecode(img, 1)
         if img is None:
             return None
+
         if self.img_mode == 'GRAY':
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
         elif self.img_mode == 'RGB':
-            assert img.shape[2] == 3, 'invalid shape of image[%s]' % (
-                img.shape)
+            assert img.shape[2] == 3, f'invalid shape of image[{img.shape}]'
             img = img[:, :, ::-1]
 
         if self.channel_first:
             img = img.transpose((2, 0, 1))
-
         data['image'] = img
         return data
 
 
 class NormalizeImage(object):
-    """ normalize image such as substract mean, divide std
-    """
+    """ normalize image such as substract mean, divide std"""
 
-    def __init__(self, scale=None, mean=None, std=None, order='chw', **kwargs):
+    def __init__(self, scale=None, mean=None, std=None, order='chw'):
         if isinstance(scale, str):
             scale = eval(scale)
         self.scale = np.float32(scale if scale is not None else 1.0 / 255.0)
@@ -77,22 +80,14 @@ class NormalizeImage(object):
         self.std = np.array(std).reshape(shape).astype('float32')
 
     def __call__(self, data):
-        img = data['image']
-        if isinstance(img, Image.Image):
-            img = np.array(img)
-
-        assert isinstance(img,
-                          np.ndarray), "invalid input 'img' in NormalizeImage"
-        data['image'] = (
-            img.astype('float32') * self.scale - self.mean) / self.std
+        img = np.array(data['image']).astype(np.float32)
+        data['image'] = (img * self.scale - self.mean) / self.std
         return data
 
 
 class ToCHWImage(object):
-    """ convert hwc image to chw image
-    """
-
-    def __init__(self, **kwargs):
+    """ convert hwc image to chw image"""
+    def __init__(self):
         pass
 
     def __call__(self, data):
@@ -105,7 +100,7 @@ class ToCHWImage(object):
 
 
 class KeepKeys(object):
-    def __init__(self, keep_keys, **kwargs):
+    def __init__(self, keep_keys):
         self.keep_keys = keep_keys
 
     def __call__(self, data):
@@ -239,37 +234,14 @@ def transform(data, ops=None):
     return data
 
 
-def check_and_read_gif(img_path):
-    if os.path.basename(img_path)[-3:] in ['gif', 'GIF']:
-        gif = cv2.VideoCapture(img_path)
-        ret, frame = gif.read()
-        if not ret:
-            print("Cannot read {}. This gif image maybe corrupted.")
-            return None, False
-        if len(frame.shape) == 2 or frame.shape[-1] == 1:
-            frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
-        imgvalue = frame[:, :, ::-1]
-        return imgvalue, True
-    return None, False
-
-
-def create_operators(op_param_list, global_config=None):
+def create_operators(op_param_dict):
     """
     create operators based on the config
-
-    Args:
-        params(list): a dict list, used to create some operators
     """
-    assert isinstance(
-        op_param_list, list), ('operator config should be a list')
     ops = []
-    for operator in op_param_list:
-        assert isinstance(operator,
-                          dict) and len(operator) == 1, "yaml format error"
-        op_name = list(operator)[0]
-        param = {} if operator[op_name] is None else operator[op_name]
-        if global_config is not None:
-            param.update(global_config)
+    for op_name, param in op_param_dict.items():
+        if param is None:
+            param = {}
         op = eval(op_name)(**param)
         ops.append(op)
     return ops
@@ -285,24 +257,24 @@ def draw_text_det_res(dt_boxes, img_path):
 
 
 class DBPostProcess(object):
-    """
-    The post process for Differentiable Binarization (DB).
-    """
+    """The post process for Differentiable Binarization (DB)."""
 
     def __init__(self,
                  thresh=0.3,
                  box_thresh=0.7,
                  max_candidates=1000,
                  unclip_ratio=2.0,
-                 use_dilation=False,
-                 **kwargs):
+                 use_dilation=False):
         self.thresh = thresh
         self.box_thresh = box_thresh
         self.max_candidates = max_candidates
         self.unclip_ratio = unclip_ratio
         self.min_size = 3
-        self.dilation_kernel = None if not use_dilation else np.array(
-            [[1, 1], [1, 1]])
+
+        if use_dilation:
+            self.dilation_kernel = np.array([[1, 1], [1, 1]])
+        else:
+            self.dilation_kernel = None
 
     def boxes_from_bitmap(self, pred, _bitmap, dest_width, dest_height):
         '''
