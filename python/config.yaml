@@ -6,7 +6,7 @@ Global:
 Det:
     module_name: ch_ppocr_v2_det
     class_name: TextDetector
-    model_path: resources/models/ch_PP-OCRv2_det_infer.onnx.onnx
+    model_path: resources/models/ch_PP-OCRv2_det_infer.onnx
 
     pre_process:
         DetResizeForTest:
