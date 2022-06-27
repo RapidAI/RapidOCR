@@ -35,6 +35,13 @@
         │   ├── ch_ppocr_v2_rec
         │   ├── ch_ppocr_v3_rec
         │   └── rapid_ocr_api.py
+        ├── rapidocr_openvino
+        │   ├── __init__.py
+        │   ├── README.md
+        │   ├── ch_ppocr_v2_cls
+        │   ├── ch_ppocr_v2_det
+        │   ├── ch_ppocr_v2_rec
+        │   └── rapid_ocr_api.py
         ├── requirements.txt
         ├── resources
         │    ├── fonts

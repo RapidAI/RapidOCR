@@ -1,4 +1,4 @@
-### 📌2022-06-25 update:
+#### 📌2022-06-25 update:
 - Reorganize some of the python inference code, put all the common adjustment parameters into the yaml file, easy to adjust, easier to use, see: [README](./python/README.md)
 - The old inference code is located in the branch: [old_python_infer](https://github.com/RapidAI/RapidOCR/tree/old_python_infer)
 
