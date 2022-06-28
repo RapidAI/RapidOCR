@@ -78,6 +78,8 @@
 4. 运行示例
     - 接口调用
         ```python
+        import cv2
+
         # 基于onnxruntime引擎推理
         from rapidocr_onnxruntime import TextSystem
 
@@ -90,8 +92,9 @@
         image_path = r'test_images/det_images/ch_en_num.jpg'
         img = cv2.imread(image_path)
         dt_boxes, rec_res = text_sys(img)
+        print(rec_res)
         ```
-    - 直接运行`test_demo.py`
+    - 直接运行`test_demo.py`，可直接可视化查看结果。
         ```bash
         python test_demp.py
         ```
