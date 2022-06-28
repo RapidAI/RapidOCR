@@ -60,7 +60,7 @@
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。
 
 ## 近期更新([more](./docs/change_log.md))
-### 📌2022-06-25 update:
+#### 📌2022-06-25 update:
 - 重新整理python部分推理代码，将常用调节参数全部放到yaml文件中，便于调节，更加容易使用,详情参见：[README](./python/README.md)
 - 之前旧的推理代码位于分支：[old_python_infer](https://github.com/RapidAI/RapidOCR/tree/old_python_infer)
 
