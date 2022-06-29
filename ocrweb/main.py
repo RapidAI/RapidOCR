@@ -1,7 +1,6 @@
-# !/usr/bin/env python
 # -*- encoding: utf-8 -*-
-# @File: main.py
-# @Author: Max
+# @Author: SWHL
+# @Contact: liekkaskono@163.com
 import base64
 
 import cv2

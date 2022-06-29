@@ -1,5 +1,6 @@
-# !/usr/bin/env python
 # -*- encoding: utf-8 -*-
+# @Author: SWHL
+# @Contact: liekkaskono@163.com
 import copy
 import importlib
 import time
@@ -107,7 +108,7 @@ class TextSystem(object):
             print(f'dt_boxes num: { len(dt_boxes)}, elapse: {det_elapse}')
 
         if dt_boxes is None or len(dt_boxes) < 1:
-            return None, None
+            return None, None, img, None
 
         start_time = time.time()
         img_crop_list = []
@@ -134,6 +135,7 @@ class TextSystem(object):
             if score >= self.text_score:
                 filter_boxes.append(box)
                 filter_rec_res.append(rec_reuslt)
+
         filter_elapse = time.time() - start_time
         elapse_part = [f'{det_elapse:.4f}',
                        f'{(cls_elapse+crop_elapse):.4f}',

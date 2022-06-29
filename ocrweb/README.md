@@ -52,4 +52,4 @@
     ```shell
     python main.py
     ```
-4. 打开`http://127.0.0.1:9003/`，即可， enjoy this.
+4. 打开`http://127.0.0.1:9003/`即可， enjoy this.
