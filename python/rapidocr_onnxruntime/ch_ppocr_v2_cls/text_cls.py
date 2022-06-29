@@ -22,9 +22,9 @@ import numpy as np
 import onnxruntime as ort
 
 try:
-    from .utils import ClsPostProcess, read_yaml
+    from .utils import ClsPostProcess, read_yaml, OrtInferSession
 except:
-    from utils import ClsPostProcess, read_yaml
+    from utils import ClsPostProcess, read_yaml, OrtInferSession
 
 
 class TextClassifier(object):
@@ -34,11 +34,9 @@ class TextClassifier(object):
         self.cls_thresh = config['cls_thresh']
         self.postprocess_op = ClsPostProcess(config['label_list'])
 
-        sess_opt = ort.SessionOptions()
-        sess_opt.log_severity_level = 4
-        sess_opt.enable_cpu_mem_arena = False
-        self.session = ort.InferenceSession(config['model_path'], sess_opt)
-        self.input_name = self.session.get_inputs()[0].name
+        session_instance = OrtInferSession(config)
+        self.session = session_instance.session
+        self.input_name = session_instance.get_input_name()
 
     def resize_norm_img(self, img):
         img_c, img_h, img_w = self.cls_image_shape
@@ -62,7 +60,6 @@ class TextClassifier(object):
         padding_im = np.zeros((img_c, img_h, img_w), dtype=np.float32)
         padding_im[:, :, :resized_w] = resized_image
         return padding_im
-
 
     def __call__(self, img_list: List[np.ndarray]):
         if isinstance(img_list, np.ndarray):
@@ -123,4 +120,4 @@ if __name__ == "__main__":
     img = cv2.imread(args.image_path)
     img_list, cls_res, predict_time = text_classifier(img)
     for ino in range(len(img_list)):
-        print(f"分类结果:{cls_res[ino]}")
+        print(f"cls result:{cls_res[ino]}")

@@ -1,5 +1,14 @@
 model_path: resources/models/ch_ppocr_server_v2.0_rec_infer.onnx
 
+use_cuda: false
+# Details of the params: https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html
+CUDAExecutionProvider:
+    device_id: 0
+    arena_extend_strategy: kNextPowerOfTwo
+    gpu_mem_limit: 2 * 1024 * 1024 * 1024
+    cudnn_conv_algo_search: EXHAUSTIVE
+    do_copy_in_default_stream: true
+
 rec_img_shape: [3, 32, 320]
 rec_batch_num: 6
 keys_path: resources/rec_dict/ppocr_keys_v1.txt

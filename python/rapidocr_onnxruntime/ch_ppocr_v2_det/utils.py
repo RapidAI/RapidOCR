@@ -50,10 +50,12 @@ class OrtInferSession(object):
         self.session = InferenceSession(config['model_path'],
                                         sess_options=sess_opt,
                                         providers=EP_list)
-        # https://github.com/microsoft/onnxruntime/issues/11323
-        # https://github.com/microsoft/onnxruntime/issues/11996
+
         if config['use_cuda'] and cuda_ep not in self.session.get_providers():
-            warnings.warn(f'{cuda_ep} is not avaiable for current env',
+            warnings.warn(f'{cuda_ep} is not avaiable for current env, the inference part is automatically shifted to be executed under {cpu_ep}.\n'
+                          'Please ensure the installed onnxruntime-gpu version matches your cuda and cudnn version, '
+                          'you can check their relations from the offical web site: '
+                          'https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html',
                           RuntimeWarning)
 
     def get_input_name(self, input_idx=0):

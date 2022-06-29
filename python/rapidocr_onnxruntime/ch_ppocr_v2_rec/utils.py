@@ -1,8 +1,48 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+import warnings
+
 import numpy as np
 import yaml
+from onnxruntime import (get_available_providers, get_device,
+                         SessionOptions, InferenceSession)
+
+
+class OrtInferSession(object):
+    def __init__(self, config):
+        sess_opt = SessionOptions()
+        sess_opt.log_severity_level = 4
+        sess_opt.enable_cpu_mem_arena = False
+
+        cuda_ep = 'CUDAExecutionProvider'
+        cpu_ep = 'CPUExecutionProvider'
+
+        EP_list = []
+        if config['use_cuda'] and get_device() == 'GPU' \
+                and cuda_ep in get_available_providers():
+            EP_list = [(cuda_ep, config[cuda_ep])]
+        else:
+            raise RuntimeError(f'{cuda_ep} is not avaiable for --use_cuda!')
+
+        EP_list.append(cpu_ep)
+
+        self.session = InferenceSession(config['model_path'],
+                                        sess_options=sess_opt,
+                                        providers=EP_list)
+
+        if config['use_cuda'] and cuda_ep not in self.session.get_providers():
+            warnings.warn(f'{cuda_ep} is not avaiable for current env, the inference part is automatically shifted to be executed under {cpu_ep}.\n'
+                          'Please ensure the installed onnxruntime-gpu version matches your cuda and cudnn version, '
+                          'you can check their relations from the offical web site: '
+                          'https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html',
+                          RuntimeWarning)
+
+    def get_input_name(self, input_idx=0):
+        return self.session.get_inputs()[input_idx].name
+
+    def get_output_name(self, output_idx=0):
+        return self.session.get_outputs()[output_idx].name
 
 
 def read_yaml(yaml_path):
