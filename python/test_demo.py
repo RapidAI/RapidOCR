@@ -89,8 +89,7 @@ def visualize(image_path, boxes, rec_res, font_path="fonts/msyh.ttc"):
 
 
 if __name__ == '__main__':
-    config_path = 'config.yaml'
-    text_sys = TextSystem(config_path)
+    text_sys = TextSystem('config.yaml')
 
     image_path = r'test_images/det_images/ch_en_num.jpg'
     img = cv2.imread(image_path)

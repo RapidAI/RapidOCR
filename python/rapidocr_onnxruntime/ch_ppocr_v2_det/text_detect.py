@@ -37,7 +37,6 @@ class TextDetector(object):
         session_instance = OrtInferSession(config)
         self.session = session_instance.session
         self.input_name = session_instance.get_input_name()
-        self.output_name = session_instance.get_output_name()
 
     def order_points_clockwise(self, pts):
         """
@@ -100,7 +99,7 @@ class TextDetector(object):
         shape_list = np.expand_dims(shape_list, axis=0)
 
         starttime = time.time()
-        preds = self.session.run([self.output_name], {self.input_name: img})
+        preds = self.session.run(None, {self.input_name: img})
 
         post_result = self.postprocess_op(preds[0], shape_list)
 
@@ -124,4 +123,4 @@ if __name__ == "__main__":
     dt_boxes, elapse = text_detector(img)
     src_im = draw_text_det_res(dt_boxes, args.image_path)
     cv2.imwrite('det_results.jpg', src_im)
-    print('图像已经保存为det_results.jpg了')
+    print('The det_results.jpg has been saved in the current directory.')

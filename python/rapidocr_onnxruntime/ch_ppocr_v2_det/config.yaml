@@ -1,7 +1,7 @@
 model_path: G:\ProgramFiles\_self\RapidOCR\python\resources\models\ch_PP-OCRv2_det_infer.onnx
 
-# https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html
 use_cuda: false
+# Details of the params: https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html
 CUDAExecutionProvider:
     device_id: 0
     arena_extend_strategy: kNextPowerOfTwo
