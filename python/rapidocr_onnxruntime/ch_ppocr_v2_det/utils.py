@@ -13,19 +13,54 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-# coding:utf-8
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
-import os
+# -*- encoding: utf-8 -*-
+# @Author: SWHL
+# @Contact: liekkaskono@163.com
 import sys
+import warnings
 
 import cv2
 import numpy as np
 import pyclipper
 import six
-from shapely.geometry import Polygon
 import yaml
+from shapely.geometry import Polygon
+from onnxruntime import (get_available_providers, get_device,
+                         SessionOptions, InferenceSession)
+
+
+class OrtInferSession(object):
+    def __init__(self, config):
+        sess_opt = SessionOptions()
+        sess_opt.log_severity_level = 4
+        sess_opt.enable_cpu_mem_arena = False
+
+        cuda_ep = 'CUDAExecutionProvider'
+        cpu_ep = 'CPUExecutionProvider'
+
+        EP_list = []
+        if config['use_cuda'] and get_device() == 'GPU' \
+                and cuda_ep in get_available_providers():
+            EP_list = [(cuda_ep, config[cuda_ep])]
+        else:
+            raise RuntimeError(f'{cuda_ep} is not avaiable for --use_cuda!')
+
+        EP_list.append(cpu_ep)
+
+        self.session = InferenceSession(config['model_path'],
+                                        sess_options=sess_opt,
+                                        providers=EP_list)
+        # https://github.com/microsoft/onnxruntime/issues/11323
+        # https://github.com/microsoft/onnxruntime/issues/11996
+        if config['use_cuda'] and cuda_ep not in self.session.get_providers():
+            warnings.warn(f'{cuda_ep} is not avaiable for current env',
+                          RuntimeWarning)
+
+    def get_input_name(self, input_idx=0):
+        return self.session.get_inputs()[input_idx].name
+
+    def get_output_name(self, output_idx=0):
+        return self.session.get_outputs()[output_idx].name
 
 
 def read_yaml(yaml_path):
@@ -227,6 +262,7 @@ def transform(data, ops=None):
     """ transform """
     if ops is None:
         ops = []
+
     for op in ops:
         data = op(data)
         if data is None:
