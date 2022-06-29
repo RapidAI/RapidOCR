@@ -6,7 +6,7 @@
      - 其中给出了使用模型，以及具体参数，参数具体介绍参见：[Link](https://github.com/RapidAI/RapidOCR/blob/main/python/README.md#configyaml%E4%B8%AD%E5%B8%B8%E7%94%A8%E5%8F%82%E6%95%B0%E4%BB%8B%E7%BB%8D)
 2. 网页上显示的推理时间可以具体解释一下吗？
     <div align="center">
-        <img src="../assets/ocrweb_time.jpg" width="100%" height="100%">
+        <img src="../assets/ocrweb_time.jpg" width="80%" height="80%">
     </div>
 
 ### 运行
