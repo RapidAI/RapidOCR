@@ -4,10 +4,19 @@
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
 </p>
 
+- **各个版本的ONNX模型下载地址：**[百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
 - 所有常用的参数配置都在`config.yaml`下，一目了然，更加便捷
 - 每个独立的模块下均有独立的`config.yaml`配置文件，可以单独使用
-- `det`的`mobile`和`server`版，共用一个推理代码，直接更改配置文件中模型路径即可
-- `rec`的`mobile`和`server`版本，共用一个推理代码，直接更改配置文件中模型路径即可
+- `det`部分：
+  - `det`中`mobile`和`server`版，共用一个推理代码，直接更改配置文件中模型路径即可
+  - `det`中`v2`和`v3`两个版本代码，共用一个推理代码，直接更改配置文件中模型路径即可
+    ```yaml
+    Det:
+        module_name: ch_ppocr_v2_det
+        class_name: TextDetector
+        model_path: resources/models/ch_PP-OCRv3_det_infer.onnx
+    ```
+- `rec`中`mobile`和`server`版本，共用一个推理代码，直接更改配置文件中模型路径即可
 - onnxruntime和OpenVINO调用方式如下:
     ```python
     # 基于onnxruntime引擎推理
@@ -21,7 +30,11 @@
 ### 使用步骤
 1. 下载当前下的`rapidocr_onnxruntime`/`rapidocr_openvino`目录到本地
 2. 下载链接下的`resources`目录（包含模型和显示的字体文件）
-   - [百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
+   - 下载链接：[百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
+   - `resources/models`下模型搭配已经为最优组合（速度和精度平衡）
+        ```text
+        ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls +  ch_ppocr_mobile_v2.0_rec
+        ```
    - 最终目录如下:
         ```text
         .
@@ -47,7 +60,7 @@
         │    ├── fonts
         │    │   └── msyh.ttc
         │    ├── models
-        │    │   ├── ch_PP-OCRv2_det_infer.onnx.onnx
+        │    │   ├── ch_PP-OCRv3_det_infer.onnx
         │    │   ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
         │    │   └── ch_ppocr_mobile_v2.0_rec_infer.onnx
         │    └── rec_dict
