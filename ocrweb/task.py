@@ -1,7 +1,4 @@
-# !/usr/bin/env python
 # -*- encoding: utf-8 -*-
-# @File: task.py
-# @Time: 2021/03/07 20:29:32
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import base64
@@ -29,8 +26,7 @@ def detect_recognize(image_path):
     dt_boxes, rec_res, img, elapse_part = text_sys(image)
 
     if dt_boxes is None or rec_res is None:
-        temp_rec_res = []
-        rec_res_data = json.dumps(temp_rec_res,
+        rec_res_data = json.dumps([],
                                   indent=2,
                                   ensure_ascii=False)
         elapse = 0
@@ -42,6 +38,7 @@ def detect_recognize(image_path):
         for i, value in enumerate(rec_res):
             temp_rec_res.append([i, value[0], value[1]])
         temp_rec_res = np.array(temp_rec_res)
+
         rec_res_data = json.dumps(temp_rec_res.tolist(),
                                   indent=2,
                                   ensure_ascii=False)
@@ -52,6 +49,7 @@ def detect_recognize(image_path):
 
         elapse = reduce(lambda x, y: float(x)+float(y), elapse_part)
         elapse_part = ','.join([str(x) for x in elapse_part])
+
     return json.dumps({'image': img,
                        'total_elapse': f'{elapse:.4f}',
                        'elapse_part': elapse_part,
