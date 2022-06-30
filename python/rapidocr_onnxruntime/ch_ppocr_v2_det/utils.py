@@ -42,9 +42,6 @@ class OrtInferSession(object):
         if config['use_cuda'] and get_device() == 'GPU' \
                 and cuda_ep in get_available_providers():
             EP_list = [(cuda_ep, config[cuda_ep])]
-        else:
-            raise RuntimeError(f'{cuda_ep} is not avaiable for --use_cuda!')
-
         EP_list.append(cpu_ep)
 
         self.session = InferenceSession(config['model_path'],
