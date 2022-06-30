@@ -22,7 +22,8 @@
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
   - [Recently updates(more)](#recently-updatesmore)
-    - [📌2022-06-25 update:](#2022-06-25-update)
+      - [🏝2022-06-30 update:](#2022-06-30-update)
+      - [📌2022-06-25 update:](#2022-06-25-update)
       - [🍿2022-05-15 update](#2022-05-15-update)
       - [😀2022-05-12 upadte](#2022-05-12-upadte)
       - [🎧2022-04-04 update](#2022-04-04-update)
@@ -39,6 +40,7 @@
       - [Text Recognition](#text-recognition)
   - [PaddleOCR-FAQ](#paddleocr-faq)
   - [Original initiator and start-up author](#original-initiator-and-start-up-author)
+  - [Acknowledgements](#acknowledgements)
   - [Authorization](#authorization)
   - [Contact us](#contact-us)
   - [Demo](#demo)
@@ -58,7 +60,12 @@
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
 ## Recently updates([more](./change_log_en.md))
-### 📌2022-06-25 update:
+#### 🏝2022-06-30 update:
+- In the python inference section, add a configuration option for whether to use GPU inference, which can be used with one click if the `onnxruntime-gpu` version is correctly installed (Fix [issue#30](https://github.com/RapidAI/RapidOCR/issues/30))
+- The specific GPU-based reasoning will need to wait for me to sort it out and update it later.
+- For details, see: [onnxruntime-gpu version reasoning configuration](./python/README.md#onnxruntime-gpu version reasoning configuration)
+
+#### 📌2022-06-25 update:
 - Reorganize some of the python inference code, put all the common adjustment parameters into the yaml file, easy to adjust, easier to use, see: [README](./python/README.md)
 - The old inference code is located in the branch: [old_python_infer](https://github.com/RapidAI/RapidOCR/tree/old_python_infer)
 
@@ -166,6 +173,10 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
     <a href="https://github.com/znsoftm"><img src="https://avatars.githubusercontent.com/u/15354249?v=4" width=65 height=65></a>
     <a href="https://github.com/SWHL"><img src="https://avatars.githubusercontent.com/u/28639377?v=4" width=65 height=65></a>
 </p>
+
+## Acknowledgements
+- Many thanks to [DeliciaLaniD](https://github.com/DeliciaLaniD) for fixing the misplaced start position of scan animation in ocrweb.
+- Many thanks to [zhsunlight](https://github.com/zhsunlight) for the suggestion about parametric call GPU inference.
 
 ## Authorization
 - The copyright of the OCR model belongs to Baidu, and the copyright of other engineering codes belongs to the owner of this warehouse.

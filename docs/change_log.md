@@ -1,3 +1,8 @@
+#### 🏝2022-06-30 update:
+- python推理部分，增加参数选择使用GPU推理的配置选项，在正确安装`onnxruntime-gpu`版本前提下，可以一键使用（Fix [issue#30](https://github.com/RapidAI/RapidOCR/issues/30)）
+- 具体基于GPU的推理情况，需要等我后续整理一下，再更新出来
+- 详情参见：[onnxruntime-gpu版推理配置](./python/README.md#onnxruntime-gpu版推理配置)
+
 #### 📌2022-06-25 update:
 - 重新整理python部分推理代码，将常用调节参数全部放到yaml文件中，便于调节，更加容易使用
 - 详情参见：[README](./python/README.md)

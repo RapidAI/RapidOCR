@@ -12,19 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # -*- encoding: utf-8 -*-
+# @Author: SWHL
+# @Contact: liekkaskono@163.com
 import argparse
 import time
 
 import cv2
 import numpy as np
-import onnxruntime
+
 
 try:
     from .utils import (DBPostProcess, create_operators,
-                        draw_text_det_res, transform, read_yaml)
+                        draw_text_det_res, transform, read_yaml, OrtInferSession)
 except:
     from utils import (DBPostProcess, create_operators,
-                       draw_text_det_res, transform, read_yaml)
+                       draw_text_det_res, transform, read_yaml, OrtInferSession)
 
 
 class TextDetector(object):
@@ -32,18 +34,15 @@ class TextDetector(object):
         self.preprocess_op = create_operators(config['pre_process'])
         self.postprocess_op = DBPostProcess(**config['post_process'])
 
-        sess_opt = onnxruntime.SessionOptions()
-        sess_opt.log_severity_level = 4
-        sess_opt.enable_cpu_mem_arena = False
-        self.session = onnxruntime.InferenceSession(config['model_path'],
-                                                    sess_opt)
-        self.input_name = self.session.get_inputs()[0].name
-        self.output_name = self.session.get_outputs()[0].name
+        session_instance = OrtInferSession(config)
+        self.session = session_instance.session
+        self.input_name = session_instance.get_input_name()
 
     def order_points_clockwise(self, pts):
         """
-        reference from: https://github.com/jrosebr1/imutils/blob/master/imutils/perspective.py
-        # sort the points based on their x-coordinates
+        reference from:
+        https://github.com/jrosebr1/imutils/blob/master/imutils/perspective.py
+        sort the points based on their x-coordinates
         """
         xSorted = pts[np.argsort(pts[:, 0]), :]
 
@@ -85,7 +84,11 @@ class TextDetector(object):
         return dt_boxes
 
     def __call__(self, img):
-        ori_im = img.copy()
+        if img is None:
+            raise ValueError('img is None')
+
+        ori_im_shape = img.shape[:2]
+
         data = {'image': img}
         data = transform(data, self.preprocess_op)
         img, shape_list = data
@@ -96,13 +99,12 @@ class TextDetector(object):
         shape_list = np.expand_dims(shape_list, axis=0)
 
         starttime = time.time()
-        preds = self.session.run([self.output_name],
-                                 {self.input_name: img})
+        preds = self.session.run(None, {self.input_name: img})
 
         post_result = self.postprocess_op(preds[0], shape_list)
 
         dt_boxes = post_result[0]['points']
-        dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im.shape)
+        dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im_shape)
         elapse = time.time() - starttime
         return dt_boxes, elapse
 
@@ -121,4 +123,4 @@ if __name__ == "__main__":
     dt_boxes, elapse = text_detector(img)
     src_im = draw_text_det_res(dt_boxes, args.image_path)
     cv2.imwrite('det_results.jpg', src_im)
-    print('图像已经保存为det_results.jpg了')
+    print('The det_results.jpg has been saved in the current directory.')
