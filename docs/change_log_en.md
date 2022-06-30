@@ -1,3 +1,8 @@
+#### 🏝2022-06-30 update:
+- In the python inference section, add a configuration option for whether to use GPU inference, which can be used with one click if the `onnxruntime-gpu` version is correctly installed (Fix [issue#30](https://github.com/RapidAI/RapidOCR/issues/30))
+- The specific GPU-based reasoning will need to wait for me to sort it out and update it later.
+- For details, see: [onnxruntime-gpu version reasoning configuration](./python/README.md#onnxruntime-gpu version reasoning configuration)
+
 #### 📌2022-06-25 update:
 - Reorganize some of the python inference code, put all the common adjustment parameters into the yaml file, easy to adjust, easier to use, see: [README](./python/README.md)
 - The old inference code is located in the branch: [old_python_infer](https://github.com/RapidAI/RapidOCR/tree/old_python_infer)

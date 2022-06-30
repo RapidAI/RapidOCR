@@ -137,7 +137,7 @@
    ```bash
    $ pip install onnxruntime-gpu==1.xxx
    ```
-2. 更改[`config.yaml`]((./config.yaml))中对应部分的参数即可，详细参数介绍参见[官方文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)。
+2. 更改[`config.yaml`](./config.yaml)中对应部分的参数即可，详细参数介绍参见[官方文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)。
     ```yaml
     use_cuda: true
     CUDAExecutionProvider:
