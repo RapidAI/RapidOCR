@@ -12,7 +12,7 @@
 ### 运行
 1. 安装`requirements.txt`下相关包
     ```shell
-    pip install -r requirements.txt
+    pip install -r requirements.txt -i https://pypi.douban.com/simple/
     ```
 2. 下载`resources`目录
     - 下载链接：[百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
@@ -33,7 +33,7 @@
         │   └── rapid_ocr_api.py
         ├── resources
         │   ├── models
-        │   │   ├── ch_PP-OCRv2_det_infer.onnx
+        │   │   ├── ch_PP-OCRv3_det_infer.onnx
         │   │   ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
         │   │   └── ch_ppocr_mobile_v2.0_rec_infer.onnx
         │   └── rec_dict
