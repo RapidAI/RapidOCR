@@ -23,7 +23,7 @@
 - [RapidOCR (捷智OCR)](#rapidocr-捷智ocr)
   - [简介](#简介)
   - [近期更新(more)](#近期更新more)
-    - [📌2022-06-25 update:](#2022-06-25-update)
+      - [📌2022-06-25 update:](#2022-06-25-update)
       - [🥟2022-05-25 update](#2022-05-25-update)
       - [🍿2022-05-15 update](#2022-05-15-update)
       - [😀2022-05-12 upadte](#2022-05-12-upadte)
@@ -97,7 +97,7 @@
 
 ## [在线demo](http://rapidocr.51pda.cn:9003/)
 - **说明**: 本在线demo不存储小伙伴们上传测试的任何图像数据
-- **demo所用模型组合为**: `ch_PP-OCRv2 det` + `mobile cls` + `mobile rec`
+- **demo所用模型组合为**: `ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls +  ch_ppocr_mobile_v2.0_rec`
 - **运行机器配置**: `4核 AMD EPYC 7K62 48-Core Processor `
 - **示例图**:
     <div align="center">
