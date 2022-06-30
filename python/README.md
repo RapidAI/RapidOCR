@@ -123,45 +123,31 @@
         ```
 
 ### [`config.yaml`](./config.yaml)中常用参数介绍
-|参数名称|作用|建议取值范围|默认值|
-|:---:|:---:|:---:|:---:|
-|box_thresh|文本检测所得框是否保留的阈值，值越大，召回率越低|[0, 1]|0.5|
-|unclip_ratio|控制文本检测框的大小，值越大，检测框整体越大|[1.6, 2.0]|1.6|
-|text_score|文本识别结果置信度，值越大，把握越大|[0, 1]|0.5|
 
+|    参数名称      | 建议取值范围   | 默认值   |                       作用                       |
+| :------------: | :----------: | :-----: | :----------------------------------------------:|
+|  `box_thresh`  |    [0, 1]    |   0.5   | 文本检测所得框是否保留的阈值，值越大，召回率越低 |
+| `unclip_ratio` |  [1.6, 2.0]  |   1.6   |   控制文本检测框的大小，值越大，检测框整体越大   |
+|  `text_score`  |    [0, 1]    |   0.5   |       文本识别结果置信度，值越大，把握越大       |
+|   `use_cuda`   |              | `false` |              是否使用CUDA，加速推理              |
 
 ### onnxruntime-gpu版推理配置
 
-1. **onnxruntime-gpu**需要严格按照与cuda、cudnn版本对应来安装，具体参考[文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements)，**这一步关乎后面是否可以成功调用GPU**
+1. **onnxruntime-gpu**需要严格按照与cuda、cudnn版本对应来安装，具体参考[文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements)，**这一步关乎后面是否可以成功调用GPU**。
    ```bash
    $ pip install onnxruntime-gpu==1.xxx
    ```
-3. 推理代码中，加载onnx模型部分，用以下对应语言代码替换即可，详细参见：[官方教程](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)
-   - python版本
-      ```python
-      # 根据机器配置，安装对应版本的onnxruntime-gpu
-      # pip install onnxruntime-gpu==xxxx
+2. 更改[`config.yaml`]((./config.yaml))中对应部分的参数即可，详细参数介绍参见[官方文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)。
+    ```yaml
+    use_cuda: true
+    CUDAExecutionProvider:
+        device_id: 0
+        arena_extend_strategy: kNextPowerOfTwo
+        gpu_mem_limit: 2 * 1024 * 1024 * 1024
+        cudnn_conv_algo_search: EXHAUSTIVE
+        do_copy_in_default_stream: true
+    ```
 
-      import onnxruntime as ort
-
-      model_path = '<path to model>'
-
-      providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
-      session = ort.InferenceSession(model_path, providers=providers)
-      ```
-   - C/C++版本
-      ```c++
-      OrtSessionOptions* session_options = /* ... */;
-
-      OrtCUDAProviderOptions options;
-      options.device_id = 0;
-      options.arena_extend_strategy = 0;
-      options.gpu_mem_limit = 2 * 1024 * 1024 * 1024;
-      options.cudnn_conv_algo_search = OrtCudnnConvAlgoSearch::EXHAUSTIVE;
-      options.do_copy_in_default_stream = 1;
-
-      SessionOptionsAppendExecutionProvider_CUDA(session_options, &options);
-      ```
 3. 推理时间粗略对比
 
    |推理方式|推理图像数目|耗费时间(s/张)|
