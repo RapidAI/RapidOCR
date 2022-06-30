@@ -40,6 +40,7 @@
       - [文本识别模型(仅供参考)](#文本识别模型仅供参考)
       - [模型转onnx](#模型转onnx)
   - [原始发起者及初创作者](#原始发起者及初创作者)
+  - [致谢](#致谢)
   - [版权声明](#版权声明)
   - [授权](#授权)
   - [联系我们](#联系我们)
@@ -181,6 +182,9 @@
     <a href="https://github.com/znsoftm"><img src="https://avatars.githubusercontent.com/u/15354249?v=4" width=65 height=65></a>
     <a href="https://github.com/SWHL"><img src="https://avatars.githubusercontent.com/u/28639377?v=4" width=65 height=65></a>
 </p>
+
+## 致谢
+- 非常感谢[DeliciaLaniD](https://github.com/DeliciaLaniD)修复ocrweb中扫描动画起始位置错位问题
 
 ## 版权声明
 - 如果你的产品使用了本仓库中的全部或部分代码、文字或材料
