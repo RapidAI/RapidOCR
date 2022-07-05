@@ -2,7 +2,7 @@ Global:
     text_score: 0.5
     use_angle_cls: true
     print_verbose: true
-    min_height: 50
+    min_height: 30
 
 Det:
     module_name: ch_ppocr_v2_det
