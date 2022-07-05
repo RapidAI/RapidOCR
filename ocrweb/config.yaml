@@ -3,7 +3,6 @@ Global:
     use_angle_cls: true
     print_verbose: true
     min_height: 50
-    width_height_ratio: 8
 
 Det:
     module_name: ch_ppocr_v2_det
