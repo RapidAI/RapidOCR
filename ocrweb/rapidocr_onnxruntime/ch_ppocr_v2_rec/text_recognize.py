@@ -14,17 +14,15 @@
 import argparse
 import math
 import time
-from pathlib import Path
 from typing import List
 
 import cv2
 import numpy as np
-import onnxruntime
 
 try:
-    from .utils import CTCLabelDecode, read_yaml
+    from .utils import CTCLabelDecode, read_yaml, OrtInferSession
 except:
-    from utils import CTCLabelDecode, read_yaml
+    from utils import CTCLabelDecode, read_yaml, OrtInferSession
 
 
 class TextRecognizer(object):
@@ -34,12 +32,9 @@ class TextRecognizer(object):
         self.character_dict_path =  config['keys_path']
         self.postprocess_op = CTCLabelDecode(self.character_dict_path)
 
-        sess_opt = onnxruntime.SessionOptions()
-        sess_opt.log_severity_level = 4
-        sess_opt.enable_cpu_mem_arena = False
-        self.session = onnxruntime.InferenceSession(config['model_path'],
-                                                    sess_opt)
-        self.input_name = self.session.get_inputs()[0].name
+        session_instance = OrtInferSession(config)
+        self.session = session_instance.session
+        self.input_name = session_instance.get_input_name()
 
     def resize_norm_img(self, img, max_wh_ratio):
         img_channel, img_height, img_width = self.rec_image_shape

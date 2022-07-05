@@ -63,7 +63,6 @@ class TextClassifier(object):
         padding_im[:, :, :resized_w] = resized_image
         return padding_im
 
-
     def __call__(self, img_list: List[np.ndarray]):
         if isinstance(img_list, np.ndarray):
             img_list = [img_list]

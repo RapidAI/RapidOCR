@@ -1,3 +1,7 @@
+#### 😁2022-07-05 update:
+- 添加对单行文本的处理能力，对于单行文本，可自行设定阈值，不过检测模块，直接识别即可。详情参见[README](./python/README.md#configyamlconfigyaml中常用参数介绍)
+- 优化python部分代码逻辑，更优雅简洁。
+
 #### 🏝2022-06-30 update:
 - python推理部分，增加参数选择使用GPU推理的配置选项，在正确安装`onnxruntime-gpu`版本前提下，可以一键使用（Fix [issue#30](https://github.com/RapidAI/RapidOCR/issues/30)）
 - 具体基于GPU的推理情况，需要等我后续整理一下，再更新出来

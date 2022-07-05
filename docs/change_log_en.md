@@ -1,3 +1,7 @@
+#### 😁2022-07-05 update:
+- Add the ability to handle single line text, for single line text, you can set your own threshold, but the detection module, direct recognition can be. For details, see [README](./python/README.md#configyamlconfigyaml中常用参数介绍)
+- Optimize some code logic of python, more elegant and concise.
+
 #### 🏝2022-06-30 update:
 - In the python inference section, add a configuration option for whether to use GPU inference, which can be used with one click if the `onnxruntime-gpu` version is correctly installed (Fix [issue#30](https://github.com/RapidAI/RapidOCR/issues/30))
 - The specific GPU-based reasoning will need to wait for me to sort it out and update it later.

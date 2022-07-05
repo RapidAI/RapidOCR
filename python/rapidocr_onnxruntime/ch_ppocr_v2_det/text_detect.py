@@ -38,6 +38,31 @@ class TextDetector(object):
         self.session = session_instance.session
         self.input_name = session_instance.get_input_name()
 
+    def __call__(self, img):
+        if img is None:
+            raise ValueError('img is None')
+
+        ori_im_shape = img.shape[:2]
+
+        data = {'image': img}
+        data = transform(data, self.preprocess_op)
+        img, shape_list = data
+        if img is None:
+            return None, 0
+
+        img = np.expand_dims(img, axis=0).astype(np.float32)
+        shape_list = np.expand_dims(shape_list, axis=0)
+
+        starttime = time.time()
+        preds = self.session.run(None, {self.input_name: img})
+
+        post_result = self.postprocess_op(preds[0], shape_list)
+
+        dt_boxes = post_result[0]['points']
+        dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im_shape)
+        elapse = time.time() - starttime
+        return dt_boxes, elapse
+
     def order_points_clockwise(self, pts):
         """
         reference from:
@@ -82,31 +107,6 @@ class TextDetector(object):
             dt_boxes_new.append(box)
         dt_boxes = np.array(dt_boxes_new)
         return dt_boxes
-
-    def __call__(self, img):
-        if img is None:
-            raise ValueError('img is None')
-
-        ori_im_shape = img.shape[:2]
-
-        data = {'image': img}
-        data = transform(data, self.preprocess_op)
-        img, shape_list = data
-        if img is None:
-            return None, 0
-
-        img = np.expand_dims(img, axis=0).astype(np.float32)
-        shape_list = np.expand_dims(shape_list, axis=0)
-
-        starttime = time.time()
-        preds = self.session.run(None, {self.input_name: img})
-
-        post_result = self.postprocess_op(preds[0], shape_list)
-
-        dt_boxes = post_result[0]['points']
-        dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im_shape)
-        elapse = time.time() - starttime
-        return dt_boxes, elapse
 
 
 if __name__ == "__main__":

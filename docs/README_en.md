@@ -22,11 +22,11 @@
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
   - [Recently updates(more)](#recently-updatesmore)
+      - [😁2022-07-05 update:](#2022-07-05-update)
       - [🏝2022-06-30 update:](#2022-06-30-update)
       - [📌2022-06-25 update:](#2022-06-25-update)
       - [🍿2022-05-15 update](#2022-05-15-update)
       - [😀2022-05-12 upadte](#2022-05-12-upadte)
-      - [🎧2022-04-04 update](#2022-04-04-update)
   - [FAQ](#faq)
   - [SDK compilation status](#sdk-compilation-status)
   - [Online demo](#online-demo)
@@ -60,6 +60,10 @@
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
 ## Recently updates([more](./change_log_en.md))
+#### 😁2022-07-05 update:
+- Add the ability to handle single line text, for single line text, you can set your own threshold, but the detection module, direct recognition can be. For details, see [README](./python/README.md#configyamlconfigyaml中常用参数介绍)
+- Optimize some code logic of python, more elegant and concise.
+
 #### 🏝2022-06-30 update:
 - In the python inference section, add a configuration option for whether to use GPU inference, which can be used with one click if the `onnxruntime-gpu` version is correctly installed (Fix [issue#30](https://github.com/RapidAI/RapidOCR/issues/30))
 - The specific GPU-based reasoning will need to wait for me to sort it out and update it later.
@@ -77,10 +81,6 @@
 - Add the ONNX model converted from the PaddleOCR v3 det model, download it directly from the network disk, and replace it. ([Baidu Netdisk](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing ))
 - Added a comparison table of text detection model effects of various versions. For details, click [Comparison of the effects of various versions of ONNX models] (#Comparison of the effects of various versions of onnx models). The text detection model of v3 is better than the previous v2 in terms of the indicators on the test set constructed by itself, and it is recommended to use it.
 
-#### 🎧2022-04-04 update
-- Add suport for OpenVINO under python
-- Give the performance comparison table of OpenVINO and ONNXRuntime
-- For details:[python/README](./python/README.md)
 
 ## [FAQ](./doc/FAQ.md)
 

@@ -23,12 +23,12 @@
 - [RapidOCR (捷智OCR)](#rapidocr-捷智ocr)
   - [简介](#简介)
   - [近期更新(more)](#近期更新more)
+      - [😁2022-07-05 update:](#2022-07-05-update)
       - [🏝2022-06-30 update:](#2022-06-30-update)
       - [📌2022-06-25 update:](#2022-06-25-update)
       - [🥟2022-05-25 update](#2022-05-25-update)
       - [🍿2022-05-15 update](#2022-05-15-update)
       - [😀2022-05-12 upadte](#2022-05-12-upadte)
-      - [🎧2022-04-04 update](#2022-04-04-update)
   - [整个框架](#整个框架)
   - [常见问题  FAQ](#常见问题--faq)
   - [SDK 编译状态](#sdk-编译状态)
@@ -62,6 +62,11 @@
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。
 
 ## 近期更新([more](./docs/change_log.md))
+
+#### 😁2022-07-05 update:
+- 添加对单行文本的处理能力，对于单行文本，可自行设定阈值，不过检测模块，直接识别即可。详情参见[README](./python/README.md#configyamlconfigyaml中常用参数介绍)
+- 优化python部分代码逻辑，更优雅简洁。
+
 #### 🏝2022-06-30 update:
 - python推理部分，增加参数选择使用GPU推理的配置选项，在正确安装`onnxruntime-gpu`版本前提下，可以一键使用（Fix [issue#30](https://github.com/RapidAI/RapidOCR/issues/30)）
 - 具体基于GPU的推理情况，需要等我后续整理一下，再更新出来
@@ -81,11 +86,6 @@
 #### 😀2022-05-12 upadte
 - 增加PaddleOCR v3 det模型转换的ONNX模型，直接去网盘下载，替换即可。([百度网盘](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing))
 - 增加各个版本文本检测模型效果对比表格，详情点击[各个版本ONNX模型效果对比](#各个版本onnx模型效果对比)。v3的文本检测模型从自己构建测试集上的指标来看是好于之前的v2的，推荐使用。
-
-#### 🎧2022-04-04 update
-- 增加python下的基于OpenVINO推理引擎的支持
-- 给出OpenVINO和ONNXRuntime的性能对比表格，详情参见:[python/rapidocr_openvino/README](./python/rapidocr_openvino/README.md)
-
 
 ## 整个框架
 <div align="center">

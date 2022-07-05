@@ -1,9 +1,7 @@
+# !/usr/bin/env python
 # -*- encoding: utf-8 -*-
-# @Author: SWHL
-# @Contact: liekkaskono@163.com
 import copy
 import importlib
-import time
 import sys
 from pathlib import Path
 
@@ -20,8 +18,11 @@ class TextSystem(object):
         super(TextSystem).__init__()
         config = self.read_yaml(config_path)
 
-        self.print_verbose = config['Global']['print_verbose']
-        self.text_score = config['Global']['text_score']
+        global_config = config['Global']
+        self.print_verbose = global_config['print_verbose']
+        self.text_score = global_config['text_score']
+        self.min_height = global_config['min_height']
+        self.width_height_ratio = global_config['width_height_ratio']
 
         TextDetector = self.init_module(config['Det']['module_name'],
                                         config['Det']['class_name'])
@@ -37,6 +38,33 @@ class TextSystem(object):
                                               config['Cls']['class_name'])
             self.text_cls = TextClassifier(config['Cls'])
 
+    def __call__(self, img: np.ndarray):
+        h, w = img.shape[:2]
+        if h < self.min_height and w / h >= self.width_height_ratio:
+            dt_boxes, img_crop_list = self.get_boxes_img_without_det(img, h, w)
+        else:
+            dt_boxes, elapse = self.text_detector(img)
+            if dt_boxes is None or len(dt_boxes) < 1:
+                return None, None
+            if self.print_verbose:
+                print(f'dt_boxes num: {len(dt_boxes)}, elapse: {elapse}')
+
+            dt_boxes = self.sorted_boxes(dt_boxes)
+            img_crop_list = self.get_crop_img_list(img, dt_boxes)
+
+        if self.use_angle_cls:
+            img_crop_list, angle_list, elapse = self.text_cls(img_crop_list)
+            if self.print_verbose:
+                print(f'cls num: {len(img_crop_list)}, elapse: {elapse}')
+
+        rec_res, elapse = self.text_recognizer(img_crop_list)
+        if self.print_verbose:
+            print(f'rec_res num: {len(rec_res)}, elapse: {elapse}')
+
+        filter_boxes, filter_rec_res = self.filter_boxes_rec_by_score(dt_boxes,
+                                                                      rec_res)
+        return filter_boxes, filter_rec_res
+
     @staticmethod
     def read_yaml(yaml_path):
         with open(yaml_path, 'rb') as f:
@@ -48,38 +76,43 @@ class TextSystem(object):
         module_part = importlib.import_module(module_name)
         return getattr(module_part, class_name)
 
-    def get_rotate_crop_image(self, img, points):
-        '''
-        img_height, img_width = img.shape[0:2]
-        left = int(np.min(points[:, 0]))
-        right = int(np.max(points[:, 0]))
-        top = int(np.min(points[:, 1]))
-        bottom = int(np.max(points[:, 1]))
-        img_crop = img[top:bottom, left:right, :].copy()
-        points[:, 0] = points[:, 0] - left
-        points[:, 1] = points[:, 1] - top
-        '''
-        img_crop_width = int(
-            max(
-                np.linalg.norm(points[0] - points[1]),
-                np.linalg.norm(points[2] - points[3])))
-        img_crop_height = int(
-            max(
-                np.linalg.norm(points[0] - points[3]),
-                np.linalg.norm(points[1] - points[2])))
-        pts_std = np.float32([[0, 0], [img_crop_width, 0],
-                              [img_crop_width, img_crop_height],
-                              [0, img_crop_height]])
-        M = cv2.getPerspectiveTransform(points, pts_std)
-        dst_img = cv2.warpPerspective(
-            img,
-            M, (img_crop_width, img_crop_height),
-            borderMode=cv2.BORDER_REPLICATE,
-            flags=cv2.INTER_CUBIC)
-        dst_img_height, dst_img_width = dst_img.shape[0:2]
-        if dst_img_height * 1.0 / dst_img_width >= 1.5:
-            dst_img = np.rot90(dst_img)
-        return dst_img
+    def get_boxes_img_without_det(self, img, h, w):
+        x0, y0, x1, y1 = 0, 0, w, h
+        dt_boxes = np.array([[x0, y0], [x1, y0], [x1, y1], [x0, y1]])
+        dt_boxes = dt_boxes[np.newaxis, ...]
+        img_crop_list = [img]
+        return dt_boxes, img_crop_list
+
+    def get_crop_img_list(self, img, dt_boxes):
+        def get_rotate_crop_image(img, points):
+            img_crop_width = int(
+                max(
+                    np.linalg.norm(points[0] - points[1]),
+                    np.linalg.norm(points[2] - points[3])))
+            img_crop_height = int(
+                max(
+                    np.linalg.norm(points[0] - points[3]),
+                    np.linalg.norm(points[1] - points[2])))
+            pts_std = np.float32([[0, 0], [img_crop_width, 0],
+                                  [img_crop_width, img_crop_height],
+                                  [0, img_crop_height]])
+            M = cv2.getPerspectiveTransform(points, pts_std)
+            dst_img = cv2.warpPerspective(
+                img,
+                M, (img_crop_width, img_crop_height),
+                borderMode=cv2.BORDER_REPLICATE,
+                flags=cv2.INTER_CUBIC)
+            dst_img_height, dst_img_width = dst_img.shape[0:2]
+            if dst_img_height * 1.0 / dst_img_width >= 1.5:
+                dst_img = np.rot90(dst_img)
+            return dst_img
+
+        img_crop_list = []
+        for box in dt_boxes:
+            tmp_box = copy.deepcopy(box)
+            img_crop = get_rotate_crop_image(img, tmp_box)
+            img_crop_list.append(img_crop)
+        return img_crop_list
 
     @staticmethod
     def sorted_boxes(dt_boxes):
@@ -102,46 +135,14 @@ class TextSystem(object):
                 _boxes[i + 1] = tmp
         return _boxes
 
-    def __call__(self, img: np.ndarray):
-        dt_boxes, det_elapse = self.text_detector(img)
-        if self.print_verbose:
-            print(f'dt_boxes num: { len(dt_boxes)}, elapse: {det_elapse}')
-
-        if dt_boxes is None or len(dt_boxes) < 1:
-            return None, None, img, None
-
-        start_time = time.time()
-        img_crop_list = []
-        dt_boxes = self.sorted_boxes(dt_boxes)
-        for bno in range(len(dt_boxes)):
-            tmp_box = copy.deepcopy(dt_boxes[bno])
-            img_crop = self.get_rotate_crop_image(img, tmp_box)
-            img_crop_list.append(img_crop)
-        crop_elapse = time.time() - start_time
-
-        if self.use_angle_cls:
-            img_crop_list, _, cls_elapse = self.text_cls(img_crop_list)
-            if self.print_verbose:
-                print(f'cls num: {len(img_crop_list)}, elapse: {cls_elapse}')
-
-        rec_res, rec_elapse = self.text_recognizer(img_crop_list)
-        if self.print_verbose:
-            print(f'rec_res num: {len(rec_res)}, elapse: {rec_elapse}')
-
-        start_time = time.time()
+    def filter_boxes_rec_by_score(self, dt_boxes, rec_res):
         filter_boxes, filter_rec_res = [], []
         for box, rec_reuslt in zip(dt_boxes, rec_res):
             text, score = rec_reuslt
             if score >= self.text_score:
                 filter_boxes.append(box)
                 filter_rec_res.append(rec_reuslt)
-
-        filter_elapse = time.time() - start_time
-        elapse_part = [f'{det_elapse:.4f}',
-                       f'{(cls_elapse+crop_elapse):.4f}',
-                       f'{(rec_elapse+filter_elapse):.4f}'
-        ]
-        return filter_boxes, filter_rec_res, img, elapse_part
+        return filter_boxes, filter_rec_res
 
 
 if __name__ == '__main__':
