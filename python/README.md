@@ -136,6 +136,7 @@
 |Det| `unclip_ratio` |  [1.6, 2.0]  |   1.6   |   控制文本检测框的大小，值越大，检测框整体越大   |
 |Det/Cls/Rec|  `use_cuda`   |              | `false` |              是否使用CUDA，加速推理              |
 - `min_height`和`width_height_ratio`这两个参数是用来卡那些只有一行文本的图像，例如下图，这类图像不会进入文本检测模块，直接进入后续过程即可。
+
   ![](./test_images/single_line_text.jpg)
 
 ### onnxruntime-gpu版推理配置
