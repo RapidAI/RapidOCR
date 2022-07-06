@@ -40,29 +40,6 @@ class TextClassifier(object):
         self.session = ort.InferenceSession(config['model_path'], sess_opt)
         self.input_name = self.session.get_inputs()[0].name
 
-    def resize_norm_img(self, img):
-        img_c, img_h, img_w = self.cls_image_shape
-        h, w = img.shape[:2]
-        ratio = w / float(h)
-        if math.ceil(img_h * ratio) > img_w:
-            resized_w = img_w
-        else:
-            resized_w = int(math.ceil(img_h * ratio))
-
-        resized_image = cv2.resize(img, (resized_w, img_h))
-        resized_image = resized_image.astype('float32')
-        if img_c == 1:
-            resized_image = resized_image / 255
-            resized_image = resized_image[np.newaxis, :]
-        else:
-            resized_image = resized_image.transpose((2, 0, 1)) / 255
-
-        resized_image -= 0.5
-        resized_image /= 0.5
-        padding_im = np.zeros((img_c, img_h, img_w), dtype=np.float32)
-        padding_im[:, :, :resized_w] = resized_image
-        return padding_im
-
     def __call__(self, img_list: List[np.ndarray]):
         if isinstance(img_list, np.ndarray):
             img_list = [img_list]
@@ -107,6 +84,29 @@ class TextClassifier(object):
                     img_list[indices[beg_img_no + rno]] = cv2.rotate(
                         img_list[indices[beg_img_no + rno]], 1)
         return img_list, cls_res, elapse
+
+    def resize_norm_img(self, img):
+        img_c, img_h, img_w = self.cls_image_shape
+        h, w = img.shape[:2]
+        ratio = w / float(h)
+        if math.ceil(img_h * ratio) > img_w:
+            resized_w = img_w
+        else:
+            resized_w = int(math.ceil(img_h * ratio))
+
+        resized_image = cv2.resize(img, (resized_w, img_h))
+        resized_image = resized_image.astype('float32')
+        if img_c == 1:
+            resized_image = resized_image / 255
+            resized_image = resized_image[np.newaxis, :]
+        else:
+            resized_image = resized_image.transpose((2, 0, 1)) / 255
+
+        resized_image -= 0.5
+        resized_image /= 0.5
+        padding_im = np.zeros((img_c, img_h, img_w), dtype=np.float32)
+        padding_im[:, :, :resized_w] = resized_image
+        return padding_im
 
 
 if __name__ == "__main__":

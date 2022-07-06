@@ -20,7 +20,6 @@ import time
 import cv2
 import numpy as np
 
-
 try:
     from .utils import (DBPostProcess, create_operators,
                         draw_text_det_res, transform, read_yaml, OrtInferSession)

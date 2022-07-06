@@ -89,6 +89,11 @@
    - Note: 在Windows端，Shapely库可能自动安装会有问题，解决方案参见[Q15](../docs/FAQ.md#q15-装完环境之后运行python-mainpy之后报错oserror-winerror-126-找不到指定的模組)
 
 4. 运行示例
+    - 运行单元测试
+        ```bash
+        cd tests
+        pytest test_*.py
+        ```
     - 接口调用
         ```python
         import cv2
@@ -129,7 +134,7 @@
 |Global|  `text_score`  |    [0, 1]    |   0.5   |       文本识别结果置信度，值越大，把握越大       |
 |Global|  `use_angle_cls`  |  `bool`      |   `true`   |       是否使用文本行的方向分类       |
 |Global|  `print_verbose`  |    `bool`    |   `true`   |       是否打印各个部分耗时信息       |
-|Global|  `min_heigh`  |    `int`    |   50   |       图像高度，单位是像素       |
+|Global|  `min_heigh`  |    `int`    |   30   |       图像最小高度（单位是像素），低于这个值，会跳过文本检测阶段，直接进行后续识别       |
 ||||||
 |Det|  `box_thresh`  |    [0, 1]    |   0.5   | 文本检测所得框是否保留的阈值，值越大，召回率越低 |
 |Det| `unclip_ratio` |  [1.6, 2.0]  |   1.6   |   控制文本检测框的大小，值越大，检测框整体越大   |
