@@ -58,6 +58,7 @@ class TextSystem(object):
             img_crop_list = self.get_crop_img_list(img, dt_boxes)
             crop_elapse = time.time() - start_time
 
+        cls_elapse = 0
         if self.use_angle_cls:
             img_crop_list, _, cls_elapse = self.text_cls(img_crop_list)
             if self.print_verbose:
