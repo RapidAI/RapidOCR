@@ -5,7 +5,7 @@ import base
 import cv2
 
 
-module_name = 'ch_ppocr_v2_rec'
+module_name = 'ch_ppocr_v3_rec'
 class_name = 'TextRecognizer'
 TextRecognizer = base.init_module(module_name, class_name)
 
