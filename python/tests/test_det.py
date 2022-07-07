@@ -17,7 +17,7 @@ text_det = TextDetector(config)
 
 
 def test_det():
-    img_path = 'test_files/ch_en_num.jpg'
+    img_path = 'test_files/text_det.jpg'
 
     img = cv2.imread(img_path)
 

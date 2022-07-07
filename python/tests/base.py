@@ -9,6 +9,7 @@ import sys
 import yaml
 
 package_name = 'rapidocr_onnxruntime'
+# package_name = 'rapidocr_openvino'
 
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
