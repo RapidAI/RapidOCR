@@ -1,3 +1,8 @@
+#### ✨2022-07-07 update:
+- Fix the bug of v3 rec inference in python version, and merge v3 rec and v2 rec into the same set of inference code, which is more concise and convenient.
+- Add unit test under python module
+- Add [Acknowledgement module](../docs/README_en.md#Acknowledgement) to this page to thank the partners who contributed to this project.
+
 #### 😁2022-07-05 update:
 - Add the ability to handle single line text, for single line text, you can set your own threshold, but the detection module, direct recognition can be. For details, see [README](./python/README.md#configyamlconfigyaml中常用参数介绍)
 - Optimize some code logic of python, more elegant and concise.

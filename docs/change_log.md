@@ -1,3 +1,8 @@
+#### ✨2022-07-07 update:
+- 修复python版中v3 rec推理bug，并将v3 rec与v2 rec合并为同一套推理代码，更加简洁和方便
+- 添加python模块下的单元测试
+- 该页面添加[致谢模块](../README.md#致谢)，感谢为这个项目作出贡献的小伙伴。
+
 #### 😁2022-07-05 update:
 - 添加对单行文本的处理能力，对于单行文本，可自行设定阈值，不过检测模块，直接识别即可。详情参见[README](./python/README.md#configyamlconfigyaml中常用参数介绍)
 - 优化python部分代码逻辑，更优雅简洁。

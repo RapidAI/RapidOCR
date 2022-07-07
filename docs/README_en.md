@@ -22,11 +22,11 @@
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
   - [Recently updates(more)](#recently-updatesmore)
+      - [✨2022-07-07 update:](#2022-07-07-update)
       - [😁2022-07-05 update:](#2022-07-05-update)
       - [🏝2022-06-30 update:](#2022-06-30-update)
       - [📌2022-06-25 update:](#2022-06-25-update)
       - [🍿2022-05-15 update](#2022-05-15-update)
-      - [😀2022-05-12 upadte](#2022-05-12-upadte)
   - [FAQ](#faq)
   - [SDK compilation status](#sdk-compilation-status)
   - [Online demo](#online-demo)
@@ -60,6 +60,12 @@
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
 ## Recently updates([more](./change_log_en.md))
+
+#### ✨2022-07-07 update:
+- Fix the bug of v3 rec inference in python version, and merge v3 rec and v2 rec into the same set of inference code, which is more concise and convenient.
+- Add unit test under python module
+- Add [Acknowledgement module](#Acknowledgement) to this page to thank the partners who contributed to this project.
+
 #### 😁2022-07-05 update:
 - Add the ability to handle single line text, for single line text, you can set your own threshold, but the detection module, direct recognition can be. For details, see [README](./python/README.md#configyamlconfigyaml中常用参数介绍)
 - Optimize some code logic of python, more elegant and concise.
@@ -76,11 +82,6 @@
 #### 🍿2022-05-15 update
 - Add the ONNX model converted from the PaddleOCR v3 rec model, just go to the network disk to download and replace it. ([Baidu Netdisk](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing ))
 - Added a comparison table of the effects of each version of the text recognition model. For details, click [Comparison of the effects of various versions of ONNX models] (#Comparison of the effects of various versions of onnx models). The text recognition model of v3 is not as good as the previous one in terms of the indicators on the test set constructed by itself.
-
-#### 😀2022-05-12 upadte
-- Add the ONNX model converted from the PaddleOCR v3 det model, download it directly from the network disk, and replace it. ([Baidu Netdisk](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing ))
-- Added a comparison table of text detection model effects of various versions. For details, click [Comparison of the effects of various versions of ONNX models] (#Comparison of the effects of various versions of onnx models). The text detection model of v3 is better than the previous v2 in terms of the indicators on the test set constructed by itself, and it is recommended to use it.
-
 
 ## [FAQ](./doc/FAQ.md)
 
@@ -176,7 +177,8 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 
 ## Acknowledgements
 - Many thanks to [DeliciaLaniD](https://github.com/DeliciaLaniD) for fixing the misplaced start position of scan animation in ocrweb.
-- Many thanks to [zhsunlight](https://github.com/zhsunlight) for the suggestion about parametric call GPU inference.
+- Many thanks to [zhsunlight](https://github.com/zhsunlight) for the suggestion about parameterized call GPU reasoning and the careful and thoughtful testing.
+- Many thanks to [lzh111222334](https://github.com/lzh111222334) for fixing some bugs of rec preprocessing under python version.
 
 ## Authorization
 - The copyright of the OCR model belongs to Baidu, and the copyright of other engineering codes belongs to the owner of this warehouse.
