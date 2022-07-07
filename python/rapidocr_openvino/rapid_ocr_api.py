@@ -14,8 +14,10 @@ sys.path.append(str(root_dir))
 
 
 class TextSystem(object):
-    def __init__(self, config_path=str(root_dir / 'config.yaml')):
+    def __init__(self, config_path):
         super(TextSystem).__init__()
+        if not Path(config_path).exists():
+            raise FileExistsError(f'{config_path} does not exist!')
         config = self.read_yaml(config_path)
 
         global_config = config['Global']

@@ -17,14 +17,13 @@ import time
 
 import cv2
 import numpy as np
-from openvino.runtime import Core
 
 try:
     from .utils import (DBPostProcess, create_operators,
-                        draw_text_det_res, transform, read_yaml)
+                        transform, OpenVINOInferSession)
 except:
     from utils import (DBPostProcess, create_operators,
-                       draw_text_det_res, transform, read_yaml)
+                       transform, OpenVINOInferSession)
 
 
 class TextDetector(object):
@@ -32,10 +31,29 @@ class TextDetector(object):
         self.preprocess_op = create_operators(config['pre_process'])
         self.postprocess_op = DBPostProcess(**config['post_process'])
 
-        ie = Core()
-        model_onnx = ie.read_model(config['model_path'])
-        compile_model = ie.compile_model(model=model_onnx, device_name='CPU')
-        self.session = compile_model.create_infer_request()
+        openvino_instance = OpenVINOInferSession(config)
+        self.session = openvino_instance.session
+
+    def __call__(self, img):
+        ori_im = img.copy()
+        data = {'image': img}
+        data = transform(data, self.preprocess_op)
+        img, shape_list = data
+        if img is None:
+            return None, 0
+
+        img = np.expand_dims(img, axis=0).astype(np.float32)
+        shape_list = np.expand_dims(shape_list, axis=0)
+
+        starttime = time.time()
+        self.session.infer(inputs=[img])
+        preds = self.session.get_output_tensor().data
+
+        post_result = self.postprocess_op(preds, shape_list)
+        dt_boxes = post_result[0]['points']
+        dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im.shape)
+        elapse = time.time() - starttime
+        return dt_boxes, elapse
 
     def order_points_clockwise(self, pts):
         """
@@ -81,27 +99,6 @@ class TextDetector(object):
         dt_boxes = np.array(dt_boxes_new)
         return dt_boxes
 
-    def __call__(self, img):
-        ori_im = img.copy()
-        data = {'image': img}
-        data = transform(data, self.preprocess_op)
-        img, shape_list = data
-        if img is None:
-            return None, 0
-
-        img = np.expand_dims(img, axis=0).astype(np.float32)
-        shape_list = np.expand_dims(shape_list, axis=0)
-
-        starttime = time.time()
-        self.session.infer(inputs=[img])
-        preds = self.session.get_output_tensor().data
-
-        post_result = self.postprocess_op(preds, shape_list)
-        dt_boxes = post_result[0]['points']
-        dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im.shape)
-        elapse = time.time() - starttime
-        return dt_boxes, elapse
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -109,12 +106,15 @@ if __name__ == "__main__":
     parser.add_argument('--image_path', type=str, default=None)
     args = parser.parse_args()
 
+    from utils import read_yaml
     config = read_yaml(args.config_path)
 
     text_detector = TextDetector(config)
 
     img = cv2.imread(args.image_path)
     dt_boxes, elapse = text_detector(img)
+
+    from utils import draw_text_det_res
     src_im = draw_text_det_res(dt_boxes, args.image_path)
     cv2.imwrite('det_results.jpg', src_im)
     print('图像已经保存为det_results.jpg了')

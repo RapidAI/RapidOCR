@@ -3,6 +3,15 @@
 # @Contact: liekkaskono@163.com
 import numpy as np
 import yaml
+from openvino.runtime import Core
+
+
+class OpenVINOInferSession(object):
+    def __init__(self, config):
+        ie = Core()
+        model_onnx = ie.read_model(config['model_path'])
+        compile_model = ie.compile_model(model=model_onnx, device_name='CPU')
+        self.session = compile_model.create_infer_request()
 
 
 def read_yaml(yaml_path):

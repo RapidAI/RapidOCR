@@ -22,10 +22,10 @@ import numpy as np
 
 try:
     from .utils import (DBPostProcess, create_operators,
-                        draw_text_det_res, transform, read_yaml, OrtInferSession)
+                        transform, read_yaml, OrtInferSession)
 except:
     from utils import (DBPostProcess, create_operators,
-                       draw_text_det_res, transform, read_yaml, OrtInferSession)
+                       transform, read_yaml, OrtInferSession)
 
 
 class TextDetector(object):
@@ -120,6 +120,8 @@ if __name__ == "__main__":
 
     img = cv2.imread(args.image_path)
     dt_boxes, elapse = text_detector(img)
+
+    from utils import draw_text_det_res
     src_im = draw_text_det_res(dt_boxes, args.image_path)
     cv2.imwrite('det_results.jpg', src_im)
     print('The det_results.jpg has been saved in the current directory.')

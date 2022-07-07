@@ -13,11 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-# coding:utf-8
+# -*- encoding: utf-8 -*-
+# @Author: SWHL
+# @Contact: liekkaskono@163.com
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import os
 import sys
 
 import cv2
@@ -26,6 +27,15 @@ import pyclipper
 import six
 from shapely.geometry import Polygon
 import yaml
+from openvino.runtime import Core
+
+
+class OpenVINOInferSession(object):
+    def __init__(self, config):
+        ie = Core()
+        model_onnx = ie.read_model(config['model_path'])
+        compile_model = ie.compile_model(model=model_onnx, device_name='CPU')
+        self.session = compile_model.create_infer_request()
 
 
 def read_yaml(yaml_path):
