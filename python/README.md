@@ -17,24 +17,37 @@
 
 ### 简介和说明
 - **各个版本的ONNX模型下载地址：**[百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
-- 所有常用的参数配置都在`config.yaml`下，一目了然，更加便捷
+- 所有常用的参数配置都在[`config.yaml`](./config.yaml)下，一目了然，更加便捷
 - 每个独立的模块下均有独立的`config.yaml`配置文件，可以单独使用
 - `det`部分：
-  - `det`中`mobile`和`server`版，共用一个推理代码，直接更改配置文件中模型路径即可
-  - `det`中`v2`和`v3`两个版本代码，共用一个推理代码，直接更改配置文件中模型路径即可
+  - `det`中`mobile`和`server`版，推理代码一致，直接更改配置文件中模型路径即可
+  - `det`中`v2`和`v3`两个版本，推理代码一致，直接更改配置文件中模型路径即可
     ```yaml
     Det:
         module_name: ch_ppocr_v2_det
         class_name: TextDetector
         model_path: resources/models/ch_PP-OCRv3_det_infer.onnx
     ```
-- `rec`中`mobile`和`server`版本，共用一个推理代码，直接更改配置文件中模型路径即可
-- onnxruntime和OpenVINO调用方式如下:
+- `rec`部分：
+  - `rec`中`mobile`和`server`版本，推理代码一致，直接更改配置文件中模型路径即可
+  - `rec`中`v2`和`v3`两个版本，共用同一个推理代码。
+    - 两版本差别仅在输入shape和模型。经过测试，采用`v3 rec模型`+`[3, 48, 320]`效果最好。
+    - 目前配置文件`config.yaml`中（如下所示）已经改为该最优组合。
+    ```yaml
+    module_name: ch_ppocr_v2_rec
+    class_name: TextRecognizer
+    model_path: resources/models/ch_PP-OCRv3_rec_infer.onnx
+
+    rec_img_shape: [3, 48, 320]
+    rec_batch_num: 6
+    keys_path: resources/rec_dict/ppocr_keys_v1.txt
+    ```
+- onnxruntime和openvino调用方式如下:
     ```python
     # 基于onnxruntime引擎推理
     from rapidocr_onnxruntime import TextSystem
 
-    # 基于openvin引擎推理
+    # 基于openvino引擎推理
     from rapidocr_openvino import TextSystem
     ```
 - 值得说明的是，基于openvino推理部分中`ch_ppocr_v2_cls`部分仍然是基于onnxruntime的，原因是openvino有bug，详情见[openvino/issue](https://github.com/openvinotoolkit/openvino/issues/11501)
@@ -92,7 +105,7 @@
 
         pip install -r requirements.txt -i https://pypi.douban.com/simple/
         ```
-   - 基于OpenVINO推理所需环境安装：
+   - 基于openvino推理所需环境安装：
         ```bash
         # Windows端
         pip install openvino==2022.1.0
@@ -114,7 +127,7 @@
         # 基于onnxruntime引擎推理
         from rapidocr_onnxruntime import TextSystem
 
-        # 基于OpenVINO引擎推理
+        # 基于openvino引擎推理
         # from rapidocr_openvino import TextSystem
 
         config_path = 'config.yaml'
@@ -128,16 +141,6 @@
     - 直接运行`test_demo.py`，可直接可视化查看结果。
         ```bash
         python test_demp.py
-        ```
-    - `rec`部分，如果想要使用`PPOCR-v3`的话，需要将`config.yaml`中的`Rec`部分改为如下:
-        ```yaml
-        module_name: ch_ppocr_v3_rec
-        class_name: TextRecognizer
-        model_path: resources/models/PPOCRv3/ch_PP-OCRv3_rec_infer.onnx
-
-        rec_img_shape: [3, 48, 320]
-        rec_batch_num: 6
-        keys_path: resources/rec_dict/ppocr_keys_v1.txt
         ```
 
 ### [`config.yaml`](./config.yaml)中常用参数介绍
