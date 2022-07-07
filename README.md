@@ -191,7 +191,8 @@
 
 ## 致谢
 - 非常感谢[DeliciaLaniD](https://github.com/DeliciaLaniD)修复ocrweb中扫描动画起始位置错位问题。
-- 非常感谢[zhsunlight](https://github.com/zhsunlight)关于参数化调用GPU推理的建议。
+- 非常感谢[zhsunlight](https://github.com/zhsunlight)关于参数化调用GPU推理的建议以及细致周到的测试。
+- 非常感谢[lzh111222334](https://github.com/lzh111222334)修复python版本下rec前处理部分bug。
 
 ## 版权声明
 - 如果你的产品使用了本仓库中的全部或部分代码、文字或材料

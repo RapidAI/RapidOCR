@@ -57,7 +57,7 @@ Cls:
 Rec:
     module_name: ch_ppocr_v2_rec
     class_name: TextRecognizer
-    model_path: resources/models/ch_ppocr_mobile_v2.0_rec_infer.onnx
+    model_path: resources/models/ch_PP-OCRv3_rec_infer.onnx
 
     use_cuda: false
     CUDAExecutionProvider:
@@ -66,6 +66,6 @@ Rec:
         cudnn_conv_algo_search: EXHAUSTIVE
         do_copy_in_default_stream: true
 
-    rec_img_shape: [3, 32, 320]
+    rec_img_shape: [3, 48, 320]
     rec_batch_num: 6
     keys_path: resources/rec_dict/ppocr_keys_v1.txt
