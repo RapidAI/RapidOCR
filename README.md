@@ -105,7 +105,7 @@
 
 ## [在线demo](http://rapidocr.51pda.cn:9003/)
 - **说明**: 本在线demo不存储小伙伴们上传测试的任何图像数据
-- **demo所用模型组合为**: `ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls +  ch_ppocr_mobile_v2.0_rec`
+- **demo所用模型组合（最优组合）为**: `ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec`
 - **运行机器配置**: `4核 AMD EPYC 7K62 48-Core Processor `
 - **示例图**:
     <div align="center">
@@ -122,8 +122,8 @@
     ├── assets              # 一些演示用的图片，不是测试集
     ├── commonlib           # 通用库
     ├── cpp                 # 基于c++的工程项目文件夹
+    ├── docs                # 相关的一些说明文档
     ├── dotnet              # .Net程序目录
-    ├── FAQ.md              # 一些问答整理
     ├── images              # 测试用图片，典型的测试图，一张是自然场景
     ├── include             # 编译c语言接口库时的头文件目录
     ├── ios                 # 苹果手机平台工程目录

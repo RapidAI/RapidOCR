@@ -18,6 +18,7 @@
 ### 简介和说明
 - **各个版本的ONNX模型下载地址：**[百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
 - 所有常用的参数配置都在[`config.yaml`](./config.yaml)下，一目了然，更加便捷
+- **目前[`config.yaml`](./config.yaml)中配置为权衡速度和准确度的最优组合。**
 - 每个独立的模块下均有独立的`config.yaml`配置文件，可以单独使用
 - `det`部分：
   - `det`中`mobile`和`server`版，推理代码一致，直接更改配置文件中模型路径即可
@@ -72,7 +73,6 @@
         │   ├── ch_ppocr_v2_cls
         │   ├── ch_ppocr_v2_det
         │   ├── ch_ppocr_v2_rec
-        │   ├── ch_ppocr_v3_rec
         │   └── rapid_ocr_api.py
         ├── rapidocr_openvino
         │   ├── __init__.py
@@ -88,15 +88,15 @@
         │    ├── models
         │    │   ├── ch_PP-OCRv3_det_infer.onnx
         │    │   ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
-        │    │   └── ch_ppocr_mobile_v2.0_rec_infer.onnx
+        │    │   └── ch_PP-OCRv3_rec_infer.onnx
         │    └── rec_dict
         │        ├── en_dict.txt
         │        ├── japan_dict.txt
         │        ├── korean_dict.txt
         │        └── ppocr_keys_v1.txt
         └── test_images
-            ├── det_images
-            └── rec_images
+            ├── ch_en_num.jpg
+            └── single_line_text.jpg
         ```
 3. 安装运行环境
    - 基于onnxruntime推理所需环境安装：
@@ -179,7 +179,7 @@
 - `Rec`部分
     |    参数名称      | 取值范围   | 默认值   |                       作用                       |
     | ------------: | :----------: | :-----: | :----------------------------------------------|
-    |`rec_img_shape`| - |`[3, 32, 320]`| 输入文本识别模型的图像Shape（CHW） |
+    |`rec_img_shape`| - |`[3, 48, 320]`| 输入文本识别模型的图像Shape（CHW） |
     |`rec_batch_num`| - | 6 | 批次推理的batch大小，一般采用默认值即可，太大并没有明显提速，效果还可能会差 |
     |`keys_path`| - | - | 文本识别模型推理所使用字典文件，始识别哪种类型文本而定（中英、日文等） |
 

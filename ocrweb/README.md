@@ -2,7 +2,7 @@
 
 ### 相关问题
 1. 各个阶段使用的模型以及配置参数有哪些？
-     - 使用模型搭配为：`ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls +  ch_ppocr_mobile_v2.0_rec`
+     - 使用模型搭配（最优组合）为：`ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec`
      - 所有相关参数配置参见当前目录下的`config.yaml`文件
      - 其中给出了使用模型，以及具体参数，参数具体介绍参见：[Link](https://github.com/RapidAI/RapidOCR/blob/main/python/README.md#configyaml%E4%B8%AD%E5%B8%B8%E7%94%A8%E5%8F%82%E6%95%B0%E4%BB%8B%E7%BB%8D)
 2. 网页上显示的推理时间可以具体解释一下吗？
@@ -30,13 +30,12 @@
         │   ├── ch_ppocr_v2_cls
         │   ├── ch_ppocr_v2_det
         │   ├── ch_ppocr_v2_rec
-        │   ├── ch_ppocr_v3_rec
         │   └── rapid_ocr_api.py
         ├── resources
         │   ├── models
         │   │   ├── ch_PP-OCRv3_det_infer.onnx
         │   │   ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
-        │   │   └── ch_ppocr_mobile_v2.0_rec_infer.onnx
+        │   │   └── ch_PP-OCRv3_rec_infer.onnx
         │   └── rec_dict
         │       ├── en_dict.txt
         │       ├── japan_dict.txt
