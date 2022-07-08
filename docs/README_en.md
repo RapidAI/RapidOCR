@@ -53,7 +53,7 @@
 ## Introduction
 - Completely open source, free and support offline deployment of multi-platform and multi-language OCR SDK
 - **Chinese Advertising**: Welcome to join our QQ group to download the model and test program, QQ group number: 887298230
-- **Cause**: Baidu paddlepaddle engineering is not very good, in order to facilitate everyone to perform OCR reasoning on various terminals, we convert it to onnx format, use ``python/c++/java/swift/c#'' to change It is ported to various platforms.
+- **Cause**: Baidu paddlepaddle engineering is not very good, in order to facilitate everyone to perform OCR reasoning on various terminals, we convert it to onnx format, use `Python/C++/Java/Swift/C#' to change It is ported to various platforms.
 
 - **Name Source**: Light, fast, economical and smart. OCR technology based on deep learning technology focuses on artificial intelligence advantages and small models, with speed as the mission and effect as the leading role.
 
@@ -67,7 +67,7 @@
 - Add [Acknowledgement module](#Acknowledgement) to this page to thank the partners who contributed to this project.
 
 #### 😁2022-07-05 update:
-- Add the ability to handle single line text, for single line text, you can set your own threshold, but the detection module, direct recognition can be. For details, see [README](./python/README.md#configyamlconfigyaml中常用参数介绍)
+- Add the ability to handle single line text, for single line text, you can set your own threshold, but the detection module, direct recognition can be. For details, see [README](../python/README.md#configyamlconfigyaml中常用参数介绍)
 - Optimize some code logic of python, more elegant and concise.
 
 #### 🏝2022-06-30 update:
@@ -76,12 +76,12 @@
 - For details, see: [onnxruntime-gpu version reasoning configuration](./python/README.md#onnxruntime-gpu version reasoning configuration)
 
 #### 📌2022-06-25 update:
-- Reorganize some of the python inference code, put all the common adjustment parameters into the yaml file, easy to adjust, easier to use, see: [README](./python/README.md)
+- Reorganize some of the python inference code, put all the common adjustment parameters into the yaml file, easy to adjust, easier to use, see: [README](../python/README.md)
 - The old inference code is located in the branch: [old_python_infer](https://github.com/RapidAI/RapidOCR/tree/old_python_infer)
 
 #### 🍿2022-05-15 update
-- Add the ONNX model converted from the PaddleOCR v3 rec model, just go to the network disk to download and replace it. ([Baidu Netdisk](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing ))
-- Added a comparison table of the effects of each version of the text recognition model. For details, click [Comparison of the effects of various versions of ONNX models] (#Comparison of the effects of various versions of onnx models). The text recognition model of v3 is not as good as the previous one in terms of the indicators on the test set constructed by itself.
+- Add the ONNX model converted from the PaddleOCR v3 rec model, just go to the network disk to download and replace it. ([Baidu Netdisk](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing))
+- Added a comparison table of the effects of each version of the text recognition model. For details, click [Comparison of the effects of various versions of ONNX models](#compared). The text recognition model of v3 is not as good as the previous one in terms of the indicators on the test set constructed by itself.
 
 ## [FAQ](./doc/FAQ.md)
 
@@ -128,11 +128,11 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 
 
 ## Current Progress
-- [x] C++ example (Windows/Linux/macOS): [demo](./cpp)
-- [x] Jvm example (Java/Kotlin): [demo](./jvm)
-- [x] .Net example (C#): [demo](./dotnet)
-- [x] Android example: [demo](./android)
-- [x] python example: [demo](./python)
+- [x] C++ example (Windows/Linux/macOS): [demo](../cpp)
+- [x] Jvm example (Java/Kotlin): [demo](../jvm)
+- [x] .Net example (C#): [demo](../dotnet)
+- [x] Android example: [demo](../android)
+- [x] python example: [demo](../python)
 - [ ] IOS example: waiting for someone to contribute code
 - [ ] Rewrite the C++ reasoning code according to the python version to improve the reasoning effect, and add support for gif/tga/webp format pictures
 

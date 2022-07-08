@@ -1,19 +1,19 @@
 #### ✨2022-07-07 update:
 - Fix the bug of v3 rec inference in python version, and merge v3 rec and v2 rec into the same set of inference code, which is more concise and convenient.
-- Add unit test under python module
+- Add unit test under python module.
 - Add [Acknowledgement module](../docs/README_en.md#Acknowledgement) to this page to thank the partners who contributed to this project.
 
 #### 😁2022-07-05 update:
-- Add the ability to handle single line text, for single line text, you can set your own threshold, but the detection module, direct recognition can be. For details, see [README](./python/README.md#configyamlconfigyaml中常用参数介绍)
+- Add the ability to handle single line text, for single line text, you can set your own threshold, but the detection module, direct recognition can be. For details, see [README](../python/README.md#configyamlconfigyaml中常用参数介绍)
 - Optimize some code logic of python, more elegant and concise.
 
 #### 🏝2022-06-30 update:
 - In the python inference section, add a configuration option for whether to use GPU inference, which can be used with one click if the `onnxruntime-gpu` version is correctly installed (Fix [issue#30](https://github.com/RapidAI/RapidOCR/issues/30))
 - The specific GPU-based reasoning will need to wait for me to sort it out and update it later.
-- For details, see: [onnxruntime-gpu version reasoning configuration](./python/README.md#onnxruntime-gpu version reasoning configuration)
+- For details, see: [onnxruntime-gpu version reasoning configuration](../python/README.md#onnxruntime-gpu version reasoning configuration)
 
 #### 📌2022-06-25 update:
-- Reorganize some of the python inference code, put all the common adjustment parameters into the yaml file, easy to adjust, easier to use, see: [README](./python/README.md)
+- Reorganize some of the python inference code, put all the common adjustment parameters into the yaml file, easy to adjust, easier to use, see: [README](../python/README.md)
 - The old inference code is located in the branch: [old_python_infer](https://github.com/RapidAI/RapidOCR/tree/old_python_infer)
 
 #### 🍿2022-05-15 update
@@ -27,7 +27,7 @@
 #### 2022-02-24 update
 - Optimize the inference code of the python part.
 - Add inference code examples that use the different language models.
-- For details, see: [python/README](./python/README.md)
+- For details, see: [python/README](../python/README.md)
 
 #### 2021-12-18 update
 - Add [Google Colab Demo](https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/RapidOCRDemo.ipynb).
@@ -40,7 +40,7 @@
   - Change the det model(`ch_PP-OCRv2_det_infer.onnx`), faster and more accurate.
 
 #### 2021-11-13 update
-- Add adjustable super parameters for text detection and recognition in Python version, mainly `box_thresh|unclip_ratio|text_score`, see [parameter adjustment](python/README.md#相关调节参数) for details
+- Add adjustable super parameters for text detection and recognition in Python version, mainly `box_thresh|unclip_ratio|text_score`, see [parameter adjustment](../python/README.md#相关调节参数) for details
 - The dictionary position in text recognition is given in parameter mode to facilitate flexible configuration. See [keys_path](python/rapidOCR.sh) for details
 
 #### 2021-10-27 update
