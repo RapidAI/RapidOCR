@@ -42,6 +42,7 @@
       - [模型转onnx](#模型转onnx)
   - [原始发起者及初创作者](#原始发起者及初创作者)
   - [致谢](#致谢)
+  - [赞助](#赞助)
   - [版权声明](#版权声明)
   - [授权](#授权)
   - [联系我们](#联系我们)
@@ -194,6 +195,12 @@
 - 非常感谢[DeliciaLaniD](https://github.com/DeliciaLaniD)修复ocrweb中扫描动画起始位置错位问题。
 - 非常感谢[zhsunlight](https://github.com/zhsunlight)关于参数化调用GPU推理的建议以及细致周到的测试。
 - 非常感谢[lzh111222334](https://github.com/lzh111222334)修复python版本下rec前处理部分bug。
+
+## 赞助
+
+|赞助者|应用的产品|
+|:---:|:---:|
+|<a href="https://github.com/cuiliang" title="cuiliang"><img src="https://avatars.githubusercontent.com/u/1972649?v=4" width=65 height=65></a>|<a href="https://getquicker.net/" title="Quicker指尖工具箱"><img src="https://tvax2.sinaimg.cn/crop.0.0.600.600.180/82cedfe9ly8h0gd3koj1qj20go0goq34.jpg?KID=imgbed,tva&Expires=1657299650&ssig=7MKPeFM6RU" width=65 height=65></a>|
 
 ## 版权声明
 - 如果你的产品使用了本仓库中的全部或部分代码、文字或材料

@@ -41,6 +41,7 @@
   - [PaddleOCR-FAQ](#paddleocr-faq)
   - [Original initiator and start-up author](#original-initiator-and-start-up-author)
   - [Acknowledgements](#acknowledgements)
+  - [Sponsor](#sponsor)
   - [Authorization](#authorization)
   - [Contact us](#contact-us)
   - [Demo](#demo)
@@ -178,6 +179,12 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 - Many thanks to [DeliciaLaniD](https://github.com/DeliciaLaniD) for fixing the misplaced start position of scan animation in ocrweb.
 - Many thanks to [zhsunlight](https://github.com/zhsunlight) for the suggestion about parameterized call GPU reasoning and the careful and thoughtful testing.
 - Many thanks to [lzh111222334](https://github.com/lzh111222334) for fixing some bugs of rec preprocessing under python version.
+
+## Sponsor
+
+|Sponsor|Applied Products|
+|:---:|:---:|
+|<a href="https://github.com/cuiliang" title="cuiliang"><img src="https://avatars.githubusercontent.com/u/1972649?v=4" width=65 height=65></a>|<a href="https://getquicker.net/" title="Quicker"><img src="https://tvax2.sinaimg.cn/crop.0.0.600.600.180/82cedfe9ly8h0gd3koj1qj20go0goq34.jpg?KID=imgbed,tva&Expires=1657299650&ssig=7MKPeFM6RU" width=65 height=65></a>|
 
 ## Authorization
 - The copyright of the OCR model belongs to Baidu, and the copyright of other engineering codes belongs to the owner of this warehouse.
