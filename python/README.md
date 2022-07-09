@@ -202,7 +202,7 @@
 
 3. 推理情况
    1. 下载基准测试数据集（`test_images_benchmark`），放到`tests/benchmark`目录下。
-        - [百度网盘](链接：https://pan.baidu.com/s/1R4gYtJt2G3ypGkLWGwUCKg?pwd=ceuo) | [Google Drive](https://drive.google.com/drive/folders/1IIOCcUXdWa43Tfpsiy6UQJmPsZLnmgFh?usp=sharing)
+        - [百度网盘](https://pan.baidu.com/s/1R4gYtJt2G3ypGkLWGwUCKg?pwd=ceuo) | [Google Drive](https://drive.google.com/drive/folders/1IIOCcUXdWa43Tfpsiy6UQJmPsZLnmgFh?usp=sharing)
         - 最终目录结构如下：
             ```text
             tests/benchmark/
