@@ -3,7 +3,7 @@
 - 一共251张图像，类型涉及自然场景、文档类、广告海报、卡证类和手写体等样式，涉及语种为中英文。
 
 #### 下载链接
-- [百度网盘](链接：https://pan.baidu.com/s/1R4gYtJt2G3ypGkLWGwUCKg?pwd=ceuo)
+- [百度网盘](https://pan.baidu.com/s/1R4gYtJt2G3ypGkLWGwUCKg?pwd=ceuo)
 - [Google Drive](https://drive.google.com/drive/folders/1IIOCcUXdWa43Tfpsiy6UQJmPsZLnmgFh?usp=sharing)
 
 #### 贡献者

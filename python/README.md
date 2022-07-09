@@ -4,7 +4,7 @@
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
 </p>
 
-<details>
+<details open>
 <summary>目录</summary>
 
 - [Python版RapidOCR](#python版rapidocr)
@@ -219,14 +219,24 @@
         # GPU
         python tests/benchmark/benchmark.py --yaml_path config_gpu.yaml
         ```
-   3. 运行相关信息汇总：
-        - 设备型号：
-        - GPU型号：
-        - CPU型号：
-        - 耗时情况：
-
-           |设备|总耗时(s)|平均耗时(s/img)|
-           |:---:|:---:|:---:|
-           |CPU|||
-           |GPU|||
-
+   3. 运行相关信息汇总：（以下仅为个人测试情况，具体情况请自行测试）
+        - 来自[zhsunlight](https://github.com/zhsunlight)的测试，感谢
+          - 设备型号：宏碁(Acer) 暗影骑士·威N50-N93游戏台式机
+          - CPU型号：十代i5-10400F 16G 512G SSD
+          - GPU型号：NVIDIA GeForce GTX 1660Super 6G
+          - onnxruntime-gpu: 1.11.0
+          - 耗时情况：
+             |设备|总耗时(s)|平均耗时(s/img)|
+             |:---:|:---:|:---:|
+             |CPU|296.8841|1.18282|
+             |GPU|646.14667|2.57429|
+        - 来自[SWHL](https://github.com/SWHL)的测试
+          - 设备型号：Docker
+          - CPU型号：-
+          - GPU型号：NVIDIA V100S 16G
+          - onnxruntime-gpu: 1.7.0
+          - 耗时情况：
+             |设备|总耗时(s)|平均耗时(s/img)|
+             |:---:|:---:|:---:|
+             |CPU|1079.4726|4.3001|
+             |GPU|525.8244|2.0989|
