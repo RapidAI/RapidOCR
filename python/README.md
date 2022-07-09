@@ -200,4 +200,33 @@
         do_copy_in_default_stream: true
     ```
 
-3. 推理情况(待更新)
+3. 推理情况
+   1. 下载基准测试数据集（`test_images_benchmark`），放到`tests/benchmark`目录下。
+        - [百度网盘](链接：https://pan.baidu.com/s/1R4gYtJt2G3ypGkLWGwUCKg?pwd=ceuo) | [Google Drive](https://drive.google.com/drive/folders/1IIOCcUXdWa43Tfpsiy6UQJmPsZLnmgFh?usp=sharing)
+        - 最终目录结构如下：
+            ```text
+            tests/benchmark/
+                ├── benchmark.py
+                ├── config_gpu.yaml
+                ├── config.yaml
+                └── test_images_benchmark
+            ```
+   2. 运行以下代码（`python`目录下运行）：
+        ```shell
+        # CPU
+        python tests/benchmark/benchmark.py --yaml_path config.yaml
+
+        # GPU
+        python tests/benchmark/benchmark.py --yaml_path config_gpu.yaml
+        ```
+   3. 运行相关信息汇总：
+        - 设备型号：
+        - GPU型号：
+        - CPU型号：
+        - 耗时情况：
+
+           |设备|总耗时(s)|平均耗时(s/img)|
+           |:---:|:---:|:---:|
+           |CPU|||
+           |GPU|||
+
