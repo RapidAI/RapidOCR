@@ -37,9 +37,6 @@
         │   │   ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
         │   │   └── ch_PP-OCRv3_rec_infer.onnx
         │   └── rec_dict
-        │       ├── en_dict.txt
-        │       ├── japan_dict.txt
-        │       ├── korean_dict.txt
         │       └── ppocr_keys_v1.txt
         ├── static
         │   ├── css
