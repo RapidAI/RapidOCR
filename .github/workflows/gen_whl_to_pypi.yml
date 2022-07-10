@@ -1,0 +1,40 @@
+name: Package whl files to push to pypi
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'python/rapidocr_onnxruntime/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set SSH Environment
+        env:
+          DEPLOY_KEYS: ${{ secrets.GEN_PYTHON_SDK }}
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$DEPLOY_KEYS" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          chmod 700 ~/.ssh && chmod 600 ~/.ssh/*
+
+      - name: Run setup.py
+        run: |
+          cd python
+          mkdir rapidocr_onnxruntime_t
+          mv rapidocr_onnxruntime rapidocr_onnxruntime_t
+          mv rapidocr_onnxruntime_t rapidocr_onnxruntime
+          cd rapidocr_onnxruntime
+          echo "from .rapidocr_onnxruntime.rapid_ocr_api import TextSystem" > __init__.py
+
+          cd ..
+
+          python setup.py bdist_wheel
+
+      - name: Push to pypi
+        run: |
+          python -m twine upload dist/* -u ${{ secrets.TWINE_NAME }} -p ${{ secrets.TWINE_PWD }}
