@@ -23,7 +23,7 @@
 - [RapidOCR (捷智OCR)](#rapidocr-捷智ocr)
   - [简介](#简介)
   - [近期更新(more)](#近期更新more)
-      - [🎧2022-07-02 update:](#2022-07-02-update)
+      - [🎧2022-07-10 update:](#2022-07-10-update)
       - [✨2022-07-07 update:](#2022-07-07-update)
       - [😁2022-07-05 update:](#2022-07-05-update)
       - [🏝2022-06-30 update:](#2022-06-30-update)
@@ -63,7 +63,7 @@
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。
 
 ## 近期更新([more](./docs/change_log.md))
-#### 🎧2022-07-02 update:
+#### 🎧2022-07-10 update:
 - 添加onnxruntime-gpu的测试情况→[link](./python/README.md#onnxruntime-gpu版推理配置)
 - 添加benchamark测试集 → [link](./images/README.md)
 - 添加自动发布whl包的actions，当修改python/rapidocr_onnxruntime时，会自动更新发布whl包。具体使用方法参见[Whl README](./docs/doc_whl_en.md)

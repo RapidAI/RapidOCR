@@ -22,7 +22,7 @@
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
   - [Recently updates(more)](#recently-updatesmore)
-      - [🎧2022-07-02 update:](#2022-07-02-update)
+      - [🎧2022-07-10 update:](#2022-07-10-update)
       - [✨2022-07-07 update:](#2022-07-07-update)
       - [😁2022-07-05 update:](#2022-07-05-update)
       - [🏝2022-06-30 update:](#2022-06-30-update)
@@ -61,7 +61,7 @@
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
 ## Recently updates([more](./change_log_en.md))
-#### 🎧2022-07-02 update:
+#### 🎧2022-07-10 update:
 - Add test case for onnxruntime-gpu → [link](../python/README.md#onnxruntime-gpu version inference configuration)
 - Add benchamark test set → [link](../images/README.md)
 - Add actions to automatically publish whl packages, when modifying python/rapidocr_onnxruntime, it will automatically update the published whl packages. See [WHL README](../docs/doc_whl_en.md)
