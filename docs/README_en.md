@@ -64,7 +64,7 @@
 #### 🎧2022-07-02 update:
 - Add test case for onnxruntime-gpu → [link](../python/README.md#onnxruntime-gpu version inference configuration)
 - Add benchamark test set → [link](../images/README.md)
-- Add actions to automatically publish whl packages, when modifying python/rapidocr_onnxruntime, it will automatically update the published whl packages. See [WHL REAMDE](../docs/doc_whl_en.md)
+- Add actions to automatically publish whl packages, when modifying python/rapidocr_onnxruntime, it will automatically update the published whl packages. See [WHL README](../docs/doc_whl_en.md)
 
 #### ✨2022-07-07 update:
 - Fix the bug of v3 rec inference in python version, and merge v3 rec and v2 rec into the same set of inference code, which is more concise and convenient.

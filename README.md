@@ -66,7 +66,7 @@
 #### 🎧2022-07-02 update:
 - 添加onnxruntime-gpu的测试情况→[link](./python/README.md#onnxruntime-gpu版推理配置)
 - 添加benchamark测试集 → [link](./images/README.md)
-- 添加自动发布whl包的actions，当修改python/rapidocr_onnxruntime时，会自动更新发布whl包。具体使用方法参见[Whl REAMDE](./docs/doc_whl_en.md)
+- 添加自动发布whl包的actions，当修改python/rapidocr_onnxruntime时，会自动更新发布whl包。具体使用方法参见[Whl README](./docs/doc_whl_en.md)
 
 #### ✨2022-07-07 update:
 - 修复python版中v3 rec推理bug，并将v3 rec与v2 rec合并为同一套推理代码，更加简洁和方便
