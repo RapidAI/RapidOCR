@@ -32,7 +32,7 @@ jobs:
           echo "from .rapidocr_onnxruntime.rapid_ocr_api import TextSystem" > __init__.py
 
           cd ..
-
+          python -m pip install --upgrade pip
           python setup.py bdist_wheel
           mv dist ../
 
