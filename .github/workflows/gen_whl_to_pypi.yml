@@ -34,8 +34,17 @@ jobs:
           cd ..
 
           python setup.py bdist_wheel
+          mv dist ../
 
-      - name: Push to pypi
-        run: |
-          pip install twine -i https://pypi.douban.com/simple/
-          twine upload dist/* -u ${{ secrets.TWINE_NAME }} -p ${{ secrets.TWINE_PWD }}
+      # - name: Publish distribution 📦 to Test PyPI
+      #   uses: pypa/gh-action-pypi-publish@v1.5.0
+      #   with:
+      #     password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+      #     repository_url: https://test.pypi.org/legacy/
+      #     packages_dir: dist/
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.5.0
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages_dir: dist/
