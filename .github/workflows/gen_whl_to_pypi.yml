@@ -37,4 +37,5 @@ jobs:
 
       - name: Push to pypi
         run: |
-          python -m twine upload dist/* -u ${{ secrets.TWINE_NAME }} -p ${{ secrets.TWINE_PWD }}
+          pip install twine -i https://pypi.douban.com/simple/
+          twine upload dist/* -u ${{ secrets.TWINE_NAME }} -p ${{ secrets.TWINE_PWD }}
