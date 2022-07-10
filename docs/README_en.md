@@ -22,11 +22,11 @@
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
   - [Recently updates(more)](#recently-updatesmore)
+      - [🎧2022-07-02 update:](#2022-07-02-update)
       - [✨2022-07-07 update:](#2022-07-07-update)
       - [😁2022-07-05 update:](#2022-07-05-update)
       - [🏝2022-06-30 update:](#2022-06-30-update)
       - [📌2022-06-25 update:](#2022-06-25-update)
-      - [🍿2022-05-15 update](#2022-05-15-update)
   - [FAQ](#faq)
   - [SDK compilation status](#sdk-compilation-status)
   - [Online demo](#online-demo)
@@ -61,6 +61,10 @@
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
 ## Recently updates([more](./change_log_en.md))
+#### 🎧2022-07-02 update:
+- Add test case for onnxruntime-gpu → [link](../python/README.md#onnxruntime-gpu version inference configuration)
+- Add benchamark test set → [link](../images/README.md)
+- Add actions to automatically publish whl packages, when modifying python/rapidocr_onnxruntime, it will automatically update the published whl packages. See [WHL REAMDE](../docs/doc_whl_en.md)
 
 #### ✨2022-07-07 update:
 - Fix the bug of v3 rec inference in python version, and merge v3 rec and v2 rec into the same set of inference code, which is more concise and convenient.
@@ -79,10 +83,6 @@
 #### 📌2022-06-25 update:
 - Reorganize some of the python inference code, put all the common adjustment parameters into the yaml file, easy to adjust, easier to use, see: [README](../python/README.md)
 - The old inference code is located in the branch: [old_python_infer](https://github.com/RapidAI/RapidOCR/tree/old_python_infer)
-
-#### 🍿2022-05-15 update
-- Add the ONNX model converted from the PaddleOCR v3 rec model, just go to the network disk to download and replace it. ([Baidu Netdisk](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing))
-- Added a comparison table of the effects of each version of the text recognition model. For details, click [Comparison of the effects of various versions of ONNX models](#compared). The text recognition model of v3 is not as good as the previous one in terms of the indicators on the test set constructed by itself.
 
 ## [FAQ](./doc/FAQ.md)
 
@@ -185,6 +185,8 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 |Sponsor|Applied Products|
 |:---:|:---:|
 |<a href="https://github.com/cuiliang" title="cuiliang"><img src="https://avatars.githubusercontent.com/u/1972649?v=4" width=65 height=65></a>|<a href="https://getquicker.net/" title="Quicker"><img src="https://tvax2.sinaimg.cn/crop.0.0.600.600.180/82cedfe9ly8h0gd3koj1qj20go0goq34.jpg?KID=imgbed,tva&Expires=1657299650&ssig=7MKPeFM6RU" width=65 height=65></a>|
+
+- If you want to sponsor the project, you can directly click the Sponsor button at the top of the current page, please write a note to facilitate adding to the sponsorship list above.
 
 ## Authorization
 - The copyright of the OCR model belongs to Baidu, and the copyright of other engineering codes belongs to the owner of this warehouse.
