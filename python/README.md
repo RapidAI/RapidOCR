@@ -148,6 +148,7 @@
    | `use_angle_cls`  |  `bool`      |   `true`   |       是否使用文本行的方向分类       |
    | `print_verbose`  |    `bool`    |   `true`   |       是否打印各个部分耗时信息       |
    | `min_height`  |    `int`    |   30   |       图像最小高度（单位是像素）<br/>低于这个值，会跳过文本检测阶段，直接进行后续识别       |
+   |`width_height_ratio`| `int`| 8| 如果输入图像的宽高比大于`width_height_ratio`，则会跳过文本检测，直接进行后续识别<br/>`width_height_ratio=-1`：不用这个参数 |
 
     - `min_height`是用来过滤只有一行文本的图像（如下图），这类图像不会进入文本检测模块，直接进入后续过程。
 

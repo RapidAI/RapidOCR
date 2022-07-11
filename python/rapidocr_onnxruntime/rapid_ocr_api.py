@@ -26,6 +26,7 @@ class TextSystem(object):
         self.print_verbose = global_config['print_verbose']
         self.text_score = global_config['text_score']
         self.min_height = global_config['min_height']
+        self.width_height_ratio = global_config['width_height_ratio']
 
         TextDetector = self.init_module(config['Det']['module_name'],
                                         config['Det']['class_name'])
@@ -43,7 +44,12 @@ class TextSystem(object):
 
     def __call__(self, img: np.ndarray):
         h, w = img.shape[:2]
-        if h <= self.min_height:
+        if self.width_height_ratio == -1:
+            use_limit_ratio = False
+        else:
+            use_limit_ratio = w / h > self.width_height_ratio
+
+        if h <= self.min_height or use_limit_ratio:
             dt_boxes, img_crop_list = self.get_boxes_img_without_det(img, h, w)
         else:
             dt_boxes, elapse = self.text_detector(img)
@@ -56,7 +62,7 @@ class TextSystem(object):
             img_crop_list = self.get_crop_img_list(img, dt_boxes)
 
         if self.use_angle_cls:
-            img_crop_list, angle_list, elapse = self.text_cls(img_crop_list)
+            img_crop_list, _, elapse = self.text_cls(img_crop_list)
             if self.print_verbose:
                 print(f'cls num: {len(img_crop_list)}, elapse: {elapse}')
 
