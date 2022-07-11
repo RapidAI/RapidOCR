@@ -20,7 +20,7 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/ocr', methods=['POST', 'GET'])
+@app.route('/ocr', methods=['POST'])
 def ocr():
     if request.method == 'POST':
         url_get = request.get_json()
