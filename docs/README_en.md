@@ -24,9 +24,7 @@
   - [Recently updates(more)](#recently-updatesmore)
       - [🎧2022-07-10 update:](#2022-07-10-update)
       - [✨2022-07-07 update:](#2022-07-07-update)
-      - [😁2022-07-05 update:](#2022-07-05-update)
-      - [🏝2022-06-30 update:](#2022-06-30-update)
-      - [📌2022-06-25 update:](#2022-06-25-update)
+  - [Related Projects](#related-projects)
   - [FAQ](#faq)
   - [SDK compilation status](#sdk-compilation-status)
   - [Online demo](#online-demo)
@@ -71,18 +69,9 @@
 - Add unit test under python module
 - Add [Acknowledgement module](#Acknowledgement) to this page to thank the partners who contributed to this project.
 
-#### 😁2022-07-05 update:
-- Add the ability to handle single line text, for single line text, you can set your own threshold, but the detection module, direct recognition can be. For details, see [README](../python/README.md#configyamlconfigyaml中常用参数介绍)
-- Optimize some code logic of python, more elegant and concise.
-
-#### 🏝2022-06-30 update:
-- In the python inference section, add a configuration option for whether to use GPU inference, which can be used with one click if the `onnxruntime-gpu` version is correctly installed (Fix [issue#30](https://github.com/RapidAI/RapidOCR/issues/30))
-- The specific GPU-based reasoning will need to wait for me to sort it out and update it later.
-- For details, see: [onnxruntime-gpu version reasoning configuration](./python/README.md#onnxruntime-gpu version reasoning configuration)
-
-#### 📌2022-06-25 update:
-- Reorganize some of the python inference code, put all the common adjustment parameters into the yaml file, easy to adjust, easier to use, see: [README](../python/README.md)
-- The old inference code is located in the branch: [old_python_infer](https://github.com/RapidAI/RapidOCR/tree/old_python_infer)
+## Related Projects
+- [RapidVideOCR](https://github.com/SWHL/RapidVideOCR): Extract hard subtitles from videos based on RapidOCR.
+- [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): Table structure reduction.
 
 ## [FAQ](./doc/FAQ.md)
 

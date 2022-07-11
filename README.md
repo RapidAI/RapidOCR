@@ -25,11 +25,8 @@
   - [近期更新(more)](#近期更新more)
       - [🎧2022-07-10 update:](#2022-07-10-update)
       - [✨2022-07-07 update:](#2022-07-07-update)
-      - [😁2022-07-05 update:](#2022-07-05-update)
-      - [🏝2022-06-30 update:](#2022-06-30-update)
-      - [📌2022-06-25 update:](#2022-06-25-update)
-      - [🥟2022-05-25 update](#2022-05-25-update)
-  - [整个框架](#整个框架)
+  - [生态框架](#生态框架)
+  - [相关项目](#相关项目)
   - [常见问题  FAQ](#常见问题--faq)
   - [SDK 编译状态](#sdk-编译状态)
   - [在线demo](#在线demo)
@@ -56,7 +53,7 @@
 ## 简介
 - 💖目前已知**运行速度最快、支持最广**，完全开源免费并支持离线部署的多平台多语言OCR SDK
 - **中文广告**： 欢迎加入我们的QQ群下载模型及测试程序，qq群号：887298230
-- **缘起**：百度paddlepaddle工程化不是太好，为了方便大家在各种端上进行ocr推理，我们将它转换为onnx格式，使用``python/c++/java/swift/c#`` 将它移植到各个平台。
+- **缘起**：百度paddlepaddle工程化不是太好，为了方便大家在各种端上进行ocr推理，我们将它转换为onnx格式，使用`Python/C++/Java/Swift/C#` 将它移植到各个平台。
 
 - **名称来源**： 轻快好省并智能。 基于深度学习技术的OCR技术，主打人工智能优势及小模型，以速度为使命，效果为主导。
 
@@ -73,27 +70,15 @@
 - 添加python模块下的单元测试
 - 该页面添加[致谢模块](#致谢)，感谢为这个项目作出贡献的小伙伴。
 
-#### 😁2022-07-05 update:
-- 添加对单行文本的处理能力，对于单行文本，可自行设定阈值，不过检测模块，直接识别即可。详情参见[README](./python/README.md#configyamlconfigyaml中常用参数介绍)
-- 优化python部分代码逻辑，更优雅简洁。
 
-#### 🏝2022-06-30 update:
-- python推理部分，增加参数选择使用GPU推理的配置选项，在正确安装`onnxruntime-gpu`版本前提下，可以一键使用（Fix [issue#30](https://github.com/RapidAI/RapidOCR/issues/30)）
-- 具体基于GPU的推理情况，需要等我后续整理一下，再更新出来
-- 详情参见：[onnxruntime-gpu版推理配置](./python/README.md#onnxruntime-gpu版推理配置)
-
-#### 📌2022-06-25 update:
-- 重新整理python部分推理代码，将常用调节参数全部放到yaml文件中，便于调节，更加容易使用,详情参见：[README](./python/README.md)
-- 之前旧的推理代码位于分支：[old_python_infer](https://github.com/RapidAI/RapidOCR/tree/old_python_infer)
-
-#### 🥟2022-05-25 update
-- 增加基于PaddleOCR v3 rec的python版本推理代码，详情参见[v3 rec](./python/rapidocr_onnxruntime/ch_ppocr_v3_rec)
-
-
-## 整个框架
+## 生态框架
 <div align="center">
     <img src="./assets/RapidOCR_system.jpg">
 </div>
+
+## 相关项目
+- [RapidVideOCR](https://github.com/SWHL/RapidVideOCR)：基于RapidOCR，提取视频中的硬字幕
+- [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): 表格结构还原
 
 ## 常见问题  [FAQ](./docs/FAQ.md)
 
