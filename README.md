@@ -78,7 +78,7 @@
 
 ## 相关项目
 - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR)：基于RapidOCR，提取视频中的硬字幕
-- [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): 表格结构还原
+- [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): 表格结构还原 | [博客解读论文和源码](https://blog.csdn.net/shiwanghualuo/article/details/125047732)
 
 ## 常见问题  [FAQ](./docs/FAQ.md)
 
