@@ -26,3 +26,4 @@ post_process:
     max_candidates: 1000
     unclip_ratio: 1.6
     use_dilation: true
+    score_mode: "fast"
