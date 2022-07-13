@@ -10,8 +10,7 @@
     - [关于OpenVINO](#关于openvino)
     - [OpenVINO与ONNXRuntime性能对比](#openvino与onnxruntime性能对比)
     - [OpenVINO与ONNXRuntime推理代码写法对比](#openvino与onnxruntime推理代码写法对比)
-
-</details><br/>
+</details>
 
 #### 基于OpenVINO推理引擎
 - OpenVINO推理方向分类模型有误，已经提了[issue](https://github.com/openvinotoolkit/openvino/issues/11501)
@@ -42,7 +41,7 @@ pip install openvino-dev==2022.1.0
 - OpenVINO可以直接推理IR、ONNX和PaddlePaddle模型，具体如下(图来源:[link](https://docs.openvino.ai/latest/openvino_docs_OV_UG_OV_Runtime_User_Guide.html#doxid-openvino-docs-o-v-u-g-o-v-runtime-user-guide))：
 
     <div align="center">
-        <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/BASIC_FLOW_IE_C.svg">
+        <img src="https://docs.openvino.ai/latest/_images/BASIC_FLOW_IE_C.svg">
     </div>
 
 - 和ONNXRuntime同时推理同一个ONNX模型，OpenVINO推理速度更快
