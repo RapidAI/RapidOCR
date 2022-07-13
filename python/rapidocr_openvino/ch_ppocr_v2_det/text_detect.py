@@ -117,4 +117,4 @@ if __name__ == "__main__":
     from utils import draw_text_det_res
     src_im = draw_text_det_res(dt_boxes, args.image_path)
     cv2.imwrite('det_results.jpg', src_im)
-    print('图像已经保存为det_results.jpg了')
+    print('The det_results.jpg has been saved in the current directory.')

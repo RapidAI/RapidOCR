@@ -12,6 +12,7 @@
   - [使用步骤](#使用步骤)
   - [`config.yaml`中常用参数介绍](#configyaml中常用参数介绍)
   - [onnxruntime-gpu版推理配置](#onnxruntime-gpu版推理配置)
+  - [OpenVINO GPU推理配置](#openvino-gpu推理配置)
 </details>
 
 
@@ -239,3 +240,7 @@
              |:---:|:---:|:---:|
              |CPU|1079.4726|4.3001|
              |GPU|525.8244|2.0989|
+
+### OpenVINO GPU推理配置
+- 官方参考文档：[docs](https://docs.openvino.ai/latest/api/ie_python_api/_autosummary/openvino.runtime.Core.html?highlight=compile_model#openvino.runtime.Core.compile_model)
+- 考虑到openvino只能使用自家显卡推理，通用性不高，这里暂不作相关配置说明。

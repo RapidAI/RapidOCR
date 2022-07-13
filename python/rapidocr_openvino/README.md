@@ -1,5 +1,21 @@
-### 基于OpenVINO推理引擎
-- OpenVINO推理方向分类模型有误，已经提了[issue](https://github.com/openvinotoolkit/openvino/issues/11501)→ 问题有已经解决，但是需要自己编译OpenVINO，参见[Answer](https://github.com/openvinotoolkit/openvino/issues/11501#issuecomment-1096366363)
+## rapidocr_openvino
+
+<details open>
+<summary>目录</summary>
+
+- [rapidocr_openvino](#rapidocr_openvino)
+    - [基于OpenVINO推理引擎](#基于openvino推理引擎)
+    - [安装](#安装)
+    - [模型问题](#模型问题)
+    - [关于OpenVINO](#关于openvino)
+    - [OpenVINO与ONNXRuntime性能对比](#openvino与onnxruntime性能对比)
+    - [OpenVINO与ONNXRuntime推理代码写法对比](#openvino与onnxruntime推理代码写法对比)
+
+</details><br/>
+
+#### 基于OpenVINO推理引擎
+- OpenVINO推理方向分类模型有误，已经提了[issue](https://github.com/openvinotoolkit/openvino/issues/11501)
+- 问题已经解决，但是需要自己编译OpenVINO，参见[Answer](https://github.com/openvinotoolkit/openvino/issues/11501#issuecomment-1096366363)
 
 #### 安装
 ```bash
@@ -26,7 +42,7 @@ pip install openvino-dev==2022.1.0
 - OpenVINO可以直接推理IR、ONNX和PaddlePaddle模型，具体如下(图来源:[link](https://docs.openvino.ai/latest/openvino_docs_OV_UG_OV_Runtime_User_Guide.html#doxid-openvino-docs-o-v-u-g-o-v-runtime-user-guide))：
 
     <div align="center">
-        <img src="../assets/BASIC_FLOW_IE_C.svg">
+        <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/BASIC_FLOW_IE_C.svg">
     </div>
 
 - 和ONNXRuntime同时推理同一个ONNX模型，OpenVINO推理速度更快
@@ -66,8 +82,7 @@ NOTE: 以`ch_ppocr_mobile_v2_det`中推理代码为例子
     self.output_name = self.session.get_outputs()[0].name
 
     # 推理
-    preds = self.session.run([self.output_name],
-                                {self.input_name: img})
+    preds = self.session.run([self.output_name], {self.input_name: img})
     ```
 
 - OpenVINO
@@ -77,8 +92,7 @@ NOTE: 以`ch_ppocr_mobile_v2_det`中推理代码为例子
     # 初始化
     ie = Core()
     model_onnx = ie.read_model(det_model_path)
-    compile_model = ie.compile_model(model=model_onnx,
-                                        device_name='CPU')
+    compile_model = ie.compile_model(model=model_onnx, device_name='CPU')
     self.vino_session = compile_model.create_infer_request()
 
     # 推理
