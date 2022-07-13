@@ -37,7 +37,7 @@ Det:
         max_candidates: 1000
         unclip_ratio: 1.6
         use_dilation: true
-        score_mode: "fast"
+        score_mode: fast
 
 Cls:
     module_name: ch_ppocr_v2_cls

@@ -405,7 +405,7 @@ class DBPostProcess(object):
         box[:, 1] = box[:, 1] - ymin
         cv2.fillPoly(mask, box.reshape(1, -1, 2).astype(np.int32), 1)
         return cv2.mean(bitmap[ymin:ymax + 1, xmin:xmax + 1], mask)[0]
-    
+
     def box_score_slow(self, bitmap, contour):
         '''
         box_score_slow: use polyon mean score as the mean score
