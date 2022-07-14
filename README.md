@@ -91,7 +91,7 @@
 | Windows x86/x64 |  [![CMake-windows-x86-x64](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml)        |  [下载链接](https://github.com/RapidAI/RapidOCR/releases) |
 | Linux x64       |  [![CMake-linux](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml) |  暂不提供，自行编译 |
 
-## [在线demo](http://rapidocr.51pda.cn:9003/)
+## [在线demo http://www.ifreeocr.com](http://www.ifreeocr.com/)
 - **说明**: 本在线demo不存储小伙伴们上传测试的任何图像数据
 - **demo所用模型组合（最优组合）为**: `ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec`
 - **运行机器配置**: `4核 AMD EPYC 7K62 48-Core Processor `
