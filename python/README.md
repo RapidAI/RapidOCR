@@ -186,7 +186,7 @@ print(rec_res)
         ```
     - 直接运行`test_demo.py`，可直接可视化查看结果。
         ```bash
-        python test_demp.py
+        python test_demo.py
         ```
 
 ### [`config.yaml`](./config.yaml)中常用参数介绍
