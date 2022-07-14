@@ -9,7 +9,7 @@ pip install rapidocr-onnxruntime
 ```bash
 wget https://github.com/RapidAI/RapidOCR/releases/download/v1.0.0/required_for_whl_v1.0.0.zip
 
-# or by gitee
+# or by gitee 
 # wget https://gitee.com/RapidAI/RapidOCR/attach_files/1126710/download/required_for_whl_v1.0.0.zip
 
 unzip required_for_whl_v1.0.0.zip
