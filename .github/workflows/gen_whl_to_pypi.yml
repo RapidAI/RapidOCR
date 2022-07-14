@@ -5,7 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'python/rapidocr_onnxruntime/**'
-      - ’docs/doc_whl_en.md‘
+      - 'docs/doc_whl_en.md'
 
 jobs:
   build:
