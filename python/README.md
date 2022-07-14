@@ -9,7 +9,8 @@
 
 - [Python版RapidOCR](#python版rapidocr)
   - [简介和说明](#简介和说明)
-  - [使用步骤](#使用步骤)
+  - [pip安装快速使用](#pip安装快速使用)
+  - [源码使用步骤](#源码使用步骤)
   - [`config.yaml`中常用参数介绍](#configyaml中常用参数介绍)
   - [onnxruntime-gpu版推理配置](#onnxruntime-gpu版推理配置)
   - [OpenVINO GPU推理配置](#openvino-gpu推理配置)
@@ -54,9 +55,55 @@
     ```
 - 值得说明的是，基于openvino推理部分中`ch_ppocr_v2_cls`部分仍然是基于onnxruntime的，原因是openvino有bug，详情见[openvino/issue](https://github.com/openvinotoolkit/openvino/issues/11501)
 
+### pip安装快速使用
+1. 安装`rapidocr_onnxruntime`包
+   ```shell
+   pip install rapidocr-onnxruntime
+   ```
 
-### 使用步骤
+2. 下载相关的模型和配置文件
+    ```shell
+    $ wget https://github.com/RapidAI/RapidOCR/releases/download/v1.0.0/required_for_whl_v1.0.0.zip
+
+    # Download by gitee
+    # wget https://gitee.com/RapidAI/RapidOCR/attach_files/1126710/download/required_for_whl_v1.0.0.zip
+
+    $ unzip required_for_whl_v1.0.0.zip
+    $ cd required_for_whl_v1.0.0
+    ```
+    - 最终目录结构如下：
+    ```text
+    required_for_whl_v1.0.0/
+        ├── config.yaml
+        ├── README.md
+        ├── test_demo.py
+        ├── resources
+        │   ├── models
+        │   │   ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
+        │   │   ├── ch_PP-OCRv3_det_infer.onnx
+        │   │   └── ch_PP-OCRv3_rec_infer.onnx
+        │   └── rec_dict
+        │       └── ppocr_keys_v1.txt
+        └── test_images
+            └── ch_en_num.jpg
+    ```
+
+3. 推理使用
+```python
+import cv2
+from rapidocr_onnxruntime import TextSystem
+
+text_sys = TextSystem('config.yaml')
+
+img = cv2.imread('test_images/ch_en_num.jpg')
+
+dt_boxes, rec_res = text_sys(img)
+print(rec_res)
+```
+
+### 源码使用步骤
 1. 下载当前下的`rapidocr_onnxruntime`/`rapidocr_openvino`目录到本地
+
 2. 下载链接下的`resources`目录（包含模型和显示的字体文件）
    - 下载链接：[百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
    - `resources/models`下模型搭配已经为最优组合（速度和精度平衡）
@@ -96,6 +143,7 @@
             ├── ch_en_num.jpg
             └── single_line_text.jpg
         ```
+
 3. 安装运行环境
    - 基于onnxruntime推理所需环境安装：
         ```bash
@@ -110,7 +158,7 @@
 
         pip install -r requirements.txt -i https://pypi.douban.com/simple/
         ```
-   - Note: 在Windows端，Shapely库可能自动安装会有问题，解决方案参见[Q15](../docs/FAQ.md#q15-装完环境之后运行python-mainpy之后报错oserror-winerror-126-找不到指定的模組)
+   - Note: 在Windows端，Shapely库可能自动安装会有问题，解决方案参见[Q15](../docs/FAQ.md#q-windows系统下装完环境之后运行示例程序之后报错oserror-winerror-126-找不到指定的模組)
 
 4. 运行示例
     - 运行单元测试
