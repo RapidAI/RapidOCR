@@ -1,6 +1,6 @@
 
 <div align="center">
-  <img src="./assets/RapidOCR_LOGO.png" width="50%" height="50%"/>
+  <img src="./assets/RapidOCR_LOGO.png" width="55%" height="55%"/>
 </div>
 
 # RapidOCR (捷智OCR)
@@ -14,6 +14,7 @@
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
     <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors"><img src="https://img.shields.io/github/contributors/RapidAI/RapidOCR?color=9ea"></a>
     <a href="https://pypi.org/project/rapidocr-onnxruntime/"><img src="https://img.shields.io/pypi/dm/rapidocr-onnxruntime?color=9cf"></a>
+    <a href=""><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-onnxruntime?style=plastic"></a>
     <a href="https://github.com/RapidAI/RapidOCR/stargazers"><img src="https://img.shields.io/github/stars/RapidAI/RapidOCR?color=ccf"></a>
 </p>
 
@@ -26,8 +27,8 @@
   - [近期更新(more)](#近期更新more)
       - [🎧2022-07-10 update:](#2022-07-10-update)
       - [✨2022-07-07 update:](#2022-07-07-update)
+  - [相关项目(more)](#相关项目more)
   - [生态框架](#生态框架)
-  - [相关项目](#相关项目)
   - [常见问题  FAQ](#常见问题--faq)
   - [SDK 编译状态](#sdk-编译状态)
   - [在线demo](#在线demo)
@@ -72,14 +73,14 @@
 - 该页面添加[致谢模块](#致谢)，感谢为这个项目作出贡献的小伙伴。
 
 
+## 相关项目([more](./docs/related_projects.md))
+- [RapidVideOCR](https://github.com/SWHL/RapidVideOCR)：基于RapidOCR，提取视频中的硬字幕
+- [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): 表格结构还原 | [博客解读论文和源码](https://blog.csdn.net/shiwanghualuo/article/details/125047732)
+
 ## 生态框架
 <div align="center">
     <img src="./assets/RapidOCR_system.jpg">
 </div>
-
-## 相关项目
-- [RapidVideOCR](https://github.com/SWHL/RapidVideOCR)：基于RapidOCR，提取视频中的硬字幕
-- [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): 表格结构还原 | [博客解读论文和源码](https://blog.csdn.net/shiwanghualuo/article/details/125047732)
 
 ## 常见问题  [FAQ](./docs/FAQ.md)
 
