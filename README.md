@@ -78,9 +78,13 @@
 - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): 表格结构还原 | [博客解读论文和源码](https://blog.csdn.net/shiwanghualuo/article/details/125047732)
 
 ## 生态框架
-<div align="center">
-    <img src="./assets/RapidOCR_system.jpg">
-</div>
+```mermaid
+flowchart LR
+    A[/OurSelf Dataset/] --> B(PaddleOCR Train)
+    B --train --> C(Text Det) & D(Text Cls) & E(Text Rec) --Convert--> F(ONNX)
+    F --> G{RapidOCR Deploy\n<b>Python/C++/Java/C#</b>}
+    G --> H(Windows x86/x64) & I(Linux) & J(Android) & K(Web) & L(Raspberry Pi)
+```
 
 ## 常见问题  [FAQ](./docs/FAQ.md)
 

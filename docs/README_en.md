@@ -26,7 +26,8 @@
   - [Recently updates(more)](#recently-updatesmore)
       - [🎧2022-07-10 update:](#2022-07-10-update)
       - [✨2022-07-07 update:](#2022-07-07-update)
-  - [Related Projects](#related-projects)
+  - [Related Projects(more)](#related-projectsmore)
+  - [Overall Framework](#overall-framework)
   - [FAQ](#faq)
   - [SDK compilation status](#sdk-compilation-status)
   - [Online demo](#online-demo)
@@ -73,6 +74,16 @@
 ## Related Projects([more](./docs/related_projects.md))
 - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR): Extract hard subtitles from videos based on RapidOCR.
 - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): Table structure reduction.
+
+
+## Overall Framework
+```mermaid
+flowchart LR
+    A[/OurSelf Dataset/] --> B(PaddleOCR Train)
+    B --train --> C(Text Det) & D(Text Cls) & E(Text Rec) --Convert--> F(ONNX)
+    F --> G{RapidOCR Deploy\n<b>Python/C++/Java/C#</b>}
+    G --> H(Windows x86/x64) & I(Linux) & J(Android) & K(Web) & L(Raspberry Pi)
+```
 
 ## [FAQ](./doc/FAQ.md)
 
