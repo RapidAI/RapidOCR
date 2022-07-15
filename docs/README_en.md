@@ -14,7 +14,7 @@
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
     <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors"><img src="https://img.shields.io/github/contributors/RapidAI/RapidOCR?color=9ea"></a>
     <a href="https://pypi.org/project/rapidocr-onnxruntime/"><img src="https://img.shields.io/pypi/dm/rapidocr-onnxruntime?color=9cf"></a>
-    <a href=""><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-onnxruntime?style=plastic"></a>
+    <a href="https://pypi.org/project/rapidocr-onnxruntime/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-onnxruntime?style=plastic"></a>
     <a href="https://github.com/RapidAI/RapidOCR/stargazers"><img src="https://img.shields.io/github/stars/RapidAI/RapidOCR?color=ccf"></a>
 </p>
 
@@ -70,7 +70,7 @@
 - Add unit test under python module
 - Add [Acknowledgement module](#Acknowledgement) to this page to thank the partners who contributed to this project.
 
-## Related Projects
+## Related Projects([more](./docs/related_projects.md))
 - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR): Extract hard subtitles from videos based on RapidOCR.
 - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): Table structure reduction.
 
