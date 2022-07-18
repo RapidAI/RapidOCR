@@ -6,12 +6,12 @@ import base64
 import cv2
 import numpy as np
 from flask import Flask, render_template, request
+from wsgiref.simple_server import make_server
 
 from task import detect_recognize
 
 app = Flask(__name__)
 
-# 设置上传文件大小
 app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024
 
 
@@ -35,4 +35,8 @@ def ocr():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=9003, debug=True, processes=True)
+    ip = '0.0.0.0'
+    ip_port = 9003
+
+    server = make_server(ip, ip_port, app)
+    server.serve_forever()
