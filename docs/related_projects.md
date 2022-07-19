@@ -5,8 +5,8 @@
   - [版面分析](#版面分析)
   - [表格识别](#表格识别)
   - [视频OCR](#视频ocr)
-  - [印章OCR](#印章ocr)
   - [卡证OCR](#卡证ocr)
+  - [印章OCR](#印章ocr)
 
 </details>
 
@@ -43,7 +43,23 @@
     - [PubTabNet](https://github.com/ibm-aur-nlp/PubTabNet): IBM构建，568k+文档图像数据，包括表格图像和对应的HTML标注。
 
 ### 视频OCR
-
-### 印章OCR
+- 相关论文和帖子：
+  - [【NeurIPS2021】A Bilingual, OpenWorld Video Text Dataset and End-to-end Video Text Spotter with Transformer](https://arxiv.org/abs/2112.04888) | [博客解读](https://blog.csdn.net/shiwanghualuo/article/details/122712872?spm=1001.2014.3001.5501)
+  - [【ACM MM 2019】You only recognize once: Towards fast video text spotting](https://arxiv.org/pdf/1903.03299)
+- 相关工程：
+  - [video-subtitle-extractor](https://github.com/YaoFANGUK/video-subtitle-extractor): 一款将视频中的硬字幕提取为外挂字幕文件(srt格式)的软件
+  - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR): 提取视频中硬字幕
+- 数据集汇总：
+  - [BOVText: A Large-Scale, Bilingual Open World Dataset for Video Text Spotting](https://github.com/weijiawu/BOVText-Benchmark): 快手科技、浙江大学和北京邮电大学合作提出，大规模双语开放场景下的视频文本基准数据集，该数据集主要提供了2000+视频，1,750,000帧开放视频场景的视频。同时，还提供了丰富的标注类型（标题、字幕、场景文本等）。该数据集支持四个任务：视频帧检测、视频帧识别、视频文本跟踪和端到端视频文本识别。
 
 ### 卡证OCR
+- 相关论文和帖子：
+- 相关工程：
+  - [fake_certificate_generator](https://github.com/deep-practice/fake_certificate_generator): 假的证件合成器，包括身份证、驾驶证、营业执照。
+- 数据集汇总：
+  - 暂无，一般这类数据较为敏感，通常都合成假数据来使用。
+
+### 印章OCR
+- 相关论文和帖子：
+- 相关工程：
+- 数据集汇总：
