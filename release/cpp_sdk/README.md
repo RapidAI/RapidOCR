@@ -16,4 +16,4 @@ c:\test\x64\rapidocrtester.exe  e:\rapidocr\models\  e:\test\test.jpg
 ```
 
 
-#### 下载多语言模型文件 [link](https://github.com/RapidOCR/RapidOCR/releases/download/V1.0/rapid-model.tgz)
+#### 下载多语言模型文件 [link](https://github.com/RapidAI/RapidOCR/releases/download/V1.0/rapid-model.tgz)
