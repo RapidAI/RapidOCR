@@ -10,7 +10,7 @@
         <img src="../assets/ocrweb_time.jpg" width="80%" height="80%">
     </div>
 
-### 运行
+### Web方式运行
 1. 安装`requirements.txt`下相关包
     ```shell
     pip install -r requirements.txt -i https://pypi.douban.com/simple/
@@ -50,3 +50,58 @@
     python main.py
     ```
 4. 打开`http://0.0.0.0:9003/`即可， enjoy it!
+
+### 以API方式运行和调用
+1. 同**Web方式运行**中步骤1
+2. 同**Web方式运行**中步骤2
+3. 运行`api.py`
+   ```python
+   python api.py
+   ```
+
+4. 发送post请求，调用
+    ```python
+    import ast
+    import base64
+    import json
+
+    import requests
+
+
+    def get_byte(img_path):
+        with open(img_path, 'rb') as f:
+            img_byte = base64.b64encode(f.read())
+        img_str = img_byte.decode('ascii')
+        return img_str
+
+
+    if __name__ == '__main__':
+        header = {
+                "cookie": "token=code_space;",
+                "Accept": "*/*",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "zh-CN,zh;q=0.9",
+                "Connection": "keep-alive",
+                "Content-Type": "application/json; charset=UTF-8",
+        }
+
+        url = 'http://localhost:9003/ocr'
+
+        img_path = '../images/1.jpg'
+        img = get_byte(img_path)
+        post_json = json.dumps({'file': img})
+
+        response = requests.post(url, data=post_json, headers=header)
+
+        if response.status_code == 200:
+            rec_res = ast.literal_eval(response.text)
+            print(rec_res)
+        else:
+            print(response.status_code)
+
+    ```
+
+5. 输出以下结果，即为正确。
+   ```text
+   [['0', '香港深圳抽血', '0.93583983'], ['1', '专业查性别', '0.89865875'], ['2', '专业鉴定B超单', '0.9955703'], ['3', 'b超仪器查性别', '0.99489486'], ['4', '加微信eee', '0.99073666'], ['5', '可邮寄', '0.99923944']]
+   ```

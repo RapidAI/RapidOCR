@@ -50,10 +50,7 @@ def detect_recognize(image_path):
         elapse = reduce(lambda x, y: float(x)+float(y), elapse_part)
         elapse_part = ','.join([str(x) for x in elapse_part])
 
-    return json.dumps({'image': img,
-                       'total_elapse': f'{elapse:.4f}',
-                       'elapse_part': elapse_part,
-                       'rec_res': rec_res_data})
+    return img, elapse, elapse_part, rec_res_data
 
 
 def check_and_read_gif(img_path):

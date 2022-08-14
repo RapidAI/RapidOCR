@@ -1,3 +1,7 @@
+#### 🦣2022-08-14 update:
+- The ocrweb part adds the function of deploying calls by API, and you can send POST requests to get OCR recognition results.
+- For details, see: [API deploy](../ocrweb/README.md#以api方式运行和调用)
+
 #### 🎧2022-07-10 update:
 - Add test case for onnxruntime-gpu → [link](../python/README.md#onnxruntime-gpu version inference configuration)
 - Add benchamark test set → [link](../images/README.md)

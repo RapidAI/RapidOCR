@@ -24,6 +24,7 @@
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
   - [Recently updates(more)](#recently-updatesmore)
+      - [🦣2022-08-14 update:](#2022-08-14-update)
       - [🎧2022-07-10 update:](#2022-07-10-update)
       - [✨2022-07-07 update:](#2022-07-07-update)
   - [Related Projects(more)](#related-projectsmore)
@@ -61,6 +62,10 @@
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
 ## Recently updates([more](./change_log_en.md))
+#### 🦣2022-08-14 update:
+- The ocrweb part adds the function of deploying calls by API, and you can send POST requests to get OCR recognition results.
+- For details, see: [API deploy](./ocrweb/README.md#以api方式运行和调用)
+
 #### 🎧2022-07-10 update:
 - Add test case for onnxruntime-gpu → [link](../python/README.md#onnxruntime-gpu version inference configuration)
 - Add benchamark test set → [link](../images/README.md)

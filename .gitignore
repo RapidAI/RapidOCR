@@ -152,3 +152,5 @@ long1.jpg
 *.pdiparams
 *.pdiparams.info
 *.pdmodel
+
+.DS_Store

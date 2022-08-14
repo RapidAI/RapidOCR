@@ -24,7 +24,7 @@ def index():
 def ocr():
     if request.method == 'POST':
         url_get = request.get_json()
-        img_str = str(url_get).split(',')[1]
+        img_str = url_get.get('file')
 
         image = base64.b64decode(img_str)
         nparr = np.frombuffer(image, np.uint8)
@@ -33,10 +33,7 @@ def ocr():
             image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
         img, elapse, elapse_part, rec_res_data = detect_recognize(image)
-        return json.dumps({'image': img,
-                           'total_elapse': f'{elapse:.4f}',
-                           'elapse_part': elapse_part,
-                           'rec_res': rec_res_data})
+        return rec_res_data
 
 
 if __name__ == '__main__':

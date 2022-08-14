@@ -1,3 +1,7 @@
+#### 🦣2022-08-14 update:
+- ocrweb部分增加以API方式部署调用的功能，可以通过发送POST请求，来获得OCR识别结果。
+- 详情参见：[API方式调用](../ocrweb/README.md#以api方式运行和调用)
+
 #### ✨2022-07-07 update:
 - 修复python版中v3 rec推理bug，并将v3 rec与v2 rec合并为同一套推理代码，更加简洁和方便
 - 添加python模块下的单元测试
