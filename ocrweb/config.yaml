@@ -6,7 +6,7 @@ Global:
     width_height_ratio: 8
 
 Det:
-    module_name: ch_ppocr_v2_det
+    module_name: ch_ppocr_v3_det
     class_name: TextDetector
     model_path: resources/models/ch_PP-OCRv3_det_infer.onnx
 
@@ -56,7 +56,7 @@ Cls:
     label_list: ['0', '180']
 
 Rec:
-    module_name: ch_ppocr_v2_rec
+    module_name: ch_ppocr_v3_rec
     class_name: TextRecognizer
     model_path: resources/models/ch_PP-OCRv3_rec_infer.onnx
 

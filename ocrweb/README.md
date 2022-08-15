@@ -1,14 +1,9 @@
 ## RapidOCR Web Demo
 
-### 相关问题
-1. 各个阶段使用的模型以及配置参数有哪些？
-     - 使用模型搭配（最优组合）为：`ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec`
-     - 所有相关参数配置参见当前目录下的`config.yaml`文件
-     - 其中给出了使用模型，以及具体参数，参数具体介绍参见：[Link](https://github.com/RapidAI/RapidOCR/blob/main/python/README.md#configyaml%E4%B8%AD%E5%B8%B8%E7%94%A8%E5%8F%82%E6%95%B0%E4%BB%8B%E7%BB%8D)
-2. 网页上显示的推理时间可以具体解释一下吗？
-    <div align="center">
-        <img src="../assets/ocrweb_time.jpg" width="80%" height="80%">
-    </div>
+- [RapidOCR Web Demo](#rapidocr-web-demo)
+  - [Web方式运行](#web方式运行)
+  - [以API方式运行和调用](#以api方式运行和调用)
+  - [相关问题](#相关问题)
 
 ### Web方式运行
 1. 安装`requirements.txt`下相关包
@@ -105,3 +100,13 @@
    ```text
    [['0', '香港深圳抽血', '0.93583983'], ['1', '专业查性别', '0.89865875'], ['2', '专业鉴定B超单', '0.9955703'], ['3', 'b超仪器查性别', '0.99489486'], ['4', '加微信eee', '0.99073666'], ['5', '可邮寄', '0.99923944']]
    ```
+
+### 相关问题
+1. 各个阶段使用的模型以及配置参数有哪些？
+     - 使用模型搭配（最优组合）为：`ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec`
+     - 所有相关参数配置参见当前目录下的`config.yaml`文件
+     - 其中给出了使用模型，以及具体参数，参数具体介绍参见：[Link](https://github.com/RapidAI/RapidOCR/blob/main/python/README.md#configyaml%E4%B8%AD%E5%B8%B8%E7%94%A8%E5%8F%82%E6%95%B0%E4%BB%8B%E7%BB%8D)
+2. 网页上显示的推理时间可以具体解释一下吗？
+    <div align="center">
+        <img src="../assets/ocrweb_time.jpg" width="80%" height="80%">
+    </div>
