@@ -15,7 +15,7 @@ from rapidocr_onnxruntime import TextSystem
 text_sys = TextSystem('config.yaml')
 
 
-def detect_recognize(image_path):
+def detect_recognize(image_path, is_api=False):
     if isinstance(image_path, str):
         image = cv2.imread(image_path)
     elif isinstance(image_path, np.ndarray):
@@ -26,31 +26,34 @@ def detect_recognize(image_path):
     dt_boxes, rec_res, img, elapse_part = text_sys(image)
 
     if dt_boxes is None or rec_res is None:
-        rec_res_data = json.dumps([],
-                                  indent=2,
-                                  ensure_ascii=False)
-        elapse = 0
-        elapse_part = ''
-        image = cv2.imencode('.jpg', img)[1]
-        img = str(base64.b64encode(image))[2:-1]
+        elapse, elapse_part = 0, ''
+        img_str = img_to_base64(img)
+        rec_res_data = json.dumps([], indent=2, ensure_ascii=False)
     else:
         temp_rec_res = []
         for i, value in enumerate(rec_res):
             temp_rec_res.append([i, value[0], value[1]])
         temp_rec_res = np.array(temp_rec_res)
-
         rec_res_data = json.dumps(temp_rec_res.tolist(),
                                   indent=2,
                                   ensure_ascii=False)
 
         det_im = draw_text_det_res(dt_boxes, img)
-        image = cv2.imencode('.jpg', det_im)[1]
-        img = str(base64.b64encode(image))[2:-1]
+        img_str = img_to_base64(det_im)
 
         elapse = reduce(lambda x, y: float(x)+float(y), elapse_part)
         elapse_part = ','.join([str(x) for x in elapse_part])
 
-    return img, elapse, elapse_part, rec_res_data
+    if is_api:
+        return rec_res_data
+    else:
+        return img_str, elapse, elapse_part, rec_res_data
+
+
+def img_to_base64(img):
+    img = cv2.imencode('.jpg', img)[1]
+    img_str = str(base64.b64encode(img))[2:-1]
+    return img_str
 
 
 def check_and_read_gif(img_path):

@@ -2,7 +2,6 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import base64
-import json
 from wsgiref.simple_server import make_server
 
 import cv2
@@ -32,7 +31,7 @@ def ocr():
         if image.ndim == 2:
             image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
-        img, elapse, elapse_part, rec_res_data = detect_recognize(image)
+        rec_res_data = detect_recognize(image, is_api=True)
         return rec_res_data
 
 

@@ -63,31 +63,21 @@
     import requests
 
 
-    def get_byte(img_path):
+    def get_json_format(img_path):
         with open(img_path, 'rb') as f:
             img_byte = base64.b64encode(f.read())
-        img_str = img_byte.decode('ascii')
-        return img_str
+        img_json = json.dumps({'file': img_byte.decode('ascii')})
+        return img_json
 
 
     if __name__ == '__main__':
-        header = {
-                "cookie": "token=code_space;",
-                "Accept": "*/*",
-                "Accept-Encoding": "gzip, deflate, br",
-                "Accept-Language": "zh-CN,zh;q=0.9",
-                "Connection": "keep-alive",
-                "Content-Type": "application/json; charset=UTF-8",
-        }
-
         url = 'http://localhost:9003/ocr'
+        header = {'Content-Type': 'application/json; charset=UTF-8'}
 
         img_path = '../images/1.jpg'
-        img = get_byte(img_path)
-        post_json = json.dumps({'file': img})
+        img_json = get_json_format(img_path)
 
-        response = requests.post(url, data=post_json, headers=header)
-
+        response = requests.post(url, data=img_json, headers=header)
         if response.status_code == 200:
             rec_res = ast.literal_eval(response.text)
             print(rec_res)
@@ -100,6 +90,8 @@
    ```text
    [['0', '香港深圳抽血', '0.93583983'], ['1', '专业查性别', '0.89865875'], ['2', '专业鉴定B超单', '0.9955703'], ['3', 'b超仪器查性别', '0.99489486'], ['4', '加微信eee', '0.99073666'], ['5', '可邮寄', '0.99923944']]
    ```
+   - 如果图像中存在文字，则会输出`list`类型，如上。
+   - 如果没有检测到文字，则会输出空列表(`[]`)。
 
 ### 相关问题
 1. 各个阶段使用的模型以及配置参数有哪些？
