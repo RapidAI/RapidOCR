@@ -17,7 +17,7 @@ def draw_ocr_box_txt(image, boxes, txts, font_path,
                      scores=None, text_score=0.5):
     if not Path(font_path).exists():
         raise FileNotFoundError(f'The {font_path} does not exists! \n'
-                                f'Please download the file in the https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY')
+                                f'Please download the file in the https://drive.google.com/file/d/1evWVX38EFNwTq_n5gTFgnlv8tdaNcyIA/view?usp=sharing')
 
     h, w = image.height, image.width
     img_left = image.copy()
