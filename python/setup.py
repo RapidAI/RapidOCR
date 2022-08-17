@@ -39,7 +39,6 @@ def get_readme():
 
 module_name = 'rapidocr_onnxruntime'
 latest_version = get_latest_version(module_name)
-latest_version = '1.1.-1'
 version_num = version_add_one(latest_version)
 
 setuptools.setup(
@@ -60,7 +59,7 @@ setuptools.setup(
     package_dir={'': module_name},
     packages=setuptools.find_packages(where=module_name),
     keywords=[
-        'ocr textdetection textrecognition crnn east star-net rosetta ocrlite db chineseocr chinesetextdetection chinesetextrecognition'
+        'ocr text_detection text_recognition db onnxruntime paddleocr openvino'
     ],
 )
 
