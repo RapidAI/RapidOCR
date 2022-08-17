@@ -39,6 +39,7 @@ def get_readme():
 
 module_name = 'rapidocr_onnxruntime'
 latest_version = get_latest_version(module_name)
+latest_version = '1.1.-1'
 version_num = version_add_one(latest_version)
 
 setuptools.setup(
