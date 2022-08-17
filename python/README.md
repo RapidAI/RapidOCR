@@ -73,19 +73,18 @@
 
     - 最终目录结构如下：
         ```text
-        required_for_whl_v1.0.0/
+        required_for_whl_v1.1.0/
             ├── config.yaml
             ├── README.md
             ├── test_demo.py
             ├── resources
-            │   ├── models
-            │   │   ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
-            │   │   ├── ch_PP-OCRv3_det_infer.onnx
-            │   │   └── ch_PP-OCRv3_rec_infer.onnx
-            │   └── rec_dict
-            │       └── ppocr_keys_v1.txt
+            │   └──  models
+            │       ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
+            │       ├── ch_PP-OCRv3_det_infer.onnx
+            │       └── ch_PP-OCRv3_rec_infer.onnx
             └── test_images
-                └── ch_en_num.jpg
+                ├── ch_en_num.jpg
+                └── single_line_text.jpg
         ```
 
 3. 推理使用
