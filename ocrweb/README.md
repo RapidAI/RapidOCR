@@ -1,11 +1,11 @@
 ## RapidOCR Web Demo
 
 - [RapidOCR Web Demo](#rapidocr-web-demo)
-  - [Web方式运行](#web方式运行)
+  - [以Web方式运行](#以web方式运行)
   - [以API方式运行和调用](#以api方式运行和调用)
   - [相关问题](#相关问题)
 
-### Web方式运行
+### 以Web方式运行
 1. 安装`requirements.txt`下相关包
     ```shell
     pip install -r requirements.txt -i https://pypi.douban.com/simple/
@@ -45,8 +45,8 @@
 4. 打开`http://0.0.0.0:9003/`即可， enjoy it!
 
 ### 以API方式运行和调用
-1. 同**Web方式运行**中步骤1
-2. 同**Web方式运行**中步骤2
+1. 同**以Web方式运行**中步骤1
+2. 同**以Web方式运行**中步骤2
 3. 运行`api.py`
    ```python
    python api.py

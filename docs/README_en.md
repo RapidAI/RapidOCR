@@ -27,8 +27,6 @@
       - [🥹2022-08-17 update:](#2022-08-17-update)
       - [🕶2022-08-14 update:](#2022-08-14-update)
       - [🎧2022-07-10 update:](#2022-07-10-update)
-      - [✨2022-07-07 update:](#2022-07-07-update)
-  - [Related Projects(more)](#related-projectsmore)
   - [Overall Framework](#overall-framework)
   - [FAQ](#faq)
   - [SDK compilation status](#sdk-compilation-status)
@@ -74,15 +72,6 @@
 - Add test case for onnxruntime-gpu → [link](../python/README.md#onnxruntime-gpu version inference configuration)
 - Add benchamark test set → [link](../images/README.md)
 - Add actions to automatically publish whl packages, when modifying python/rapidocr_onnxruntime, it will automatically update the published whl packages. See [WHL README](../docs/doc_whl_en.md)
-
-#### ✨2022-07-07 update:
-- Fix the bug of v3 rec inference in python version, and merge v3 rec and v2 rec into the same set of inference code, which is more concise and convenient.
-- Add unit test under python module
-- Add [Acknowledgement module](#Acknowledgement) to this page to thank the partners who contributed to this project.
-
-## Related Projects([more](./docs/related_projects.md))
-- [RapidVideOCR](https://github.com/SWHL/RapidVideOCR): Extract hard subtitles from videos based on RapidOCR.
-- [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): Table structure reduction.
 
 
 ## Overall Framework
@@ -186,6 +175,7 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 - Many thanks to [DeliciaLaniD](https://github.com/DeliciaLaniD) for fixing the misplaced start position of scan animation in ocrweb.
 - Many thanks to [zhsunlight](https://github.com/zhsunlight) for the suggestion about parameterized call GPU reasoning and the careful and thoughtful testing.
 - Many thanks to [lzh111222334](https://github.com/lzh111222334) for fixing some bugs of rec preprocessing under python version.
+- Many thanks to [AutumnSun1996](https://github.com/AutumnSun1996) for the suggestiong in the [#42](https://github.com/RapidAI/RapidOCR/issues/42).
 
 ## Sponsor
 

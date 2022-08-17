@@ -28,7 +28,6 @@
       - [🥹2022-08-17 update:](#2022-08-17-update)
       - [🕶2022-08-14 update:](#2022-08-14-update)
       - [🎧2022-07-10 update:](#2022-07-10-update)
-      - [✨2022-07-07 update:](#2022-07-07-update)
   - [相关项目(more)](#相关项目more)
   - [生态框架](#生态框架)
   - [常见问题  FAQ](#常见问题--faq)
@@ -72,11 +71,6 @@
 - 添加onnxruntime-gpu的测试情况→[link](./python/README.md#onnxruntime-gpu版推理配置)
 - 添加benchamark测试集 → [link](./images/README.md)
 - 添加自动发布whl包的actions，当修改`python/rapidocr_onnxruntime`下代码时，会自动更新发布whl包。具体使用方法参见[Whl README](./docs/doc_whl_en.md)
-
-#### ✨2022-07-07 update:
-- 修复python版中v3 rec推理bug，并将v3 rec与v2 rec合并为同一套推理代码，更加简洁和方便
-- 添加python模块下的单元测试
-- 该页面添加[致谢模块](#致谢)，感谢为这个项目作出贡献的小伙伴。
 
 
 ## 相关项目([more](./docs/related_projects.md))
@@ -193,6 +187,7 @@ flowchart LR
 - 非常感谢[DeliciaLaniD](https://github.com/DeliciaLaniD)修复ocrweb中扫描动画起始位置错位问题。
 - 非常感谢[zhsunlight](https://github.com/zhsunlight)关于参数化调用GPU推理的建议以及细致周到的测试。
 - 非常感谢[lzh111222334](https://github.com/lzh111222334)修复python版本下rec前处理部分bug。
+- 非常感谢[AutumnSun1996](https://github.com/AutumnSun1996)在[#42](https://github.com/RapidAI/RapidOCR/issues/42)中的建议。
 
 ## 赞助
 |赞助者|应用的产品|
