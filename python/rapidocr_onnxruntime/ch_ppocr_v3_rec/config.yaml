@@ -10,4 +10,3 @@ CUDAExecutionProvider:
 
 rec_img_shape: [3, 48, 320]
 rec_batch_num: 6
-keys_path: resources/rec_dict/ppocr_keys_v1.txt

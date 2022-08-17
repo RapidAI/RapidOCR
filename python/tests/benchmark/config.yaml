@@ -1,11 +1,12 @@
 Global:
     text_score: 0.5
     use_angle_cls: true
-    print_verbose: false
+    print_verbose: true
     min_height: 30
+    width_height_ratio: 8
 
 Det:
-    module_name: ch_ppocr_v2_det
+    module_name: ch_ppocr_v3_det
     class_name: TextDetector
     model_path: resources/models/ch_PP-OCRv3_det_infer.onnx
 
@@ -36,6 +37,7 @@ Det:
         max_candidates: 1000
         unclip_ratio: 1.6
         use_dilation: true
+        score_mode: fast
 
 Cls:
     module_name: ch_ppocr_v2_cls
@@ -55,7 +57,7 @@ Cls:
     label_list: ['0', '180']
 
 Rec:
-    module_name: ch_ppocr_v2_rec
+    module_name: ch_ppocr_v3_rec
     class_name: TextRecognizer
     model_path: resources/models/ch_PP-OCRv3_rec_infer.onnx
 
@@ -68,4 +70,3 @@ Rec:
 
     rec_img_shape: [3, 48, 320]
     rec_batch_num: 6
-    keys_path: resources/rec_dict/ppocr_keys_v1.txt

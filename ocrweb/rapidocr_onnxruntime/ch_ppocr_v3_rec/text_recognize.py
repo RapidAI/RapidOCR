@@ -27,14 +27,19 @@ except:
 
 class TextRecognizer(object):
     def __init__(self, config):
-        self.rec_image_shape = config['rec_img_shape']
-        self.rec_batch_num = config['rec_batch_num']
-        self.character_dict_path =  config['keys_path']
-        self.postprocess_op = CTCLabelDecode(self.character_dict_path)
-
         session_instance = OrtInferSession(config)
         self.session = session_instance.session
         self.input_name = session_instance.get_input_name()
+        meta_dict = session_instance.get_metadata()
+
+        if 'character' in meta_dict.keys():
+            self.character_dict_path = meta_dict['character'].splitlines()
+        else:
+            self.character_dict_path = config['keys_path']
+        self.postprocess_op = CTCLabelDecode(self.character_dict_path)
+
+        self.rec_batch_num = config['rec_batch_num']
+        self.rec_image_shape = config['rec_img_shape']
 
     def resize_norm_img(self, img, max_wh_ratio):
         img_channel, img_height, img_width = self.rec_image_shape

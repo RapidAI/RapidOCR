@@ -17,7 +17,7 @@ def draw_ocr_box_txt(image, boxes, txts, font_path,
                      scores=None, text_score=0.5):
     if not Path(font_path).exists():
         raise FileNotFoundError(f'The {font_path} does not exists! \n'
-                                f'Please download the file in the https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY')
+                                f'Please download the file in the https://drive.google.com/file/d/1evWVX38EFNwTq_n5gTFgnlv8tdaNcyIA/view?usp=sharing')
 
     h, w = image.height, image.width
     img_left = image.copy()
@@ -91,10 +91,10 @@ def visualize(image_path, boxes, rec_res, font_path="resources/fonts/FZYTK.TTF")
 if __name__ == '__main__':
     text_sys = TextSystem('config.yaml')
 
-    image_path = r'test_images/ch_en_num.jpg'
+    image_path = 'test_images/ch_en_num.jpg'
     img = cv2.imread(image_path)
     dt_boxes, rec_res = text_sys(img)
     print(rec_res)
 
     visualize(image_path, dt_boxes, rec_res,
-              font_path='resources/fonts/msyh.ttc')
+              font_path='resources/fonts/FZYTK.TTF')
