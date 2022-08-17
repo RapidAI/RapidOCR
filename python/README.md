@@ -64,8 +64,8 @@
     $ unzip required_for_whl_v1.0.0.zip
     $ cd required_for_whl_v1.0.0
     ```
-    - 模型Hash值，自行比对
-        |模型名称|Hash值|
+    - 模型md5值，自行比对
+        |模型名称|md5值|
         |---:|:---|
         |ch_ppocr_mobile_v2.0_cls_infer.onnx|    c99c6bfc2df6544427ad3c7c85feab36|
         |ch_PP-OCRv3_det_infer.onnx          |   f3b6ff552124995842242f6dac1afde3|

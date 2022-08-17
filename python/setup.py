@@ -62,4 +62,3 @@ setuptools.setup(
         'ocr textdetection textrecognition crnn east star-net rosetta ocrlite db chineseocr chinesetextdetection chinesetextrecognition'
     ],
 )
-
