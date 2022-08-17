@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '!python/**'
+      - '!ocrweb/**'
+      - '!*.md'
+      - '!docs/**'
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
