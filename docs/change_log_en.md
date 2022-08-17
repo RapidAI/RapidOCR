@@ -1,4 +1,7 @@
-#### 🦣2022-08-14 update:
+#### 🥹2022-08-17 update:
+- The python/ocrweb part v1.1.0 is released, see the [link]((https://github.com/RapidAI/RapidOCR/releases/tag/v1.1.0)) for details.
+
+#### 🕶2022-08-14 update:
 - The ocrweb part adds the function of deploying calls by API, and you can send POST requests to get OCR recognition results.
 - For details, see: [API deploy](../ocrweb/README.md#以api方式运行和调用)
 

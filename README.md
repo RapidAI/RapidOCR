@@ -25,7 +25,8 @@
 - [RapidOCR (捷智OCR)](#rapidocr-捷智ocr)
   - [简介](#简介)
   - [近期更新(more)](#近期更新more)
-      - [🦣2022-08-14 update:](#2022-08-14-update)
+      - [🥹2022-08-17 update:](#2022-08-17-update)
+      - [🕶2022-08-14 update:](#2022-08-14-update)
       - [🎧2022-07-10 update:](#2022-07-10-update)
       - [✨2022-07-07 update:](#2022-07-07-update)
   - [相关项目(more)](#相关项目more)
@@ -52,18 +53,18 @@
       - [多语言示例图像](#多语言示例图像)
 </details>
 
-
 ## 简介
 - 💖目前已知**运行速度最快、支持最广**，完全开源免费并支持离线部署的多平台多语言OCR SDK
 - **中文广告**： 欢迎加入我们的QQ群下载模型及测试程序，qq群号：887298230
 - **缘起**：百度paddlepaddle工程化不是太好，为了方便大家在各种端上进行ocr推理，我们将它转换为onnx格式，使用`Python/C++/Java/Swift/C#` 将它移植到各个平台。
-
 - **名称来源**： 轻快好省并智能。 基于深度学习技术的OCR技术，主打人工智能优势及小模型，以速度为使命，效果为主导。
-
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。
 
 ## 近期更新([more](./docs/change_log.md))
-#### 🦣2022-08-14 update:
+#### 🥹2022-08-17 update:
+- python/ocrweb部分 v1.1.0发布，详情参见[v1.1.0](https://github.com/RapidAI/RapidOCR/releases/tag/v1.1.0)
+
+#### 🕶2022-08-14 update:
 - ocrweb部分增加以API方式部署调用的功能，可以通过发送POST请求，来获得OCR识别结果。
 - 详情参见：[API方式调用](./ocrweb/README.md#以api方式运行和调用)
 

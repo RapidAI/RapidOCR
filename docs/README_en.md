@@ -24,7 +24,8 @@
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
   - [Recently updates(more)](#recently-updatesmore)
-      - [🦣2022-08-14 update:](#2022-08-14-update)
+      - [🥹2022-08-17 update:](#2022-08-17-update)
+      - [🕶2022-08-14 update:](#2022-08-14-update)
       - [🎧2022-07-10 update:](#2022-07-10-update)
       - [✨2022-07-07 update:](#2022-07-07-update)
   - [Related Projects(more)](#related-projectsmore)
@@ -62,7 +63,10 @@
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
 ## Recently updates([more](./change_log_en.md))
-#### 🦣2022-08-14 update:
+#### 🥹2022-08-17 update:
+- The python/ocrweb part v1.1.0 is released, see the [link]((https://github.com/RapidAI/RapidOCR/releases/tag/v1.1.0)) for details.
+
+#### 🕶2022-08-14 update:
 - The ocrweb part adds the function of deploying calls by API, and you can send POST requests to get OCR recognition results.
 - For details, see: [API deploy](../ocrweb/README.md#以api方式运行和调用)
 
