@@ -91,15 +91,10 @@ def visualize(image_path, boxes, rec_res, font_path="resources/fonts/FZYTK.TTF")
 if __name__ == '__main__':
     text_sys = TextSystem('config.yaml')
 
-    from tqdm import tqdm
-    img_list = list(Path('tmp_images').iterdir())
-    for image_path in tqdm(img_list):
-        image_path = str(image_path)
-        print(image_path)
-        # image_path = r'test_images/ch_en_num.jpg'
-        img = cv2.imread(image_path)
-        dt_boxes, rec_res = text_sys(img)
-        # print(rec_res)
+    image_path = r'test_images/ch_en_num.jpg'
+    img = cv2.imread(image_path)
+    dt_boxes, rec_res = text_sys(img)
+    print(rec_res)
 
-    # visualize(image_path, dt_boxes, rec_res,
-    #           font_path='resources/fonts/FZYTK.TTF')
+    visualize(image_path, dt_boxes, rec_res,
+              font_path='resources/fonts/msyh.ttc')
