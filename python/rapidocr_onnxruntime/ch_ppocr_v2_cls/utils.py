@@ -26,12 +26,15 @@ class OrtInferSession(object):
 
         cuda_ep = 'CUDAExecutionProvider'
         cpu_ep = 'CPUExecutionProvider'
+        cpu_provider_options = {
+            "arena_extend_strategy": "kSameAsRequested",
+        }
 
         EP_list = []
         if config['use_cuda'] and get_device() == 'GPU' \
                 and cuda_ep in get_available_providers():
             EP_list = [(cuda_ep, config[cuda_ep])]
-        EP_list.append(cpu_ep)
+        EP_list.append((cpu_ep, cpu_provider_options))
 
         self.session = InferenceSession(config['model_path'],
                                         sess_options=sess_opt,

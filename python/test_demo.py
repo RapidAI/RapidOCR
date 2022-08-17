@@ -69,7 +69,7 @@ def draw_ocr_box_txt(image, boxes, txts, font_path,
     return np.array(img_show)
 
 
-def visualize(image_path, boxes, rec_res, font_path="fonts/msyh.ttc"):
+def visualize(image_path, boxes, rec_res, font_path="resources/fonts/FZYTK.TTF"):
     image = Image.open(image_path)
     txts = [rec_res[i][0] for i in range(len(rec_res))]
     scores = [rec_res[i][1] for i in range(len(rec_res))]
@@ -91,10 +91,15 @@ def visualize(image_path, boxes, rec_res, font_path="fonts/msyh.ttc"):
 if __name__ == '__main__':
     text_sys = TextSystem('config.yaml')
 
-    image_path = r'test_images/ch_en_num.jpg'
-    img = cv2.imread(image_path)
-    dt_boxes, rec_res = text_sys(img)
-    print(rec_res)
+    from tqdm import tqdm
+    img_list = list(Path('tmp_images').iterdir())
+    for image_path in tqdm(img_list):
+        image_path = str(image_path)
+        print(image_path)
+        # image_path = r'test_images/ch_en_num.jpg'
+        img = cv2.imread(image_path)
+        dt_boxes, rec_res = text_sys(img)
+        # print(rec_res)
 
-    visualize(image_path, dt_boxes, rec_res,
-              font_path='resources/fonts/msyh.ttc')
+    # visualize(image_path, dt_boxes, rec_res,
+    #           font_path='resources/fonts/FZYTK.TTF')
