@@ -18,7 +18,7 @@ class OrtInferSession(object):
         cuda_ep = 'CUDAExecutionProvider'
         cpu_ep = 'CPUExecutionProvider'
         cpu_provider_options = {
-        "arena_extend_strategy": "kSameAsRequested",
+            "arena_extend_strategy": "kSameAsRequested",
         }
 
         EP_list = []

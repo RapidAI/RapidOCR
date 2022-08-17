@@ -12,7 +12,6 @@ TextRecognizer = base.init_module(module_name, class_name)
 yaml_path = base.root_dir / base.package_name / module_name / 'config.yaml'
 config = base.read_yaml(str(yaml_path))
 config['model_path'] = str(base.root_dir / config['model_path'])
-config['keys_path'] = str(base.root_dir / config['keys_path'])
 
 text_rec = TextRecognizer(config)
 

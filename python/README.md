@@ -24,27 +24,20 @@
 - 每个独立的模块下均有独立的`config.yaml`配置文件，可以单独使用
 - `det`部分：
   - `det`中`mobile`和`server`版，推理代码一致，直接更改配置文件中模型路径即可
-  - `det`中`v2`和`v3`两个版本，推理代码一致，直接更改配置文件中模型路径即可
-    ```yaml
-    Det:
-        module_name: ch_ppocr_v2_det
-        class_name: TextDetector
-        model_path: resources/models/ch_PP-OCRv3_det_infer.onnx
-    ```
+  - `det`中`v2`和`v3`两个版本，推理代码一致。
 - `rec`部分：
   - `rec`中`mobile`和`server`版本，推理代码一致，直接更改配置文件中模型路径即可
   - `rec`中`v2`和`v3`两个版本，共用同一个推理代码。
     - 两版本差别仅在输入shape和模型。经过测试，采用`v3 rec模型`+`[3, 48, 320]`效果最好。
-    - 目前配置文件`config.yaml`中（如下所示）已经改为该最优组合。
-    ```yaml
-    module_name: ch_ppocr_v2_rec
-    class_name: TextRecognizer
-    model_path: resources/models/ch_PP-OCRv3_rec_infer.onnx
+    - 目前配置文件`config.yaml`中（如下所示）已是最优组合。
+        ```yaml
+        module_name: ch_ppocr_v3_rec
+        class_name: TextRecognizer
+        model_path: resources/models/ch_PP-OCRv3_rec_infer.onnx
 
-    rec_img_shape: [3, 48, 320]
-    rec_batch_num: 6
-    keys_path: resources/rec_dict/ppocr_keys_v1.txt
-    ```
+        rec_img_shape: [3, 48, 320]
+        rec_batch_num: 6
+        ```
 - onnxruntime和openvino调用方式如下:
     ```python
     # 基于onnxruntime引擎推理
@@ -102,15 +95,15 @@ print(rec_res)
 ```
 
 ### 源码使用步骤
-1. 下载当前下的`rapidocr_onnxruntime`/`rapidocr_openvino`目录到本地
+1. 下载当前目录下的`rapidocr_onnxruntime`或者`rapidocr_openvino`目录到本地
 
 2. 下载链接下的`resources`目录（包含模型和显示的字体文件）
    - 下载链接：[百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
    - `resources/models`下模型搭配已经为最优组合（速度和精度平衡）
         ```text
-        ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls +  ch_ppocr_mobile_v2.0_rec
+        ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls +  ch_PP-OCRv3_rec
         ```
-   - 最终目录如下:
+   - 最终目录如下，自行比对:
         ```text
         .
         ├── README.md
@@ -119,26 +112,24 @@ print(rec_res)
         ├── rapidocr_onnxruntime
         │   ├── __init__.py
         │   ├── ch_ppocr_v2_cls
-        │   ├── ch_ppocr_v2_det
-        │   ├── ch_ppocr_v2_rec
+        │   ├── ch_ppocr_v3_det
+        │   ├── ch_ppocr_v3_rec
         │   └── rapid_ocr_api.py
         ├── rapidocr_openvino
         │   ├── __init__.py
         │   ├── README.md
         │   ├── ch_ppocr_v2_cls
-        │   ├── ch_ppocr_v2_det
-        │   ├── ch_ppocr_v2_rec
+        │   ├── ch_ppocr_v3_det
+        │   ├── ch_ppocr_v3_rec
         │   └── rapid_ocr_api.py
         ├── requirements.txt
         ├── resources
         │    ├── fonts
-        │    │   └── msyh.ttc
-        │    ├── models
-        │    │   ├── ch_PP-OCRv3_det_infer.onnx
-        │    │   ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
-        │    │   └── ch_PP-OCRv3_rec_infer.onnx
-        │    └── rec_dict
-        │        └── ppocr_keys_v1.txt
+        │    │   └── FZYTK.TTF
+        │    └── models
+        │        ├── ch_PP-OCRv3_det_infer.onnx
+        │        ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
+        │        └── ch_PP-OCRv3_rec_infer.onnx
         └── test_images
             ├── ch_en_num.jpg
             └── single_line_text.jpg
@@ -176,11 +167,11 @@ print(rec_res)
         # 基于openvino引擎推理
         # from rapidocr_openvino import TextSystem
 
-        config_path = 'config.yaml'
-        text_sys = TextSystem(config_path)
+        text_sys = TextSystem('config.yaml')
 
         image_path = r'test_images/det_images/ch_en_num.jpg'
         img = cv2.imread(image_path)
+
         dt_boxes, rec_res = text_sys(img)
         print(rec_res)
         ```
@@ -229,7 +220,6 @@ print(rec_res)
     | ------------: | :----------: | :-----: | :----------------------------------------------|
     |`rec_img_shape`| - |`[3, 48, 320]`| 输入文本识别模型的图像Shape（CHW） |
     |`rec_batch_num`| - | 6 | 批次推理的batch大小，一般采用默认值即可，太大并没有明显提速，效果还可能会差 |
-    |`keys_path`| - | - | 文本识别模型推理所使用字典文件，始识别哪种类型文本而定（中英、日文等） |
 
 ### onnxruntime-gpu版推理配置
 
