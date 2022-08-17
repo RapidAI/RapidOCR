@@ -42,6 +42,10 @@ class OrtInferSession(object):
     def get_output_name(self, output_idx=0):
         return self.session.get_outputs()[output_idx].name
 
+    def get_metadata(self):
+        meta_dict = self.session.get_modelmeta().custom_metadata_map
+        return meta_dict
+
 
 def read_yaml(yaml_path):
     with open(yaml_path, 'rb') as f:
@@ -57,12 +61,17 @@ class CTCLabelDecode(object):
 
         self.character_str = []
         assert character_dict_path is not None, "character_dict_path should not be None"
-        with open(character_dict_path, "rb") as fin:
-            lines = fin.readlines()
-            for line in lines:
-                line = line.decode('utf-8').strip("\n").strip("\r\n")
-                self.character_str.append(line)
+
+        if isinstance(character_dict_path, str):
+            with open(character_dict_path, "rb") as fin:
+                lines = fin.readlines()
+                for line in lines:
+                    line = line.decode('utf-8').strip("\n").strip("\r\n")
+                    self.character_str.append(line)
+        else:
+            self.character_str = character_dict_path
         self.character_str.append(' ')
+
 
         dict_character = self.add_special_char(self.character_str)
         self.character = dict_character

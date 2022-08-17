@@ -22,17 +22,15 @@
         ├── task.py
         ├── rapidocr_onnxruntime
         │   ├── __init__.py
+        │   ├── ch_ppocr_v3_det
         │   ├── ch_ppocr_v2_cls
-        │   ├── ch_ppocr_v2_det
-        │   ├── ch_ppocr_v2_rec
+        │   ├── ch_ppocr_v3_rec
         │   └── rapid_ocr_api.py
         ├── resources
-        │   ├── models
-        │   │   ├── ch_PP-OCRv3_det_infer.onnx
-        │   │   ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
-        │   │   └── ch_PP-OCRv3_rec_infer.onnx
-        │   └── rec_dict
-        │       └── ppocr_keys_v1.txt
+        │   └── models
+        │       ├── ch_PP-OCRv3_det_infer.onnx
+        │       ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
+        │       └── ch_PP-OCRv3_rec_infer.onnx
         ├── static
         │   ├── css
         │   └── js
@@ -83,7 +81,6 @@
             print(rec_res)
         else:
             print(response.status_code)
-
     ```
 
 5. 输出以下结果，即为正确。
