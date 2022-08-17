@@ -35,7 +35,7 @@ class TextRecognizer(object):
         if 'character' in meta_dict.keys():
             self.character_dict_path = meta_dict['character'].splitlines()
         else:
-            self.character_dict_path = config['keys_path']
+            self.character_dict_path = config.get('keys_path', None)
         self.postprocess_op = CTCLabelDecode(self.character_dict_path)
 
         self.rec_batch_num = config['rec_batch_num']

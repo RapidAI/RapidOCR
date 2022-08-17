@@ -72,7 +72,6 @@ class CTCLabelDecode(object):
             self.character_str = character_dict_path
         self.character_str.append(' ')
 
-
         dict_character = self.add_special_char(self.character_str)
         self.character = dict_character
 
