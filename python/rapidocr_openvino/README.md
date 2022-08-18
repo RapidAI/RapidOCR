@@ -1,5 +1,7 @@
 ## rapidocr_openvino
 
+**🚩注意：基于目前`openvino==2022.1.0`版，在推理批量图像时，申请内存不释放的问题，详情可参见[issue11939](https://github.com/openvinotoolkit/openvino/issues/11939)**
+
 <details open>
 <summary>目录</summary>
 
@@ -13,7 +15,7 @@
 </details>
 
 #### 基于OpenVINO推理引擎
-- OpenVINO推理方向分类模型有误，已经提了[issue](https://github.com/openvinotoolkit/openvino/issues/11501)
+- ~~OpenVINO推理方向分类模型有误，已经提了[issue](https://github.com/openvinotoolkit/openvino/issues/11501)~~
 - 问题已经解决，但是需要自己编译OpenVINO，参见[Answer](https://github.com/openvinotoolkit/openvino/issues/11501#issuecomment-1096366363)
 
 #### 安装
