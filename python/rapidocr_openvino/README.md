@@ -78,12 +78,12 @@ NOTE: 以`ch_ppocr_mobile_v2_det`中推理代码为例子
     sess_opt = onnxruntime.SessionOptions()
     sess_opt.log_severity_level = 4
     sess_opt.enable_cpu_mem_arena = False
-    self.session = onnxruntime.InferenceSession(det_model_path, sess_opt)
-    self.input_name = self.session.get_inputs()[0].name
-    self.output_name = self.session.get_outputs()[0].name
+    session = onnxruntime.InferenceSession(det_model_path, sess_opt)
+    input_name = session.get_inputs()[0].name
+    output_name = session.get_outputs()[0].name
 
     # 推理
-    preds = self.session.run([self.output_name], {self.input_name: img})
+    preds = session.run([output_name], {input_name: img})
     ```
 
 - OpenVINO
@@ -94,9 +94,10 @@ NOTE: 以`ch_ppocr_mobile_v2_det`中推理代码为例子
     ie = Core()
     model_onnx = ie.read_model(det_model_path)
     compile_model = ie.compile_model(model=model_onnx, device_name='CPU')
-    self.vino_session = compile_model.create_infer_request()
+    vino_session = compile_model.create_infer_request()
 
     # 推理
-    self.vino_session.infer(inputs=[img])
-    vino_preds = self.vino_session.get_output_tensor().data
+    vino_session.infer(inputs=[img])
+    vino_preds = vino_session.get_output_tensor().data
     ```
+
