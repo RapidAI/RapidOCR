@@ -1,4 +1,4 @@
-#### 🥹2022-08-17 update:
+#### 🧸2022-08-17 update:
 - python/ocrweb部分 v1.1.0发布，详情参见[v1.1.0](https://github.com/RapidAI/RapidOCR/releases/tag/v1.1.0)
 
 #### 🕶2022-08-14 update:

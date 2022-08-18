@@ -1,4 +1,4 @@
-## Python版RapidOCR
+## RapidOCR Python
 <p>
     <a href=""><img src="https://img.shields.io/badge/Python-3.6+-aff.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
@@ -7,7 +7,7 @@
 <details open>
 <summary>目录</summary>
 
-- [Python版RapidOCR](#python版rapidocr)
+- [RapidOCR Python](#rapidocr-python)
   - [简介和说明](#简介和说明)
   - [pip安装快速使用](#pip安装快速使用)
   - [源码使用步骤](#源码使用步骤)
@@ -101,10 +101,13 @@ print(rec_res)
 ```
 
 ### 源码使用步骤
-1. 下载当前目录下的`rapidocr_onnxruntime`或者`rapidocr_openvino`目录到本地
+1. 下载整个项目到本地
+   ```shell
+   cd RapidOCR/python
+   ```
 
 2. 下载链接下的`resources`目录（包含模型和显示的字体文件）
-   - 下载链接：[百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
+   - 下载链接：[Github](https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/resources.zip) | [Gitee](https://gitee.com/RapidAI/RapidOCR/releases/download/v1.1.0/resources.zip) | [百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
    - `resources/models`下模型搭配已经为最优组合（速度和精度平衡）
         ```text
         ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls +  ch_PP-OCRv3_rec
@@ -155,7 +158,7 @@ print(rec_res)
 
         pip install -r requirements.txt -i https://pypi.douban.com/simple/
         ```
-   - Note: 在Windows端，Shapely库可能自动安装会有问题，解决方案参见[Q15](../docs/FAQ.md#q-windows系统下装完环境之后运行示例程序之后报错oserror-winerror-126-找不到指定的模組)
+   - Note: 在Windows端，Shapely库自动安装可能会有问题，解决方案参见[Q15](../docs/FAQ.md#q-windows系统下装完环境之后运行示例程序之后报错oserror-winerror-126-找不到指定的模組)
 
 4. 运行示例
     - 运行单元测试
