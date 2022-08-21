@@ -156,6 +156,8 @@
             reader.readAsDataURL(targetFile);
 
             var formdata = new FormData();
+            var token = location.hash.slice(1);
+            formdata.set('token', token);
             formdata.set('image', targetFile);
             formdata.set('lang', $('input[name=lang]:checked').val());
 
@@ -172,11 +174,12 @@
                 },
                 error: function (evt) {
                     console.log(evt);
-                    alert('检测失败: ' + evt);
+                    alert('检测失败: ' + evt.status + ', ' + evt.statusText);
                 },
                 success: function (resp) {
                     $("#wrapper").hide();
                     if (resp.msg !== 'OK') {
+                        console.log(resp);
                         alert('检测失败: ', resp.msg);
                         return;
                     }

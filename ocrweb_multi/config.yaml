@@ -1,8 +1,7 @@
-debug: '1'
-
 server:
   host: 127.0.0.1
   port: 9003
+  # OCR接口Token, 为null时将跳过Token验证
   token: null
 
 global:

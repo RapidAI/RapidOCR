@@ -23,8 +23,8 @@ def index():
     return send_file('static/index.html')
 
 
-def json_response(data, *args):
-    return make_response(tojson(data), {"content-type": 'application/json'}, *args)
+def json_response(data, status=200):
+    return make_response(tojson(data), status, {"content-type": 'application/json'})
 
 
 @app.route('/lang')
@@ -43,7 +43,7 @@ def ocr():
     """执行文字识别"""
     if conf['server'].get('token'):
         if request.values.get('token') != conf['server']['token']:
-            return json_response({'msg': 'invalid token'}, 403)
+            return json_response({'msg': 'invalid token'}, status=403)
 
     lang = request.values.get('lang') or 'ch'
     detect = parse_bool(request.values.get('detect') or 'true')
