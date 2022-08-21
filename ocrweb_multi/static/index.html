@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <title>RapidOCR Demo</title>
+    <link rel=stylesheet type="text/css" href="/static/css/main.css">
+    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon" />
+    <style>
+        h1 {
+            text-align: center;
+            margin: 0;
+        }
+
+        div.header {
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>
+            Rapid🗲OCR Demo
+            &thinsp;
+            <a href="https://github.com/RapidAI/RapidOCR" class="verysmall">欢迎Star</a>&thinsp;
+            <a href="https://github.com/RapidAI/RapidOCR/tree/main/ocrweb#readme" class="verysmall">了解Demo</a>
+        </h1>
+    </div>
+    <div class="area">
+        <input type="file" style="display: none;" name="pic" id="target_image" />
+        <div id="input-hint" class="row">
+            <span class="btn-gen">选择图片 <span class="small">支持拖拽/粘贴/点击; 支持常见图片格式; 大小不超过3M</span></span>
+        </div>
+        <div class="row">
+            <span>选择语言:</span>
+            <span id="langs"></span>
+        </div>
+    </div>
+    <div class="area">
+        <div class="leftarea" id="detectDiv">
+            <span class="span_title">文 本 检 测 结 果</span><br /><br />
+            <div id="result_view">
+                <img src="/static/hint.svg" alt="目标图片">
+                <canvas id="overlay"></canvas>
+                <div id="wrapper" style="display: none"></div>
+            </div>
+        </div>
+        <div class="rightarea" id="recogDiv">
+            <span id="rec_res" class="span_title">文 本 识 别 结 果</span>
+            <br /><br />
+            <table id="locTable" class="table" cellspacing="0" cellpadding="5"></table>
+        </div>
+    </div>
+    <script src="/static/js/jquery-3.0.0.min.js"></script>
+    <script type="text/javascript">
+        const cvs = $('canvas')[0];
+        const ctx = cvs.getContext('2d');
+        var targetFile = null;
+        $(function () {
+            // onload
+            $.ajax({
+                url: '/lang',
+                type: 'GET',
+                success: (data) => {
+                    console.log(data);
+                    let langs = $('#langs');
+                    langs.html('');
+                    let checked = ' checked';
+                    for (let item of data.data) {
+                        langs.append(`<label class="btn-gen"><input name="lang" type="radio" value="${item.code}"${checked}>${item.name}</label>`);
+                        checked = '';
+                    }
+                    $('input[name=lang]').on('change', requestOCR);
+                }
+            })
+        })
+
+        $('#result_view > img').on('load', function (e) {
+            cvs.width = e.target.naturalWidth;
+            cvs.height = e.target.naturalHeight;
+        });
+        $('#input-hint').on('click', function (e) {
+            $('#target_image').click();
+        });
+        $('body').on('dragover', function (e) {
+            e.preventDefault();
+        });
+        $('body').on('drop', function (e) {
+            e.preventDefault();
+            let trans = e.originalEvent.dataTransfer;
+            if (trans.items) {
+                for (let i = 0; i < trans.items.length; i++) {
+                    // If dropped items aren't files, reject them
+                    if (trans.items[i].kind === 'file') {
+                        targetFile = trans.items[i].getAsFile();
+                        // console.log(`… file[${i}].name = ${targetFile.name}`);
+                        requestOCR();
+                        return;
+                    }
+                }
+            } else {
+                // Use DataTransfer interface to access the file(s)
+                for (let i = 0; i < trans.files.length; i++) {
+                    // console.log(`… file[${i}].name = ${trans.files[i].name}`);
+                    targetFile = trans.files[i];
+                    requestOCR();
+                    return;
+                }
+            }
+        });
+        $("#target_image").on('change', function () {
+            targetFile = $("#target_image")[0].files[0];
+            console.log('Use file', targetFile)
+            requestOCR();
+        });
+        function getTs(ts, keys) {
+            let t = 0;
+            for (let key of keys) {
+                t += (ts[key] || 0);
+            }
+            return t.toFixed(4);
+        }
+        function drawPolyLines(points) {
+            ctx.moveTo(points[0][0], points[0][1]);
+            for (let pt of points) {
+                ctx.lineTo(pt[0], pt[1]);
+            }
+            ctx.lineTo(points[0][0], points[0][1]);
+            ctx.stroke();
+        }
+        function requestOCR() {
+            if (!targetFile) {
+                return;
+            }
+            // 判断图像格式是否匹配
+            let imageName = targetFile.name;
+            let index = imageName.lastIndexOf('.');
+            let extName = imageName.substr(index + 1);
+            let imgArr = ['jpg', 'bmp', 'png', 'jpeg'];
+            if (!(imgArr.includes(extName.toLocaleLowerCase()))) {
+                alert("图像文件格式不支持！");
+                return;
+            }
+
+            // 判断图像大小是否符合
+            let imageSize = targetFile.size / 1024 / 1024;
+            if (imageSize >= 3) {
+                alert("图像大小超过3M!");
+                return;
+            }
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $('#result_view > img').attr('src', e.target.result);
+            };
+            reader.readAsDataURL(targetFile);
+
+            var formdata = new FormData();
+            formdata.set('image', targetFile);
+            formdata.set('lang', $('input[name=lang]:checked').val());
+
+            $.ajax({
+                url: "/ocr",
+                type: "POST",
+                data: formdata,
+                processData: false,
+                contentType: false,
+                beforeSend: function () {
+                    $("#wrapper").show();
+                    $("#locTable").hide();
+                    $("#rec_res").html("文本识别结果");
+                },
+                error: function (evt) {
+                    console.log(evt);
+                    alert('检测失败: ' + evt);
+                },
+                success: function (resp) {
+                    $("#wrapper").hide();
+                    if (resp.msg !== 'OK') {
+                        alert('检测失败: ', resp.msg);
+                        return;
+                    }
+                    let data = resp.data;
+                    $("#rec_res").html("文 本 检 测 结 果(Total:" + data.ts.total.toFixed(3) + "s)")
+                    $("#rec_res").show();
+                    let html = [];
+                    html.push('<tr>' +
+                        '<th align="right">Det: ' + getTs(data.ts, ['detect', 'post-detect']) + 's</th>' +
+                        '<th align="center">Cls: ' + getTs(data.ts, ['classify', 'post-classify']) + 's</th>' +
+                        '<th align="left">Rec: ' + getTs(data.ts, ['recognize', 'post-recognize']) + 's</th>' +
+                        "</tr>")
+                    html.push("<tr>" +
+                        '<th bgcolor="#C0C0C0">序号</th>' +
+                        '<th bgcolor="#C0C0C0">识别结果</th>' +
+                        '<th bgcolor="#C0C0C0">置信度</th>' +
+                        "</tr>")
+                    ctx.strokeStyle = '#ff0000'
+                    ctx.font = '16px sans-serif'
+                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                    for (let idx = 0; idx < data.results.length; idx++) {
+                        let result = data.results[idx];
+                        drawPolyLines(result.box);
+                        ctx.fillText(idx, result.box[0][0], result.box[0][1]);
+                        ctx.strokeText(idx, result.box[0][0], result.box[0][1]);
+                        html.push('<tr><td>');
+                        html.push(idx);
+                        html.push('</td><td>');
+                        html.push(result.text);
+                        html.push('</td><td>');
+                        html.push(result.score.toFixed(4));
+                        html.push('</td></tr>');
+                    }
+                    $("#locTable").html(html.join(''));
+                    $("#locTable").show();
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,106 @@
+debug: '1'
+
+server:
+  host: 127.0.0.1
+  port: 9003
+  token: null
+
+global:
+  use_cuda: false
+  verbose: false
+  # Details of the params: https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html
+  cuda_provider:
+    device_id: 0
+    arena_extend_strategy: kNextPowerOfTwo
+    cudnn_conv_algo_search: EXHAUSTIVE
+    do_copy_in_default_stream: true
+
+# 模型配置
+models:
+  # 位置检测模型
+  detect:
+    det_en:
+      path: models/en_PP-OCRv3_det_infer.onnx
+      config: &detectConfig
+        pre_process:
+          - class: DetResizeForTest
+            limit_side_len: 736
+            limit_type: min
+          - class: NormalizeImage
+            std: [0.229, 0.224, 0.225]
+            mean: [0.485, 0.456, 0.406]
+            # 1 / 255
+            scale: 0.00392156862745098
+            order: hwc
+          - class: ToCHWImage
+          - class: KeepKeys
+            keep_keys: ["image", "shape"]
+        post_process:
+          thresh: 0.3
+          box_thresh: 0.5
+          max_candidates: 1000
+          unclip_ratio: 1.6
+          use_dilation: true
+    det_ch:
+      path: models/ch_PP-OCRv3_det_infer.onnx
+      config: *detectConfig
+    det_ml:
+      path: models/ch_PP-OCRv3_det_infer.onnx
+      config: *detectConfig
+  # 方向检测模型
+  classify:
+    cls_ml:
+      path: models/ch_ppocr_mobile_v2.0_cls_infer.meta.onnx
+      config:
+        batch_size: 8
+        score_thresh: 0.9
+  # 文字识别模型
+  recognize:
+    rec_ch:
+      path: models/ch_PP-OCRv3_rec_infer.meta.onnx
+      config: &recognizeConfig
+        batch_size: 8
+    rec_cht:
+      path: models/chinese_cht_PP-OCRv3_rec_infer.meta.onnx
+      config: *recognizeConfig
+    rec_en:
+      path: models/en_PP-OCRv3_rec_infer.meta.onnx
+      config: *recognizeConfig
+    rec_ja:
+      path: models/japan_PP-OCRv3_rec_infer.meta.onnx
+      config: *recognizeConfig
+
+# 多语言配置
+languages:
+  ch:
+    name: 中文
+    models:
+      detect: det_ch
+      classify: cls_ml
+      recognize: rec_ch
+    config: &languageConfig
+      text_score: 0.5
+      use_angle_cls: true
+      verbose: false
+      min_height: 30
+  cht:
+    name: 繁体中文
+    models:
+      detect: det_ch
+      classify: cls_ml
+      recognize: rec_cht
+    config: *languageConfig
+  ja:
+    name: 日文
+    models:
+      detect: det_ch
+      classify: cls_ml
+      recognize: rec_ja
+    config: *languageConfig
+  en:
+    name: 英文
+    models:
+      detect: det_en
+      classify: cls_ml
+      recognize: rec_en
+    config: *languageConfig

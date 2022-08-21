@@ -1,0 +1,150 @@
+html {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    background-color: #ebedef;
+    min-height: 100%;
+    margin: 0;
+}
+
+.btn-gen {
+    background-color: #00a1d6;
+    text-align: center;
+    border-radius: 18px;
+    margin: 0 5px 0 5px;
+    font-size: 15px;
+    padding: 5px 10px;
+    height: 20px;
+    min-width: 120px;
+    text-transform: uppercase;
+    color: #fff;
+    border: none;
+}
+
+.btn-gen:hover,
+.btn-gen:focus {
+    border-color: #23AAEE;
+    background-color: #23AAEE;
+    color: white;
+    cursor: pointer;
+}
+
+.row {
+    margin: 15px;
+}
+
+.small {
+    font-size: 0.8em;
+}
+
+.verysmall {
+    font-size: 0.5em;
+}
+
+.area {
+    text-align: center;
+    height: auto;
+    margin: auto;
+}
+
+.leftarea {
+    float: left;
+    width: 50%;
+    height: auto;
+    position: relative;
+}
+
+.rightarea {
+    float: left;
+    width: 50%;
+    height: auto;
+    overflow-y: auto;
+}
+
+.table {
+    width: auto;
+    height: auto;
+    margin: 0 auto;
+
+}
+
+.span_title {
+    width: 98%;
+    height: 36px;
+    margin-top: 4px;
+    line-height: 32px;
+    background-color: #00a1d6;
+    border: 1px solid #00a1d6;
+    border-radius: 20px;
+    color: #fff;
+    display: inline-block;
+    text-align: center;
+    font-size: 22px;
+    transition: .3s;
+    box-sizing: border-box;
+    cursor: default;
+}
+
+.uplodNote {
+    font-size: 10px;
+    color: #A1A1A1;
+}
+
+a {
+    text-decoration: none;
+}
+
+#input-hint {
+    margin: auto;
+    cursor: pointer;
+
+}
+
+#result_view {
+    position: relative;
+    width: 95%;
+    margin: auto;
+}
+
+#result_view img,
+#result_view canvas {
+    width: 100%;
+    height: 100%;
+}
+
+#result_view canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+/* wrapper */
+#wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        linear-gradient(#1a98ca, #1a98ca),
+        linear-gradient(90deg, #ffffff33 1px, transparent 0, transparent 19px),
+        linear-gradient(#ffffff33 1px, transparent 0, transparent 19px),
+        linear-gradient(transparent, #1a98ca);
+    background-size: 100% 1.5%, 10% 100%, 100% 8%, 100% 100%;
+    background-repeat: no-repeat, repeat, repeat, no-repeat;
+    background-position: 0% 100%, 0 0, 0 0, 0 0;
+    /* 初始位置 */
+    clip-path: polygon(0% 0%, 100% 0%, 100% 1.5%, 0% 1.5%);
+    /* 添加动画效果 */
+    animation: move 1s infinite linear;
+}
+
+@keyframes move {
+    to {
+        background-position: 0 100%, 0 0, 0 0, 0 0;
+        /* 终止位置 */
+        clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+    }
+}
