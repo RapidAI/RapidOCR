@@ -41,7 +41,7 @@
         <div class="leftarea" id="detectDiv">
             <span class="span_title">文 本 检 测 结 果</span><br /><br />
             <div id="result_view">
-                <img src="/static/hint.svg" alt="目标图片">
+                <img src="/static/hint.svg" alt="目标图片" style="display: none">
                 <canvas id="overlay"></canvas>
                 <div id="wrapper" style="display: none"></div>
             </div>
@@ -76,25 +76,19 @@
             })
         })
 
-        $('#result_view > img').on('load', function (e) {
-            cvs.width = e.target.naturalWidth;
-            cvs.height = e.target.naturalHeight;
-        });
         $('#input-hint').on('click', function (e) {
             $('#target_image').click();
         });
         $('body').on('dragover', function (e) {
             e.preventDefault();
         });
-        $('body').on('drop', function (e) {
-            e.preventDefault();
-            let trans = e.originalEvent.dataTransfer;
+        function handleData(trans) {
             if (trans.items) {
                 for (let i = 0; i < trans.items.length; i++) {
                     // If dropped items aren't files, reject them
                     if (trans.items[i].kind === 'file') {
                         targetFile = trans.items[i].getAsFile();
-                        // console.log(`… file[${i}].name = ${targetFile.name}`);
+                        console.log(`handleData: items[${i}].name = ${targetFile.name}`);
                         requestOCR();
                         return;
                     }
@@ -102,17 +96,33 @@
             } else {
                 // Use DataTransfer interface to access the file(s)
                 for (let i = 0; i < trans.files.length; i++) {
-                    // console.log(`… file[${i}].name = ${trans.files[i].name}`);
                     targetFile = trans.files[i];
+                    console.log(`handleData: files[${i}].name = ${targetFile.name}`);
                     requestOCR();
                     return;
                 }
             }
+        }
+        $('body').on('paste', function (e) {
+            let trans = e.originalEvent.clipboardData;
+            handleData(trans);
+        })
+        $('body').on('drop', function (e) {
+            e.preventDefault();
+            let trans = e.originalEvent.dataTransfer;
+            handleData(trans);
         });
         $("#target_image").on('change', function () {
             targetFile = $("#target_image")[0].files[0];
             console.log('Use file', targetFile)
             requestOCR();
+        });
+        $('#result_view > img').on('load', function (e) {
+            let img = $('#result_view > img')[0];
+            cvs.width = e.target.naturalWidth;
+            cvs.height = e.target.naturalHeight;
+            ctx.clearRect(0, 0, cvs.width, cvs.height);
+            ctx.drawImage(img, 0, 0);
         });
         function getTs(ts, keys) {
             let t = 0;
@@ -137,7 +147,7 @@
             let imageName = targetFile.name;
             let index = imageName.lastIndexOf('.');
             let extName = imageName.substr(index + 1);
-            let imgArr = ['jpg', 'bmp', 'png', 'jpeg'];
+            let imgArr = ['webp', 'jpg', 'bmp', 'png', 'jpeg'];
             if (!(imgArr.includes(extName.toLocaleLowerCase()))) {
                 alert("图像文件格式不支持！");
                 return;
@@ -199,7 +209,6 @@
                         "</tr>")
                     ctx.strokeStyle = '#ff0000'
                     ctx.font = '16px sans-serif'
-                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
                     for (let idx = 0; idx < data.results.length; idx++) {
                         let result = data.results[idx];
                         drawPolyLines(result.box);

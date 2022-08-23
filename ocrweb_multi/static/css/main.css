@@ -108,16 +108,9 @@ a {
     margin: auto;
 }
 
-#result_view img,
 #result_view canvas {
     width: 100%;
     height: 100%;
-}
-
-#result_view canvas {
-    position: absolute;
-    left: 0;
-    top: 0;
 }
 
 /* wrapper */
