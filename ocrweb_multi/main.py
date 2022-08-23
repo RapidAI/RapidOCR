@@ -50,6 +50,8 @@ def ocr():
     classify = parse_bool(request.values.get('classify') or 'true')
 
     image_file = request.files.get('image')
+    if not image_file:
+        return json_response({'msg': 'no image'}, 400)
     nparr = np.frombuffer(image_file.stream.read(), np.uint8)
     image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     log.info('Input: image %s, lang=%s, detect=%s, classify=%s', image.shape, lang, detect, classify)
