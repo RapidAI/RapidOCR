@@ -37,6 +37,7 @@ def get_readme():
         readme = f.read()
     return readme
 
+
 module_name = 'rapidocr_onnxruntime'
 latest_version = get_latest_version(module_name)
 version_num = version_add_one(latest_version)

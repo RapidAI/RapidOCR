@@ -58,6 +58,9 @@
 1. 安装`rapidocr_onnxruntime`包
    ```shell
    pip install rapidocr-onnxruntime
+
+   # or
+   # pip install rapidocr-openvino
    ```
 
 2. 下载相关的模型和配置文件
