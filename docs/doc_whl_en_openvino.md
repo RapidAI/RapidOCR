@@ -5,7 +5,7 @@
 </p>
 
 ### 1. Install package by pypi.
-```bash
+```shell
 pip install rapidocr-openvino
 ```
 
