@@ -26,18 +26,19 @@ def version_add_one(version, add_loc=-1):
         new_version = '.'.join(version_list)
         return new_version
     else:
-        return None
+        return '0.0.0'
 
 
 def get_readme():
     root_dir = Path(__file__).resolve().parent.parent
-    readme_path = str(root_dir / 'docs' / 'doc_whl_en.md')
+    readme_path = str(root_dir / 'docs' / 'doc_whl_en_openvino.md')
     print(readme_path)
-    with open(readme_path, 'r') as f:
+    with open(readme_path, 'r', encoding='utf-8') as f:
         readme = f.read()
     return readme
 
-module_name = 'rapidocr_onnxruntime'
+
+module_name = 'rapidocr_openvino'
 latest_version = get_latest_version(module_name)
 version_num = version_add_one(latest_version)
 
@@ -52,14 +53,14 @@ setuptools.setup(
     author_email="liekkaskono@163.com",
     url="https://github.com/RapidAI/RapidOCR",
     license='Apache-2.0',
-    include_package_data=True,
-    install_requires=["pyclipper>=1.2.1", "onnxruntime",
+    install_requires=["pyclipper>=1.2.1", "openvino==2022.2.0.dev20220829",
                       "opencv_python>=4.5.1.48", "numpy>=1.19.3",
                       "six>=1.15.0", "Shapely>=1.7.1"],
+    include_package_data=True,
+    package_data={"": ["*.txt"]},
     package_dir={'': module_name},
     packages=setuptools.find_packages(where=module_name),
     keywords=[
         'ocr text_detection text_recognition db onnxruntime paddleocr openvino'
     ],
 )
-

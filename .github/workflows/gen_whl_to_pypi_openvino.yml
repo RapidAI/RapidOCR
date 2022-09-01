@@ -1,12 +1,12 @@
-name: Package whl files to push to pypi
+name: push rapidocr_onnxruntime to pypi
 
 on:
   push:
     branches: [ main ]
     paths:
-      - 'python/rapidocr_onnxruntime/**'
-      - 'docs/doc_whl_en.md'
-      - 'python/setup.py'
+      - 'python/rapidocr_openvino/**'
+      - 'docs/doc_whl_en_openvino.md'
+      - 'python/setup_openvino.py'
 
 jobs:
   build:
@@ -24,18 +24,18 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           chmod 700 ~/.ssh && chmod 600 ~/.ssh/*
 
-      - name: Run setup.py
+      - name: Run setup_openvino.py
         run: |
           cd python
-          mkdir rapidocr_onnxruntime_t
-          mv rapidocr_onnxruntime rapidocr_onnxruntime_t
-          mv rapidocr_onnxruntime_t rapidocr_onnxruntime
-          cd rapidocr_onnxruntime
-          echo "from .rapidocr_onnxruntime.rapid_ocr_api import TextSystem" > __init__.py
+          mkdir rapidocr_openvino_t
+          mv rapidocr_openvino rapidocr_openvino_t
+          mv rapidocr_openvino_t rapidocr_openvino
+          cd rapidocr_openvino
+          echo "from .rapidocr_openvino.rapid_ocr_api import TextSystem" > __init__.py
 
           cd ..
           python -m pip install --upgrade pip
-          python setup.py bdist_wheel
+          python setup_openvino.py bdist_wheel
           mv dist ../
 
       # - name: Publish distribution 📦 to Test PyPI

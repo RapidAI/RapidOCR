@@ -1,0 +1,52 @@
+name: push rapidocr_onnxruntime to pypi
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'python/rapidocr_onnxruntime/**'
+      - 'docs/doc_whl_en_onnxruntime.md'
+      - 'python/setup_onnxruntime.py'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set SSH Environment
+        env:
+          DEPLOY_KEYS: ${{ secrets.GEN_PYTHON_SDK }}
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$DEPLOY_KEYS" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          chmod 700 ~/.ssh && chmod 600 ~/.ssh/*
+
+      - name: Run setup_onnxruntime.py
+        run: |
+          cd python
+          mkdir rapidocr_onnxruntime_t
+          mv rapidocr_onnxruntime rapidocr_onnxruntime_t
+          mv rapidocr_onnxruntime_t rapidocr_onnxruntime
+          cd rapidocr_onnxruntime
+          echo "from .rapidocr_onnxruntime.rapid_ocr_api import TextSystem" > __init__.py
+
+          cd ..
+          python -m pip install --upgrade pip
+          python setup_onnxruntime.py bdist_wheel
+          mv dist ../
+
+      # - name: Publish distribution 📦 to Test PyPI
+      #   uses: pypa/gh-action-pypi-publish@v1.5.0
+      #   with:
+      #     password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+      #     repository_url: https://test.pypi.org/legacy/
+      #     packages_dir: dist/
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.5.0
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages_dir: dist/
