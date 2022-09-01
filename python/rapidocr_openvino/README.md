@@ -1,12 +1,11 @@
 ## rapidocr_openvino
 
-**🚩注意：基于目前`openvino==2022.1.0`版，在推理批量图像时，存在申请内存不释放的问题，详情可参见[issue11939](https://github.com/openvinotoolkit/openvino/issues/11939)**
+**🚩注意：基于目前`openvino==2022.2.0.dev20220829`版，在推理批量图像时，存在申请内存不释放的问题，详情可参见[issue11939](https://github.com/openvinotoolkit/openvino/issues/11939)**
 
 <details open>
 <summary>目录</summary>
 
 - [rapidocr_openvino](#rapidocr_openvino)
-    - [基于OpenVINO推理引擎](#基于openvino推理引擎)
     - [安装](#安装)
     - [模型问题](#模型问题)
     - [关于OpenVINO](#关于openvino)
@@ -14,17 +13,14 @@
     - [OpenVINO与ONNXRuntime推理代码写法对比](#openvino与onnxruntime推理代码写法对比)
 </details>
 
-#### 基于OpenVINO推理引擎
-- ~~OpenVINO推理方向分类模型有误，已经提了[issue](https://github.com/openvinotoolkit/openvino/issues/11501)~~
-- 问题已经解决，但是需要自己编译OpenVINO，参见[Answer](https://github.com/openvinotoolkit/openvino/issues/11501#issuecomment-1096366363)
 
 #### 安装
 ```bash
 # Windows端
-pip install openvino==2022.1.0
+pip install openvino==2022.2.0.dev20220829
 
 # 里面含有mo
-pip install openvino-dev==2022.1.0
+pip install openvino-dev==2022.2.0.dev20220829
 ```
 
 #### 模型问题
@@ -100,4 +96,3 @@ NOTE: 以`ch_ppocr_mobile_v2_det`中推理代码为例子
     vino_session.infer(inputs=[img])
     vino_preds = vino_session.get_output_tensor().data
     ```
-

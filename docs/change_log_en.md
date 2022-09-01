@@ -1,3 +1,7 @@
+#### 🛴2022-09-01 update:
+- Since openvino released version 2022.2.0.dev20220829, this version solves the problem of `cls` partial model inference. So far, the openvino-based rapidocr has been unified, and it is all completed by the openvino inference engine.
+- For detailed usage, see: [python/README](../python/README.md#源码使用步骤).
+
 #### 🧸2022-08-17 update:
 - The python/ocrweb part v1.1.0 is released, see the [link]((https://github.com/RapidAI/RapidOCR/releases/tag/v1.1.0)) for details.
 
