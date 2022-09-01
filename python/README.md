@@ -47,6 +47,12 @@
     from rapidocr_openvino import TextSystem
     ```
 - 关于openvino详细的使用方法，参见[openvino_readme](./rapidocr_openvino/README.md)。
+- 关于选择哪个推理引擎（onnxruntime 或者 openvino）?
+    |推理引擎|推理速度更快|占用内存更少|
+    |:---:|:---:|:---:|
+    |onnxruntime||✓|
+    |openvino|✓||
+
 
 ### pip安装快速使用
 1. 安装`rapidocr_onnxruntime`包
