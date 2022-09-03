@@ -21,9 +21,9 @@ import cv2
 import numpy as np
 
 try:
-    from .utils import ClsPostProcess, read_yaml, OrtInferSession
+    from .utils import ClsPostProcess, read_yaml, OpenVINOInferSession
 except:
-    from utils import ClsPostProcess, read_yaml, OrtInferSession
+    from utils import ClsPostProcess, read_yaml, OpenVINOInferSession
 
 
 class TextClassifier(object):
@@ -33,9 +33,8 @@ class TextClassifier(object):
         self.cls_thresh = config['cls_thresh']
         self.postprocess_op = ClsPostProcess(config['label_list'])
 
-        session_instance = OrtInferSession(config)
-        self.session = session_instance.session
-        self.input_name = session_instance.get_input_name()
+        openvino_instance = OpenVINOInferSession(config)
+        self.session = openvino_instance.session
 
     def __call__(self, img_list: List[np.ndarray]):
         if isinstance(img_list, np.ndarray):
@@ -69,8 +68,9 @@ class TextClassifier(object):
             norm_img_batch = np.concatenate(norm_img_batch).astype(np.float32)
 
             starttime = time.time()
-            onnx_inputs = {self.input_name: norm_img_batch}
-            prob_out = self.session.run(None, onnx_inputs)[0]
+            self.session.infer(inputs=[norm_img_batch])
+            prob_out = self.session.get_output_tensor().data
+
             cls_result = self.postprocess_op(prob_out)
             elapse += time.time() - starttime
 

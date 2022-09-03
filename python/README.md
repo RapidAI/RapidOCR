@@ -46,12 +46,21 @@
     # 基于openvino引擎推理
     from rapidocr_openvino import TextSystem
     ```
-- 值得说明的是，基于openvino推理部分中`ch_ppocr_v2_cls`部分仍然是基于onnxruntime的，原因是openvino有bug，详情见[openvino/issue](https://github.com/openvinotoolkit/openvino/issues/11501)
+- 关于openvino详细的使用方法，参见[openvino_readme](./rapidocr_openvino/README.md)。
+- 关于选择哪个推理引擎（onnxruntime 或者 openvino）?
+    |推理引擎|推理速度更快|占用内存更少|
+    |:---:|:---:|:---:|
+    |onnxruntime||✓|
+    |openvino|✓||
+
 
 ### pip安装快速使用
 1. 安装`rapidocr_onnxruntime`包
    ```shell
    pip install rapidocr-onnxruntime
+
+   # or
+   # pip install rapidocr-openvino
    ```
 
 2. 下载相关的模型和配置文件
@@ -154,7 +163,7 @@ print(rec_res)
    - 基于openvino推理所需环境安装：
         ```bash
         # Windows端
-        pip install openvino==2022.1.0
+        pip install openvino==2022.2.0.dev20220829
 
         pip install -r requirements.txt -i https://pypi.douban.com/simple/
         ```

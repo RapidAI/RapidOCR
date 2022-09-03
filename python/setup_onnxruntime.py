@@ -31,11 +31,12 @@ def version_add_one(version, add_loc=-1):
 
 def get_readme():
     root_dir = Path(__file__).resolve().parent.parent
-    readme_path = str(root_dir / 'docs' / 'doc_whl_en.md')
+    readme_path = str(root_dir / 'docs' / 'doc_whl_en_onnxruntime.md')
     print(readme_path)
     with open(readme_path, 'r') as f:
         readme = f.read()
     return readme
+
 
 module_name = 'rapidocr_onnxruntime'
 latest_version = get_latest_version(module_name)
@@ -62,4 +63,3 @@ setuptools.setup(
         'ocr text_detection text_recognition db onnxruntime paddleocr openvino'
     ],
 )
-

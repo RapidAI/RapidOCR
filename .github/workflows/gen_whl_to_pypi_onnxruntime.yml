@@ -1,12 +1,12 @@
-name: Package whl files to push to pypi
+name: push rapidocr_onnxruntime to pypi
 
 on:
   push:
     branches: [ main ]
     paths:
       - 'python/rapidocr_onnxruntime/**'
-      - 'docs/doc_whl_en.md'
-      - 'python/setup.py'
+      - 'docs/doc_whl_en_onnxruntime.md'
+      - 'python/setup_onnxruntime.py'
 
 jobs:
   build:
@@ -24,7 +24,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           chmod 700 ~/.ssh && chmod 600 ~/.ssh/*
 
-      - name: Run setup.py
+      - name: Run setup_onnxruntime.py
         run: |
           cd python
           mkdir rapidocr_onnxruntime_t
@@ -35,7 +35,7 @@ jobs:
 
           cd ..
           python -m pip install --upgrade pip
-          python setup.py bdist_wheel
+          python setup_onnxruntime.py bdist_wheel
           mv dist ../
 
       # - name: Publish distribution 📦 to Test PyPI

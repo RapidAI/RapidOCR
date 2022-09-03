@@ -1,0 +1,52 @@
+name: push rapidocr_openvino to pypi
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'python/rapidocr_openvino/**'
+      - 'docs/doc_whl_en_openvino.md'
+      - 'python/setup_openvino.py'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set SSH Environment
+        env:
+          DEPLOY_KEYS: ${{ secrets.GEN_PYTHON_SDK }}
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$DEPLOY_KEYS" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          chmod 700 ~/.ssh && chmod 600 ~/.ssh/*
+
+      - name: Run setup_openvino.py
+        run: |
+          cd python
+          mkdir rapidocr_openvino_t
+          mv rapidocr_openvino rapidocr_openvino_t
+          mv rapidocr_openvino_t rapidocr_openvino
+          cd rapidocr_openvino
+          echo "from .rapidocr_openvino.rapid_ocr_api import TextSystem" > __init__.py
+
+          cd ..
+          python -m pip install --upgrade pip
+          python setup_openvino.py bdist_wheel
+          mv dist ../
+
+      # - name: Publish distribution 📦 to Test PyPI
+      #   uses: pypa/gh-action-pypi-publish@v1.5.0
+      #   with:
+      #     password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+      #     repository_url: https://test.pypi.org/legacy/
+      #     packages_dir: dist/
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.5.0
+        with:
+          password: ${{ secrets.RAPIDOCR_OPENVINO }}
+          packages_dir: dist/
