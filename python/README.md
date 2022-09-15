@@ -100,6 +100,7 @@
 ```python
 import cv2
 from rapidocr_onnxruntime import TextSystem
+# from rapidocr_openvino import TextSystem
 
 text_sys = TextSystem('config.yaml')
 
