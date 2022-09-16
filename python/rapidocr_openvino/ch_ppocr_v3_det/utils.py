@@ -128,19 +128,19 @@ class DetResizeForTest(object):
             self.image_shape = kwargs['image_shape']
             self.resize_type = 1
         elif 'limit_side_len' in kwargs:
-            self.limit_side_len = kwargs['limit_side_len']
+            self.limit_side_len = kwargs.get('limit_side_len', 736)
             self.limit_type = kwargs.get('limit_type', 'min')
 
         if 'resize_long' in kwargs:
             self.resize_type = 2
             self.resize_long = kwargs.get('resize_long', 960)
         else:
-            self.limit_side_len = 736
-            self.limit_type = 'min'
+            self.limit_side_len = kwargs.get('limit_side_len', 736)
+            self.limit_type = kwargs.get('limit_type', 'min')
 
     def __call__(self, data):
         img = data['image']
-        src_h, src_w, _ = img.shape
+        src_h, src_w = img.shape[:2]
 
         if self.resize_type == 0:
             # img, shape = self.resize_image_type0(img)
@@ -172,7 +172,7 @@ class DetResizeForTest(object):
             img, (ratio_h, ratio_w)
         """
         limit_side_len = self.limit_side_len
-        h, w, _ = img.shape
+        h, w = img.shape[:2]
 
         # limit the max side
         if self.limit_type == 'max':
@@ -209,7 +209,7 @@ class DetResizeForTest(object):
         return img, [ratio_h, ratio_w]
 
     def resize_image_type2(self, img):
-        h, w, _ = img.shape
+        h, w = img.shape[:2]
 
         resize_w = w
         resize_h = h
