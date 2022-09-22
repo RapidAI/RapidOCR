@@ -1,9 +1,24 @@
 ## RapidOCR Web Demo
 
 - [RapidOCR Web Demo](#rapidocr-web-demo)
+  - [简要说明](#简要说明)
   - [以Web方式运行](#以web方式运行)
-  - [以API方式运行和调用](#以api方式运行和调用)
-  - [相关问题](#相关问题)
+  - [以API方式运行](#以api方式运行)
+
+
+### 简要说明
+- 所用模型组合（最优组合）为：
+  ```text
+  ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec
+  ```
+- **运行机器配置:** `4核 AMD EPYC 7K62 48-Core Processor`
+- 所有相关参数配置参见当前目录下的[`config.yaml`](./config.yaml)，具体参数解释参见[Link](https://github.com/RapidAI/RapidOCR/blob/main/python/README.md#configyaml%E4%B8%AD%E5%B8%B8%E7%94%A8%E5%8F%82%E6%95%B0%E4%BB%8B%E7%BB%8D)。
+- 网页上显示的推理时间具体解释如下：
+    <div align="center">
+        <img src="../assets/ocrweb_time.jpg" width="80%" height="80%">
+    </div>
+
+
 
 ### 以Web方式运行
 1. 安装`requirements.txt`下相关包
@@ -44,7 +59,7 @@
     ```
 4. 打开`http://0.0.0.0:9003/`即可， enjoy it!
 
-### 以API方式运行和调用
+### 以API方式运行
 1. 同**以Web方式运行**中步骤1
 2. 同**以Web方式运行**中步骤2
 3. 运行`api.py`
@@ -103,13 +118,3 @@
     ```
    - 如果没有检测到文字，则会输出空列表(`[]`)。
    - **!!说明：OCR的输出结果为最原始结果，大家可按需进一步扩展。**
-
-### 相关问题
-1. 各个阶段使用的模型以及配置参数有哪些？
-     - 使用模型搭配（最优组合）为：`ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec`
-     - 所有相关参数配置参见当前目录下的`config.yaml`文件
-     - 其中给出了使用模型，以及具体参数，参数具体介绍参见：[Link](https://github.com/RapidAI/RapidOCR/blob/main/python/README.md#configyaml%E4%B8%AD%E5%B8%B8%E7%94%A8%E5%8F%82%E6%95%B0%E4%BB%8B%E7%BB%8D)
-2. 网页上显示的推理时间可以具体解释一下吗？
-    <div align="center">
-        <img src="../assets/ocrweb_time.jpg" width="80%" height="80%">
-    </div>
