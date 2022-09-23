@@ -93,7 +93,7 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 | Windows x86/x64 | [![CMake-windows-x86-x64](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml) | [Download Link](https://github.com/RapidAI/RapidOCR/releases) |
 | Linux x64 | [![CMake-linux](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml) | Not available yet, compile by yourself |
 
-## [Online demo](http://rapidocr.51pda.cn:9003/)
+## [Online demo](http://www.deepdatasec.com:9003/)
 - The model combination (optimal combination) used for the demo is: `ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec`
 - Environment: `4 Core AMD EPYC 7K62 48-Core Processor `
 - **Gif Demo**:
@@ -132,7 +132,7 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 - [x] .Net example (C#): [demo](../dotnet)
 - [x] Android example: [demo](../android)
 - [x] python example: [demo](../python)
-- [ ] IOS example: waiting for someone to contribute code
+- [ ] iOS example: waiting for someone to contribute code
 - [ ] Rewrite the C++ reasoning code according to the python version to improve the reasoning effect, and add support for gif/tga/webp format pictures
 
 ## Model related
