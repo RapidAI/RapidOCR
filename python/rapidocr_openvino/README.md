@@ -17,10 +17,10 @@
 #### 安装
 ```bash
 # Windows端
-pip install openvino==2022.2.0.dev20220829
+pip install openvino==2022.2.0
 
 # 里面含有mo
-pip install openvino-dev==2022.2.0.dev20220829
+pip install openvino-dev==2022.2.0
 ```
 
 #### 模型问题
