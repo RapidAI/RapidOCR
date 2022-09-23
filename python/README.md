@@ -164,7 +164,7 @@ print(rec_res)
    - 基于openvino推理所需环境安装：
         ```bash
         # Windows端
-        pip install openvino==2022.2.0.dev20220829
+        pip install openvino==2022.2.0
 
         pip install -r requirements.txt -i https://pypi.douban.com/simple/
         ```
@@ -277,8 +277,10 @@ print(rec_res)
         python tests/benchmark/benchmark.py --yaml_path config_gpu.yaml
         ```
    3. 运行相关信息汇总：（以下仅为个人测试情况，具体情况请自行测试）
+
         - 来自[zhsunlight](https://github.com/zhsunlight)的测试，感谢
           - 设备型号：宏碁(Acer) 暗影骑士·威N50-N93游戏台式机
+          - OS: Windows
           - CPU型号：十代i5-10400F 16G 512G SSD
           - GPU型号：NVIDIA GeForce GTX 1660Super 6G
           - onnxruntime-gpu: 1.11.0
@@ -289,6 +291,7 @@ print(rec_res)
              |GPU|646.14667|2.57429|
         - 来自[SWHL](https://github.com/SWHL)的测试
           - 设备型号：Docker
+          - OS: Linux Ubuntu
           - CPU型号：-
           - GPU型号：NVIDIA V100S 16G
           - onnxruntime-gpu: 1.7.0

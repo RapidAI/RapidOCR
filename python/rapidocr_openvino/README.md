@@ -1,6 +1,6 @@
 ## rapidocr_openvino
 
-**🚩注意：基于目前`openvino==2022.2.0.dev20220829`版，在推理批量图像时，存在申请内存不释放的问题，详情可参见[issue11939](https://github.com/openvinotoolkit/openvino/issues/11939)**
+**🚩注意：基于目前`openvino==2022.2.0`版，在推理批量图像时，存在申请内存不释放的问题，详情可参见[issue11939](https://github.com/openvinotoolkit/openvino/issues/11939)**
 
 <details open>
 <summary>目录</summary>
