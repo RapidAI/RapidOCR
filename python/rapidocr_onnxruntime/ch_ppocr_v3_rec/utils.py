@@ -6,7 +6,8 @@ import warnings
 import numpy as np
 import yaml
 from onnxruntime import (get_available_providers, get_device,
-                         SessionOptions, InferenceSession)
+                         SessionOptions, InferenceSession,
+                         GraphOptimizationLevel)
 
 
 class OrtInferSession(object):
@@ -14,6 +15,7 @@ class OrtInferSession(object):
         sess_opt = SessionOptions()
         sess_opt.log_severity_level = 4
         sess_opt.enable_cpu_mem_arena = False
+        sess_opt.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
 
         cuda_ep = 'CUDAExecutionProvider'
         cpu_ep = 'CPUExecutionProvider'

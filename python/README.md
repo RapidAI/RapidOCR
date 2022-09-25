@@ -277,29 +277,16 @@ print(rec_res)
         python tests/benchmark/benchmark.py --yaml_path config_gpu.yaml
         ```
    3. 运行相关信息汇总：（以下仅为个人测试情况，具体情况请自行测试）
-
-        - 来自[zhsunlight](https://github.com/zhsunlight)的测试，感谢
-          - 设备型号：宏碁(Acer) 暗影骑士·威N50-N93游戏台式机
-          - OS: Windows
-          - CPU型号：十代i5-10400F 16G 512G SSD
-          - GPU型号：NVIDIA GeForce GTX 1660Super 6G
-          - onnxruntime-gpu: 1.11.0
-          - 耗时情况：
-             |设备|总耗时(s)|平均耗时(s/img)|
-             |:---:|:---:|:---:|
-             |CPU|296.8841|1.18282|
-             |GPU|646.14667|2.57429|
-        - 来自[SWHL](https://github.com/SWHL)的测试
-          - 设备型号：Docker
-          - OS: Linux Ubuntu
-          - CPU型号：-
-          - GPU型号：NVIDIA V100S 16G
-          - onnxruntime-gpu: 1.7.0
-          - 耗时情况：
-             |设备|总耗时(s)|平均耗时(s/img)|
-             |:---:|:---:|:---:|
-             |CPU|1079.4726|4.3001|
-             |GPU|525.8244|2.0989|
+        - 环境
+            |测试者|设备|OS|CPU|GPU|onnxruntime-gpu|
+            |:--|:--|:--|:--|:--|:--|
+            |[1][zhsunlight](https://github.com/zhsunlight)|宏碁(Acer) 暗影骑士·威N50-N93游戏台式机|Windows|十代i5-10400F 16G 512G SSD|NVIDIA GeForce GTX 1660Super 6G|1.11.0|
+            |[2][SWHL](https://github.com/SWHL)|服务器|Linux|-|NVIDIA GeForce RTX 3090|1.12.1|
+        - 耗时
+             |对应上面序号|CPU总耗时(s)|CPU平均耗时(s/img)|GPU总耗时(s)|GPU平均耗时(s/img)||
+             |:---:|:---:|:---:|:---:|:---:|:---:|
+             |[1]|296.8841|1.18282|646.14667|2.57429|
+             |[2]|149.35427|0.50504|250.81760|0.99927|
 
 ### OpenVINO GPU推理配置
 - 官方参考文档：[docs](https://docs.openvino.ai/latest/api/ie_python_api/_autosummary/openvino.runtime.Core.html?highlight=compile_model#openvino.runtime.Core.compile_model)

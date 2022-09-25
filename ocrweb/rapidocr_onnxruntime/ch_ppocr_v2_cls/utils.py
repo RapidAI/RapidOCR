@@ -15,7 +15,8 @@ import warnings
 
 import yaml
 from onnxruntime import (get_available_providers, get_device,
-                         SessionOptions, InferenceSession)
+                         SessionOptions, InferenceSession,
+                         GraphOptimizationLevel)
 
 
 class OrtInferSession(object):
@@ -23,15 +24,19 @@ class OrtInferSession(object):
         sess_opt = SessionOptions()
         sess_opt.log_severity_level = 4
         sess_opt.enable_cpu_mem_arena = False
+        sess_opt.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
 
         cuda_ep = 'CUDAExecutionProvider'
         cpu_ep = 'CPUExecutionProvider'
+        cpu_provider_options = {
+            "arena_extend_strategy": "kSameAsRequested",
+        }
 
         EP_list = []
         if config['use_cuda'] and get_device() == 'GPU' \
                 and cuda_ep in get_available_providers():
             EP_list = [(cuda_ep, config[cuda_ep])]
-        EP_list.append(cpu_ep)
+        EP_list.append((cpu_ep, cpu_provider_options))
 
         self.session = InferenceSession(config['model_path'],
                                         sess_options=sess_opt,

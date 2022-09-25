@@ -26,7 +26,8 @@ import six
 import yaml
 from shapely.geometry import Polygon
 from onnxruntime import (get_available_providers, get_device,
-                         SessionOptions, InferenceSession)
+                         SessionOptions, InferenceSession,
+                         GraphOptimizationLevel)
 
 
 class OrtInferSession(object):
@@ -34,15 +35,19 @@ class OrtInferSession(object):
         sess_opt = SessionOptions()
         sess_opt.log_severity_level = 4
         sess_opt.enable_cpu_mem_arena = False
+        sess_opt.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
 
         cuda_ep = 'CUDAExecutionProvider'
         cpu_ep = 'CPUExecutionProvider'
+        cpu_provider_options = {
+            "arena_extend_strategy": "kSameAsRequested",
+        }
 
         EP_list = []
         if config['use_cuda'] and get_device() == 'GPU' \
                 and cuda_ep in get_available_providers():
             EP_list = [(cuda_ep, config[cuda_ep])]
-        EP_list.append(cpu_ep)
+        EP_list.append((cpu_ep, cpu_provider_options))
 
         self.session = InferenceSession(config['model_path'],
                                         sess_options=sess_opt,
@@ -152,19 +157,19 @@ class DetResizeForTest(object):
             self.image_shape = kwargs['image_shape']
             self.resize_type = 1
         elif 'limit_side_len' in kwargs:
-            self.limit_side_len = kwargs['limit_side_len']
+            self.limit_side_len = kwargs.get('limit_side_len', 736)
             self.limit_type = kwargs.get('limit_type', 'min')
 
         if 'resize_long' in kwargs:
             self.resize_type = 2
             self.resize_long = kwargs.get('resize_long', 960)
         else:
-            self.limit_side_len = 736
-            self.limit_type = 'min'
+            self.limit_side_len = kwargs.get('limit_side_len', 736)
+            self.limit_type = kwargs.get('limit_type', 'min')
 
     def __call__(self, data):
         img = data['image']
-        src_h, src_w, _ = img.shape
+        src_h, src_w = img.shape[:2]
 
         if self.resize_type == 0:
             # img, shape = self.resize_image_type0(img)
@@ -196,7 +201,7 @@ class DetResizeForTest(object):
             img, (ratio_h, ratio_w)
         """
         limit_side_len = self.limit_side_len
-        h, w, _ = img.shape
+        h, w = img.shape[:2]
 
         # limit the max side
         if self.limit_type == 'max':
@@ -233,7 +238,7 @@ class DetResizeForTest(object):
         return img, [ratio_h, ratio_w]
 
     def resize_image_type2(self, img):
-        h, w, _ = img.shape
+        h, w = img.shape[:2]
 
         resize_w = w
         resize_h = h
@@ -299,12 +304,14 @@ class DBPostProcess(object):
                  box_thresh=0.7,
                  max_candidates=1000,
                  unclip_ratio=2.0,
+                 score_mode="fast",
                  use_dilation=False):
         self.thresh = thresh
         self.box_thresh = box_thresh
         self.max_candidates = max_candidates
         self.unclip_ratio = unclip_ratio
         self.min_size = 3
+        self.score_mode = score_mode
 
         if use_dilation:
             self.dilation_kernel = np.array([[1, 1], [1, 1]])
@@ -337,7 +344,10 @@ class DBPostProcess(object):
             if sside < self.min_size:
                 continue
             points = np.array(points)
-            score = self.box_score_fast(pred, points.reshape(-1, 2))
+            if self.score_mode == "fast":
+                score = self.box_score_fast(pred, points.reshape(-1, 2))
+            else:
+                score = self.box_score_slow(pred, contour)
             if self.box_thresh > score:
                 continue
 
@@ -390,15 +400,36 @@ class DBPostProcess(object):
     def box_score_fast(self, bitmap, _box):
         h, w = bitmap.shape[:2]
         box = _box.copy()
-        xmin = np.clip(np.floor(box[:, 0].min()).astype(np.int), 0, w - 1)
-        xmax = np.clip(np.ceil(box[:, 0].max()).astype(np.int), 0, w - 1)
-        ymin = np.clip(np.floor(box[:, 1].min()).astype(np.int), 0, h - 1)
-        ymax = np.clip(np.ceil(box[:, 1].max()).astype(np.int), 0, h - 1)
+        xmin = np.clip(np.floor(box[:, 0].min()).astype(np.int32), 0, w - 1)
+        xmax = np.clip(np.ceil(box[:, 0].max()).astype(np.int32), 0, w - 1)
+        ymin = np.clip(np.floor(box[:, 1].min()).astype(np.int32), 0, h - 1)
+        ymax = np.clip(np.ceil(box[:, 1].max()).astype(np.int32), 0, h - 1)
 
         mask = np.zeros((ymax - ymin + 1, xmax - xmin + 1), dtype=np.uint8)
         box[:, 0] = box[:, 0] - xmin
         box[:, 1] = box[:, 1] - ymin
         cv2.fillPoly(mask, box.reshape(1, -1, 2).astype(np.int32), 1)
+        return cv2.mean(bitmap[ymin:ymax + 1, xmin:xmax + 1], mask)[0]
+
+    def box_score_slow(self, bitmap, contour):
+        '''
+        box_score_slow: use polyon mean score as the mean score
+        '''
+        h, w = bitmap.shape[:2]
+        contour = contour.copy()
+        contour = np.reshape(contour, (-1, 2))
+
+        xmin = np.clip(np.min(contour[:, 0]), 0, w - 1)
+        xmax = np.clip(np.max(contour[:, 0]), 0, w - 1)
+        ymin = np.clip(np.min(contour[:, 1]), 0, h - 1)
+        ymax = np.clip(np.max(contour[:, 1]), 0, h - 1)
+
+        mask = np.zeros((ymax - ymin + 1, xmax - xmin + 1), dtype=np.uint8)
+
+        contour[:, 0] = contour[:, 0] - xmin
+        contour[:, 1] = contour[:, 1] - ymin
+
+        cv2.fillPoly(mask, contour.reshape(1, -1, 2).astype(np.int32), 1)
         return cv2.mean(bitmap[ymin:ymax + 1, xmin:xmax + 1], mask)[0]
 
     def __call__(self, pred, shape_list):
