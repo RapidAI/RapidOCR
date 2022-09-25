@@ -281,7 +281,7 @@ print(rec_res)
             |测试者|设备|OS|CPU|GPU|onnxruntime-gpu|
             |:--|:--|:--|:--|:--|:--|
             |[1][zhsunlight](https://github.com/zhsunlight)|宏碁(Acer) 暗影骑士·威N50-N93游戏台式机|Windows|十代i5-10400F 16G 512G SSD|NVIDIA GeForce GTX 1660Super 6G|1.11.0|
-            |[2][SWHL](https://github.com/SWHL)|服务器|Linux|-|NVIDIA GeForce RTX 3090|1.12.1|
+            |[2][SWHL](https://github.com/SWHL)|服务器|Linux|AMD R9 5950X|NVIDIA GeForce RTX 3090|1.12.1|
         - 耗时
              |对应上面序号|CPU总耗时(s)|CPU平均耗时(s/img)|GPU总耗时(s)|GPU平均耗时(s/img)||
              |:---:|:---:|:---:|:---:|:---:|:---:|
