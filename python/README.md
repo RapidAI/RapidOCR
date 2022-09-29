@@ -242,10 +242,49 @@ print(rec_res)
 
 ### onnxruntime-gpu版推理配置
 
-1. **onnxruntime-gpu**需要严格按照与cuda、cudnn版本对应来安装，具体参考[文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements)，**这一步关乎后面是否可以成功调用GPU**。
-   ```bash
-   $ pip install onnxruntime-gpu==1.xxx
-   ```
+1. **onnxruntime-gpu**需要严格按照与CUDA、cuDNN版本对应来安装，具体参考[文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements)，**这一步关乎后面是否可以成功调用GPU**。
+   - 以下是安装示例：
+        - 所用机器环境情况：
+            - `nvcc-smi`显示**CUDA Driver API**版本：11.7
+            - `nccc -V`显示**CUDA Runtime API**版本：11.6
+            - 以上两个版本的对应关系，可参考[博客](https://blog.csdn.net/weixin_39518984/article/details/111406728)
+        - 具体安装命令如下：
+            ```bash
+            $ conda install cudatoolkit=11.6.0
+            $ conda install cudnn=8.3.2.44
+            $ pip install onnxruntime-gpu==1.12.0
+            ```
+        - 验证是否可以`onnxruntime-gpu`正常调用GPU
+            1. 验证`get_device()`是否可返回GPU
+                ```python
+                import onnxruntime as ort
+
+                print(ort.get_device())
+                # GPU
+                ```
+            2. 如果第一步满足了，继续验证`onnxruntime-gpu`加载模型时是否可以调用GPU
+                ```python
+                import onnxruntime as ort
+
+                providers = [
+                    ('CUDAExecutionProvider', {
+                        'device_id': 0,
+                        'arena_extend_strategy': 'kNextPowerOfTwo',
+                        'gpu_mem_limit': 2 * 1024 * 1024 * 1024,
+                        'cudnn_conv_algo_search': 'EXHAUSTIVE',
+                        'do_copy_in_default_stream': True,
+                    }),
+                    'CPUExecutionProvider',
+                ]
+
+                # download link: https://github.com/openvinotoolkit/openvino/files/9355419/super_resolution.zip
+                model_path = 'super_resolution.onnx
+                session = ort.InferenceSession(model_path, providers=providers)
+
+                print(session.get_providers())
+                # 如果输出中含有CUDAExecutionProvider,则证明可以正常调用GPU
+                # ['CUDAExecutionProvider', 'CPUExecutionProvider']
+                ```
 2. 更改[`config.yaml`](./config.yaml)中对应部分的参数即可，详细参数介绍参见[官方文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)。
     ```yaml
     use_cuda: true
