@@ -85,7 +85,7 @@ class TextRecognizer(object):
         img_channel, img_height, img_width = self.rec_image_shape
         assert img_channel == img.shape[2]
 
-        img_width = int((img_height * max_wh_ratio))
+        img_width = int(img_height * max_wh_ratio)
 
         h, w = img.shape[:2]
         ratio = w / float(h)
