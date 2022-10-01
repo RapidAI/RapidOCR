@@ -278,7 +278,7 @@ print(rec_res)
                 ]
 
                 # download link: https://github.com/openvinotoolkit/openvino/files/9355419/super_resolution.zip
-                model_path = 'super_resolution.onnx
+                model_path = 'super_resolution.onnx'
                 session = ort.InferenceSession(model_path, providers=providers)
 
                 print(session.get_providers())
