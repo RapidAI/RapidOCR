@@ -25,9 +25,9 @@
 - [RapidOCR (捷智OCR)](#rapidocr-捷智ocr)
   - [简介](#简介)
   - [近期更新(more)](#近期更新more)
+      - [🚩2022-10-01 udpate:](#2022-10-01-udpate)
       - [🛴2022-09-01 update:](#2022-09-01-update)
       - [🧸2022-08-17 update:](#2022-08-17-update)
-      - [🕶2022-08-14 update:](#2022-08-14-update)
   - [相关项目(more)](#相关项目more)
   - [生态框架](#生态框架)
   - [常见问题  FAQ](#常见问题--faq)
@@ -60,17 +60,16 @@
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。
 
 ## 近期更新([more](./docs/change_log.md))
+#### 🚩2022-10-01 udpate:
+- 修复python部分下一些较小bugs
+- merge来自[AutumnSun1996](https://github.com/AutumnSun1996)的[OCRWeb实现的多语言部署](https://github.com/RapidAI/RapidOCR/pull/46)demo，详情参见：[ocrweb_mutli-README](./ocrweb_multi/README.md)
+
 #### 🛴2022-09-01 update:
 - 由于openvino发布了2022.2.0.dev20220829版本，该版本解决了`cls`部分模型推理的问题。至此，基于openvino的rapidocr完成了统一，全部由openvino推理引擎完成。
 - 详细使用方法参见：[python/README](./python/README.md#源码使用步骤)
 
 #### 🧸2022-08-17 update:
 - python/ocrweb部分 v1.1.0发布，详情参见[v1.1.0](https://github.com/RapidAI/RapidOCR/releases/tag/v1.1.0)
-
-#### 🕶2022-08-14 update:
-- ocrweb部分增加以API方式部署调用的功能，可以通过发送POST请求，来获得OCR识别结果。
-- 详情参见：[API方式调用](./ocrweb/README.md#以api方式运行和调用)
-
 
 ## 相关项目([more](./docs/related_projects.md))
 - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR)：基于RapidOCR，提取视频中的硬字幕

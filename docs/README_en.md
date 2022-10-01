@@ -25,9 +25,9 @@
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
   - [Recently updates(more)](#recently-updatesmore)
+      - [🚩2022-10-01 udpate:](#2022-10-01-udpate)
       - [🛴2022-09-01 update:](#2022-09-01-update)
       - [🧸2022-08-17 update:](#2022-08-17-update)
-      - [🕶2022-08-14 update:](#2022-08-14-update)
   - [Overall Framework](#overall-framework)
   - [FAQ](#faq)
   - [SDK compilation status](#sdk-compilation-status)
@@ -62,17 +62,16 @@
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
 ## Recently updates([more](./change_log_en.md))
+#### 🚩2022-10-01 udpate:
+- Fix some minor bugs under python section.
+- Merge the [OCRWeb Implementation of Multilingual Deployment](https://github.com/RapidAI/RapidOCR/pull/46) demo from [AutumnSun1996](https://github.com/AutumnSun1996), see for details: [ocrweb_mutli-README](./ocrweb_multi/README.md)
+
 #### 🛴2022-09-01 update:
 - Since openvino released version 2022.2.0.dev20220829, this version solves the problem of `cls` partial model inference. So far, the openvino-based rapidocr has been unified, and it is all completed by the openvino inference engine.
 - For detailed usage, see: [python/README](../python/README.md#源码使用步骤).
 
 #### 🧸2022-08-17 update:
 - The python/ocrweb part v1.1.0 is released, see the [link]((https://github.com/RapidAI/RapidOCR/releases/tag/v1.1.0)) for details.
-
-#### 🕶2022-08-14 update:
-- The ocrweb part adds the function of deploying calls by API, and you can send POST requests to get OCR recognition results.
-- For details, see: [API deploy](../ocrweb/README.md#以api方式运行和调用)
-
 
 ## Overall Framework
 ```mermaid
