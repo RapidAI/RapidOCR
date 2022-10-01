@@ -1,13 +1,12 @@
 server:
   host: 127.0.0.1
-  port: 9003
+  port: 8001
   # OCR接口Token, 为null时将跳过Token验证
   token: null
 
 global:
   use_cuda: false
   verbose: false
-  # Details of the params: https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html
   cuda_provider:
     device_id: 0
     arena_extend_strategy: kNextPowerOfTwo

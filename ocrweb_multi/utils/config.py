@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 import sys
 from pathlib import Path
 import yaml
@@ -23,4 +24,4 @@ def get_resource_path(name: str):
     raise FileNotFoundError(name)
 
 
-conf = yaml.safe_load(get_resource_path('config.yaml').read_text())
+conf = yaml.safe_load(get_resource_path('config.yaml').read_text(encoding='utf-8'))
