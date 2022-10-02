@@ -65,6 +65,7 @@
 #### 🚩2022-10-01 udpate:
 - Fix some minor bugs under python section.
 - Merge the [OCRWeb Implementation of Multilingual Deployment](https://github.com/RapidAI/RapidOCR/pull/46) demo from [AutumnSun1996](https://github.com/AutumnSun1996), see for details: [ocrweb_mutli-README](./ocrweb_multi/README.md)
+- Add a description of the problem that onnxruntime-gpu inference speed is slower than CPU. For details, please refer to: [onnxruntime-gpu version related instructions](../python/README.md#onnxruntime-gpu版相关说明)
 
 #### 🛴2022-09-01 update:
 - Since openvino released version 2022.2.0.dev20220829, this version solves the problem of `cls` partial model inference. So far, the openvino-based rapidocr has been unified, and it is all completed by the openvino inference engine.

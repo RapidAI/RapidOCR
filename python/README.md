@@ -12,6 +12,7 @@
   - [pip安装快速使用](#pip安装快速使用)
   - [源码使用步骤](#源码使用步骤)
   - [`config.yaml`中常用参数介绍](#configyaml中常用参数介绍)
+  - [onnxruntime-gpu版相关说明](#onnxruntime-gpu版相关说明)
   - [onnxruntime-gpu版推理配置](#onnxruntime-gpu版推理配置)
   - [OpenVINO GPU推理配置](#openvino-gpu推理配置)
 </details>
@@ -240,8 +241,11 @@ print(rec_res)
     |`rec_img_shape`| - |`[3, 48, 320]`| 输入文本识别模型的图像Shape（CHW） |
     |`rec_batch_num`| - | 6 | 批次推理的batch大小，一般采用默认值即可，太大并没有明显提速，效果还可能会差 |
 
-### onnxruntime-gpu版推理配置
+### onnxruntime-gpu版相关说明
+- 目前已知在onnxruntime-gpu上测试过的小伙伴，反映都是GPU推理速度比在CPU上慢很多。经过探索，初步确定原因为onnxruntime在推理动态图输入时，速度就会慢很多。关于该问题，已经提了相关issue,具体可参见[onnxruntime issue#13198](https://github.com/microsoft/onnxruntime/issues/13198)
+- 为了便于比较onnxruntime上推理的基准比较，简单整理了一个[AI Studio: TestOrtInfer](https://aistudio.baidu.com/aistudio/projectdetail/4634684?contributionType=1&sUid=57084&shared=1&ts=1664700017761)项目，小伙伴想要测试的，可以直接Fork来运行查看。
 
+### onnxruntime-gpu版推理配置
 1. **onnxruntime-gpu**需要严格按照与CUDA、cuDNN版本对应来安装，具体参考[文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements)，**这一步关乎后面是否可以成功调用GPU**。
    - 以下是安装示例：
         - 所用机器环境情况：

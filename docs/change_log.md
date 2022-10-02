@@ -1,6 +1,7 @@
 #### 🚩2022-10-01 udpate:
 - 修复python部分下一些较小bugs
 - merge来自[AutumnSun1996](https://github.com/AutumnSun1996)的[OCRWeb实现的多语言部署](https://github.com/RapidAI/RapidOCR/pull/46)demo，详情参见：[ocrweb_mutli-README](../ocrweb_multi/README.md)
+- 添加onnxruntime-gpu推理速度较慢于CPU的问题说明，详情参见：[onnxruntime-gpu版相关说明](../python/README.md#onnxruntime-gpu版相关说明)
 
 #### 🛴2022-09-01 update:
 - 由于openvino发布了2022.2.0.dev20220829版本，该版本解决了`cls`部分模型推理的问题。至此，基于openvino的rapidocr完成了统一，全部由openvino推理引擎完成。
