@@ -1,5 +1,7 @@
 body{
     background-color:#ebedef;
+    min-height: 100%;
+    margin: 0;
 }
 .btn-gen {
     /* position: absolute;top:540px; left: 500px; */

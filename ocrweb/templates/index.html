@@ -13,7 +13,7 @@
         <a href="https://github.com/RapidAI/RapidOCR/tree/main/ocrweb#readme" style="font-size:14px">了解Demo</a>
     </h1>
     <div class='area'>
-        <span class="btn-gen" onclick="javascript:$('#rapid_ocr').click();">试试你的图片?</span>
+        <span class="btn-gen" onclick="javascript:$('#rapid_ocr').click();">试试你的图片?（可拖拽、粘贴、点击）</span>
         <input type="file" style="display: none;" name="pic" id="rapid_ocr"/>
         <span class="uplodNote">支持PNG、JPG、JPEG、BMP，图片大小不超过3M。</span>
     </div>
@@ -34,16 +34,70 @@
     <script src="{{url_for('static', filename='js/jquery-3.0.0.min.js')}}"></script>
     <script type="text/javascript">
         // 页面加载时，执行
+        var targetFile = null;
         window.onload = function () {
             $('#detect_img').attr("width", "");
             $('#detect_img').attr("height", "");
         }
 
-        $("#rapid_ocr").change(function(){
-            let file = document.getElementById("rapid_ocr").files[0];
+        $("#rapid_ocr").on('change', function (){
+            targetFile = document.getElementById("rapid_ocr").files[0];
+            requestOCR();
+        });
+
+        $("html").on("dragover", function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            $(this).addClass('dragging');
+        });
+
+        $("html").on("dragleave", function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            $(this).removeClass('dragging');
+        });
+
+        $("html").on("drop", function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            let trans = event.originalEvent.dataTransfer;
+            handleData(trans);
+        });
+
+        $('html').on('paste', function (e) {
+            let trans = e.originalEvent.clipboardData;
+            handleData(trans);
+        });
+
+        function handleData(trans) {
+            if (trans.items) {
+                for (let i = 0; i < trans.items.length; i++) {
+                    // If dropped items aren't files, reject them
+                    if (trans.items[i].kind === 'file') {
+                        targetFile = trans.items[i].getAsFile();
+                        console.log(`handleData: items[${i}].name = ${targetFile.name}`);
+                        requestOCR();
+                        return;
+                    }
+                }
+            } else {
+                // Use DataTransfer interface to access the file(s)
+                for (let i = 0; i < trans.files.length; i++) {
+                    targetFile = trans.files[i];
+                    console.log(`handleData: files[${i}].name = ${targetFile.name}`);
+                    requestOCR();
+                    return;
+                }
+            }
+        }
+
+        function requestOCR(){
+            if (!targetFile){
+                return;
+            }
 
             // 判断图像格式是否匹配
-            let imageName = file.name;
+            let imageName = targetFile.name;
             let index = imageName.lastIndexOf('.');
             let extName = imageName.substr(index + 1);
             let imgArr = ['jpg', 'bmp', 'png', 'jpeg'];
@@ -53,7 +107,7 @@
             }
 
             // 判断图像大小是否符合
-            let imageSize = file.size / 1024 / 1024;
+            let imageSize = targetFile.size / 1024 / 1024;
             if (imageSize >= 3) {
                 alert("图像大小超过3M！");
                 return;
@@ -137,8 +191,8 @@
                 }
             );
             }
-            reader.readAsDataURL(this.files[0])
-        });
+            reader.readAsDataURL(targetFile)
+        }
     </script>
 </body>
 </html>
