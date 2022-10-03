@@ -79,10 +79,16 @@
 ## 生态框架
 ```mermaid
 flowchart LR
-    A[/OurSelf Dataset/] --> B(PaddleOCR)
-    B --train --> C(Text Det) & D(Text Cls) & E(Text Rec) --Convert--> F(ONNX)
+    subgraph Step
+    direction TB
+    C(Text Det) --> D(Text Cls) --> E(Text Rec)
+    end
+
+    A[/OurSelf Dataset/] --> B(PaddleOCR) --Train--> Step --Convert--> F(ONNX)
     F --> G{RapidOCR Deploy\n<b>Python/C++/Java/C#</b>}
     G --> H(Windows x86/x64) & I(Linux) & J(Android) & K(Web) & L(Raspberry Pi)
+
+    click B "https://github.com/PaddlePaddle/PaddleOCR" _blank
 ```
 
 ## 常见问题  [FAQ](./docs/FAQ.md)
