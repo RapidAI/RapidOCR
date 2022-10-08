@@ -72,9 +72,12 @@
 #### 🧸2022-08-17 update:
 - python/ocrweb部分 v1.1.0发布，详情参见[v1.1.0](https://github.com/RapidAI/RapidOCR/releases/tag/v1.1.0)
 
-## 相关项目([more](./docs/related_projects.md))
+## 垂直相关项目([more](./docs/related_projects.md))
 - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR)：基于RapidOCR，提取视频中的硬字幕
 - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): 表格结构还原 | [博客解读论文和源码](https://blog.csdn.net/shiwanghualuo/article/details/125047732)
+
+## 衍生项目
+- [RapidOCR HTTP服务/win32程序/易语言编写](https://github.com/Physton/RapidOCRServer)
 
 ## 生态框架
 ```mermaid

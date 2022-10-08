@@ -74,6 +74,13 @@
 #### 🧸2022-08-17 update:
 - The python/ocrweb part v1.1.0 is released, see the [link]((https://github.com/RapidAI/RapidOCR/releases/tag/v1.1.0)) for details.
 
+## Related projects ([more](../docs/related_projects.md))
+- [RapidVideOCR](https://github.com/SWHL/RapidVideOCR): Extract hard subtitles in videos based on RapidOCR
+- [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): table structure restoration | [blog interpretation papers and source code](https://blog.csdn.net/shiwanghualuo/article/details/125047732)
+
+## Derivatives
+- [RapidOCR HTTP service/win32 program/easy language writing](https://github.com/Physton/RapidOCRServer)
+
 ## Overall Framework
 ```mermaid
 flowchart LR
