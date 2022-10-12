@@ -26,6 +26,7 @@
 ### Demo下载(Win、mac、linux)
 
 - 编译好的demo文件比较大，可以到Q群(887298230)共享内下载
+- [Google Drive](https://drive.google.com/drive/folders/1ik0vfWjfTfhsx4k2jjZxyb5JWx3d4dvR?usp=sharing) 下载
 
 ### 模型下载
 - 下载链接： ([百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing))
