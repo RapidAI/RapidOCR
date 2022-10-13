@@ -6,17 +6,12 @@ from wsgiref.simple_server import make_server
 
 import cv2
 import numpy as np
-from flask import Flask, render_template, request
+from flask import Flask, request
 
 from task import detect_recognize
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024
-
-
-@app.route('/')
-def index():
-    return render_template('index.html')
 
 
 @app.route('/ocr', methods=['POST'])
