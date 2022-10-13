@@ -20,7 +20,7 @@ def ocr():
         url_get = request.get_json()
         img_str = url_get.get('file')
 
-        image = base64.b64decode(img_str)
+        image = base64.b64decode(img_str + '=' * (-len(img_str) % 4))
         nparr = np.frombuffer(image, np.uint8)
         image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         if image.ndim == 2:
