@@ -1,4 +1,7 @@
 #### SDK包中的目录说明
+
+### 以下内容停止更新，为方便单独管理，把C++项目代码移到[RapidOcrOnnx](https://github.com/RapidAI/RapidOcrOnnx)
+
 ```text
 x86  32位二进制制文件
 libx86  32位链接库文件

@@ -1,5 +1,7 @@
 ## RapidOCR C++ version
 
+### 以下内容停止更新，为方便单独管理，把C++项目代码移到[RapidOcrOnnx](https://github.com/RapidAI/RapidOcrOnnx)
+
 - [RapidOCR C++ version](#rapidocr-c-version)
   - [Project下载](#project下载)
   - [Demo下载(Win、mac、linux)](#demo下载winmaclinux)
