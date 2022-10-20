@@ -35,7 +35,7 @@ namespace OcrLiteLib
                 op.GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_EXTENDED;
                 op.InterOpNumThreads = numThread;
                 op.IntraOpNumThreads = numThread;
-                angleNet = new InferenceSession(path);
+                angleNet = new InferenceSession(path, op);
                 inputNames = angleNet.InputMetadata.Keys.ToList();
             }
             catch (Exception ex)

@@ -219,7 +219,7 @@
             this.detNameTextBox.Name = "detNameTextBox";
             this.detNameTextBox.Size = new System.Drawing.Size(489, 21);
             this.detNameTextBox.TabIndex = 12;
-            this.detNameTextBox.Text = "ch_ppocr_server_v2.0_det_infer.onnx";
+            this.detNameTextBox.Text = "ch_PP-OCRv3_det_infer.onnx";
             // 
             // label10
             // 
@@ -253,7 +253,7 @@
             this.recNameTextBox.Name = "recNameTextBox";
             this.recNameTextBox.Size = new System.Drawing.Size(489, 21);
             this.recNameTextBox.TabIndex = 16;
-            this.recNameTextBox.Text = "ch_ppocr_server_v2.0_rec_infer.onnx";
+            this.recNameTextBox.Text = "ch_PP-OCRv3_rec_infer.onnx";
             // 
             // label12
             // 
@@ -341,7 +341,7 @@
             this.unClipRatioNumeric.Size = new System.Drawing.Size(74, 21);
             this.unClipRatioNumeric.TabIndex = 22;
             this.unClipRatioNumeric.Value = new decimal(new int[] {
-            15,
+            16,
             0,
             0,
             65536});
@@ -414,6 +414,11 @@
             this.paddingNumeric.Name = "paddingNumeric";
             this.paddingNumeric.Size = new System.Drawing.Size(74, 21);
             this.paddingNumeric.TabIndex = 7;
+            this.paddingNumeric.Value = new decimal(new int[] {
+            50,
+            0,
+            0,
+            0});
             // 
             // label2
             // 
@@ -447,7 +452,7 @@
             this.boxScoreThreshNumeric.Size = new System.Drawing.Size(74, 21);
             this.boxScoreThreshNumeric.TabIndex = 13;
             this.boxScoreThreshNumeric.Value = new decimal(new int[] {
-            7,
+            5,
             0,
             0,
             65536});
@@ -498,7 +503,7 @@
             this.tableLayoutPanel1.CellBorderStyle = System.Windows.Forms.TableLayoutPanelCellBorderStyle.Outset;
             this.tableLayoutPanel1.ColumnCount = 2;
             this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 80F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 94F));
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 96F));
             this.tableLayoutPanel1.Controls.Add(this.boxScoreThreshNumeric, 1, 2);
             this.tableLayoutPanel1.Controls.Add(this.label4, 0, 2);
             this.tableLayoutPanel1.Controls.Add(this.imgResizeNumeric, 1, 1);
@@ -594,7 +599,7 @@
             this.Controls.Add(this.initBtn);
             this.Controls.Add(this.ocrResultTextBox);
             this.Name = "FormOcr";
-            this.Text = "BaiPiaoOcrOnnxCs v1.0.0";
+            this.Text = "RapidOcrOnnxCs v1.2.0";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.tableLayoutPanel2.ResumeLayout(false);
             this.tableLayoutPanel2.PerformLayout();

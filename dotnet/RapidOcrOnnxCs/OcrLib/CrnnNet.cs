@@ -14,7 +14,7 @@ namespace OcrLiteLib
     {
         private readonly float[] MeanValues = { 127.5F, 127.5F, 127.5F };
         private readonly float[] NormValues = { 1.0F / 127.5F, 1.0F / 127.5F, 1.0F / 127.5F };
-        private const int crnnDstHeight = 32;
+        private const int crnnDstHeight = 48;
         private const int crnnCols = 6625;
 
         private InferenceSession crnnNet;
