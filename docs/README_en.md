@@ -10,6 +10,7 @@
 <p align="left">
     <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="../assets/colab-badge.svg" alt="Open in Colab"></a>
     <a href="https://aistudio.baidu.com/aistudio/projectdetail/4444785?sUid=57084&shared=1&ts=1660896122332"><img src="https://img.shields.io/badge/PP-Open in AI Studio-blue.svg"></a>
+    <a href="https://huggingface.co/spaces/SWHL/RapidOCRDemo"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Open%20in%20Space-blue"></a><br/>
     <a href="./LICENSE"><img src="https://img.shields.io/badge/License-Apache%202-dfd.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/Python-3.6+-aff.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
@@ -28,6 +29,8 @@
       - [🚩2022-10-01 udpate:](#2022-10-01-udpate)
       - [🛴2022-09-01 update:](#2022-09-01-update)
       - [🧸2022-08-17 update:](#2022-08-17-update)
+  - [Related projects (more)](#related-projects-more)
+  - [Derivatives](#derivatives)
   - [Overall Framework](#overall-framework)
   - [FAQ](#faq)
   - [SDK compilation status](#sdk-compilation-status)
