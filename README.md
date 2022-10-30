@@ -106,7 +106,7 @@ flowchart LR
 | Windows x86/x64 |  [![CMake-windows-x86-x64](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml)        |  [下载链接](https://github.com/RapidAI/RapidOCR/releases) |
 | Linux x64       |  [![CMake-linux](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml) |  暂不提供，自行编译 |
 
-## [在线demo](http://www.deepdatasec.com:9003/)
+## [在线demo](http://rapidai.deepdatasec.com:9003/)
 - 如果demo挂了，可以访问Hugging Face上的demo: [RapidOCRDemo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
 - **说明**: 本在线demo不存储小伙伴们上传测试的任何图像数据，详情参见：[ocrweb/README](./ocrweb/README.md)
 - **demo所用模型组合（最优组合）为**:

@@ -109,7 +109,7 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 | Windows x86/x64 | [![CMake-windows-x86-x64](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml) | [Download Link](https://github.com/RapidAI/RapidOCR/releases) |
 | Linux x64 | [![CMake-linux](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml) | Not available yet, compile by yourself |
 
-## [Online demo](http://www.deepdatasec.com:9003/)
+## [Online demo](http://rapidai.deepdatasec.com:9003/)
 - If the demo fails, you can visit the demo on Hugging Face: [RapidOCRDemo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
 - **Note**: This online demo does not store any image data uploaded and tested by friends. For details, please refer to: [ocrweb/README](../ocrweb/README.md)
 - The model combination (optimal combination) used for the demo is: `ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec`
