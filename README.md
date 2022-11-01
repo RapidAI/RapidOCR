@@ -8,9 +8,10 @@
 简体中文 | [English](./docs/README_en.md)
 
 <p align="left">
+    <a href="http://rapidai.deepdatasec.com:9003/"><img src="https://img.shields.io/badge/%F0%9F%97%B2-Online%20Demo-blue"></a>
+    <a href="https://huggingface.co/spaces/SWHL/RapidOCRDemo"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Hugging Face Demo-blue"></a>
     <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="./assets/colab-badge.svg" alt="Open in Colab"></a>
-    <a href="https://aistudio.baidu.com/aistudio/projectdetail/4444785?sUid=57084&shared=1&ts=1660896122332"><img src="https://img.shields.io/badge/PP-Open in AI Studio-blue.svg"></a>
-    <a href="https://huggingface.co/spaces/SWHL/RapidOCRDemo"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Open%20in%20Spaces-blue"></a><br/>
+    <a href="https://aistudio.baidu.com/aistudio/projectdetail/4444785?sUid=57084&shared=1&ts=1660896122332"><img src="https://img.shields.io/badge/PP-Open in AI Studio-blue.svg"></a><br/>
     <a href=""><img src="https://img.shields.io/badge/Python-3.6+-aff.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
     <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors"><img src="https://img.shields.io/github/contributors/RapidAI/RapidOCR?color=9ea"></a>
@@ -62,6 +63,9 @@
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。
 
 ## 近期更新([more](./docs/change_log.md))
+#### 🎃2022-11-01 update:
+- 添加Hugging Face Demo, 增加可以调节超参数的功能，详情可访问[Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
+
 #### 🚩2022-10-01 udpate:
 - 修复python部分下一些较小bugs
 - merge来自[AutumnSun1996](https://github.com/AutumnSun1996)的[OCRWeb实现的多语言部署](https://github.com/RapidAI/RapidOCR/pull/46)demo，详情参见：[ocrweb_mutli-README](./ocrweb_multi/README.md)
@@ -71,8 +75,6 @@
 - 由于openvino发布了2022.2.0.dev20220829版本，该版本解决了`cls`部分模型推理的问题。至此，基于openvino的rapidocr完成了统一，全部由openvino推理引擎完成。
 - 详细使用方法参见：[python/README](./python/README.md#源码使用步骤)
 
-#### 🧸2022-08-17 update:
-- python/ocrweb部分 v1.1.0发布，详情参见[v1.1.0](https://github.com/RapidAI/RapidOCR/releases/tag/v1.1.0)
 
 ## 垂直相关项目([more](./docs/related_projects.md))
 - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR)：基于RapidOCR，提取视频中的硬字幕
@@ -106,18 +108,23 @@ flowchart LR
 | Windows x86/x64 |  [![CMake-windows-x86-x64](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml)        |  [下载链接](https://github.com/RapidAI/RapidOCR/releases) |
 | Linux x64       |  [![CMake-linux](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml) |  暂不提供，自行编译 |
 
-## [在线demo](http://rapidai.deepdatasec.com:9003/)
-- 如果demo挂了，可以访问Hugging Face上的demo: [RapidOCRDemo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
-- **说明**: 本在线demo不存储小伙伴们上传测试的任何图像数据，详情参见：[ocrweb/README](./ocrweb/README.md)
-- **demo所用模型组合（最优组合）为**:
-  ```text
-  ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec
-  ```
-- **运行机器配置**: `4核 AMD EPYC 7K62 48-Core Processor `
-- **示例图**:
-    <div align="center">
-        <img src="./assets/demo.gif" width="100%" height="100%">
-    </div>
+## 在线demo
+- [自建在线demo](http://rapidai.deepdatasec.com:9003/)
+    - **说明**: 本在线demo不存储小伙伴们上传测试的任何图像数据，详情参见：[ocrweb/README](./ocrweb/README.md)
+    - **demo所用模型组合（最优组合）为**:
+    ```text
+    ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec
+    ```
+    - **运行机器配置**: `4核 AMD EPYC 7K62 48-Core Processor `
+    - **示例图**:
+        <div align="center">
+            <img src="./assets/demo.gif" width="100%" height="100%">
+        </div>
+- [Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
+   <div align="center">
+       <img src="./assets/huggingfacedemo.jpg" width="100%" height="100%">
+   </div>
+
 
 ## 项目结构
 <details>

@@ -1,3 +1,6 @@
+#### 🎃2022-11-01 update:
+- Add Hugging Face Demo, add module that can adjust hyperameters, for details, please visit [Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo).
+
 #### 🚩2022-10-01 udpate:
 - Fix some minor bugs under python section.
 - Merge the [OCRWeb Implementation of Multilingual Deployment](https://github.com/RapidAI/RapidOCR/pull/46) demo from [AutumnSun1996](https://github.com/AutumnSun1996), see for details: [ocrweb_mutli-README](../ocrweb_multi/README.md)

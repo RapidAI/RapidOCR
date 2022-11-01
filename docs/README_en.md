@@ -8,10 +8,10 @@
 [简体中文](../README.md) | English
 
 <p align="left">
-    <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="../assets/colab-badge.svg" alt="Open in Colab"></a>
-    <a href="https://aistudio.baidu.com/aistudio/projectdetail/4444785?sUid=57084&shared=1&ts=1660896122332"><img src="https://img.shields.io/badge/PP-Open in AI Studio-blue.svg"></a>
-    <a href="https://huggingface.co/spaces/SWHL/RapidOCRDemo"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Open%20in%20Spaces-blue"></a><br/>
-    <a href="./LICENSE"><img src="https://img.shields.io/badge/License-Apache%202-dfd.svg"></a>
+    <a href="http://rapidai.deepdatasec.com:9003/"><img src="https://img.shields.io/badge/%F0%9F%97%B2-Online%20Demo-blue"></a>
+    <a href="https://huggingface.co/spaces/SWHL/RapidOCRDemo"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Hugging Face Demo-blue"></a>
+    <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="./assets/colab-badge.svg" alt="Open in Colab"></a>
+    <a href="https://aistudio.baidu.com/aistudio/projectdetail/4444785?sUid=57084&shared=1&ts=1660896122332"><img src="https://img.shields.io/badge/PP-Open in AI Studio-blue.svg"></a><br/>
     <a href=""><img src="https://img.shields.io/badge/Python-3.6+-aff.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
     <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors"><img src="https://img.shields.io/github/contributors/RapidAI/RapidOCR?color=9ea"></a>
@@ -65,6 +65,9 @@
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
 ## Recently updates([more](./change_log_en.md))
+#### 🎃2022-11-01 update:
+- Add Hugging Face Demo, add module that can adjust hyperameters, for details, please visit [Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo).
+
 #### 🚩2022-10-01 udpate:
 - Fix some minor bugs under python section.
 - Merge the [OCRWeb Implementation of Multilingual Deployment](https://github.com/RapidAI/RapidOCR/pull/46) demo from [AutumnSun1996](https://github.com/AutumnSun1996), see for details: [ocrweb_mutli-README](./ocrweb_multi/README.md)
@@ -74,8 +77,6 @@
 - Since openvino released version 2022.2.0.dev20220829, this version solves the problem of `cls` partial model inference. So far, the openvino-based rapidocr has been unified, and it is all completed by the openvino inference engine.
 - For detailed usage, see: [python/README](../python/README.md#源码使用步骤).
 
-#### 🧸2022-08-17 update:
-- The python/ocrweb part v1.1.0 is released, see the [link]((https://github.com/RapidAI/RapidOCR/releases/tag/v1.1.0)) for details.
 
 ## Related projects ([more](../docs/related_projects.md))
 - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR): Extract hard subtitles in videos based on RapidOCR
@@ -109,15 +110,20 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 | Windows x86/x64 | [![CMake-windows-x86-x64](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml) | [Download Link](https://github.com/RapidAI/RapidOCR/releases) |
 | Linux x64 | [![CMake-linux](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml) | Not available yet, compile by yourself |
 
-## [Online demo](http://rapidai.deepdatasec.com:9003/)
-- If the demo fails, you can visit the demo on Hugging Face: [RapidOCRDemo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
-- **Note**: This online demo does not store any image data uploaded and tested by friends. For details, please refer to: [ocrweb/README](../ocrweb/README.md)
-- The model combination (optimal combination) used for the demo is: `ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec`
-- Environment: `4 Core AMD EPYC 7K62 48-Core Processor `
-- **Gif Demo**:
-    <div align="center">
-        <img src="../assets/demo.gif" width="100%" height="100%">
-    </div>
+## Demo
+- [Online demo](http://rapidai.deepdatasec.com:9003/)
+    - If the demo fails, you can visit the demo on Hugging Face: [RapidOCRDemo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
+    - **Note**: This online demo does not store any image data uploaded and tested by friends. For details, please refer to: [ocrweb/README](../ocrweb/README.md)
+    - The model combination (optimal combination) used for the demo is: `ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec`
+    - Environment: `4 Core AMD EPYC 7K62 48-Core Processor `
+    - **Gif Demo**:
+        <div align="center">
+            <img src="../assets/demo.gif" width="100%" height="100%">
+        </div>
+- [Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
+   <div align="center">
+       <img src="../assets/huggingfacedemo.jpg" width="100%" height="100%">
+   </div>
 
 ## Directory structure
 <details>
