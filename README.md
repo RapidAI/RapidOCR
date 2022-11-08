@@ -27,9 +27,9 @@
 - [RapidOCR (捷智OCR)](#rapidocr-捷智ocr)
   - [简介](#简介)
   - [近期更新(more)](#近期更新more)
+      - [🎃2022-11-01 update:](#2022-11-01-update)
       - [🚩2022-10-01 udpate:](#2022-10-01-udpate)
       - [🛴2022-09-01 update:](#2022-09-01-update)
-      - [🧸2022-08-17 update:](#2022-08-17-update)
   - [垂直相关项目(more)](#垂直相关项目more)
   - [衍生项目](#衍生项目)
   - [生态框架](#生态框架)
@@ -121,9 +121,14 @@ flowchart LR
             <img src="./assets/demo.gif" width="100%" height="100%">
         </div>
 - [Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
-   <div align="center">
-       <img src="./assets/huggingfacedemo.jpg" width="100%" height="100%">
-   </div>
+  - 该demo依托于Hugging Face的Spaces构建，采用Gradio库生成，同时添加三个超参数:
+    - `box_thresh`: 检测到的框是文本的概率，值越大，框中是文本的概率就越大
+    - `unclip_ratio`: 控制检测到文本框的大小，值越大，检测框整体越大
+    - `text_score`: 文本识别结果是正确的置信度，值越大，显示出的识别结果更准确
+  - 示例图：
+    <div align="center">
+        <img src="./assets/huggingfacedemo.jpg" width="100%" height="100%">
+    </div>
 
 
 ## 项目结构
