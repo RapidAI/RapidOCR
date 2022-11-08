@@ -2,6 +2,7 @@
 
 - [RapidOCR Web Demo](#rapidocr-web-demo)
   - [简要说明](#简要说明)
+  - [config.yaml全局参数说明](#configyaml全局参数说明)
   - [以Web方式运行](#以web方式运行)
   - [以API方式运行](#以api方式运行)
 
@@ -18,6 +19,16 @@
         <img src="../assets/ocrweb_time.jpg" width="80%" height="80%">
     </div>
 
+### config.yaml全局参数说明
+```text
+Global:
+    text_score: 0.5
+    use_angle_cls: true  # 是否使用文本框分类模型，默认为True
+    use_text_det: true   # 是否使用文本检测模型，默认为True
+    print_verbose: true  # 使用打印各个阶段的运行时长到终端，默认为True
+    min_height: 30       # 图像高度小于30将不经过文本检测模型
+    width_height_ratio: 8  # 图像宽高比大于该值，则不经过文本检测模型
+```
 
 
 ### 以Web方式运行

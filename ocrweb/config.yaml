@@ -1,6 +1,7 @@
 Global:
     text_score: 0.5
     use_angle_cls: true
+    use_text_det: true
     print_verbose: true
     min_height: 30
     width_height_ratio: 8
