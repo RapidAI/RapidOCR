@@ -25,6 +25,14 @@ def detect_recognize(image_path, is_api=False):
 
     dt_boxes, rec_res, img, elapse_part = text_sys(image)
 
+    if is_api:
+        fina_result = [[dt.tolist(), rec[0], str(rec[1])]
+                       for dt, rec in zip(dt_boxes, rec_res)]
+        fina_reuslt_json = json.dumps(fina_result,
+                                      indent=2,
+                                      ensure_ascii=False)
+        return fina_reuslt_json
+
     if dt_boxes is None or rec_res is None:
         elapse, elapse_part = 0, ''
         img_str = img_to_base64(img)
@@ -32,9 +40,8 @@ def detect_recognize(image_path, is_api=False):
     else:
         temp_rec_res = []
         for i, value in enumerate(rec_res):
-            temp_rec_res.append([i, value[0], value[1]])
-        temp_rec_res = np.array(temp_rec_res)
-        rec_res_data = json.dumps(temp_rec_res.tolist(),
+            temp_rec_res.append([str(i), value[0], str(value[1])])
+        rec_res_data = json.dumps(temp_rec_res,
                                   indent=2,
                                   ensure_ascii=False)
 
@@ -43,16 +50,7 @@ def detect_recognize(image_path, is_api=False):
 
         elapse = reduce(lambda x, y: float(x)+float(y), elapse_part)
         elapse_part = ','.join([str(x) for x in elapse_part])
-
-    if is_api:
-        fina_result = [[dt.tolist(), rec[0], rec[1]]
-                       for dt, rec in zip(dt_boxes, rec_res)]
-        fina_reuslt_json = json.dumps(fina_result,
-                                      indent=2,
-                                      ensure_ascii=False)
-        return fina_reuslt_json
-    else:
-        return img_str, elapse, elapse_part, rec_res_data
+    return img_str, elapse, elapse_part, rec_res_data
 
 
 def img_to_base64(img):
