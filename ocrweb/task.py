@@ -10,9 +10,9 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from rapidocr_onnxruntime import TextSystem
+from rapidocr_onnxruntime import RapidOCR
 
-text_sys = TextSystem('config.yaml')
+text_sys = RapidOCR('config.yaml')
 
 
 def detect_recognize(image_path, is_api=False):
@@ -23,29 +23,26 @@ def detect_recognize(image_path, is_api=False):
     else:
         raise TypeError(f'{image_path} is not str or ndarray.')
 
-    dt_boxes, rec_res, img, elapse_part = text_sys(image)
+    final_result, img, elapse_part = text_sys(image)
 
     if is_api:
-        fina_result = [[dt.tolist(), rec[0], str(rec[1])]
-                       for dt, rec in zip(dt_boxes, rec_res)]
-        fina_reuslt_json = json.dumps(fina_result,
-                                      indent=2,
-                                      ensure_ascii=False)
-        return fina_reuslt_json
+        final_reuslt_json = json.dumps(final_result,
+                                       indent=2,
+                                       ensure_ascii=False)
+        return final_reuslt_json
 
-    if dt_boxes is None or rec_res is None:
+    if final_result is None:
         elapse, elapse_part = 0, ''
         img_str = img_to_base64(img)
         rec_res_data = json.dumps([], indent=2, ensure_ascii=False)
     else:
-        temp_rec_res = []
-        for i, value in enumerate(rec_res):
-            temp_rec_res.append([str(i), value[0], str(value[1])])
-        rec_res_data = json.dumps(temp_rec_res,
+        boxes, txts, scores = list(zip(*final_result))
+        rec_res = list(zip(range(len(txts)), txts, scores))
+        rec_res_data = json.dumps(rec_res,
                                   indent=2,
                                   ensure_ascii=False)
 
-        det_im = draw_text_det_res(dt_boxes, img)
+        det_im = draw_text_det_res(np.array(boxes), img)
         img_str = img_to_base64(det_im)
 
         elapse = reduce(lambda x, y: float(x)+float(y), elapse_part)

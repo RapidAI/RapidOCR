@@ -9,14 +9,14 @@ import numpy as np
 import cv2
 
 from utils.config import conf
-from rapidocr.rapid_ocr_api import TextSystem
+from rapidocr.rapid_ocr_api import RapidOCR
 
 
 @lru_cache(maxsize=None)
 def load_language_model(lang='ch'):
     models = conf['languages'][lang]
     print('model', models)
-    return TextSystem(models)
+    return RapidOCR(models)
 
 
 def detect_recognize(image, lang='ch', detect=True, classify=True):

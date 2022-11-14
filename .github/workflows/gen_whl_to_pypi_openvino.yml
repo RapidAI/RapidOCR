@@ -31,7 +31,7 @@ jobs:
           mv rapidocr_openvino rapidocr_openvino_t
           mv rapidocr_openvino_t rapidocr_openvino
           cd rapidocr_openvino
-          echo "from .rapidocr_openvino.rapid_ocr_api import TextSystem" > __init__.py
+          echo "from .rapidocr_openvino.rapid_ocr_api import RapidOCR" > __init__.py
 
           cd ..
           python -m pip install --upgrade pip

@@ -45,7 +45,7 @@ version_num = version_add_one(latest_version)
 setuptools.setup(
     name=module_name,
     version=version_num,
-    platforms="Windows & Linux & Mac",
+    platforms="Any",
     description="RapidOCR",
     long_description=get_readme(),
     long_description_content_type='text/markdown',
@@ -63,4 +63,10 @@ setuptools.setup(
     keywords=[
         'ocr text_detection text_recognition db onnxruntime paddleocr openvino'
     ],
+    classifiers=[
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+    ]
 )

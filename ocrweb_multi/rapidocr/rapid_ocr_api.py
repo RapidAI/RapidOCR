@@ -61,9 +61,9 @@ def load_onnx_model(step, name):
     return model_class(model_config['path'], model_config.get('config'))
 
 
-class TextSystem(object):
+class RapidOCR(object):
     def __init__(self, config):
-        super(TextSystem).__init__()
+        super(RapidOCR).__init__()
         self.config = config
         self.text_score = config['config']['text_score']
         self.min_height = config['config']['min_height']

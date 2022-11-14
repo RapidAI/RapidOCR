@@ -11,7 +11,7 @@ cur_dir = Path(__file__).resolve().parent
 sys.path.append(str(cur_dir.parent.parent))
 
 import cv2
-from rapidocr_onnxruntime import TextSystem
+from rapidocr_onnxruntime import RapidOCR
 
 
 if __name__ == '__main__':
@@ -20,7 +20,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     yaml_path = cur_dir / args.yaml_path
-    text_sys = TextSystem(yaml_path)
+    text_sys = RapidOCR(yaml_path)
 
     image_dir = cur_dir / 'test_images_benchmark'
     if not image_dir.exists():
@@ -33,7 +33,7 @@ if __name__ == '__main__':
         img = cv2.imread(str(image_path))
 
         start_time = time.time()
-        dt_boxes, rec_res = text_sys(img)
+        result = text_sys(img)
         elapse = time.time() - start_time
 
         cost_time_list.append(elapse)

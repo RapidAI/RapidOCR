@@ -9,8 +9,8 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from rapidocr_onnxruntime import TextSystem
-# from rapidocr_openvino import TextSystem
+from rapidocr_onnxruntime import RapidOCR
+# from rapidocr_openvino import RapidOCR
 
 
 def draw_ocr_box_txt(image, boxes, txts, font_path,
@@ -27,7 +27,7 @@ def draw_ocr_box_txt(image, boxes, txts, font_path,
     draw_left = ImageDraw.Draw(img_left)
     draw_right = ImageDraw.Draw(img_right)
     for idx, (box, txt) in enumerate(zip(boxes, txts)):
-        if scores is not None and scores[idx] < text_score:
+        if scores is not None and float(scores[idx]) < text_score:
             continue
 
         color = (random.randint(0, 255),
@@ -69,12 +69,11 @@ def draw_ocr_box_txt(image, boxes, txts, font_path,
     return np.array(img_show)
 
 
-def visualize(image_path, boxes, rec_res, font_path="resources/fonts/FZYTK.TTF"):
+def visualize(image_path, result, font_path="resources/fonts/FZYTK.TTF"):
     image = Image.open(image_path)
-    txts = [rec_res[i][0] for i in range(len(rec_res))]
-    scores = [rec_res[i][1] for i in range(len(rec_res))]
+    boxes, txts, scores = list(zip(*result))
 
-    draw_img = draw_ocr_box_txt(image, boxes,
+    draw_img = draw_ocr_box_txt(image, np.array(boxes),
                                 txts, font_path,
                                 scores,
                                 text_score=0.5)
@@ -89,12 +88,11 @@ def visualize(image_path, boxes, rec_res, font_path="resources/fonts/FZYTK.TTF")
 
 
 if __name__ == '__main__':
-    text_sys = TextSystem('config.yaml')
+    text_sys = RapidOCR('config.yaml')
 
     image_path = 'test_images/ch_en_num.jpg'
     img = cv2.imread(image_path)
-    dt_boxes, rec_res = text_sys(img)
-    print(rec_res)
+    result = text_sys(img)
+    print(result)
 
-    visualize(image_path, dt_boxes, rec_res,
-              font_path='resources/fonts/FZYTK.TTF')
+    visualize(image_path, result, font_path='resources/fonts/FZYTK.TTF')

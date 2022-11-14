@@ -42,10 +42,10 @@
 - onnxruntime和openvino调用方式如下:
     ```python
     # 基于onnxruntime引擎推理
-    from rapidocr_onnxruntime import TextSystem
+    from rapidocr_onnxruntime import RapidOCR
 
     # 基于openvino引擎推理
-    from rapidocr_openvino import TextSystem
+    from rapidocr_openvino import RapidOCR
     ```
 - 关于openvino详细的使用方法，参见[openvino_readme](./rapidocr_openvino/README.md)。
 - 关于选择哪个推理引擎（onnxruntime 或者 openvino）?
@@ -100,15 +100,18 @@
 3. 推理使用
 ```python
 import cv2
-from rapidocr_onnxruntime import TextSystem
-# from rapidocr_openvino import TextSystem
+from rapidocr_onnxruntime import RapidOCR
+# from rapidocr_openvino import RapidOCR
 
-text_sys = TextSystem('config.yaml')
+text_sys = RapidOCR('config.yaml')
 
 img = cv2.imread('test_images/ch_en_num.jpg')
 
-dt_boxes, rec_res = text_sys(img)
-print(rec_res)
+result = text_sys(img)
+print(result)
+
+# result: [[文本框坐标], 文本内容, 置信度]
+# 示例：[[左上, 右上, 右下, 左下], '小明', '0.99']
 ```
 
 ### 源码使用步骤
@@ -182,18 +185,21 @@ print(rec_res)
         import cv2
 
         # 基于onnxruntime引擎推理
-        from rapidocr_onnxruntime import TextSystem
+        from rapidocr_onnxruntime import RapidOCR
 
         # 基于openvino引擎推理
-        # from rapidocr_openvino import TextSystem
+        # from rapidocr_openvino import RapidOCR
 
-        text_sys = TextSystem('config.yaml')
+        text_sys = RapidOCR('config.yaml')
 
         image_path = r'test_images/det_images/ch_en_num.jpg'
         img = cv2.imread(image_path)
 
-        dt_boxes, rec_res = text_sys(img)
-        print(rec_res)
+        result = text_sys(img)
+        print(result)
+
+        # result: [[文本框坐标], 文本内容, 置信度]
+        # 示例：[[左上, 右上, 右下, 左下], '小明', '0.99']
         ```
     - 直接运行`test_demo.py`，可直接可视化查看结果。
         ```bash

@@ -14,9 +14,9 @@ root_dir = Path(__file__).resolve().parent
 sys.path.append(str(root_dir))
 
 
-class TextSystem(object):
+class RapidOCR(object):
     def __init__(self, config_path=str(root_dir / 'config.yaml')):
-        super(TextSystem).__init__()
+        super(RapidOCR).__init__()
         config = self.read_yaml(config_path)
 
         global_config = config['Global']
@@ -58,7 +58,7 @@ class TextSystem(object):
         else:
             dt_boxes, det_elapse = self.text_detector(img)
             if dt_boxes is None or len(dt_boxes) < 1:
-                return None, None, img, None
+                return None, img, None
             if self.print_verbose:
                 print(f'dt_boxes num: {len(dt_boxes)}, elapse: {det_elapse}')
 
@@ -81,12 +81,14 @@ class TextSystem(object):
         start_time = time.time()
         filter_boxes, filter_rec_res = self.filter_boxes_rec_by_score(dt_boxes,
                                                                       rec_res)
+        fina_result = [[dt.tolist(), rec[0], str(rec[1])]
+                       for dt, rec in zip(filter_boxes, filter_rec_res)]
         filter_elapse = time.time() - start_time
         elapse_part = [f'{det_elapse:.4f}',
                        f'{(cls_elapse+crop_elapse):.4f}',
                        f'{(rec_elapse+filter_elapse):.4f}'
         ]
-        return filter_boxes, filter_rec_res, img, elapse_part
+        return fina_result, img, elapse_part
 
     @staticmethod
     def read_yaml(yaml_path):
@@ -169,7 +171,7 @@ class TextSystem(object):
 
 
 if __name__ == '__main__':
-    text_sys = TextSystem('config.yaml')
+    text_sys = RapidOCR('config.yaml')
 
     import cv2
     img = cv2.imread('resources/test_images/det_images/ch_en_num.jpg')

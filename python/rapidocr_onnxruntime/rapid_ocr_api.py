@@ -14,9 +14,9 @@ root_dir = Path(__file__).resolve().parent
 sys.path.append(str(root_dir))
 
 
-class TextSystem(object):
+class RapidOCR(object):
     def __init__(self, config_path):
-        super(TextSystem).__init__()
+        super(RapidOCR).__init__()
         if not Path(config_path).exists():
             raise FileExistsError(f'{config_path} does not exist!')
 
@@ -72,7 +72,9 @@ class TextSystem(object):
 
         filter_boxes, filter_rec_res = self.filter_boxes_rec_by_score(dt_boxes,
                                                                       rec_res)
-        return filter_boxes, filter_rec_res
+        fina_result = [[dt.tolist(), rec[0], str(rec[1])]
+                       for dt, rec in zip(filter_boxes, filter_rec_res)]
+        return fina_result
 
     @staticmethod
     def read_yaml(yaml_path):
@@ -155,7 +157,7 @@ class TextSystem(object):
 
 
 if __name__ == '__main__':
-    text_sys = TextSystem('config.yaml')
+    text_sys = RapidOCR('config.yaml')
 
     import cv2
     img = cv2.imread('resources/test_images/det_images/ch_en_num.jpg')

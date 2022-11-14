@@ -45,7 +45,7 @@ version_num = version_add_one(latest_version)
 setuptools.setup(
     name=module_name,
     version=version_num,
-    platforms="Windows & Linux & Mac",
+    platforms="Any",
     description="RapidOCR",
     long_description=get_readme(),
     long_description_content_type='text/markdown',
@@ -54,7 +54,7 @@ setuptools.setup(
     url="https://github.com/RapidAI/RapidOCR",
     license='Apache-2.0',
     include_package_data=True,
-    install_requires=["pyclipper>=1.2.1", "onnxruntime",
+    install_requires=["pyclipper>=1.2.1", "onnxruntime>=1.7.0",
                       "opencv_python>=4.5.1.48", "numpy>=1.19.3",
                       "six>=1.15.0", "Shapely>=1.7.1"],
     package_dir={'': module_name},
@@ -62,4 +62,10 @@ setuptools.setup(
     keywords=[
         'ocr text_detection text_recognition db onnxruntime paddleocr openvino'
     ],
+    classifiers=[
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+    ]
 )

@@ -1,5 +1,6 @@
-# !/usr/bin/env python
 # -*- encoding: utf-8 -*-
+# @Author: SWHL
+# @Contact: liekkaskono@163.com
 import copy
 import importlib
 import sys
@@ -13,11 +14,12 @@ root_dir = Path(__file__).resolve().parent
 sys.path.append(str(root_dir))
 
 
-class TextSystem(object):
+class RapidOCR(object):
     def __init__(self, config_path):
-        super(TextSystem).__init__()
+        super(RapidOCR).__init__()
         if not Path(config_path).exists():
             raise FileExistsError(f'{config_path} does not exist!')
+
         config = self.read_yaml(config_path)
 
         global_config = config['Global']
@@ -60,7 +62,7 @@ class TextSystem(object):
             img_crop_list = self.get_crop_img_list(img, dt_boxes)
 
         if self.use_angle_cls:
-            img_crop_list, angle_list, elapse = self.text_cls(img_crop_list)
+            img_crop_list, _, elapse = self.text_cls(img_crop_list)
             if self.print_verbose:
                 print(f'cls num: {len(img_crop_list)}, elapse: {elapse}')
 
@@ -70,7 +72,9 @@ class TextSystem(object):
 
         filter_boxes, filter_rec_res = self.filter_boxes_rec_by_score(dt_boxes,
                                                                       rec_res)
-        return filter_boxes, filter_rec_res
+        fina_result = [[dt.tolist(), rec[0], str(rec[1])]
+                       for dt, rec in zip(filter_boxes, filter_rec_res)]
+        return fina_result
 
     @staticmethod
     def read_yaml(yaml_path):
@@ -153,7 +157,7 @@ class TextSystem(object):
 
 
 if __name__ == '__main__':
-    text_sys = TextSystem('config.yaml')
+    text_sys = RapidOCR('config.yaml')
 
     import cv2
     img = cv2.imread('resources/test_images/det_images/ch_en_num.jpg')

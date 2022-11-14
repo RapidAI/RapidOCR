@@ -38,12 +38,15 @@ cd required_for_whl_v1.1.0
 ### 3. Use.
 ```python
 import cv2
-from rapidocr_onnxruntime import TextSystem
+from rapidocr_onnxruntime import RapidOCR
 
-text_sys = TextSystem('config.yaml')
+text_sys = RapidOCR('config.yaml')
 
 img = cv2.imread('test_images/ch_en_num.jpg')
 
-dt_boxes, rec_res = text_sys(img)
-print(rec_res)
+result = text_sys(img)
+print(result)
+
+# result: [[dt_boxes], txt, score]
+# 示例：[[左上, 右上, 右下, 左下], '小明', '0.99']
 ```
