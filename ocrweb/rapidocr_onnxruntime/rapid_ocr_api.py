@@ -1,5 +1,6 @@
-# !/usr/bin/env python
 # -*- encoding: utf-8 -*-
+# @Author: SWHL
+# @Contact: liekkaskono@163.com
 import copy
 import importlib
 import sys
