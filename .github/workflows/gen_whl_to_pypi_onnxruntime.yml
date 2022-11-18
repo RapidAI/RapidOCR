@@ -9,11 +9,51 @@ on:
       - 'python/setup_onnxruntime.py'
 
 jobs:
-  build:
+  UnitTesting:
+    runs-on: windows-latest
+    steps:
+      - name: Install 7Zip PowerShell Module
+        shell: powershell
+        run: Install-Module 7Zip4PowerShell -Force -Verbose
+
+      - uses: actions/checkout@v3
+      - name: Pull latest code
+
+      - uses: suisei-cn/actions-download-file@v1
+        id: downloadfile3  # Remember to give an ID if you need the output filename
+        name: Download required_for_whl_v1.1.0
+        with:
+            url: "https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip"
+            target: ./
+
+      - name: Decompress
+        shell: powershell
+        run: |
+              Expand-7Zip -ArchiveFileName ./required_for_whl_v1.1.0.zip -TargetPath .\
+
+      - name: List all file
+        shell: cmd
+        run:  |
+              dir .
+
+      - name: Unit testings
+        shell: cmd
+        run: |
+          set git_keep_path=%cur_dir%\python\resoureces\models\.gitkeep
+          del %git_keep_path%
+          move required_for_whl_v1.1.0\resources\models\* python\resources\models\
+          cd python
+          pip install -r requirements.txt
+          pip install onnxruntime==1.11.0 openvino==2022.2.0
+          cd tests
+          pytest test_det.py test_cls.py test_rec.py
+
+  GenerateWHL_PushPyPi:
+    needs: UnitTesting
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set SSH Environment
         env:
