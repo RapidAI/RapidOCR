@@ -16,12 +16,12 @@ jobs:
         shell: powershell
         run: Install-Module 7Zip4PowerShell -Force -Verbose
 
-      - uses: actions/checkout@v3
       - name: Pull latest code
+        uses: actions/checkout@v3
 
-      - uses: suisei-cn/actions-download-file@v1
+      - name: Download required_for_whl_v1.1.0
+        uses: suisei-cn/actions-download-file@v1
         id: downloadfile3  # Remember to give an ID if you need the output filename
-        name: Download required_for_whl_v1.1.0
         with:
             url: "https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip"
             target: ./

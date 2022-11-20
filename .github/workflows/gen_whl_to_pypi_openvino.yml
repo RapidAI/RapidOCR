@@ -16,8 +16,8 @@ jobs:
         shell: powershell
         run: Install-Module 7Zip4PowerShell -Force -Verbose
 
-      - uses: actions/checkout@v3
       - name: Pull latest code
+        uses: actions/checkout@v3
 
       - uses: suisei-cn/actions-download-file@v1
         id: downloadfile3  # Remember to give an ID if you need the output filename
