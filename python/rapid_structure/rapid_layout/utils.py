@@ -132,15 +132,11 @@ class NormalizeImage(object):
 class ToCHWImage(object):
     """ convert hwc image to chw image
     """
-
     def __init__(self, **kwargs):
         pass
 
     def __call__(self, data):
-        img = data['image']
-        from PIL import Image
-        if isinstance(img, Image.Image):
-            img = np.array(img)
+        img = np.array(data['image'])
         data['image'] = img.transpose((2, 0, 1))
         return data
 

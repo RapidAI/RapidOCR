@@ -26,9 +26,9 @@
 - [RapidOCR](#rapidocr)
   - [Introduction](#introduction)
   - [Recently updates(more)](#recently-updatesmore)
+      - [🧻2022-11-20 upadte:](#2022-11-20-upadte)
       - [🎃2022-11-01 update:](#2022-11-01-update)
       - [🚩2022-10-01 udpate:](#2022-10-01-udpate)
-      - [🛴2022-09-01 update:](#2022-09-01-update)
   - [Related projects (more)](#related-projects-more)
   - [Derivatives](#derivatives)
   - [Overall Framework](#overall-framework)
@@ -65,6 +65,9 @@
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
 
 ## Recently updates([more](./change_log_en.md))
+#### 🧻2022-11-20 upadte:
+- \[python\] Add the layout analysis part, which supports the detection and analysis of three layouts: Chinese, English and tables. See: [Rapid Structure](../python/rapid_structure/README.md) section for details.
+
 #### 🎃2022-11-01 update:
 - Add Hugging Face Demo, add module that can adjust hyperameters, for details, please visit [Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo).
 
@@ -72,10 +75,6 @@
 - Fix some minor bugs under python section.
 - Merge the [OCRWeb Implementation of Multilingual Deployment](https://github.com/RapidAI/RapidOCR/pull/46) demo from [AutumnSun1996](https://github.com/AutumnSun1996), see for details: [ocrweb_mutli-README](./ocrweb_multi/README.md)
 - Add a description of the problem that onnxruntime-gpu inference speed is slower than CPU. For details, please refer to: [onnxruntime-gpu version related instructions](../python/README.md#onnxruntime-gpu版相关说明)
-
-#### 🛴2022-09-01 update:
-- Since openvino released version 2022.2.0.dev20220829, this version solves the problem of `cls` partial model inference. So far, the openvino-based rapidocr has been unified, and it is all completed by the openvino inference engine.
-- For detailed usage, see: [python/README](../python/README.md#源码使用步骤).
 
 
 ## Related projects ([more](../docs/related_projects.md))

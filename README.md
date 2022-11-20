@@ -27,9 +27,9 @@
 - [RapidOCR (捷智OCR)](#rapidocr-捷智ocr)
   - [简介](#简介)
   - [近期更新(more)](#近期更新more)
+      - [🧻2022-11-20 upadte:](#2022-11-20-upadte)
       - [🎃2022-11-01 update:](#2022-11-01-update)
       - [🚩2022-10-01 udpate:](#2022-10-01-udpate)
-      - [🛴2022-09-01 update:](#2022-09-01-update)
   - [垂直相关项目(more)](#垂直相关项目more)
   - [衍生项目](#衍生项目)
   - [生态框架](#生态框架)
@@ -63,6 +63,9 @@
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。
 
 ## 近期更新([more](./docs/change_log.md))
+#### 🧻2022-11-20 upadte:
+- \[python\] 添加版面分析部分,支持中文、英文和表格三种版面的检测分析。详情参见:[Rapid Structure](./python/rapid_structure/README.md)部分。
+
 #### 🎃2022-11-01 update:
 - 添加Hugging Face Demo, 增加可以调节超参数的功能，详情可访问[Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
 
@@ -70,10 +73,6 @@
 - 修复python部分下一些较小bugs
 - merge来自[AutumnSun1996](https://github.com/AutumnSun1996)的[OCRWeb实现的多语言部署](https://github.com/RapidAI/RapidOCR/pull/46)demo，详情参见：[ocrweb_mutli-README](./ocrweb_multi/README.md)
 - 添加onnxruntime-gpu推理速度较慢于CPU的问题说明，详情参见：[onnxruntime-gpu版相关说明](./python/README.md#onnxruntime-gpu版相关说明)
-
-#### 🛴2022-09-01 update:
-- 由于openvino发布了2022.2.0.dev20220829版本，该版本解决了`cls`部分模型推理的问题。至此，基于openvino的rapidocr完成了统一，全部由openvino推理引擎完成。
-- 详细使用方法参见：[python/README](./python/README.md#源码使用步骤)
 
 
 ## 垂直相关项目([more](./docs/related_projects.md))

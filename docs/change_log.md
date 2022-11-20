@@ -1,3 +1,6 @@
+#### 🧻2022-11-20 upadte:
+- \[python\] 添加版面分析部分,支持中文、英文和表格三种版面的检测分析。详情参见:[Rapid Structure](./python/rapid_structure/README.md)部分。
+
 #### 🎃2022-11-01 update:
 - 添加Hugging Face Demo, 增加可以调节超参数的功能，详情可访问[Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
 
