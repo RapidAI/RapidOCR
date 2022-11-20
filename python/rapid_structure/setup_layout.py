@@ -65,5 +65,5 @@ setuptools.setup(
     ],
     entry_points={
         'console_scripts': ['rapid_layout=rapid_layout.rapid_layout:main']
-    },
+    }
 )
