@@ -121,10 +121,7 @@ class NormalizeImage(object):
         self.std = np.array(std).reshape(shape).astype('float32')
 
     def __call__(self, data):
-        img = data['image']
-        from PIL import Image
-        if isinstance(img, Image.Image):
-            img = np.array(img)
+        img = np.array(data['image'])
         assert isinstance(img,
                           np.ndarray), "invalid input 'img' in NormalizeImage"
         data['image'] = (

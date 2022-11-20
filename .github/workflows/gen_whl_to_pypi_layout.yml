@@ -1,4 +1,4 @@
-name: push rapidocr_onnxruntime to pypi
+name: Push rapidocr_layout to pypi
 
 on:
   push:
