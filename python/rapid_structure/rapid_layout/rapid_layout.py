@@ -22,9 +22,12 @@ root_dir = Path(__file__).resolve().parent
 
 
 class RapidLayout(object):
-    def __init__(self, model_path: str):
+    def __init__(self,
+                 model_path: str = None):
         config_path = str(root_dir / 'config.yaml')
         config = read_yaml(config_path)
+        if model_path is None:
+            model_path = str(root_dir / 'models' / 'layout_cdla.onnx')
         config['model_path'] = model_path
 
         session_instance = OrtInferSession(config)
@@ -64,3 +67,26 @@ class RapidLayout(object):
         post_preds = self.postprocess_op(ori_im, img, preds)
         elapse = time.time() - starttime
         return post_preds, elapse
+
+
+def main():
+    import argparse
+    import cv2
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--img_path', type=str, required=True)
+    parser.add_argument('--model_path', type=str,
+                        default=str(root_dir / 'models' / 'layout_cdla.onnx'))
+    args = parser.parse_args()
+
+    layout_engine = RapidLayout(args.model_path)
+
+    img = cv2.imread(args.img_path)
+
+    layout_res, elapse = layout_engine(img)
+
+    print(layout_res)
+
+
+if __name__ == '__main__':
+    main()

@@ -9,7 +9,7 @@ import numpy as np
 from rapid_layout import RapidLayout
 
 
-def vis_layout(img, layout_res: list):
+def vis_layout(img: np.ndarray, layout_res: list) -> None:
     tmp_img = copy.deepcopy(img)
     for v in layout_res:
         bbox = np.round(v['bbox']).astype(np.int32)
@@ -32,14 +32,14 @@ def vis_layout(img, layout_res: list):
 
 
 if __name__ == '__main__':
-    model_path = 'models/layout_cdla.onnx'
-    rapid_layout = RapidLayout(model_path)
+    model_path = 'rapid_layout/models/layout_cdla.onnx'
+    layout_engine = RapidLayout(model_path)
 
     img_path = 'test_images/ch.png'
 
     img = cv2.imread(img_path)
 
-    layout_res, elapse = rapid_layout(img)
+    layout_res, elapse = layout_engine(img)
 
     vis_layout(img, layout_res)
     print(layout_res)

@@ -6,18 +6,18 @@
 
 ### 1. Install package by pypi.
 ```shell
-pip install rapidocr-openvino
+$ pip install rapidocr-openvino
 ```
 
 ### 2. Download the models and config yaml.
 ```bash
-wget https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip
+$ wget https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip
 
 # or by gitee
 # wget https://gitee.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip
 
-unzip required_for_whl_v1.1.0.zip
-cd required_for_whl_v1.1.0
+$ unzip required_for_whl_v1.1.0.zip
+$ cd required_for_whl_v1.1.0
 ```
 
 - The final directory of the folder:
