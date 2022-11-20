@@ -23,13 +23,13 @@ jobs:
         uses: suisei-cn/actions-download-file@v1
         id: downloadfile3  # Remember to give an ID if you need the output filename
         with:
-            url: "https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip"
+            url: "https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/rapid_layout_models.zip"
             target: ./
 
       - name: Decompress
         shell: powershell
         run: |
-              Expand-7Zip -ArchiveFileName ./required_for_whl_v1.1.0.zip -TargetPath .\
+              Expand-7Zip -ArchiveFileName ./rapid_layout_models.zip -TargetPath .\
 
       - name: List all file
         shell: cmd
@@ -39,14 +39,14 @@ jobs:
       - name: Unit testings
         shell: cmd
         run: |
-          set git_keep_path=%cur_dir%\python\resoureces\models\.gitkeep
+          set git_keep_path=%cur_dir%\python\rapid_structure\rapid_layout\models\.gitkeep
           del %git_keep_path%
-          move required_for_whl_v1.1.0\resources\models\* python\resources\models\
-          cd python
+          move rapid_layout_models\* python\rapid_structure\rapid_layout\models\
+          cd python/rapid_structure
           pip install -r requirements.txt
-          pip install onnxruntime==1.11.0 openvino==2022.2.0
+          pip install onnxruntime
           cd tests
-          pytest test_det.py test_cls.py test_rec.py
+          pytest test_layout.py
 
   GenerateWHL_PushPyPi:
     needs: UnitTesting
@@ -64,19 +64,11 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           chmod 700 ~/.ssh && chmod 600 ~/.ssh/*
 
-      - name: Run setup_onnxruntime.py
+      - name: Run setup
         run: |
-          cd python
-          mkdir rapidocr_onnxruntime_t
-          mv rapidocr_onnxruntime rapidocr_onnxruntime_t
-          mv rapidocr_onnxruntime_t rapidocr_onnxruntime
-          cd rapidocr_onnxruntime
-          echo "from .rapidocr_onnxruntime.rapid_ocr_api import RapidOCR" > __init__.py
-
-          cd ..
+          cd python/rapid_structure
           python -m pip install --upgrade pip
-          python setup_onnxruntime.py bdist_wheel
-          mv dist ../
+          python setup_layout.py bdist_wheel
 
       # - name: Publish distribution 📦 to Test PyPI
       #   uses: pypa/gh-action-pypi-publish@v1.5.0

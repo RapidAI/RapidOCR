@@ -1,6 +1,5 @@
-numpy==1.21.6
-onnxruntime==1.10.0
-opencv_python==4.6.0.66
-setuptools==61.2.0
+numpy>=1.21.6
+opencv_python>=4.6.0.66
+setuptools>=61.2.0
 PyYAML
 pytest
