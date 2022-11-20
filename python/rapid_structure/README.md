@@ -24,7 +24,7 @@
 1. pip安装
    - 由于模型较小，预先将中文版面分析模型(`layout_cdla.onnx`)打包进了whl包内，如果做中文版面分析，可直接安装使用
         ```bash
-        $ pip install
+        $ pip install rapid-layout
         ```
 2. python脚本运行
    ```python
@@ -42,16 +42,17 @@
    # 假设在rapid_structure目录下
    $ rapid_layout --img_path test_images/ch.png
    ```
-4. 可视化结果
+4. 结果
+    - 返回结果
+        ```python
+        # bbox: [左上角x0,左上角y0, 右下角x0, 右上角x1]
+        # label: 类别
+        [
+            {'bbox': array([321.4160495, 91.53214898, 562.06141263, 199.85522603]), 'label': 'text'},
+            {'bbox': array([58.67292211, 107.29000663, 300.25448676, 199.68142]), 'label': 'table_caption'}
+        ]
+        ```
+   - 可视化结果
     <div align="center">
         <img src="./test_images/layout_result.jpg" width="80%" height="80%">
     </div>
-
-#### 输出结果
-- 格式为：
-  ```text
-  [
-    {'bbox': array([321.4160495, 91.53214898, 562.06141263, 199.85522603]), 'label': 'text'},
-    {'bbox': array([58.67292211, 107.29000663, 300.25448676, 199.68142]), 'label': 'table_caption'}
-  ]
-  ```
