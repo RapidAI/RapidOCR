@@ -56,13 +56,16 @@
 
 
 ### pip安装快速使用
-1. 安装`rapidocr_onnxruntime`包
-   ```shell
-   pip install rapidocr-onnxruntime
+1. 安装`rapidocr`包
+   - `rapidocr_onnxruntime`: <a href="https://pypi.org/project/rapidocr-onnxruntime/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-onnxruntime?style=plastic"></a>
+   - `rapidocr_openvino`: <a href="https://pypi.org/project/rapidocr-openvino/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-openvino?style=plastic"></a>
+   - script:
+        ```shell
+        pip install rapidocr-onnxruntime
 
-   # or
-   # pip install rapidocr-openvino
-   ```
+        # or
+        # pip install rapidocr-openvino
+        ```
 
 2. 下载相关的模型和配置文件
     ```shell
