@@ -224,7 +224,7 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 - Scan the following QR code with QQ:
 
     <div align="center">
-        <img src="../assets/qq_team.bmp" width="25%" height="25%" align="center">
+        <img src="../assets/qq_team.jpg" width="25%" height="25%" align="center">
      </div>
 
 ## Demo
@@ -240,5 +240,5 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 
 #### Demonstratioin with multi_language
 <div align="center">
-    <img src="../assets/demo_multi_language.png" width="80%" height="80%">
+    <img src="../assets/demo_multi_language.jpg" width="80%" height="80%">
 </div>

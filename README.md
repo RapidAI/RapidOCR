@@ -237,7 +237,7 @@ flowchart LR
 - 用QQ扫描以下二维码:
 
     <div align="center">
-        <img src="./assets/qq_team.bmp" width="25%" height="25%" align="center">
+        <img src="./assets/qq_team.jpg" width="25%" height="25%" align="center">
     </div>
 
 ## 示例图
@@ -253,5 +253,5 @@ flowchart LR
 
 #### 多语言示例图像
 <div align="center">
-    <img src="./assets/demo_multi_language.png" width="80%" height="80%">
+    <img src="./assets/demo_multi_language.jpg" width="80%" height="80%">
 </div>

@@ -36,6 +36,10 @@
    # 假设在rapid_structure目录下
    $ rapid_layout --img_path test_images/ch.png
    ```
+4. 可视化结果
+    <div align="center">
+        <img src="./test_images/layout_result.jpg" width="80%" height="80%">
+    </div>
 
 #### 输出结果
 - 格式为：

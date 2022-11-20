@@ -27,10 +27,15 @@ print(layout_res)
 $ rapid_layout --img_path test_images/ch.png
 ```
 
-### 4. Result
-```text
-[
-  {'bbox': array([321.4160495, 91.53214898, 562.06141263, 199.85522603]), 'label': 'text'},
-  {'bbox': array([58.67292211, 107.29000663, 300.25448676, 199.68142]), 'label': 'table_caption'}
-]
-```
+### 4. Result.
+- Return value.
+    ```text
+    [
+    {'bbox': array([321.4160495, 91.53214898, 562.06141263, 199.85522603]), 'label': 'text'},
+    {'bbox': array([58.67292211, 107.29000663, 300.25448676, 199.68142]), 'label': 'table_caption'}
+    ]
+    ```
+- Visualize result.
+    <div align="center">
+        <img src="./test_images/layout_result.jpg" width="80%" height="80%">
+    </div>
