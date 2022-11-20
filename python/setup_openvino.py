@@ -31,7 +31,7 @@ def version_add_one(version, add_loc=-1):
 
 def get_readme():
     root_dir = Path(__file__).resolve().parent.parent
-    readme_path = str(root_dir / 'docs' / 'doc_whl_en_openvino.md')
+    readme_path = str(root_dir / 'docs' / 'doc_whl_rapidocr_vino.md')
     print(readme_path)
     with open(readme_path, 'r', encoding='utf-8') as f:
         readme = f.read()
