@@ -69,7 +69,6 @@ jobs:
           cd python/rapid_structure
           python -m pip install --upgrade pip
           python setup_layout.py bdist_wheel
-          mv dist .../
 
       # - name: Publish distribution 📦 to Test PyPI
       #   uses: pypa/gh-action-pypi-publish@v1.5.0
@@ -82,4 +81,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@v1.5.0
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
-          packages_dir: dist/
+          packages_dir: python/rapid_structure/dist/
