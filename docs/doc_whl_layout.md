@@ -37,5 +37,5 @@ $ rapid_layout --img_path test_images/ch.png
     ```
 - Visualize result.
     <div align="center">
-        <img src="./test_images/layout_result.jpg" width="80%" height="80%">
+        <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/947c6958d30f47c7c7b016f7dc308f235acec3ee/python/rapid_structure/test_images/layout_result.jpg" width="80%" height="80%">
     </div>

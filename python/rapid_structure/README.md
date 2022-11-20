@@ -1,8 +1,14 @@
-#### Rapid Structure
+## Rapid Structure
 - 模型和推理代码均来自于[PP-Structure](https://github.com/PaddlePaddle/PaddleOCR/blob/release%2F2.6/ppstructure/README_ch.md#32)部分。
 - 该部分的功能主要针对文档类图像，包括版面分析和表格识别两类。
 
 #### Rapid Layout
+<p align="left">
+    <a href=""><img src="https://img.shields.io/badge/Python-3.6+-aff.svg"></a>
+    <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
+    <a href="https://pypi.org/project/rapid-layout/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapid-layout?style=plastic"></a>
+</p>
+
 ##### 简介和说明
 - 该部分主要是做文档类图像的版面分析。具体来说，就是分析给定的文档类别图像（论文截图等），定位其中类别和位置，如标题、段落、表格和图片等各个部分。
 - 目前支持三种类别的版面分析模型：中文、英文和表格版面分析模型，具体可参见下面表格：
