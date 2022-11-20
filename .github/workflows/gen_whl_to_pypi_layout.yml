@@ -7,6 +7,7 @@ on:
       - 'python/rapid_structure/rapid_layout/**'
       - 'docs/doc_whl_layout.md'
       - 'python/rapid_structure/setup_layout.py'
+      - '.github/workflows/gen_whl_to_pypi_layout.yml'
 
 jobs:
   UnitTesting:
@@ -19,7 +20,7 @@ jobs:
       - name: Pull latest code
         uses: actions/checkout@v3
 
-      - name: Download required_for_whl_v1.1.0
+      - name: Download rapid layout model
         uses: suisei-cn/actions-download-file@v1
         id: downloadfile3  # Remember to give an ID if you need the output filename
         with:
@@ -68,6 +69,9 @@ jobs:
         run: |
           cd python/rapid_structure
           python -m pip install --upgrade pip
+          wget https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/rapid_layout_models.zip
+          unzip rapid_layout_models.zip
+          mv rapid_layout_models/*.onnx rapid_layout/models/
           python setup_layout.py bdist_wheel
 
       # - name: Publish distribution 📦 to Test PyPI
