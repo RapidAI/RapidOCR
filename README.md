@@ -8,7 +8,7 @@
 简体中文 | [English](./docs/README_en.md)
 
 <p align="left">
-    <a href="http://rapidai.deepdatasec.com:9003/"><img src="https://img.shields.io/badge/%F0%9F%97%B2-Online%20Demo-blue"></a>
+    <a href="http://rapidai.deepdatasec.com:9003/"><img src="https://img.shields.io/badge/%E2%9A%A1%EF%B8%8E-Online%20Demo-blue"></a>
     <a href="https://huggingface.co/spaces/SWHL/RapidOCRDemo"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Hugging Face Demo-blue"></a>
     <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="./assets/colab-badge.svg" alt="Open in Colab"></a>
     <a href="https://aistudio.baidu.com/aistudio/projectdetail/4444785?sUid=57084&shared=1&ts=1660896122332"><img src="https://img.shields.io/badge/PP-Open in AI Studio-blue.svg"></a><br/>
