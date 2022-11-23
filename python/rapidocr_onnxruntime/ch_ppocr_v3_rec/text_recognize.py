@@ -30,10 +30,9 @@ class TextRecognizer(object):
         session_instance = OrtInferSession(config)
         self.session = session_instance.session
         self.input_name = session_instance.get_input_name()
-        meta_dict = session_instance.get_metadata()
 
-        if 'character' in meta_dict.keys():
-            self.character_dict_path = meta_dict['character'].splitlines()
+        if session_instance.have_key():
+            self.character_dict_path = session_instance.get_character_list()
         else:
             self.character_dict_path = config.get('keys_path', None)
         self.postprocess_op = CTCLabelDecode(self.character_dict_path)

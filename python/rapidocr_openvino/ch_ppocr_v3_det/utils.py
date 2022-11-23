@@ -16,26 +16,34 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 import sys
+from pathlib import Path
 
 import cv2
 import numpy as np
 import pyclipper
 import six
-from shapely.geometry import Polygon
 import yaml
 from openvino.runtime import Core
+from shapely.geometry import Polygon
 
 
 class OpenVINOInferSession(object):
     def __init__(self, config):
         ie = Core()
+
+        self._verify_model(config['model_path'])
         model_onnx = ie.read_model(config['model_path'])
         compile_model = ie.compile_model(model=model_onnx, device_name='CPU')
         self.session = compile_model.create_infer_request()
+
+    @staticmethod
+    def _verify_model(model_path):
+        model_path = Path(model_path)
+        if not model_path.exists():
+            raise FileNotFoundError(f'{model_path} does not exists.')
+        if not model_path.is_file():
+            raise FileExistsError(f'{model_path} is not a file.')
 
 
 def read_yaml(yaml_path):

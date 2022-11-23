@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from pathlib import Path
 import warnings
 
 import yaml
@@ -38,6 +39,7 @@ class OrtInferSession(object):
             EP_list = [(cuda_ep, config[cuda_ep])]
         EP_list.append((cpu_ep, cpu_provider_options))
 
+        self._verify_model(config['model_path'])
         self.session = InferenceSession(config['model_path'],
                                         sess_options=sess_opt,
                                         providers=EP_list)
@@ -54,6 +56,14 @@ class OrtInferSession(object):
 
     def get_output_name(self, output_idx=0):
         return self.session.get_outputs()[output_idx].name
+
+    @staticmethod
+    def _verify_model(model_path):
+        model_path = Path(model_path)
+        if not model_path.exists():
+            raise FileNotFoundError(f'{model_path} does not exists.')
+        if not model_path.is_file():
+            raise FileExistsError(f'{model_path} is not a file.')
 
 
 def read_yaml(yaml_path):

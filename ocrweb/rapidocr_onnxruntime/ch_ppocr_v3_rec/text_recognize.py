@@ -30,40 +30,15 @@ class TextRecognizer(object):
         session_instance = OrtInferSession(config)
         self.session = session_instance.session
         self.input_name = session_instance.get_input_name()
-        meta_dict = session_instance.get_metadata()
 
-        if 'character' in meta_dict.keys():
-            self.character_dict_path = meta_dict['character'].splitlines()
+        if session_instance.have_key():
+            self.character_dict_path = session_instance.get_character_list()
         else:
             self.character_dict_path = config.get('keys_path', None)
         self.postprocess_op = CTCLabelDecode(self.character_dict_path)
 
         self.rec_batch_num = config['rec_batch_num']
         self.rec_image_shape = config['rec_img_shape']
-
-    def resize_norm_img(self, img, max_wh_ratio):
-        img_channel, img_height, img_width = self.rec_image_shape
-        assert img_channel == img.shape[2]
-
-        img_width = int(img_height * max_wh_ratio)
-
-        h, w = img.shape[:2]
-        ratio = w / float(h)
-        if math.ceil(img_height * ratio) > img_width:
-            resized_w = img_width
-        else:
-            resized_w = int(math.ceil(img_height * ratio))
-
-        resized_image = cv2.resize(img, (resized_w, img_height))
-        resized_image = resized_image.astype('float32')
-        resized_image = resized_image.transpose((2, 0, 1)) / 255
-        resized_image -= 0.5
-        resized_image /= 0.5
-
-        padding_im = np.zeros((img_channel, img_height, img_width),
-                              dtype=np.float32)
-        padding_im[:, :, 0:resized_w] = resized_image
-        return padding_im
 
     def __call__(self, img_list: List[np.ndarray]):
         if isinstance(img_list, np.ndarray):
@@ -104,6 +79,30 @@ class TextRecognizer(object):
                 rec_res[indices[beg_img_no + rno]] = rec_result[rno]
             elapse += time.time() - starttime
         return rec_res, elapse
+
+    def resize_norm_img(self, img, max_wh_ratio):
+        img_channel, img_height, img_width = self.rec_image_shape
+        assert img_channel == img.shape[2]
+
+        img_width = int(img_height * max_wh_ratio)
+
+        h, w = img.shape[:2]
+        ratio = w / float(h)
+        if math.ceil(img_height * ratio) > img_width:
+            resized_w = img_width
+        else:
+            resized_w = int(math.ceil(img_height * ratio))
+
+        resized_image = cv2.resize(img, (resized_w, img_height))
+        resized_image = resized_image.astype('float32')
+        resized_image = resized_image.transpose((2, 0, 1)) / 255
+        resized_image -= 0.5
+        resized_image /= 0.5
+
+        padding_im = np.zeros((img_channel, img_height, img_width),
+                              dtype=np.float32)
+        padding_im[:, :, 0:resized_w] = resized_image
+        return padding_im
 
 
 if __name__ == "__main__":
