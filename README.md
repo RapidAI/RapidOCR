@@ -3,7 +3,7 @@
   <img src="./assets/RapidOCR_LOGO.png" width="55%" height="55%"/>
 </div>
 
-# RapidOCR (捷智OCR- 信创级开源OCR)
+# RapidOCR (捷智OCR- 信创级开源OCR - 为世界内容安全贡献力量)
 
 简体中文 | [English](./docs/README_en.md)
 
