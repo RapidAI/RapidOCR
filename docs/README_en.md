@@ -3,7 +3,7 @@
   <img src="../assets/RapidOCR_LOGO.png" width="55%" height="55%"/>
 </div>
 
-# RapidOCR
+# RapidOCR （Open source OCR for the security of the digital world)
 
 [简体中文](../README.md) | English
 
