@@ -8,7 +8,7 @@
 [简体中文](../README.md) | English
 
 <p align="left">
-    <a href="http://rapidai.deepdatasec.com:9003/"><img src="https://img.shields.io/badge/%E2%9A%A1%EF%B8%8E-Online%20Demo-blue"></a>
+    <a href="https://rapidai.deepdatasec.com:9003/"><img src="https://img.shields.io/badge/%E2%9A%A1%EF%B8%8E-Online%20Demo-blue"></a>
     <a href="https://huggingface.co/spaces/SWHL/RapidOCRDemo"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Hugging Face Demo-blue"></a>
     <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="../assets/colab-badge.svg" alt="Open in Colab"></a>
     <a href="https://aistudio.baidu.com/aistudio/projectdetail/4444785?sUid=57084&shared=1&ts=1660896122332"><img src="https://img.shields.io/badge/PP-Open in AI Studio-blue.svg"></a><br/>
@@ -110,7 +110,7 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 | Linux x64 | [![CMake-linux](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml) | Not available yet, compile by yourself |
 
 ## Demo
-- [Online demo](http://rapidai.deepdatasec.com:9003/)
+- [Online demo](https://rapidai.deepdatasec.com:9003/)
     - If the demo fails, you can visit the demo on Hugging Face: [RapidOCRDemo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
     - **Note**: This online demo does not store any image data uploaded and tested by friends. For details, please refer to: [ocrweb/README](../ocrweb/README.md)
     - The model combination (optimal combination) used for the demo is: `ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec`
