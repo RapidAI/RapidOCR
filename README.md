@@ -57,7 +57,7 @@
 
 ## 提供信创平台多架构商业支持
 
-包括Arm/X86/mips(龙芯)等信创CPU支持，同时兼容onnxruntime/openvino/NCNN，有意联系: znsoft@163.com , 请先邮件咨询服务方式，即时回复联系方式
+包括Arm/X86/mips(龙芯)/RISC-V等信创CPU支持，同时兼容onnxruntime/openvino/NCNN，有意联系: znsoft@163.com , 请先邮件咨询服务方式，即时回复联系方式
 
 ## 简介
 - 💖目前已知**运行速度最快、支持最广**，完全开源免费并支持离线部署的多平台多语言OCR SDK
