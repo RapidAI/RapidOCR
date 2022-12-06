@@ -1,36 +1,77 @@
-<!DOCTYPE html>
-<html lang="en">
+<!-- 
+    Provided by BUPT
+ -->
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <title>RapidOCR Demo</title>
-    <link rel=stylesheet type="text/css" href="{{url_for('static', filename='css/main.css')}}">
+    <link rel=stylesheet  href="../static/css/main.css">
     <link rel="shortcut icon" href="/static/css/favicon.ico" type="image/x-icon"/>
 </head>
 <body>
-    <h1 align="center">
-        <b><i>Rapid🗲OCR Demo</i></b>&nbsp;
-        <a href="https://github.com/RapidAI/RapidOCR" style="font-size: 14px;">欢迎Star</a>&thinsp;
-        <a href="https://github.com/RapidAI/RapidOCR/tree/main/ocrweb#readme" style="font-size:14px">了解Demo</a>
-    </h1>
-    <div class='area'>
-        <span class="btn-gen" onclick="javascript:$('#rapid_ocr').click();">试试你的图片?（可拖拽、粘贴、点击）</span>
-        <input type="file" style="display: none;" name="pic" id="rapid_ocr"/>
-        <span class="uplodNote">支持PNG、JPG、JPEG、BMP，图片大小不超过3M。</span>
-    </div>
-    <br/>
-    <div class="area">
+    <header>
+        <div class="head-wrapper">
+            <div class="logo">
+                <img src="../static/css/favicon.jpg" height="80px" alt="logo">
+            </div>
+            <div class="title">
+                <b><i>Rapid🗲OCR Demo</i></b>
+            </div>
+            <span>为世界内容安全贡献力量</span>
+            <ul class="link">
+                <li>
+                    <a href="https://github.com/RapidAI/RapidOCR/tree/main/ocrweb#readme"><b>了解Demo</b></a>
+                </li>
+                <li>
+                    <a href="https://github.com/RapidAI/RapidOCR"><b>欢迎Star</b></a>
+                </li>
+                
+            </ul>
+        </div>
+    </header>
+    <article>
+        <div class="introduction" id="introduction">
+            <span class="small-title">项 目 简 介</span>
+            <ul class="intro">
+                <li>目前已知运行速度最快、支持最广，完全开源免费并支持离线部署的多平台多语言OCR SDK</li>
+                <li>中文广告： 欢迎加入我们的QQ群下载模型及测试程序，qq群号：887298230</li>
+                <li>缘起：百度paddlepaddle工程化不是太好，为了方便大家在各种端上进行ocr推理，我们将它转换为onnx格式，使用Python/C++/Java/Swift/C# 将它移植到各个平台。</li>
+                <li>名称来源： 轻快好省并智能。 基于深度学习技术的OCR技术，主打人工智能优势及小模型，以速度为使命，效果为主导。</li>
+                <li>基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。</li>
+            </ul>
+        </div>
+
         <div class="leftarea" id="detectDiv">
-            <span class="span_title">文 本 检 测 结 果</span><br/><br/>
-            <div class="wrapper" id="wrapper" hidden></div>
-            <img id="detect_img" src=""/>
+            <span class="small-title">文 本 检 测 结 果</span>
+            <div class="img-wrapper">
+                <!-- 双层包裹使wrapper完全覆盖图片 -->
+                <div class="container">
+                    <div class="wrapper" id="wrapper"  ></div>
+                    <div class="img" id="img-table">
+                        <img id="detect_img" src=""/>
+                    </div>
+                </div>   
+            </div>
+            
+            <div class='button-area' >
+                <span class="btn-gen" onclick="javascript:$('#rapid_ocr').click();">试试你的图片?</span>
+                <input type="file" style="display: none;" name="pic" id="rapid_ocr"/>
+                <span class="uplodNote">可拖拽、粘贴、点击，支持PNG、JPG、JPEG、BMP，图片大小不超过3M。</span>
+            </div>
         </div>
 
         <div class="rightarea" id="recogDiv">
-            <span id="rec_res" class="span_title">文 本 识 别 结 果</span>
-            <br/><br/>
-            <table id="locTable" class="table" cellspacing="0" cellpadding="5"></table>
+            <span id="rec_res" class="small-title">文 本 识 别 结 果</span>
+            <div class="div-table">
+                <table id="locTable" class="table" cellspacing="0" cellpadding="5"></table>
+            </div>
+            <div class="button-area">
+                <!-- 留下两个按钮的位置，后续完善相应功能 -->
+                <span class="btn-copy" onclick="copy_table()">复制</span>
+                <span class="btn-table-excel" onclick="table_to_excel()">导出Excel</span>
+            </div>
         </div>
-    </div>
+    </article>
     <script src="{{url_for('static', filename='js/jquery-3.0.0.min.js')}}"></script>
     <script type="text/javascript">
         // 页面加载时，执行
@@ -68,7 +109,6 @@
             let trans = e.originalEvent.clipboardData;
             handleData(trans);
         });
-
         function handleData(trans) {
             if (trans.items) {
                 for (let i = 0; i < trans.items.length; i++) {
@@ -123,12 +163,8 @@
                     data: JSON.stringify(upload_data),
                     contentType: 'application/json; charset=UTF-8',
                     dataType: 'json',
-
                     beforeSend:function(){
                         $("#detect_img").attr('src', reader.result);
-                        $("#detect_img").attr("width", "95%");
-                        $("#detect_img").attr("height", "100%");
-
                         $("#wrapper").show();
                         $("#locTable").hide();
                         $("#rec_res").html("文本识别结果");
@@ -146,44 +182,57 @@
                                 document.getElementById("rec_res").textContent = "文 本 检 测 结 果(Total:" + String(data["total_elapse"]) + "s)"
                                 $("#rec_res").show();
                             }
-
+                            
                             if (data["rec_res"]){
                                 var rec_res = JSON.parse(data["rec_res"]);
-
-                                // console.log(data['elapse_part']);
-                                if (data['elapse_part']){
-                                    var elapse_list = data['elapse_part'].split(',');
-                                }else{
-                                    var elapse_list = [0, 0, 0];
+                                // 实现对非法图片的安全保护
+                                // Provided by BUPT
+                                var regex = /<([a-z][\s\S]*)>.*<\/([a-z][\s\S]*)>/i;
+                                var full_text = "";
+                                for(let k = 0; k < rec_res.length; k++){
+                                    var temp = rec_res[k];
+                                    var words = temp[1];
+                                    full_text = full_text + words;
                                 }
-                                var data = "";
-                                data += "<tr>" +
-                                            '<th align="right">Det: ' + elapse_list[0] + 's</th>' +
-                                            '<th align="center">Cls: ' + elapse_list[1] + 's</th>' +
-                                            '<th align="left">Rec: ' + elapse_list[2] + 's</th>' +
-                                        "</tr>"
-                                data += "<tr>" +
-                                            '<th bgcolor="#C0C0C0">序号</th>' +
-                                            '<th bgcolor="#C0C0C0">识别结果</th>' +
-                                            '<th bgcolor="#C0C0C0">置信度</th>' +
-                                        "</tr>"
-                                for (let i = 0; i < rec_res.length; i++) {
-                                    const element = rec_res[i];
-                                    let num = element[0];
-
-                                    let rec_result = element[1];
-
-                                    let score = Number(element[2]);
-                                    score = score.toFixed(4);
-
-                                    data += "<tr>"
-                                    data += "<td>" + num + "</td>";
-                                    data += "<td align='left'>" + rec_result + "</td>";
-                                    data += "<td>" + score + "</td>";
-                                    data += "</tr>"
+                                var result = regex.test(full_text);
+                                if(result){
+                                    alert("疑似存在恶意代码，文本结果将不会在表格中显示！");
                                 }
-                                document.getElementById("locTable").innerHTML = data;
-                                $("#locTable").show();
+                                else{
+                                    // console.log(data['elapse_part']);
+                                    if (data['elapse_part']){
+                                        var elapse_list = data['elapse_part'].split(',');
+                                    }else{
+                                        var elapse_list = [0, 0, 0];
+                                    }
+                                    var data = "";
+                                    data += "<tr>" +
+                                                '<th align="right">Det: ' + elapse_list[0] + 's</th>' +
+                                                '<th align="center">Cls: ' + elapse_list[1] + 's</th>' +
+                                                '<th align="left">Rec: ' + elapse_list[2] + 's</th>' +
+                                            "</tr>"
+                                    data += "<tr>" +
+                                                '<th bgcolor="#C0C0C0">序号</th>' +
+                                                '<th bgcolor="#C0C0C0">识别结果</th>' +
+                                                '<th bgcolor="#C0C0C0">置信度</th>' +
+                                            "</tr>"
+                                    for (let i = 0; i < rec_res.length; i++) {
+                                        const element = rec_res[i];
+                                        let num = element[0];
+
+                                        let rec_result = element[1];
+                                        let score = Number(element[2]);
+                                        score = score.toFixed(4);
+
+                                        data += "<tr>"
+                                        data += "<td>" + num + "</td>";
+                                        data += "<td align='left'>" + rec_result + "</td>";
+                                        data += "<td>" + score + "</td>";
+                                        data += "</tr>"
+                                    }
+                                    document.getElementById("locTable").innerHTML = data;
+                                    $("#locTable").show();
+                                }
                             }
                         }
 
@@ -194,5 +243,16 @@
             reader.readAsDataURL(targetFile)
         }
     </script>
+    <script>
+        function copy_table(){
+            alert("Copy the table to Pasteboard!");
+        }
+        function table_to_excel()
+        {
+            alert("Change table to Excel!");
+        }
+        </script>
+    <footer>
+        <br>
+    </footer>
 </body>
-</html>
