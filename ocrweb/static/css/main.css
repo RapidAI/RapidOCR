@@ -1,80 +1,207 @@
 body{
-    background-color:#ebedef;
+    background-color: white;
     min-height: 100%;
-    margin: 0;
+    margin: 0px auto;
 }
-.btn-gen {
-    /* position: absolute;top:540px; left: 500px; */
-    background-color: #00a1d6;
-    text-align: center;
-    border-radius: 18px;
-    margin-top: 5px;
-    font-size: 15px;
-    padding: 5px 10px;
-    height: 20px;
-    width: 120px;
-    text-transform: uppercase;
-    color: #fff;
-    border:none;
+header{
+    width: 100%;
+    height: 80px;
+    background-color:#fafafa;
+    box-shadow:0px 4px 2px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    z-index: 3;
+    top: 0;
 }
-.btn-gen:hover,
-.btn-gen:focus {
-    border-color: #23AAEE;
-    background-color: #23AAEE;
-    color: white;
-    cursor: pointer;
+.head-wrapper{
+    min-width: 1000px;
+    max-width: 1500px;
+    width: 90%;
+    margin: 0px auto;
 }
-.area{
-    text-align: center;
-    height: auto;
-    margin: auto;
-}
-.leftarea{
+.logo{
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
     float: left;
-    width: 50%;
+    overflow: hidden;
+}
+.title{
+    float: left;
+    line-height: 80px;
+    font-size: 40px;
+}
+header span{
+    font-size: 25px;
+    padding-left: 50px;
+    line-height: 80px;
+    float: left;
+}
+.link{
+    margin: 0px;
+    list-style: none;
+    height: auto;
+}
+.link li{
+    float: right;
+}
+header a{
+    display: block;
+    height: 80px;
+    font-size: 20px; 
+    line-height: 80px;
+    padding: 0px 15px;
+}
+header a:hover{
+    color: white;
+    background-color: gray;
+}
+
+article{
+    min-width: 1000px;
+    max-width: 1500px;
+    width: 80%;
+    height: auto;
+    margin: 0px auto;
+    margin-top: 90px;
+    position: relative;
+}
+.introduction,
+.leftarea,
+.rightarea{
+    background-color: white;
+    overflow: hidden;
+    margin-bottom: 20px;
+    border-radius: 0px 0px 10px 10px;
+    border: solid rgba(128, 128, 128, 0.2) 1px;
+    box-shadow:4px 4px 5px rgba(0, 0, 0, 0.2);
+}
+
+.intro{
+    margin: 10px auto;
+}
+.intro li{
+    font-size: 25px;
+    margin: 10px auto;
+}
+
+.leftarea{
+    width: 100%;
     height: auto;
     position: relative;
 }
 
-.rightarea{
-    float: left;
-    width: 50%;
+.small-title{
+    display: block;
+    height: 45px;
+    line-height: 45px;
+    font-size: 35px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+    padding-left: 10px;
+    background-color: rgba(128, 128, 128, .1);
+    border-bottom: 2px gray solid;
+}
+.img-wrapper{
+    width: 98%;
+    min-height: 400px;
+    margin: 0px auto;
+    position: relative;
+    /* 添加滑动条，过宽的图片可通过滑动条查看 */
+    overflow-x: auto;
+    border: 2px gray dashed;
+}
+.container{
+    width: auto;
     height: auto;
+    overflow: visible;
+    float: left;
+    position: relative;
+}
+.img{
+    /* 仅设置最小高度，图片若高于400px则撑开img */
+    min-height: 400px;
+    margin: 0px auto;
+    position: relative;
+}
+.btn-gen,
+.btn-copy,
+.btn-table-excel
+{
+    width: 160px;
+    height: 25px;
+    line-height: 25px;
+    background-color: #adadad;
+    border-radius: 5px;
+    margin: 10px 12px;
+    font-size: 20px;
+    padding: 5px 10px;
+    text-transform: uppercase;
+    color: #fff;
+    float: right;
+}
+
+.button-area{
+    text-align: center;
+    display: block;
+    border-top: 2px gray solid;
+    margin-top: 10px;
+}
+
+.btn-copy,
+.btn-table-excel{
+    width: 100px;
+    margin:10px 12px 10px 0px;
+    border: hidden;
+}
+
+.btn-gen:hover,
+.btn-gen:focus,
+.btn-copy:hover,
+.btn-copy:focus,
+.btn-table-excel:hover,
+.btn-table-excel:focus{
+    background-color: #8a8a8a;
+    cursor: pointer;
+}
+.uplodNote{
+    height: 20px;
+    line-height: 55px;
+    font-size: 18px;
+    color:#A1A1A1;
+    float: right;
+}
+
+.left{
+    float: left;
+    width: 70%;
+    height: 1000px;
+    border-style: dashed;
+}
+.rightarea{
+    width: 100%;
+    height: auto; 
+}
+.div-table{
+    width: 98%;
+    height: auto;
+    min-height: 400px;
+    margin: 0 auto;
 }
 .table{
     width: auto;
     height: auto;
     margin: 0 auto;
-
 }
-.span_title{
-    width: 98%;
-    height: 36px;
-    margin-top: 4px;
-    line-height: 32px;
-    background-color: #00a1d6;
-    border: 1px solid #00a1d6;
-    border-radius: 20px;
-    color: #fff;
-    display: inline-block;
-    text-align: center;
-    font-size: 22px;
-    transition: .3s;
-    box-sizing: border-box;
-}
-.uplodNote{
-    font-size: 10px;
-    color:#A1A1A1;
-}
-
 a{
     text-decoration:none;
 }
 
-/* wrapper */
-.leftarea>#wrapper {
-    position: absolute; top: 45px; left:0px;
-    width: 98%;
+.wrapper {
+    position: absolute;
+    z-index: 2;
+    float: left;
+    width: 100%;
     height: 100%;
     background:
     linear-gradient(#1a98ca, #1a98ca),
