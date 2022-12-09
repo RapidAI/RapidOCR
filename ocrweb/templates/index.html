@@ -184,6 +184,10 @@
                             }
                             
                             if (data["rec_res"]){
+                                // 若返回值为"1"，说明检测出可疑代码
+                                if (data["rec_res"] == "1"){
+                                    alert("疑似存在恶意代码，文本结果将不会在表格中显示！");
+                                }
                                 var rec_res = JSON.parse(data["rec_res"]);
                                 // 实现对非法图片的安全保护
                                 // Provided by BUPT
