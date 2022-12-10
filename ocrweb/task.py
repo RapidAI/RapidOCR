@@ -98,7 +98,7 @@ def check_image_type(file):
     is_pic_type = isinstance(file, np.ndarray)
     if is_pic_type:
         height, width = file.shape[:2]
-        # Use the height and width attributes to verify weather the image is a true image
+        # Use the height and width attributes to verify whether the image is a true image
         if height > 0 and width > 0:
             print("上传文件格式正确 ")
             return True
