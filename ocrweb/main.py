@@ -40,9 +40,9 @@ def ocr():
 
             img, elapse, elapse_part, rec_res_data = detect_recognize(image)
             return json.dumps({'image': img,
-                            'total_elapse': f'{elapse:.4f}',
-                            'elapse_part': elapse_part,
-                            'rec_res': rec_res_data})
+                               'total_elapse': f'{elapse:.4f}',
+                               'elapse_part': elapse_part,
+                               'rec_res': rec_res_data})
         else:
             return json.dumps({'message':'请选择正确的图片格式'})
 
