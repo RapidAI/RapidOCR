@@ -36,7 +36,7 @@ def css_test(s):
     return False
 
 # 本函数实现从检测到的文本中查找URL的功能
-def readurl(string): 
+def read_url(string): 
     url = re.findall('https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+', string)
     return url
 
@@ -51,7 +51,7 @@ def url_check_wechat(url):
 
 # 本函数输出URL安全性检测结果
 def url_test(input):
-    urls = readurl(input)
+    urls = read_url(input)
     for url in urls:
         state = url_check_wechat(url)
         if state == 0:    

@@ -173,6 +173,12 @@
                     success:function (data) {
                         $("#wrapper").hide();
                         if (data){
+                            // 对后缀名是图片格式，但实际不是图片的文件给出提示
+                            // Provided by BUPT
+                            if(data['message']){
+                                alert("您上传的文件不是图片!")
+                            }
+                            
                             if (data['image']){
                                 $("#detect_img").attr('src', 'data:image/jpeg;base64,'+ data['image']);
                                 $('#detect_img').show();
