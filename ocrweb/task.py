@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 
 from rapidocr_onnxruntime import RapidOCR
+from detection import detection
 
 text_sys = RapidOCR('config.yaml')
 
@@ -37,10 +38,16 @@ def detect_recognize(image_path, is_api=False):
         rec_res_data = json.dumps([], indent=2, ensure_ascii=False)
     else:
         boxes, txts, scores = list(zip(*final_result))
-        rec_res = list(zip(range(len(txts)), txts, scores))
-        rec_res_data = json.dumps(rec_res,
-                                  indent=2,
-                                  ensure_ascii=False)
+        # 检测文本扫描结果是否含有恶意代码
+        # Provided by BUPT
+        txts_str = ''.join(txts)
+        if detection(txts_str):
+            rec_res_data = json.dumps('1', indent=2, ensure_ascii=False)
+        else:
+            rec_res = list(zip(range(len(txts)), txts, scores))
+            rec_res_data = json.dumps(rec_res,
+                                      indent=2,
+                                      ensure_ascii=False)
 
         det_im = draw_text_det_res(np.array(boxes), img)
         img_str = img_to_base64(det_im)
