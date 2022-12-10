@@ -20,8 +20,7 @@ def js_test(s):
     res = re.match(regex, s)
     if res:
         return True
-    else:
-        return False
+    return False
 
 
 # 检测文本结果是否含有css代码，若含有则返回True
@@ -30,5 +29,4 @@ def css_test(s):
     res = re.match(regex, s)
     if res:
         return True
-    else:
-        return False
+    return False

@@ -10,7 +10,6 @@ import numpy as np
 from flask import Flask, render_template, request
 
 from task import detect_recognize
-from detection import detection
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024
@@ -34,14 +33,6 @@ def ocr():
             image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
         img, elapse, elapse_part, rec_res_data = detect_recognize(image)
-        # 检测文本扫描结果是否含有恶意代码
-        # Provided by BUPT
-        text_lst = json.loads(rec_res_data)
-        text_str = ""
-        for i in text_lst:
-            text_str = text_str + i[1]
-        if detection(text_str):
-            rec_res_data = "1"
         return json.dumps({'image': img,
                            'total_elapse': f'{elapse:.4f}',
                            'elapse_part': elapse_part,
