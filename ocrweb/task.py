@@ -88,26 +88,24 @@ def draw_text_det_res(dt_boxes, raw_im):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
     return src_im
 
-'''
-验证image是不是一张真图片
-Provided by BUPT
-'''
 def check_image_type(file):
-    file_type = str(type(file))
-    # check the type of file
-    if file_type != "<class 'numpy.ndarray'>":
-        print("请选择正确的图片格式")
-        return False
+    '''
+    验证image是不是一张真图片
+    Provided by BUPT
+    '''
 
-    else:
-        # get image height
-        height = file.shape[0]
-        # get image width
-        width = file.shape[1]
-        # check whether the file is in image format
+    # check whether the file is in image format
+    is_pic_type = isinstance(file, np.ndarray)
+    if is_pic_type:
+        height, width = file.shape[:2]
+        # Use the height and width attributes to verify weather the image is a true image
         if height > 0 and width > 0:
             print("上传文件格式正确 ")
             return True
         else:
             print("请选择正确的图片格式")
             return False
+
+    else:
+        print("请选择正确的图片格式")
+        return False
