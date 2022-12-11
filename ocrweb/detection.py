@@ -5,56 +5,88 @@
 import re
 import urllib.request
 import requests
+import numpy as np
+import ahocorasick
 
-# 用户自定义检测设置，若有异常则返回True
-def detection(s, js=True, css=True, url=True, il_word=True, is_pic=False):
-    res = False
-    if js:
-        res = js_test(s)
-    if css:
-        res = css_test(s)
-    if url:
-        # 对检测到的每个URL安全性进行检测；
-        # 若有安全风险，后台发出警示：“Security Risk: True”，前端文本检测结果显示不变；
-        url_test(s)
-    return res
+class Detection():
+    """
+    检查OCR过程中的安全问题，包括：js/css/url注入和文本中是否包含违规词汇
+    : js_test() -- js注入检测
+    : css_test() -- css注入检测
+    : url_test() -- url注入检测
+    : il_word_test() -- 违规词汇检测
+    Provided by BUPT
+    """
+    def __init__(self, rec_res_data):
+        self.rec_res_data = rec_res_data
 
-# 检测文本结果是否含有js代码，若含有则返回True
-def js_test(s):
-    regex = r"[\s\S]*<script[\s\S]+</script *>[\s\S]*"
-    res = re.match(regex, s)
-    if res:
-        return True
-    return False
+    def js_test(self):
+        boxes, txts, scores = list(zip(*self.rec_res_data))
+        txt_str = ''.join(txts)
+        regex = r"[\s\S]*<script[\s\S]+</script *>[\s\S]*"
+        res = re.match(regex, txt_str)
+        if res:
+            return True
+        return False
 
-# 检测文本结果是否含有css代码，若含有则返回True
-def css_test(s):
-    regex = r"[\s\S]*<style[\s\S]+</style *>[\s\S]*"
-    res = re.match(regex, s)
-    if res:
-        return True
-    return False
+    def css_test(self):
+        boxes, txts, scores = list(zip(*self.rec_res_data))
+        txt_str = ''.join(txts)
+        regex = r"[\s\S]*<style[\s\S]+</style *>[\s\S]*"
+        res = re.match(regex, txt_str)
+        if res:
+            return True
+        return False
 
-# 本函数实现从检测到的文本中查找URL的功能
-def read_url(string): 
-    url = re.findall('https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+', string)
-    return url
+    def url_test(self):
+        boxes, txts, scores = list(zip(*self.rec_res_data))
+        txt_str = ''.join(txts)
+        urls = re.findall('https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+', txt_str)
+        for url in urls:
+            state = self.url_check_wechat(url)
+            if state == 0:
+                print("Security Risk: False")
+            else:
+                print("Security Risk: True")
 
-# 本函数利用微信域名拦截API，实现URL安全性检测功能
-def url_check_wechat(url):
-    link = requests.get(
-        "https://api.kit9.cn/api/wechat_security/api.php",
-        params={"url": url},
-    )
-    result = link.json()
-    return result["data"]["state"]
+    # 本函数利用微信域名拦截API，实现URL安全性检测功能
+    def url_check_wechat(self, url):
+        """
+        :params url: 表示被检查的url链接
+        """
+        link = requests.get(
+            "https://api.kit9.cn/api/wechat_security/api.php",
+            params={"url": url},
+        )
+        result = link.json()
 
-# 本函数输出URL安全性检测结果
-def url_test(input):
-    urls = read_url(input)
-    for url in urls:
-        state = url_check_wechat(url)
-        if state == 0:    
-            print("Security Risk: False")
-        else:    
-            print("Security Risk: True")
+        return result["data"]["state"]
+
+    def il_word_test(self):
+        """
+        illegal_words.txt:
+        将公开的违规词汇数据集由 'base64' 格式转为'utf-8' 格式得到
+        （原数据链接：https://gitee.com/xstudio/badwords/tree/master）
+        """
+        word_list = []
+        is_illegal = False
+        with open('./illegal_words.txt', 'r', encoding='utf-8') as f:
+            line = f.readline()
+            while line:
+                t = line.split()[0].strip()
+                word_list.append(t)
+                line = f.readline()
+            f.close()
+
+        actree = ahocorasick.Automaton()
+        for index, word in enumerate(word_list):
+            actree.add_word(word, (index, word))
+        actree.make_automaton()
+
+        for text in self.rec_res_data:
+            for i in actree.iter(text[1]):
+                # 是否屏蔽违规词汇：若启用屏蔽，需更新rec_res_data并返回
+                # text[1] = text[1].replace(i[1][1], "**")
+                is_illegal = True
+
+        return is_illegal

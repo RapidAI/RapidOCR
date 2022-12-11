@@ -9,8 +9,7 @@ import cv2
 import numpy as np
 from flask import Flask, render_template, request
 
-from task import detect_recognize
-from task import check_image_type
+from task import detect_recognize, check_pic_type
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024
@@ -30,21 +29,24 @@ def ocr():
         image = base64.b64decode(img_str + '=' * (-len(img_str) % 4))
         nparr = np.frombuffer(image, np.uint8)
         image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        # 验证image是不是一张图片
-        # Provide by BUPT
-        check = check_image_type(image)
-        print(check)
-        if check:
+
+        # 检查后缀名是图片格式，但实际不是图片的文件
+        # Provided by BUPT
+        is_pic = check_pic_type(image)
+        if is_pic:
             if image.ndim == 2:
                 image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
-            img, elapse, elapse_part, rec_res_data = detect_recognize(image)
+            img, elapse, elapse_part, rec_res_data, securtiy_check = detect_recognize(image)
             return json.dumps({'image': img,
                                'total_elapse': f'{elapse:.4f}',
                                'elapse_part': elapse_part,
-                               'rec_res': rec_res_data})
+                               'rec_res': rec_res_data,
+                               'security_check': securtiy_check})
         else:
-            return json.dumps({'message':'请选择正确的图片格式'})
+            return json.dumps({'message': '请选择正确的图片格式'})
+
+
 
 
 if __name__ == '__main__':

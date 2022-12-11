@@ -178,7 +178,16 @@
                             if(data['message']){
                                 alert("您上传的文件不是图片!")
                             }
-                            
+
+                            // 综合判断OCR过程中是否存在安全问题（包括：js、css、url注入，违规词汇检测）
+                            // Provided by BUPT
+                            if (data["security_check"]){
+                                var security_check = JSON.parse(data["security_check"]);
+                                if (security_check){
+                                    alert("疑似存在安全问题，请检查：文本中是否包含js/css注入或违规词汇!");
+                                }
+                            }
+
                             if (data['image']){
                                 $("#detect_img").attr('src', 'data:image/jpeg;base64,'+ data['image']);
                                 $('#detect_img').show();
@@ -190,10 +199,6 @@
                             }
                             
                             if (data["rec_res"]){
-                                // 若返回值为"1"，说明检测出可疑代码
-                                if (data["rec_res"] == "1"){
-                                    alert("疑似存在恶意代码，文本结果将不会在表格中显示！");
-                                }
                                 var rec_res = JSON.parse(data["rec_res"]);
                                 // 实现对非法图片的安全保护
                                 // Provided by BUPT
@@ -209,7 +214,6 @@
                                     alert("疑似存在恶意代码，文本结果将不会在表格中显示！");
                                 }
                                 else{
-                                    // console.log(data['elapse_part']);
                                     if (data['elapse_part']){
                                         var elapse_list = data['elapse_part'].split(',');
                                     }else{
@@ -244,6 +248,7 @@
                                     $("#locTable").show();
                                 }
                             }
+
                         }
 
                     }
