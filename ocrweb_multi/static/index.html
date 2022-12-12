@@ -85,7 +85,7 @@
         function handleData(trans) {
             if (trans.items) {
                 for (let i = 0; i < trans.items.length; i++) {
-                    // If dropped items aren't test_files, reject them
+                    // If dropped items aren't files, reject them
                     if (trans.items[i].kind === 'file') {
                         targetFile = trans.items[i].getAsFile();
                         console.log(`handleData: items[${i}].name = ${targetFile.name}`);
