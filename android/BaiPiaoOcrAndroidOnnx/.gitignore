@@ -1,4 +1,4 @@
-# Built application test_files
+# Built application files
 #*.apk
 *.ap_
 *.aab
@@ -6,15 +6,15 @@
 # Files for the ART/Dalvik VM
 *.dex
 
-# Java class test_files
+# Java class files
 *.class
 
-# Generated test_files
+# Generated files
 bin/
 gen/
 out/
 
-# Gradle test_files
+# Gradle files
 .gradle/
 build/
 
@@ -27,7 +27,7 @@ proguard/
 # Log Files
 *.log
 
-# Android Studio Navigation editor temp test_files
+# Android Studio Navigation editor temp files
 .navigation/
 
 # Android Studio captures folder
@@ -50,8 +50,8 @@ captures/
 .idea/misc.xml
 .idea/codeStyles
 
-# Keystore test_files
-# Uncomment the following lines if you do not want to check your keystore test_files in.
+# Keystore files
+# Uncomment the following lines if you do not want to check your keystore files in.
 #*.jks
 #*.keystore
 
