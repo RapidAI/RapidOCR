@@ -1,6 +1,6 @@
 
 <div align="center">
-  <img src="./assets/RapidOCR_LOGO.png" width="55%" height="55%"/>
+  <img src="./assets/RapidOCR_LOGO.png" width="65%" height="65%"/>
 </div>
 
 # RapidOCR (捷智OCR- 信创级开源OCR - 为世界内容安全贡献力量)
@@ -24,7 +24,8 @@
 <details>
     <summary>目录</summary>
 
-- [RapidOCR (捷智OCR)](#rapidocr-捷智ocr)
+- [RapidOCR (捷智OCR- 信创级开源OCR - 为世界内容安全贡献力量)](#rapidocr-捷智ocr--信创级开源ocr---为世界内容安全贡献力量)
+  - [商业支持](#商业支持)
   - [简介](#简介)
   - [近期更新(more)](#近期更新more)
       - [🧻2022-11-20 update:](#2022-11-20-update)
@@ -55,16 +56,16 @@
       - [多语言示例图像](#多语言示例图像)
 </details>
 
-## 提供信创平台多架构商业支持
-
-包括Arm/X86/mips(龙芯)/RISC-V等信创CPU支持，同时兼容onnxruntime/openvino/NCNN，有意联系: znsoft@163.com , 请先邮件咨询服务项目，即时回复联系方式
+## 商业支持
+- 提供信创平台多架构，包括**Arm/X86/mips(龙芯)/RISC-V**等信创CPU支持，同时兼容**ONNXRuntime/OpenVINO/NCNN**。
+- 有意者邮件联系: znsoft@163.com, 请先邮件咨询服务项目，即时回复联系方式。
 
 ## 简介
-- 💖目前已知**运行速度最快、支持最广**，完全开源免费并支持离线部署的多平台多语言OCR SDK
+- 💖目前已知**运行速度最快、支持最广**，完全开源免费并支持离线部署的多平台多语言OCR。
 - **中文广告**： 欢迎加入我们的QQ群下载模型及测试程序，qq群号：887298230
 - **缘起**：百度paddlepaddle工程化不是太好，为了方便大家在各种端上进行ocr推理，我们将它转换为onnx格式，使用`Python/C++/Java/Swift/C#` 将它移植到各个平台。
-- **名称来源**： 轻快好省并智能。 基于深度学习技术的OCR技术，主打人工智能优势及小模型，以速度为使命，效果为主导。
-- 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度的paddlepaddle框架进行模型优化。
+- **名称来源**： 轻快好省并智能。基于深度学习技术的OCR技术，主打人工智能优势及小模型，以速度为使命，效果为主导。
+- 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度PaddlePaddle框架进行模型优化。
 
 ## 近期更新([more](./docs/change_log.md))
 #### 🧻2022-11-20 update:

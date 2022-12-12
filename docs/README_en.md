@@ -23,7 +23,7 @@
 <details>
     <summary>Contents</summary>
 
-- [RapidOCR](#rapidocr)
+- [RapidOCR （Open source OCR for the security of the digital world)](#rapidocr-open-source-ocr-for-the-security-of-the-digital-world)
   - [Introduction](#introduction)
   - [Recently updates(more)](#recently-updatesmore)
       - [🧻2022-11-20 update:](#2022-11-20-update)
@@ -38,7 +38,7 @@
   - [Directory structure](#directory-structure)
   - [Current Progress](#current-progress)
   - [Model related](#model-related)
-      - [Download models(Baidu NetDisk | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing))](#download-modelsbaidu-netdisk--google-drive)
+      - [Download models(Baidu NetDisk | Google Drive)](#download-modelsbaidu-netdisk--google-drive)
       - [Model to onnx](#model-to-onnx)
     - [Compared](#compared)
       - [Text Det](#text-det)
@@ -51,18 +51,18 @@
   - [Demo](#demo-1)
       - [Demonstration with C++/JVM](#demonstration-with-cjvm)
       - [Demonstration with .Net](#demonstration-with-net)
-      - [Demonstratioin with multi_language](#demonstratioin-with-multi_language)
+      - [Demonstratioin with multi\_language](#demonstratioin-with-multi_language)
 </details>
 
 
 ## Introduction
-- Completely open source, free and support offline deployment of multi-platform and multi-language OCR SDK
+- Completely open source, free and support offline deployment of multi-platform and multi-language OCR.
 - **Chinese Advertising**: Welcome to join our QQ group to download the model and test program, QQ group number: 887298230
-- **Cause**: Baidu paddlepaddle engineering is not very good, in order to facilitate everyone to perform OCR reasoning on various terminals, we convert it to onnx format, use `Python/C++/Java/Swift/C#' to change It is ported to various platforms.
+- **Cause**: Baidu paddlepaddle engineering is not very good, in order to facilitate everyone to perform OCR reasoning on various terminals, we convert it to onnx format, use `Python/C++/Java/Swift/C#` to change It is ported to various platforms.
 
 - **Name Source**: Light, fast, economical and smart. OCR technology based on deep learning technology focuses on artificial intelligence advantages and small models, with speed as the mission and effect as the leading role.
 
-- Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's paddlepaddle framework for model optimization according to their own needs.
+- Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's PaddlePaddle framework for model optimization according to their own needs.
 
 ## Recently updates([more](./change_log_en.md))
 #### 🧻2022-11-20 update:
