@@ -112,7 +112,7 @@
         function handleData(trans) {
             if (trans.items) {
                 for (let i = 0; i < trans.items.length; i++) {
-                    // If dropped items aren't files, reject them
+                    // If dropped items aren't test_files, reject them
                     if (trans.items[i].kind === 'file') {
                         targetFile = trans.items[i].getAsFile();
                         console.log(`handleData: items[${i}].name = ${targetFile.name}`);
@@ -181,10 +181,10 @@
 
                             // 综合判断OCR过程中是否存在安全问题（包括：js、css、url注入，违规词汇检测）
                             // Provided by BUPT
-                            if (data["security_check"]){
-                                var security_check = JSON.parse(data["security_check"]);
-                                if (security_check){
-                                    alert("疑似存在安全问题，请检查：文本中是否包含js/css注入或违规词汇!");
+                            if (data["det_str"]){
+                                {#var security_check = JSON.parse(data["det_str"]);#}
+                                if (data["det_str"] != ""){
+                                    alert(data["det_str"]);
                                 }
                             }
 

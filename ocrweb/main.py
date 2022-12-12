@@ -37,16 +37,14 @@ def ocr():
             if image.ndim == 2:
                 image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
-            img, elapse, elapse_part, rec_res_data, securtiy_check = detect_recognize(image)
+            img, elapse, elapse_part, rec_res_data, det_str = detect_recognize(image)
             return json.dumps({'image': img,
                                'total_elapse': f'{elapse:.4f}',
                                'elapse_part': elapse_part,
                                'rec_res': rec_res_data,
-                               'security_check': securtiy_check})
+                               'det_str': det_str})
         else:
             return json.dumps({'message': '请选择正确的图片格式'})
-
-
 
 
 if __name__ == '__main__':

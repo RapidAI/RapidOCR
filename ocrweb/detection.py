@@ -19,37 +19,36 @@ class Detection():
     """
     def __init__(self, rec_res_data):
         self.rec_res_data = rec_res_data
+        boxes, txts, scores = list(zip(*self.rec_res_data))
+        self.rec_res_str = ''.join(txts)
 
     def js_test(self):
-        boxes, txts, scores = list(zip(*self.rec_res_data))
-        txt_str = ''.join(txts)
         regex = r"[\s\S]*<script[\s\S]+</script *>[\s\S]*"
-        res = re.match(regex, txt_str)
+        res = re.match(regex, self.rec_res_str)
         if res:
             return True
         return False
 
     def css_test(self):
-        boxes, txts, scores = list(zip(*self.rec_res_data))
-        txt_str = ''.join(txts)
         regex = r"[\s\S]*<style[\s\S]+</style *>[\s\S]*"
-        res = re.match(regex, txt_str)
+        res = re.match(regex, self.rec_res_str)
         if res:
             return True
         return False
 
     def url_test(self):
-        boxes, txts, scores = list(zip(*self.rec_res_data))
-        txt_str = ''.join(txts)
-        urls = re.findall('https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+', txt_str)
+        urls = re.findall('https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+', self.rec_res_str)
+        is_url = False
         for url in urls:
             state = self.url_check_wechat(url)
             if state == 0:
                 print("Security Risk: False")
             else:
                 print("Security Risk: True")
+                is_url = True
+        return is_url
 
-    # 本函数利用微信域名拦截API，实现URL安全性检测功能
+
     def url_check_wechat(self, url):
         """
         :params url: 表示被检查的url链接
@@ -76,7 +75,6 @@ class Detection():
                 t = line.split()[0].strip()
                 word_list.append(t)
                 line = f.readline()
-            f.close()
 
         actree = ahocorasick.Automaton()
         for index, word in enumerate(word_list):
