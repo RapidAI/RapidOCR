@@ -29,7 +29,7 @@
   - [近期更新(more)](#近期更新more)
       - [🧻2022-11-20 update:](#2022-11-20-update)
       - [🎃2022-11-01 update:](#2022-11-01-update)
-      - [🚩2022-10-01 udpate:](#2022-10-01-udpate)
+      - [🚩2022-10-01 update:](#2022-10-01-update)
   - [垂直相关项目(more)](#垂直相关项目more)
   - [衍生项目](#衍生项目)
   - [生态框架](#生态框架)
@@ -73,7 +73,7 @@
 #### 🎃2022-11-01 update:
 - 添加Hugging Face Demo, 增加可以调节超参数的功能，详情可访问[Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
 
-#### 🚩2022-10-01 udpate:
+#### 🚩2022-10-01 update:
 - 修复python部分下一些较小bugs
 - merge来自[AutumnSun1996](https://github.com/AutumnSun1996)的[OCRWeb实现的多语言部署](https://github.com/RapidAI/RapidOCR/pull/46)demo，详情参见：[ocrweb_mutli-README](./ocrweb_multi/README.md)
 - 添加onnxruntime-gpu推理速度较慢于CPU的问题说明，详情参见：[onnxruntime-gpu版相关说明](./python/README.md#onnxruntime-gpu版相关说明)
