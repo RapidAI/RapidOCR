@@ -1,3 +1,7 @@
+#### 🤖2022-12-14 update:
+- \[python\] Move the configuration parameters and model into the module, and at the same time put the model into the whl package, which can be directly installed and used by pip, which is more convenient and quicker.
+- For details, see: [README](../python/README.md#推荐pip安装快速使用)
+
 #### 🧻2022-11-20 update:
 - \[python\] Add the layout analysis part, which supports the detection and analysis of three layouts: Chinese, English and tables. See: [Rapid Structure](../python/rapid_structure/README.md) section for details.
 

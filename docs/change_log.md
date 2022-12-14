@@ -1,3 +1,7 @@
+#### 🤖2022-12-14 update:
+- \[python\] 将配置参数和模型移到模块里面，同时将模型打到whl包内，可以直接pip安装使用，更加方便快捷。
+- 详情参见：[README](../python/README.md#推荐pip安装快速使用)
+
 #### 🧻2022-11-20 update:
 - \[python\] 添加版面分析部分,支持中文、英文和表格三种版面的检测分析。详情参见:[Rapid Structure](./python/rapid_structure/README.md)部分。
 

@@ -9,7 +9,7 @@
 
 - [RapidOCR Python](#rapidocr-python)
   - [简介和说明](#简介和说明)
-  - [pip安装快速使用](#pip安装快速使用)
+  - [（推荐）pip安装快速使用](#推荐pip安装快速使用)
   - [源码使用步骤](#源码使用步骤)
   - [`config.yaml`中常用参数介绍](#configyaml中常用参数介绍)
   - [onnxruntime-gpu版相关说明](#onnxruntime-gpu版相关说明)
@@ -20,8 +20,8 @@
 
 ### 简介和说明
 - **各个版本的ONNX模型下载地址：**[百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
-- 所有常用的参数配置都在[`config.yaml`](./config.yaml)下，一目了然，更加便捷
-- **目前[`config.yaml`](./config.yaml)中配置为权衡速度和准确度的最优组合。**
+- 所有常用的参数配置都在[`config.yaml`](./rapidocr_onnxruntime/config.yaml)下，一目了然，更加便捷
+- **目前[`config.yaml`](./rapidocr_onnxruntime/config.yaml)中配置为权衡速度和准确度的最优组合。**
 - 每个独立的模块下均有独立的`config.yaml`配置文件，可以单独使用
 - `det`部分：
   - `det`中`mobile`和`server`版，推理代码一致，直接更改配置文件中模型路径即可
@@ -55,72 +55,32 @@
     |openvino|✓||
 
 
-### pip安装快速使用
+### （推荐）pip安装快速使用
 1. 安装`rapidocr`包
-   - `rapidocr_onnxruntime`: <a href="https://pypi.org/project/rapidocr-onnxruntime/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-onnxruntime?style=plastic"></a>
-   - `rapidocr_openvino`: <a href="https://pypi.org/project/rapidocr-openvino/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-openvino?style=plastic"></a>
-   - script:
-        ```shell
-        pip install rapidocr-onnxruntime
+   - <a href="https://pypi.org/project/rapidocr-onnxruntime/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-onnxruntime?style=plastic"></a> `rapidocr_onnxruntime` → `pip install rapidocr-onnxruntime`
+   - <a href="https://pypi.org/project/rapidocr-openvino/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-openvino?style=plastic"></a> `rapidocr_openvino` → `pip install rapidocr-openvino`
 
-        # or
-        # pip install rapidocr-openvino
-        ```
+2. 推理使用
+    ```python
+    import cv2
+    from rapidocr_onnxruntime import RapidOCR
+    # from rapidocr_openvino import RapidOCR
 
-2. 下载相关的模型和配置文件
-    ```shell
-    $ wget https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip
+    text_sys = RapidOCR('config.yaml')
 
-    # Download by gitee
-    # wget https://gitee.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip
+    img = cv2.imread('test_images/ch_en_num.jpg')
 
-    $ unzip required_for_whl_v1.1.0.zip
-    $ cd required_for_whl_v1.1.0
+    result = text_sys(img)
+    print(result)
+
+    # result: [[文本框坐标], 文本内容, 置信度]
+    # 示例：[[左上, 右上, 右下, 左下], '小明', '0.99']
     ```
-    - 模型md5值，自行比对
-        |模型名称|md5值|
-        |---:|:---|
-        |ch_ppocr_mobile_v2.0_cls_infer.onnx|    c99c6bfc2df6544427ad3c7c85feab36|
-        |ch_PP-OCRv3_det_infer.onnx          |   f3b6ff552124995842242f6dac1afde3|
-        |ch_PP-OCRv3_rec_infer.onnx           |  ed1abe13869a3a7a036c0b3819c6f642|
-
-    - 最终目录结构如下：
-        ```text
-        required_for_whl_v1.1.0/
-            ├── config.yaml
-            ├── README.md
-            ├── test_demo.py
-            ├── resources
-            │   └──  models
-            │       ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
-            │       ├── ch_PP-OCRv3_det_infer.onnx
-            │       └── ch_PP-OCRv3_rec_infer.onnx
-            └── test_images
-                ├── ch_en_num.jpg
-                └── single_line_text.jpg
-        ```
-
-3. 推理使用
-```python
-import cv2
-from rapidocr_onnxruntime import RapidOCR
-# from rapidocr_openvino import RapidOCR
-
-text_sys = RapidOCR('config.yaml')
-
-img = cv2.imread('test_images/ch_en_num.jpg')
-
-result = text_sys(img)
-print(result)
-
-# result: [[文本框坐标], 文本内容, 置信度]
-# 示例：[[左上, 右上, 右下, 左下], '小明', '0.99']
-```
 
 ### 源码使用步骤
 1. 下载整个项目到本地
    ```shell
-   cd RapidOCR/python
+   $ cd RapidOCR/python
    ```
 
 2. 下载链接下的`resources`目录（包含模型和显示的字体文件）
@@ -133,29 +93,34 @@ print(result)
         ```text
         .
         ├── README.md
-        ├── config.yaml
-        ├── test_demo.py
+        ├── demo.py
         ├── rapidocr_onnxruntime
         │   ├── __init__.py
         │   ├── ch_ppocr_v2_cls
         │   ├── ch_ppocr_v3_det
         │   ├── ch_ppocr_v3_rec
-        │   └── rapid_ocr_api.py
+        │   ├── config.yaml
+        │   ├── rapid_ocr_api.py
+        │   └── models
+        │        ├── ch_PP-OCRv3_det_infer.onnx
+        │        ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
+        │        └── ch_PP-OCRv3_rec_infer.onnx
         ├── rapidocr_openvino
         │   ├── __init__.py
         │   ├── README.md
         │   ├── ch_ppocr_v2_cls
         │   ├── ch_ppocr_v3_det
         │   ├── ch_ppocr_v3_rec
-        │   └── rapid_ocr_api.py
-        ├── requirements.txt
-        ├── resources
-        │    ├── fonts
-        │    │   └── FZYTK.TTF
-        │    └── models
+        │   ├── config.yaml
+        │   ├── rapid_ocr_api.py
+        │   └── models
         │        ├── ch_PP-OCRv3_det_infer.onnx
         │        ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
         │        └── ch_PP-OCRv3_rec_infer.onnx
+        ├── requirements.txt
+        ├── resources
+        │     └── fonts
+        │        └── FZYTK.TTF
         └── test_images
             ├── ch_en_num.jpg
             └── single_line_text.jpg
@@ -170,7 +135,7 @@ print(result)
         ```
    - 基于openvino推理所需环境安装：
         ```bash
-        # Windows端
+        # Windows/Mac
         pip install openvino==2022.2.0
 
         pip install -r requirements.txt -i https://pypi.douban.com/simple/
@@ -193,7 +158,7 @@ print(result)
         # 基于openvino引擎推理
         # from rapidocr_openvino import RapidOCR
 
-        text_sys = RapidOCR('config.yaml')
+        text_sys = RapidOCR()
 
         image_path = r'test_images/det_images/ch_en_num.jpg'
         img = cv2.imread(image_path)
@@ -204,12 +169,12 @@ print(result)
         # result: [[文本框坐标], 文本内容, 置信度]
         # 示例：[[左上, 右上, 右下, 左下], '小明', '0.99']
         ```
-    - 直接运行`test_demo.py`，可直接可视化查看结果。
+    - 直接运行`demo.py`，可直接可视化查看结果。
         ```bash
-        python test_demo.py
+        python demo.py
         ```
 
-### [`config.yaml`](./config.yaml)中常用参数介绍
+### [`config.yaml`](./rapidocr_onnxruntime/config.yaml)中常用参数介绍
 - `Global`部分
    |    参数名称      | 取值范围   | 默认值   |                       作用                       |
    |------------: | :----------: | :-----: | :----------------------------------------------|
@@ -298,7 +263,7 @@ print(result)
                 # 如果输出中含有CUDAExecutionProvider,则证明可以正常调用GPU
                 # ['CUDAExecutionProvider', 'CPUExecutionProvider']
                 ```
-2. 更改[`config.yaml`](./config.yaml)中对应部分的参数即可，详细参数介绍参见[官方文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)。
+2. 更改[`config.yaml`](./rapidocr_onnxruntime/config.yaml)中对应部分的参数即可，详细参数介绍参见[官方文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)。
     ```yaml
     use_cuda: true
     CUDAExecutionProvider:
