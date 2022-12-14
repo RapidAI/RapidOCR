@@ -26,7 +26,7 @@ jobs:
         uses: suisei-cn/actions-download-file@v1
         id: downloadfile3  # Remember to give an ID if you need the output filename
         with:
-            url: $RESOURCES_URL
+            url: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip
             target: ./
 
       - name: Decompress
