@@ -73,7 +73,7 @@ jobs:
         run: |
           cd python
           wget $RESOURCES_URL
-          unzip $RESOURCES_URL
+          unzip required_for_whl_v1.1.0.zip
           cp required_for_whl_v1.1.0/resources/models/*.onnx rapidocr_openvino/models
 
       - name: Run setup_openvino.py
