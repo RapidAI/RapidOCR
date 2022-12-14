@@ -77,8 +77,6 @@ jobs:
 
       - name: Run setup_onnxruntime.py
         run: |
-          ls
-          pwd
           cd python
           mkdir rapidocr_onnxruntime_t
           mv rapidocr_onnxruntime rapidocr_onnxruntime_t
