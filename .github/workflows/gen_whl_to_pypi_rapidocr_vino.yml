@@ -6,7 +6,7 @@ on:
     paths:
       - 'python/rapidocr_openvino/**'
       - 'docs/doc_whl_rapidocr_vino.md'
-      # - 'python/setup_openvino.py'
+      - 'python/setup_openvino.py'
 
 env:
   RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip
