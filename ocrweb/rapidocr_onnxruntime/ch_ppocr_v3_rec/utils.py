@@ -1,14 +1,14 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-from pathlib import Path
 import warnings
+from pathlib import Path
 
 import numpy as np
 import yaml
-from onnxruntime import (get_available_providers, get_device,
-                         SessionOptions, InferenceSession,
-                         GraphOptimizationLevel)
+from onnxruntime import (GraphOptimizationLevel, InferenceSession,
+                         SessionOptions, get_available_providers, get_device)
+
 root_dir = Path(__file__).resolve().parent.parent
 
 

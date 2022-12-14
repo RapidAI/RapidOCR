@@ -1,11 +1,9 @@
 model_path: models/ch_PP-OCRv3_det_infer.onnx
 
 use_cuda: false
-# Details of the params: https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html
 CUDAExecutionProvider:
     device_id: 0
     arena_extend_strategy: kNextPowerOfTwo
-    gpu_mem_limit: 2 * 1024 * 1024 * 1024
     cudnn_conv_algo_search: EXHAUSTIVE
     do_copy_in_default_stream: true
 
@@ -28,3 +26,4 @@ post_process:
     max_candidates: 1000
     unclip_ratio: 1.6
     use_dilation: true
+    score_mode: "fast"

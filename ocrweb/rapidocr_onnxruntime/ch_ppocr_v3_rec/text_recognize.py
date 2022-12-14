@@ -116,4 +116,4 @@ if __name__ == "__main__":
 
     img = cv2.imread(args.image_path)
     rec_res, predict_time = text_recognizer(img)
-    print(f'识别结果: {rec_res}\t cost: {predict_time}s')
+    print(f'rec result: {rec_res}\t cost: {predict_time}s')

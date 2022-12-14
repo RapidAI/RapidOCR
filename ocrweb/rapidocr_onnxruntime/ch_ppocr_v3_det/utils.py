@@ -16,19 +16,19 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-from pathlib import Path
 import sys
 import warnings
+from pathlib import Path
 
 import cv2
 import numpy as np
 import pyclipper
 import six
 import yaml
+from onnxruntime import (GraphOptimizationLevel, InferenceSession,
+                         SessionOptions, get_available_providers, get_device)
 from shapely.geometry import Polygon
-from onnxruntime import (get_available_providers, get_device,
-                         SessionOptions, InferenceSession,
-                         GraphOptimizationLevel)
+
 root_dir = Path(__file__).resolve().parent.parent
 
 

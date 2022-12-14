@@ -92,7 +92,8 @@ if __name__ == '__main__':
 
     image_path = 'test_images/ch_en_num.jpg'
     img = cv2.imread(image_path)
-    result = text_sys(img)
+    result, elapse_list = text_sys(img)
     print(result)
+    print(elapse_list)
 
     visualize(image_path, result, font_path='resources/fonts/FZYTK.TTF')

@@ -23,7 +23,7 @@ def detect_recognize(image_path, is_api=False):
     else:
         raise TypeError(f'{image_path} is not str or ndarray.')
 
-    final_result, img, elapse_part = text_sys(image)
+    final_result, elapse_part = text_sys(copy.deepcopy(image))
 
     if is_api:
         final_reuslt_json = json.dumps(final_result,
@@ -33,7 +33,7 @@ def detect_recognize(image_path, is_api=False):
 
     if final_result is None:
         elapse, elapse_part = 0, ''
-        img_str = img_to_base64(img)
+        img_str = img_to_base64(image)
         rec_res_data = json.dumps([], indent=2, ensure_ascii=False)
     else:
         boxes, txts, scores = list(zip(*final_result))
@@ -42,11 +42,11 @@ def detect_recognize(image_path, is_api=False):
                                   indent=2,
                                   ensure_ascii=False)
 
-        det_im = draw_text_det_res(np.array(boxes), img)
+        det_im = draw_text_det_res(np.array(boxes), image)
         img_str = img_to_base64(det_im)
 
         elapse = reduce(lambda x, y: float(x)+float(y), elapse_part)
-        elapse_part = ','.join([str(x) for x in elapse_part])
+        elapse_part = ','.join([f'{x:.4f}' for x in elapse_part])
     return img_str, elapse, elapse_part, rec_res_data
 
 

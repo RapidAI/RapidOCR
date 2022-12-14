@@ -15,13 +15,17 @@ $ pip install rapidocr-openvino
 import cv2
 from rapidocr_openvino import RapidOCR
 
-text_sys = RapidOCR('config.yaml')
+text_sys = RapidOCR()
 
 img = cv2.imread('test_images/ch_en_num.jpg')
 
-result = text_sys(img)
+result, elapse_list = text_sys(img)
 print(result)
+print(elapse_list)
 
 # result: [[dt_boxes], txt, score]
 # 示例：[[左上, 右上, 右下, 左下], '小明', '0.99']
+
+# elapse_list: [det_elapse, cls_elapse, rec_elapse]
+# all_elapse = det_elapse + cls_elapse + rec_elapse
 ```

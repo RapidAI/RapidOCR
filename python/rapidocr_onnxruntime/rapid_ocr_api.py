@@ -55,30 +55,34 @@ class RapidOCR():
                 or h <= self.min_height \
                 or use_limit_ratio:
             dt_boxes, img_crop_list = self.get_boxes_img_without_det(img, h, w)
+            det_elapse = 0.0
         else:
-            dt_boxes, elapse = self.text_detector(img)
+            dt_boxes, det_elapse = self.text_detector(img)
             if dt_boxes is None or len(dt_boxes) < 1:
                 return None
+
             if self.print_verbose:
-                print(f'dt_boxes num: {len(dt_boxes)}, elapse: {elapse}')
+                print(f'dt_boxes num: {len(dt_boxes)}, elapse: {det_elapse}')
 
             dt_boxes = self.sorted_boxes(dt_boxes)
             img_crop_list = self.get_crop_img_list(img, dt_boxes)
 
+        cls_elapse = 0.0
         if self.use_angle_cls:
-            img_crop_list, _, elapse = self.text_cls(img_crop_list)
-            if self.print_verbose:
-                print(f'cls num: {len(img_crop_list)}, elapse: {elapse}')
+            img_crop_list, _, cls_elapse = self.text_cls(img_crop_list)
 
-        rec_res, elapse = self.text_recognizer(img_crop_list)
+            if self.print_verbose:
+                print(f'cls num: {len(img_crop_list)}, elapse: {cls_elapse}')
+
+        rec_res, rec_elapse = self.text_recognizer(img_crop_list)
         if self.print_verbose:
-            print(f'rec_res num: {len(rec_res)}, elapse: {elapse}')
+            print(f'rec_res num: {len(rec_res)}, elapse: {rec_elapse}')
 
         filter_boxes, filter_rec_res = self.filter_boxes_rec_by_score(dt_boxes,
                                                                       rec_res)
         fina_result = [[dt.tolist(), rec[0], str(rec[1])]
                        for dt, rec in zip(filter_boxes, filter_rec_res)]
-        return fina_result
+        return fina_result, [det_elapse, cls_elapse, rec_elapse]
 
     @staticmethod
     def read_yaml(yaml_path):

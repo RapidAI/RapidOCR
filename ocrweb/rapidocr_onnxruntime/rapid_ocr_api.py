@@ -4,7 +4,6 @@
 import copy
 import importlib
 import sys
-import time
 from pathlib import Path
 
 import cv2
@@ -55,26 +54,23 @@ class RapidOCR():
         if not self.use_text_det \
                 or h <= self.min_height \
                 or use_limit_ratio:
-            start_time = time.time()
             dt_boxes, img_crop_list = self.get_boxes_img_without_det(img, h, w)
-            crop_elapse = time.time() - start_time
-            det_elapse = 0
+            det_elapse = 0.0
         else:
             dt_boxes, det_elapse = self.text_detector(img)
             if dt_boxes is None or len(dt_boxes) < 1:
-                return None, img, None
+                return None
+
             if self.print_verbose:
                 print(f'dt_boxes num: {len(dt_boxes)}, elapse: {det_elapse}')
 
             dt_boxes = self.sorted_boxes(dt_boxes)
-
-            start_time = time.time()
             img_crop_list = self.get_crop_img_list(img, dt_boxes)
-            crop_elapse = time.time() - start_time
 
-        cls_elapse = 0
+        cls_elapse = 0.0
         if self.use_angle_cls:
             img_crop_list, _, cls_elapse = self.text_cls(img_crop_list)
+
             if self.print_verbose:
                 print(f'cls num: {len(img_crop_list)}, elapse: {cls_elapse}')
 
@@ -82,17 +78,11 @@ class RapidOCR():
         if self.print_verbose:
             print(f'rec_res num: {len(rec_res)}, elapse: {rec_elapse}')
 
-        start_time = time.time()
         filter_boxes, filter_rec_res = self.filter_boxes_rec_by_score(dt_boxes,
                                                                       rec_res)
         fina_result = [[dt.tolist(), rec[0], str(rec[1])]
                        for dt, rec in zip(filter_boxes, filter_rec_res)]
-        filter_elapse = time.time() - start_time
-        elapse_part = [f'{det_elapse:.4f}',
-                       f'{(cls_elapse+crop_elapse):.4f}',
-                       f'{(rec_elapse+filter_elapse):.4f}'
-        ]
-        return fina_result, img, elapse_part
+        return fina_result, [det_elapse, cls_elapse, rec_elapse]
 
     @staticmethod
     def read_yaml(yaml_path):
