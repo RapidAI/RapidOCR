@@ -19,36 +19,15 @@
     </div>
 
 ### 以Web方式运行
-1. 安装`requirements.txt`下相关包
+1. 安装`rapidocr_onnxruntime`
+   ```bash
+   $ pip install rapidocr_onnxruntime
+   ```
+
+2. 安装`ocrweb`目录下的`requirements.txt`下相关包
     ```shell
-    pip install -r requirements.txt -i https://pypi.douban.com/simple/
+    pip install -r requirements.txt
     ```
-2. 下载`models`目录
-    - 下载链接：[百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
-    - 最终目录结构如下：
-        ```text
-        ocrweb
-        ├── README.md
-        ├── main.py
-        ├── requirements.txt
-        ├── task.py
-        ├── rapidocr_onnxruntime
-        │   ├── __init__.py
-        │   ├── ch_ppocr_v3_det
-        │   ├── ch_ppocr_v2_cls
-        │   ├── ch_ppocr_v3_rec
-        │   ├── config.yaml
-        │   ├── rapid_ocr_api.py
-        │   └── models
-        │       ├── ch_PP-OCRv3_det_infer.onnx
-        │       ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
-        │       └── ch_PP-OCRv3_rec_infer.onnx
-        ├── static
-        │   ├── css
-        │   └── js
-        └── templates
-            └── index.html
-        ```
 
 3. 运行`main.py`
     ```shell
