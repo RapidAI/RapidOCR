@@ -8,6 +8,9 @@ on:
       - 'docs/doc_whl_rapidocr_ort.md'
       - 'python/setup_onnxruntime.py'
 
+env:
+  RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip
+
 jobs:
   UnitTesting:
     runs-on: windows-latest
@@ -23,7 +26,7 @@ jobs:
         uses: suisei-cn/actions-download-file@v1
         id: downloadfile3  # Remember to give an ID if you need the output filename
         with:
-            url: "https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip"
+            url: $RESOURCES_URL
             target: ./
 
       - name: Decompress
@@ -41,7 +44,8 @@ jobs:
         run: |
           set git_keep_path=%cur_dir%\python\resoureces\models\.gitkeep
           del %git_keep_path%
-          move required_for_whl_v1.1.0\resources\models\* python\resources\models\
+          copy required_for_whl_v1.1.0\resources\models\* python\rapidocr_onnxruntime\models\
+          copy required_for_whl_v1.1.0\resources\models\* python\rapidocr_openvino\models\
           cd python
           pip install -r requirements.txt
           pip install onnxruntime==1.11.0 openvino==2022.2.0
@@ -64,9 +68,15 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           chmod 700 ~/.ssh && chmod 600 ~/.ssh/*
 
-      - name: Run setup_onnxruntime.py
+      - name: Download models
         run: |
           cd python
+          wget $RESOURCES_URL
+          unzip $RESOURCES_URL
+          cp required_for_whl_v1.1.0/resources/models/*.onnx rapidocr_onnxruntime/models
+
+      - name: Run setup_onnxruntime.py
+        run: |
           mkdir rapidocr_onnxruntime_t
           mv rapidocr_onnxruntime rapidocr_onnxruntime_t
           mv rapidocr_onnxruntime_t rapidocr_onnxruntime
@@ -78,15 +88,15 @@ jobs:
           python setup_onnxruntime.py bdist_wheel
           mv dist ../
 
-      # - name: Publish distribution 📦 to Test PyPI
-      #   uses: pypa/gh-action-pypi-publish@v1.5.0
-      #   with:
-      #     password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-      #     repository_url: https://test.pypi.org/legacy/
-      #     packages_dir: dist/
-
-      - name: Publish distribution 📦 to PyPI
+      - name: Publish distribution 📦 to Test PyPI
         uses: pypa/gh-action-pypi-publish@v1.5.0
         with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
           packages_dir: dist/
+
+      # - name: Publish distribution 📦 to PyPI
+      #   uses: pypa/gh-action-pypi-publish@v1.5.0
+      #   with:
+      #     password: ${{ secrets.PYPI_API_TOKEN }}
+      #     packages_dir: dist/

@@ -88,7 +88,7 @@ def visualize(image_path, result, font_path="resources/fonts/FZYTK.TTF"):
 
 
 if __name__ == '__main__':
-    text_sys = RapidOCR('config.yaml')
+    text_sys = RapidOCR()
 
     image_path = 'test_images/ch_en_num.jpg'
     img = cv2.imread(image_path)

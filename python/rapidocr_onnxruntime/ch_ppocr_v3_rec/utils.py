@@ -1,14 +1,15 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-from pathlib import Path
 import warnings
+from pathlib import Path
 
 import numpy as np
 import yaml
-from onnxruntime import (get_available_providers, get_device,
-                         SessionOptions, InferenceSession,
-                         GraphOptimizationLevel)
+from onnxruntime import (GraphOptimizationLevel, InferenceSession,
+                         SessionOptions, get_available_providers, get_device)
+
+root_dir = Path(__file__).resolve().parent.parent
 
 
 class OrtInferSession(object):
@@ -30,6 +31,7 @@ class OrtInferSession(object):
             EP_list = [(cuda_ep, config[cuda_ep])]
         EP_list.append((cpu_ep, cpu_provider_options))
 
+        config['model_path'] = str(root_dir / config['model_path'])
         self._verify_model(config['model_path'])
         self.session = InferenceSession(config['model_path'],
                                         sess_options=sess_opt,

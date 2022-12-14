@@ -7,9 +7,14 @@ import yaml
 from openvino.runtime import Core
 
 
+root_dir = Path(__file__).resolve().parent.parent
+
+
 class OpenVINOInferSession(object):
     def __init__(self, config):
         ie = Core()
+
+        config['model_path'] = str(root_dir / config['model_path'])
         self._verify_model(config['model_path'])
         model_onnx = ie.read_model(config['model_path'])
         compile_model = ie.compile_model(model=model_onnx, device_name='CPU')

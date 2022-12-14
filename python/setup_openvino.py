@@ -14,8 +14,7 @@ def get_latest_version(package_name):
         output = list(filter(lambda x: len(x) > 0, output.split('\n')))
         latest_version = output[0].split(' ')[-1][1:-1]
         return latest_version
-    else:
-        return None
+    return None
 
 
 def version_add_one(version, add_loc=-1):
@@ -25,8 +24,7 @@ def version_add_one(version, add_loc=-1):
         version_list[add_loc] = mini_version
         new_version = '.'.join(version_list)
         return new_version
-    else:
-        return '0.0.0'
+    return '0.0.0'
 
 
 def get_readme():
@@ -38,13 +36,13 @@ def get_readme():
     return readme
 
 
-module_name = 'rapidocr_openvino'
-latest_version = get_latest_version(module_name)
-version_num = version_add_one(latest_version)
+MODULE_NAME = 'rapidocr_openvino'
+latest_version = get_latest_version(MODULE_NAME)
+VERSION_NUM = version_add_one(latest_version)
 
 setuptools.setup(
-    name=module_name,
-    version=version_num,
+    name=MODULE_NAME,
+    version=VERSION_NUM,
     platforms="Any",
     description="RapidOCR",
     long_description=get_readme(),
@@ -53,15 +51,15 @@ setuptools.setup(
     author_email="liekkaskono@163.com",
     url="https://github.com/RapidAI/RapidOCR",
     license='Apache-2.0',
-    install_requires=["pyclipper>=1.2.1", "openvino==2022.2.0.dev20220829",
+    include_package_data=True,
+    install_requires=["pyclipper>=1.2.1", "openvino>=2022.2.0",
                       "opencv_python>=4.5.1.48", "numpy>=1.19.3",
                       "six>=1.15.0", "Shapely>=1.7.1"],
-    include_package_data=True,
-    package_data={"": ["*.txt"]},
-    package_dir={'': module_name},
-    packages=setuptools.find_packages(where=module_name),
+    package_dir={'': MODULE_NAME},
+    packages=setuptools.find_namespace_packages(where=MODULE_NAME),
+    package_data={'': ['*.onnx', '*.yaml', '*.txt']},
     keywords=[
-        'ocr text_detection text_recognition db onnxruntime paddleocr openvino'
+        'ocr,text_detection,text_recognition,db,onnxruntime,paddleocr,openvino,rapidocr'
     ],
     classifiers=[
         'Programming Language :: Python :: 3.6',

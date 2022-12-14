@@ -12,9 +12,9 @@ class TestONNXRuntime():
     base = BaseModule(package_name='rapidocr_onnxruntime')
     TextRecognizer = base.init_module(module_name, class_name)
 
-    yaml_path = base.root_dir / base.package_name / module_name / 'config.yaml'
+    yaml_path = base.package_dir / module_name / 'config.yaml'
     config = base.read_yaml(str(yaml_path))
-    config['model_path'] = str(base.root_dir / config['model_path'])
+    config['model_path'] = str(base.package_dir / config['model_path'])
 
     text_rec = TextRecognizer(config)
 
@@ -32,9 +32,9 @@ class TestOpenVINO():
     base = BaseModule(package_name='rapidocr_openvino')
     TextRecognizer = base.init_module(module_name, class_name)
 
-    yaml_path = base.root_dir / base.package_name / module_name / 'config.yaml'
+    yaml_path = base.package_dir / module_name / 'config.yaml'
     config = base.read_yaml(str(yaml_path))
-    config['model_path'] = str(base.root_dir / config['model_path'])
+    config['model_path'] = str(base.package_dir / config['model_path'])
 
     text_rec = TextRecognizer(config)
 

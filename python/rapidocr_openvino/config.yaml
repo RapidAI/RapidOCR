@@ -1,7 +1,8 @@
 Global:
     text_score: 0.5
     use_angle_cls: true
-    print_verbose: false
+    use_text_det: true
+    print_verbose: true
     min_height: 30
     width_height_ratio: 8
 
@@ -10,7 +11,7 @@ Det:
     class_name: TextDetector
     model_path: models/ch_PP-OCRv3_det_infer.onnx
 
-    use_cuda: true
+    use_cuda: false
     # Details of the params: https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html
     CUDAExecutionProvider:
         device_id: 0
@@ -37,13 +38,14 @@ Det:
         max_candidates: 1000
         unclip_ratio: 1.6
         use_dilation: true
+        score_mode: fast
 
 Cls:
     module_name: ch_ppocr_v2_cls
     class_name: TextClassifier
     model_path: models/ch_ppocr_mobile_v2.0_cls_infer.onnx
 
-    use_cuda: true
+    use_cuda: false
     CUDAExecutionProvider:
         device_id: 0
         arena_extend_strategy: kNextPowerOfTwo
@@ -60,7 +62,7 @@ Rec:
     class_name: TextRecognizer
     model_path: models/ch_PP-OCRv3_rec_infer.onnx
 
-    use_cuda: true
+    use_cuda: false
     CUDAExecutionProvider:
         device_id: 0
         arena_extend_strategy: kNextPowerOfTwo

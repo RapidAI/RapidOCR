@@ -14,8 +14,7 @@ def get_latest_version(package_name):
         output = list(filter(lambda x: len(x) > 0, output.split('\n')))
         latest_version = output[0].split(' ')[-1][1:-1]
         return latest_version
-    else:
-        return None
+    return None
 
 
 def version_add_one(version, add_loc=-1):
@@ -25,26 +24,25 @@ def version_add_one(version, add_loc=-1):
         version_list[add_loc] = mini_version
         new_version = '.'.join(version_list)
         return new_version
-    else:
-        return None
+    return '0.0.0'
 
 
 def get_readme():
     root_dir = Path(__file__).resolve().parent.parent
     readme_path = str(root_dir / 'docs' / 'doc_whl_rapidocr_ort.md')
     print(readme_path)
-    with open(readme_path, 'r') as f:
+    with open(readme_path, 'r', encoding='utf-8') as f:
         readme = f.read()
     return readme
 
 
-module_name = 'rapidocr_onnxruntime'
-latest_version = get_latest_version(module_name)
-version_num = version_add_one(latest_version)
+MODULE_NAME = 'rapidocr_onnxruntime'
+latest_version = get_latest_version(MODULE_NAME)
+VERSION_NUM = version_add_one(latest_version)
 
 setuptools.setup(
-    name=module_name,
-    version=version_num,
+    name=MODULE_NAME,
+    version=VERSION_NUM,
     platforms="Any",
     description="RapidOCR",
     long_description=get_readme(),
@@ -57,10 +55,11 @@ setuptools.setup(
     install_requires=["pyclipper>=1.2.1", "onnxruntime>=1.7.0",
                       "opencv_python>=4.5.1.48", "numpy>=1.19.3",
                       "six>=1.15.0", "Shapely>=1.7.1"],
-    package_dir={'': module_name},
-    packages=setuptools.find_packages(where=module_name),
+    package_dir={'': MODULE_NAME},
+    packages=setuptools.find_namespace_packages(where=MODULE_NAME),
+    package_data={'': ['*.onnx', '*.yaml']},
     keywords=[
-        'ocr text_detection text_recognition db onnxruntime paddleocr openvino'
+        'ocr,text_detection,text_recognition,db,onnxruntime,paddleocr,openvino,rapidocr'
     ],
     classifiers=[
         'Programming Language :: Python :: 3.6',

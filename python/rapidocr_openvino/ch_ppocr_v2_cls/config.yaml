@@ -1,4 +1,4 @@
-model_path: resources/models/ch_ppocr_mobile_v2.0_cls_infer.onnx
+model_path: models/ch_ppocr_mobile_v2.0_cls_infer.onnx
 
 use_cuda: false
 # Details of the params: https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html

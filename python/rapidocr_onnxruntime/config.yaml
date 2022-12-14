@@ -9,7 +9,7 @@ Global:
 Det:
     module_name: ch_ppocr_v3_det
     class_name: TextDetector
-    model_path: resources/models/ch_PP-OCRv3_det_infer.onnx
+    model_path: models/ch_PP-OCRv3_det_infer.onnx
 
     use_cuda: false
     # Details of the params: https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html
@@ -43,7 +43,7 @@ Det:
 Cls:
     module_name: ch_ppocr_v2_cls
     class_name: TextClassifier
-    model_path: resources/models/ch_ppocr_mobile_v2.0_cls_infer.onnx
+    model_path: models/ch_ppocr_mobile_v2.0_cls_infer.onnx
 
     use_cuda: false
     CUDAExecutionProvider:
@@ -60,7 +60,7 @@ Cls:
 Rec:
     module_name: ch_ppocr_v3_rec
     class_name: TextRecognizer
-    model_path: resources/models/ch_PP-OCRv3_rec_infer.onnx
+    model_path: models/ch_PP-OCRv3_rec_infer.onnx
 
     use_cuda: false
     CUDAExecutionProvider:
