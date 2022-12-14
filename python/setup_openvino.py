@@ -39,6 +39,7 @@ def get_readme():
 MODULE_NAME = 'rapidocr_openvino'
 latest_version = get_latest_version(MODULE_NAME)
 VERSION_NUM = version_add_one(latest_version)
+VERSION_NUM = '1.1.14'
 
 setuptools.setup(
     name=MODULE_NAME,
