@@ -2,7 +2,6 @@
 
 - [RapidOCR Web Demo](#rapidocr-web-demo)
   - [简要说明](#简要说明)
-  - [config.yaml全局参数说明](#configyaml全局参数说明)
   - [以Web方式运行](#以web方式运行)
   - [以API方式运行](#以api方式运行)
 
@@ -18,10 +17,6 @@
     <div align="center">
         <img src="../assets/ocrweb_time.jpg" width="80%" height="80%">
     </div>
-
-### config.yaml全局参数说明
-- 详情参见：[README](../python/README.md#configyaml中常用参数介绍)
-
 
 ### 以Web方式运行
 1. 安装`requirements.txt`下相关包
