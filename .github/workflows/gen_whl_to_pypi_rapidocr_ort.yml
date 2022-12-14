@@ -7,7 +7,6 @@ on:
       - 'python/rapidocr_onnxruntime/**'
       - 'docs/doc_whl_rapidocr_ort.md'
       - 'python/setup_onnxruntime.py'
-      - '*.yml'
 
 env:
   RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip

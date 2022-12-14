@@ -2,8 +2,8 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 from pathlib import Path
-import setuptools
 import subprocess
+import setuptools
 
 
 def get_latest_version(package_name):
