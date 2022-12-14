@@ -15,9 +15,12 @@ root_dir = Path(__file__).resolve().parent
 sys.path.append(str(root_dir))
 
 
-class RapidOCR(object):
+class RapidOCR():
     def __init__(self, config_path=str(root_dir / 'config.yaml')):
         super(RapidOCR).__init__()
+        if not Path(config_path).exists():
+            raise FileExistsError(f'{config_path} does not exist!')
+
         config = self.read_yaml(config_path)
 
         global_config = config['Global']

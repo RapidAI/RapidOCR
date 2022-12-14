@@ -12,7 +12,7 @@ import numpy as np
 
 from rapidocr_onnxruntime import RapidOCR
 
-text_sys = RapidOCR('config.yaml')
+text_sys = RapidOCR()
 
 
 def detect_recognize(image_path, is_api=False):

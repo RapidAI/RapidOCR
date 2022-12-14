@@ -20,15 +20,7 @@
     </div>
 
 ### config.yaml全局参数说明
-```text
-Global:
-    text_score: 0.5
-    use_angle_cls: true  # 是否使用文本框分类模型，默认为True
-    use_text_det: true   # 是否使用文本检测模型，默认为True
-    print_verbose: true  # 使用打印各个阶段的运行时长到终端，默认为True
-    min_height: 30       # 图像高度小于30将不经过文本检测模型
-    width_height_ratio: 8  # 图像宽高比大于该值，则不经过文本检测模型
-```
+- 详情参见：[README](../python/README.md#configyaml中常用参数介绍)
 
 
 ### 以Web方式运行
@@ -36,13 +28,12 @@ Global:
     ```shell
     pip install -r requirements.txt -i https://pypi.douban.com/simple/
     ```
-2. 下载`resources`目录
+2. 下载`models`目录
     - 下载链接：[百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
     - 最终目录结构如下：
         ```text
         ocrweb
         ├── README.md
-        ├── config.yaml
         ├── main.py
         ├── requirements.txt
         ├── task.py
@@ -51,8 +42,8 @@ Global:
         │   ├── ch_ppocr_v3_det
         │   ├── ch_ppocr_v2_cls
         │   ├── ch_ppocr_v3_rec
-        │   └── rapid_ocr_api.py
-        ├── resources
+        │   ├── config.yaml
+        │   ├── rapid_ocr_api.py
         │   └── models
         │       ├── ch_PP-OCRv3_det_infer.onnx
         │       ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
