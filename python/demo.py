@@ -90,10 +90,11 @@ def visualize(image_path, result, font_path="resources/fonts/FZYTK.TTF"):
 if __name__ == '__main__':
     text_sys = RapidOCR()
 
-    image_path = 'test_images/ch_en_num.jpg'
+    image_path = '1.png'
     img = cv2.imread(image_path)
     result, elapse_list = text_sys(img)
     print(result)
     print(elapse_list)
 
-    visualize(image_path, result, font_path='resources/fonts/FZYTK.TTF')
+    if result:
+        visualize(image_path, result, font_path='resources/fonts/FZYTK.TTF')

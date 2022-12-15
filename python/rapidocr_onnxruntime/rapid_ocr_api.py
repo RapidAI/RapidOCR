@@ -59,7 +59,7 @@ class RapidOCR():
         else:
             dt_boxes, det_elapse = self.text_detector(img)
             if dt_boxes is None or len(dt_boxes) < 1:
-                return None
+                return None, None
 
             if self.print_verbose:
                 print(f'dt_boxes num: {len(dt_boxes)}, elapse: {det_elapse}')
