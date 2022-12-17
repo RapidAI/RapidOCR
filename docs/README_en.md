@@ -25,18 +25,15 @@
 
 - [RapidOCR （Open source OCR for the security of the digital world)](#rapidocr-open-source-ocr-for-the-security-of-the-digital-world)
   - [Introduction](#introduction)
+  - [Navigation](#navigation)
   - [Recently updates(more)](#recently-updatesmore)
       - [🤖2022-12-14 update:](#2022-12-14-update)
       - [🧻2022-11-20 update:](#2022-11-20-update)
       - [🎃2022-11-01 update:](#2022-11-01-update)
-  - [Related projects (more)](#related-projects-more)
-  - [Derivatives](#derivatives)
   - [Overall Framework](#overall-framework)
-  - [FAQ](#faq)
   - [SDK compilation status](#sdk-compilation-status)
   - [Demo](#demo)
-  - [Directory structure](#directory-structure)
-  - [Current Progress](#current-progress)
+  - [TODO](#todo)
   - [Model related](#model-related)
       - [Download models(Baidu NetDisk | Google Drive)](#download-modelsbaidu-netdisk--google-drive)
       - [Model to onnx](#model-to-onnx)
@@ -64,6 +61,25 @@
 
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's PaddlePaddle framework for model optimization according to their own needs.
 
+## Navigation
+- [C++ demo(Windows/Linux/macOS)](../cpp)
+- [Jvm demo(Java/Kotlin)](../jvm)
+- [.Net demo(C#)](../dotnet)
+- [Android demo](../android)
+- [Python demo](../python/README.md)
+- Web demo:
+  - [Web OCR](../ocrweb/README.md)
+  - [Multi Web OCR](../ocrweb_multi/README.md)
+- [Structure](../python/rapid_structure/README.md#rapid-structure)
+  - [layout](../python/rapid_structure/README.md#rapid-layout)
+  - [ ] table recovery
+- Derivatives
+  - [RapidOCR HTTP service/win32 program/easy language writing](https://github.com/Physton/RapidOCRServer)
+- [Related projects](../docs/related_projects.md)
+  - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR): Extract hard subtitles in videos based on RapidOCR
+  - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): table structure restoration | [blog interpretation papers and source code](http://t.csdn.cn/QNN3S)
+- [FAQ](../docs/FAQ.md)
+
 ## Recently updates([more](./change_log_en.md))
 #### 🤖2022-12-14 update:
 - \[python\] Move the configuration parameters and model into the module, and at the same time put the model into the whl package, which can be directly installed and used by pip, which is more convenient and quicker.
@@ -75,13 +91,6 @@
 #### 🎃2022-11-01 update:
 - Add Hugging Face Demo, add module that can adjust hyperameters, for details, please visit [Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo).
 
-
-## Related projects ([more](../docs/related_projects.md))
-- [RapidVideOCR](https://github.com/SWHL/RapidVideOCR): Extract hard subtitles in videos based on RapidOCR
-- [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): table structure restoration | [blog interpretation papers and source code](https://blog.csdn.net/shiwanghualuo/article/details/125047732)
-
-## Derivatives
-- [RapidOCR HTTP service/win32 program/easy language writing](https://github.com/Physton/RapidOCRServer)
 
 ## Overall Framework
 ```mermaid
@@ -97,8 +106,6 @@ flowchart LR
 
     click B "https://github.com/PaddlePaddle/PaddleOCR" _blank
 ```
-
-## [FAQ](./doc/FAQ.md)
 
 ## SDK compilation status
 Since ubuntu users are all commercial users and have the ability to compile, pre-compiled packages are not provided for the time being, and they can be compiled by themselves.
@@ -128,37 +135,8 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
         <img src="../assets/huggingfacedemo.jpg" width="100%" height="100%">
     </div>
 
-## Directory structure
-<details>
-    <summary>click to expand</summary>
 
-    RapidOCR
-        ├── android         # Android project directory
-        ├── api4cpp         # C language cross-platform interface library source code directory, directly compile with CMakelists.txt under the root
-        ├── assets          # Some pictures for demonstration, not a test set
-        ├── commonlib       # common library
-        ├── cpp             # C++-based project folder
-        ├── docs            # some docs
-        ├── dotnet          # .Net program directory
-        ├── images          # Test pictures, two typical test pictures, one is a natural scene, the other is a long text
-        ├── include         # The header file directory when compiling the c language interface library
-        ├── ios             # Apple mobile phone platform project directory
-        ├── jvm             # java-based project directory
-        ├── lib             # Compilation library file directory, used to compile the C language interface library. Binary files are not uploaded by default
-        ├── ocrweb          # Based on python and Flask web
-        ├── python          # python reasoning code directory
-        ├── release         #
-        └── tools           # Some conversion scripts and the like
-
-</details>
-
-
-## Current Progress
-- [x] C++ example (Windows/Linux/macOS): [demo](../cpp)
-- [x] Jvm example (Java/Kotlin): [demo](../jvm)
-- [x] .Net example (C#): [demo](../dotnet)
-- [x] Android example: [demo](../android)
-- [x] python example: [demo](../python)
+## TODO
 - [ ] iOS example: waiting for someone to contribute code
 - [ ] Rewrite the C++ reasoning code according to the python version to improve the reasoning effect, and add support for gif/tga/webp format pictures
 

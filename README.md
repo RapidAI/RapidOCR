@@ -27,23 +27,20 @@
 - [RapidOCR (捷智OCR- 信创级开源OCR - 为世界内容安全贡献力量)](#rapidocr-捷智ocr--信创级开源ocr---为世界内容安全贡献力量)
   - [商业支持](#商业支持)
   - [简介](#简介)
+  - [文档导航](#文档导航)
   - [近期更新(more)](#近期更新more)
       - [🤖2022-12-14 update:](#2022-12-14-update)
       - [🧻2022-11-20 update:](#2022-11-20-update)
       - [🎃2022-11-01 update:](#2022-11-01-update)
-  - [垂直相关项目(more)](#垂直相关项目more)
-  - [衍生项目](#衍生项目)
   - [生态框架](#生态框架)
-  - [常见问题  FAQ](#常见问题--faq)
   - [SDK 编译状态](#sdk-编译状态)
   - [在线demo](#在线demo)
-  - [项目结构](#项目结构)
-  - [当前进展](#当前进展)
+  - [TODO](#todo)
   - [模型相关](#模型相关)
     - [各个版本ONNX模型效果对比](#各个版本onnx模型效果对比)
       - [文本检测模型(仅供参考)](#文本检测模型仅供参考)
       - [文本识别模型(仅供参考)](#文本识别模型仅供参考)
-      - [模型转onnx](#模型转onnx)
+    - [模型转onnx](#模型转onnx)
   - [原始发起者及初创作者](#原始发起者及初创作者)
   - [致谢](#致谢)
   - [赞助](#赞助)
@@ -67,6 +64,26 @@
 - **名称来源**： 轻快好省并智能。基于深度学习技术的OCR技术，主打人工智能优势及小模型，以速度为使命，效果为主导。
 - 基于百度的开源PaddleOCR 模型及训练，任何人可以使用本推理库，也可以根据自己的需求使用百度PaddlePaddle框架进行模型优化。
 
+## 文档导航
+- [C++范例(Windows/Linux/macOS)](./cpp)
+- [Jvm范例(Java/Kotlin)](./jvm)
+- [.Net范例(C#)](./dotnet)
+- [Android范例](./android)
+- [Python范例](./python/README.md)
+- 网页版范例:
+  - [网页版OCR](./ocrweb/README.md)
+  - [多语言网页版OCR](./ocrweb_multi/README.md)
+- [版面结构化](./python/rapid_structure/README.md#rapid-structure)
+  - [版面分析](./python/rapid_structure/README.md#rapid-layout)
+  - [ ] 表格还原
+- 衍生项目
+  - [RapidOCR HTTP服务/win32程序/易语言编写](https://github.com/Physton/RapidOCRServer)
+- [垂直项目](./docs/related_projects.md)
+  - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR)：基于RapidOCR，提取视频中的硬字幕
+  - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): 表格结构还原 | [博客解读论文和源码](http://t.csdn.cn/QNN3S)
+- [常见问题 FAQ](./docs/FAQ.md)
+
+
 ## 近期更新([more](./docs/change_log.md))
 #### 🤖2022-12-14 update:
 - \[python\] 将配置参数和模型移到模块里面，同时将模型打到whl包内，可以直接pip安装使用，更加方便快捷。
@@ -78,14 +95,6 @@
 
 #### 🎃2022-11-01 update:
 - 添加Hugging Face Demo, 增加可以调节超参数的功能，详情可访问[Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
-
-
-## 垂直相关项目([more](./docs/related_projects.md))
-- [RapidVideOCR](https://github.com/SWHL/RapidVideOCR)：基于RapidOCR，提取视频中的硬字幕
-- [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): 表格结构还原 | [博客解读论文和源码](https://blog.csdn.net/shiwanghualuo/article/details/125047732)
-
-## 衍生项目
-- [RapidOCR HTTP服务/win32程序/易语言编写](https://github.com/Physton/RapidOCRServer)
 
 ## 生态框架
 ```mermaid
@@ -101,8 +110,6 @@ flowchart LR
 
     click B "https://github.com/PaddlePaddle/PaddleOCR" _blank
 ```
-
-## 常见问题  [FAQ](./docs/FAQ.md)
 
 ## SDK 编译状态
 鉴于ubuntu用户都是商业用户，也有编译能力，暂不提供预编译包使用，可自行编译。
@@ -134,39 +141,7 @@ flowchart LR
         <img src="./assets/huggingfacedemo.jpg" width="100%" height="100%">
     </div>
 
-
-## 项目结构
-<details>
-    <summary>(点击展开)</summary>
-
-    RapidOCR
-    ├── android             # 安卓工程目录
-    ├── api4cpp             # c语言跨平台接口库源码目录，直接用根下的CMakelists.txt 编译
-    ├── assets              # 一些演示用的图片，不是测试集
-    ├── commonlib           # 通用库
-    ├── cpp                 # 基于c++的工程项目文件夹
-    ├── docs                # 相关的一些说明文档
-    ├── dotnet              # .Net程序目录
-    ├── images              # 测试用图片，典型的测试图，一张是自然场景
-    ├── include             # 编译c语言接口库时的头文件目录
-    ├── ios                 # 苹果手机平台工程目录
-    ├── jvm                 # 基于java的工程目录
-    ├── lib                 # 编译用库文件目录，用于编译c语言接口库用，默认并不上传二进制文件
-    ├── ocrweb              # 基于python和Flask web
-    ├── python              # python推理代码目录
-    ├── release             # 发布的sdk
-    └── tools               #  一些转换脚本之类
-
-</details>
-
-
-## 当前进展
-- [x] C++范例(Windows/Linux/macOS): [demo](./cpp)
-- [x] Jvm范例(Java/Kotlin): [demo](./jvm)
-- [x] .Net范例(C#): [demo](./dotnet)
-- [x] Android范例: [demo](./android)
-- [x] python范例: [demo](./python)
-- [x] OpenVINO加速版本，进行中
+## TODO
 - [ ] iOS范例: 等待有缘人贡献代码
 - [ ] 依据python版本重写C++推理代码，以提升推理效果，并增加对gif/tga/webp 格式图片的支持
 
@@ -200,7 +175,7 @@ flowchart LR
 | ch_PP-OCRv3_rec_train_teacher.onnx  |       0.0140        |  0.5381   |      0.3095      |     0.7667      | 11M  |
 
 
-#### 模型转onnx
+### 模型转onnx
   - [PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter) by @[SWHL](https://github.com/SWHL)
   - [Paddle2OnnxConvertor](https://github.com/RapidAI/Paddle2OnnxConvertor) by @[benjaminwan](https://github.com/benjaminwan)
   - [手把手教你使用ONNXRunTime部署PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0) by @[Channingss](https://github.com/Channingss)
