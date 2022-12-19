@@ -44,7 +44,18 @@ class RapidOCR():
                                               config['Cls']['class_name'])
             self.text_cls = TextClassifier(config['Cls'])
 
-    def __call__(self, img: np.ndarray):
+    def __call__(self, img: np.ndarray, **kwargs):
+        if kwargs:
+            # 获得超参数
+            box_thresh = kwargs.get('box_thresh', 0.5)
+            unclip_ratio = kwargs.get('unclip_ratio', 1.6)
+            text_score = kwargs.get('text_score', 0.5)
+
+            # 更新超参数
+            self.text_detector.postprocess_op.box_thresh = box_thresh
+            self.text_detector.postprocess_op.unclip_ratio = unclip_ratio
+            self.text_score = text_score
+
         h, w = img.shape[:2]
         if self.width_height_ratio == -1:
             use_limit_ratio = False
