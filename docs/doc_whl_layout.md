@@ -24,7 +24,7 @@ print(layout_res)
 
 ### 3. Run by command line.
 ```bash
-$ rapid_layout --img_path test_images/ch.png
+$ rapid_layout --img_path test_images/layout.png
 ```
 
 ### 4. Result.

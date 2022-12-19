@@ -1,9 +1,10 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-from pathlib import Path
-import setuptools
 import subprocess
+from pathlib import Path
+
+import setuptools
 
 
 def get_latest_version(package_name):
@@ -28,7 +29,7 @@ def version_add_one(version, add_loc=-1):
 
 def get_readme():
     root_dir = Path(__file__).resolve().parent.parent.parent
-    readme_path = str(root_dir / 'docs' / 'doc_whl_layout.md')
+    readme_path = str(root_dir / 'docs' / 'doc_whl_table.md')
     with open(readme_path, 'r', encoding='utf-8') as f:
         readme = f.read()
     return readme
@@ -53,8 +54,11 @@ setuptools.setup(
     install_requires=["onnxruntime>=1.7.0", "PyYAML>=6.0",
                       "opencv_python>=4.5.1.48", "numpy>=1.21.6",
                       "rapidocr_onnxruntime>=1.1.18"],
-    packages=[MODULE_NAME, f'{MODULE_NAME}.models'],
-    package_data={'': ['layout_cdla.onnx']},
+    packages=[MODULE_NAME,
+              f'{MODULE_NAME}.models',
+              f'{MODULE_NAME}.table_matcher',
+              f'{MODULE_NAME}.table_structure'],
+    package_data={'': ['*.onnx']},
     keywords=[
         'ppstructure,table,rapidocr'
     ],
