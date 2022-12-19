@@ -7,7 +7,7 @@ on:
       - 'python/rapid_structure/rapid_layout/**'
       - 'docs/doc_whl_layout.md'
       - 'python/rapid_structure/setup_layout.py'
-      - '.github/workflows/gen_whl_to_pypi_layout.yml'
+      - '.github/workflows/gen_whl_to_pypi_rapid_layout.yml'
 
 jobs:
   UnitTesting:

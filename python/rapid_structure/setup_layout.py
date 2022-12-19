@@ -29,7 +29,7 @@ def version_add_one(version, add_loc=-1):
 
 def get_readme():
     root_dir = Path(__file__).resolve().parent.parent.parent
-    readme_path = str(root_dir / 'docs' / 'doc_whl_layout.md')
+    readme_path = str(root_dir / 'docs' / 'doc_whl_rapid_layout.md')
     with open(readme_path, 'r', encoding='utf-8') as f:
         readme = f.read()
     return readme
@@ -59,10 +59,10 @@ setuptools.setup(
         'ppstructure,layout,rapidocr'
     ],
     classifiers=[
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
     ],
     entry_points={
         'console_scripts': [f'{MODULE_NAME}={MODULE_NAME}.{MODULE_NAME}:main']

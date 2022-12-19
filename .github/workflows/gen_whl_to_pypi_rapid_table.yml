@@ -7,7 +7,7 @@ on:
       - 'python/rapid_structure/rapid_table/**'
       - 'docs/doc_whl_table.md'
       - 'python/rapid_structure/setup_table.py'
-      - '.github/workflows/gen_whl_to_pypi_table.yml'
+      - '.github/workflows/gen_whl_to_pypi_rapid_table.yml'
 
 jobs:
   UnitTesting:
