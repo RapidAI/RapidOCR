@@ -38,7 +38,7 @@
 3. 终端运行
    ```bash
    # 假设在rapid_structure目录下
-   $ rapid_layout --img_path test_images/ch.png
+   $ rapid_layout --img_path test_images/layout.png
    ```
 4. 结果
     - 返回结果
