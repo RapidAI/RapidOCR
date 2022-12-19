@@ -15,9 +15,10 @@ from rapid_table import RapidTable
 
 
 def test_table():
-    rapid_table = RapidTable()
+    img_path = str(root_dir / 'test_images' / 'table.jpg')
+    img = cv2.imread(img_path)
 
-    img = cv2.imread('test_images/table.jpg')
+    rapid_table = RapidTable()
 
     table_html_str, elapse = rapid_table(img)
     assert table_html_str.count('<tr>') == 16
