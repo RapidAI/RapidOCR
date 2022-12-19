@@ -37,7 +37,7 @@
 3. 终端运行
    ```bash
    # 假设在rapid_structure目录下
-   $ rapid_talbe --img_path test_images/table.jpg
+   $ rapid_table --img_path test_images/table.jpg
    ```
 4. 结果
     - 返回结果

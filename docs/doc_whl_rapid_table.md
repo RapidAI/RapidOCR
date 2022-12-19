@@ -23,7 +23,7 @@ print(table_html_str)
 
 ### 3. Run by command line.
 ```bash
-$ rapid_talbe --img_path test_images/table.jpg
+$ rapid_table --img_path test_images/table.jpg
 ```
 
 ### 4. Result.
