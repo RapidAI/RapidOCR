@@ -21,7 +21,7 @@ from .utils import (OrtInferSession, PicoDetPostProcess, create_operators,
 root_dir = Path(__file__).resolve().parent
 
 
-class RapidLayout(object):
+class RapidLayout():
     def __init__(self,
                  model_path: str = None):
         config_path = str(root_dir / 'config.yaml')

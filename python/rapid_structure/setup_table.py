@@ -34,7 +34,7 @@ def get_readme():
     return readme
 
 
-MODULE_NAME = 'rapid_layout'
+MODULE_NAME = 'rapid_table'
 latest_version = get_latest_version(MODULE_NAME)
 VERSION_NUM = version_add_one(latest_version)
 
@@ -42,7 +42,7 @@ setuptools.setup(
     name=MODULE_NAME,
     version=VERSION_NUM,
     platforms="Any",
-    description="RapidLayout",
+    description="RapidTable",
     long_description=get_readme(),
     long_description_content_type='text/markdown',
     author="SWHL",
@@ -51,17 +51,18 @@ setuptools.setup(
     license='Apache-2.0',
     include_package_data=True,
     install_requires=["onnxruntime>=1.7.0", "PyYAML>=6.0",
-                      "opencv_python>=4.5.1.48", "numpy>=1.21.6"],
+                      "opencv_python>=4.5.1.48", "numpy>=1.21.6",
+                      "rapidocr_onnxruntime>=1.1.18"],
     packages=[MODULE_NAME, f'{MODULE_NAME}.models'],
-    package_data={'': ['layout_cdla.onnx', '*.yaml']},
+    package_data={'': ['layout_cdla.onnx']},
     keywords=[
-        'ppstructure,layout,rapidocr'
+        'ppstructure,table,rapidocr'
     ],
     classifiers=[
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
     ],
     entry_points={
         'console_scripts': [f'{MODULE_NAME}={MODULE_NAME}.{MODULE_NAME}:main']
