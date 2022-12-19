@@ -1,3 +1,6 @@
+#### ⚽2022-12-19 update:
+- \[python\] Add the table recovery module, See [Rapid Table](../python/rapid_structure/docs/README_Table.md) for details.
+
 #### 🤖2022-12-14 update:
 - \[python\] Move the configuration parameters and model into the module, and at the same time put the model into the whl package, which can be directly installed and used by pip, which is more convenient and quicker.
 - For details, see: [README](../python/README.md#推荐pip安装快速使用)
@@ -92,8 +95,7 @@
 - Upload the model to [Baidu online disk extraction code: 30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg) or [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
 
 #### 2021-08-07 udpate:
-- TODO:
-    - [ ] PP structure table structure and cell coordinate prediction are being sorted out.
+- [x] PP structure table structure and cell coordinate prediction are being sorted out.
 
 - Previously done, unfinished, welcome to PR
     - [ ] make dokcer image

@@ -1,3 +1,6 @@
+#### ⚽2022-12-19 update:
+- \[python\] 添加表格结构还原模块，具体参见[Rapid Table](./python/rapid_structure/docs/README_Table.md)
+
 #### 🤖2022-12-14 update:
 - \[python\] 将配置参数和模型移到模块里面，同时将模型打到whl包内，可以直接pip安装使用，更加方便快捷。
 - 详情参见：[README](../python/README.md#推荐pip安装快速使用)
@@ -89,9 +92,7 @@
 - 模型上传到[百度网盘 提取码：30jv](https://pan.baidu.com/s/1qkqWK4wRdMjqGGbzR-FyWg)
 
 #### 2021-08-07 udpate:
-- 现在正在做的
-  - [ ] PP-Structure 表格结构和cell坐标预测 正在整理中
-
+- [x] PP-Structure 表格结构和cell坐标预测 正在整理中
 - 之前做的,未完成的，欢迎提PR
   - [ ] 打Dokcer镜像
   - [x] 尝试onnxruntime-gpu推理
