@@ -45,7 +45,7 @@ jobs:
           move rapid_table_models\* python\rapid_structure\rapid_table\models\
           cd python/rapid_structure
           pip install -r requirements.txt
-          pip install onnxruntime
+          pip install onnxruntime rapidocr_onnxruntime
           cd tests
           pytest test_table.py
 

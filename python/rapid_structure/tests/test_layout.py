@@ -15,7 +15,7 @@ from rapid_layout import RapidLayout
 
 
 def test_layout():
-    img_path = str(root_dir / 'test_images' / 'ch.png')
+    img_path = str(root_dir / 'test_images' / 'layout.png')
     img = cv2.imread(img_path)
 
     layout_engine = RapidLayout()
