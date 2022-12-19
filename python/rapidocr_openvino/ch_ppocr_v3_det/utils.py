@@ -30,7 +30,7 @@ from shapely.geometry import Polygon
 root_dir = Path(__file__).resolve().parent.parent
 
 
-class OpenVINOInferSession(object):
+class OpenVINOInferSession():
     def __init__(self, config):
         ie = Core()
 
@@ -55,7 +55,7 @@ def read_yaml(yaml_path):
     return data
 
 
-class DecodeImage(object):
+class DecodeImage():
     """ decode image """
 
     def __init__(self, img_mode='RGB', channel_first=False):
@@ -86,7 +86,7 @@ class DecodeImage(object):
         return data
 
 
-class NormalizeImage(object):
+class NormalizeImage():
     """ normalize image such as substract mean, divide std"""
 
     def __init__(self, scale=None, mean=None, std=None, order='chw'):
@@ -106,21 +106,18 @@ class NormalizeImage(object):
         return data
 
 
-class ToCHWImage(object):
+class ToCHWImage():
     """ convert hwc image to chw image"""
     def __init__(self):
         pass
 
     def __call__(self, data):
-        img = data['image']
-        from PIL import Image
-        if isinstance(img, Image.Image):
-            img = np.array(img)
+        img = np.array(data['image'])
         data['image'] = img.transpose((2, 0, 1))
         return data
 
 
-class KeepKeys(object):
+class KeepKeys():
     def __init__(self, keep_keys):
         self.keep_keys = keep_keys
 
@@ -131,7 +128,7 @@ class KeepKeys(object):
         return data_list
 
 
-class DetResizeForTest(object):
+class DetResizeForTest():
     def __init__(self, **kwargs):
         super(DetResizeForTest, self).__init__()
         self.resize_type = 0
@@ -277,7 +274,7 @@ def draw_text_det_res(dt_boxes, img_path):
     return src_im
 
 
-class DBPostProcess(object):
+class DBPostProcess():
     """The post process for Differentiable Binarization (DB)."""
 
     def __init__(self,

@@ -17,7 +17,7 @@ import numpy as np
 from .utils import (OrtInferSession, TableLabelDecode, TablePreprocess)
 
 
-class TableStructurer(object):
+class TableStructurer():
     def __init__(self, model_path: str):
         self.preprocess_op = TablePreprocess()
 

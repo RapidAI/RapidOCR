@@ -29,7 +29,7 @@ except:
     from utils import CTCLabelDecode, OpenVINOInferSession
 
 
-class TextRecognizer(object):
+class TextRecognizer():
     def __init__(self, config):
         self.rec_image_shape = config['rec_img_shape']
         self.rec_batch_num = config['rec_batch_num']

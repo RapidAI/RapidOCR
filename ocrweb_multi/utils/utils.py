@@ -27,7 +27,7 @@ def tojson(obj, **kws):
     return json.dumps(obj, default=default, ensure_ascii=False, **kws) + '\n'
 
 
-class OrtInferSession(object):
+class OrtInferSession():
     def __init__(self, model_path):
         ort_conf = conf['global']
         sess_opt = SessionOptions()
@@ -69,7 +69,7 @@ class OrtInferSession(object):
         return self.session.get_outputs()[output_idx].name
 
 
-class Ticker(object):
+class Ticker():
     def __init__(self, reset=True) -> None:
         self.ts = time.perf_counter()
         self.reset = reset

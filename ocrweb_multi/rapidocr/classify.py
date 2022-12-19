@@ -21,7 +21,7 @@ import numpy as np
 from utils.utils import OrtInferSession
 
 
-class ClsPostProcess(object):
+class ClsPostProcess():
     """Convert between text-label and text-index"""
 
     def __init__(self, label_list):
@@ -40,7 +40,7 @@ class ClsPostProcess(object):
         return decode_out, label
 
 
-class TextClassifier(object):
+class TextClassifier():
     def __init__(self, path, config):
         self.cls_batch_num = config['batch_size']
         self.cls_thresh = config['score_thresh']

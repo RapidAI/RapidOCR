@@ -26,7 +26,7 @@ except:
     from utils import ClsPostProcess, read_yaml, OpenVINOInferSession
 
 
-class TextClassifier(object):
+class TextClassifier():
     def __init__(self, config):
         self.cls_image_shape = config['cls_image_shape']
         self.cls_batch_num = config['cls_batch_num']

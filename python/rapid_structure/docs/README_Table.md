@@ -3,10 +3,11 @@
     <a href=""><img src="https://img.shields.io/badge/Python->=3.7,<=3.10-aff.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
     <a href="https://pypi.org/project/rapid-table/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapid-table?style=plastic"></a>
+    <a href="https://pypi.org/project/rapid-table/"><img src="https://img.shields.io/pypi/dm/rapid-table?color=9cf"></a>
 </p>
 
 ##### 简介和说明
-- 该部分主要是做文档类图像的表格结构还原。
+- 该部分主要是做文档类图像的表格结构还原。该包依赖`rapidocr_onnxruntime`。
 - 具体来说，就是分析给定的表格图像，将表格还原为对应的html格式。
 - 目前支持两种类别的表格识别模型：中文和英文表格识别模型，具体可参见下面表格：
 

@@ -19,7 +19,7 @@ from openvino.runtime import Core
 root_dir = Path(__file__).resolve().parent.parent
 
 
-class OpenVINOInferSession(object):
+class OpenVINOInferSession():
     def __init__(self, config):
         ie = Core()
 
@@ -44,7 +44,7 @@ def read_yaml(yaml_path):
     return data
 
 
-class ClsPostProcess(object):
+class ClsPostProcess():
     """ Convert between text-label and text-index """
 
     def __init__(self, label_list):

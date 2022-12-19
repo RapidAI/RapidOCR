@@ -22,7 +22,7 @@ from onnxruntime import (GraphOptimizationLevel, InferenceSession,
                          SessionOptions)
 
 
-class OrtInferSession(object):
+class OrtInferSession():
     def __init__(self, onnx_path: str):
         self.__verify_model(onnx_path)
 
@@ -59,7 +59,7 @@ class OrtInferSession(object):
             raise FileExistsError(f'{model_path} is not a file.')
 
 
-class TableLabelDecode(object):
+class TableLabelDecode():
     """  """
     def __init__(self,
                  dict_character,
@@ -192,7 +192,7 @@ class TableLabelDecode(object):
         return dict_character
 
 
-class TablePreprocess(object):
+class TablePreprocess():
     def __init__(self):
         self.table_max_len = 488
         self.build_pre_process_list()
@@ -249,7 +249,7 @@ class TablePreprocess(object):
         ]
 
 
-class ResizeTableImage(object):
+class ResizeTableImage():
     def __init__(self, max_len, resize_bboxes=False, infer_mode=False,
                 **kwargs):
         super(ResizeTableImage, self).__init__()
@@ -273,7 +273,7 @@ class ResizeTableImage(object):
         return data
 
 
-class PaddingTableImage(object):
+class PaddingTableImage():
     def __init__(self, size, **kwargs):
         super(PaddingTableImage, self).__init__()
         self.size = size
@@ -291,10 +291,9 @@ class PaddingTableImage(object):
         return data
 
 
-class NormalizeImage(object):
+class NormalizeImage():
     """ normalize image such as substract mean, divide std
     """
-
     def __init__(self, scale=None, mean=None, std=None, order='chw', **kwargs):
         if isinstance(scale, str):
             scale = eval(scale)
@@ -307,10 +306,7 @@ class NormalizeImage(object):
         self.std = np.array(std).reshape(shape).astype('float32')
 
     def __call__(self, data):
-        img = data['image']
-        from PIL import Image
-        if isinstance(img, Image.Image):
-            img = np.array(img)
+        img = np.array(data['image'])
         assert isinstance(img,
                         np.ndarray), "invalid input 'img' in NormalizeImage"
         data['image'] = (
@@ -318,23 +314,19 @@ class NormalizeImage(object):
         return data
 
 
-class ToCHWImage(object):
+class ToCHWImage():
     """ convert hwc image to chw image
     """
-
     def __init__(self, **kwargs):
         pass
 
     def __call__(self, data):
-        img = data['image']
-        from PIL import Image
-        if isinstance(img, Image.Image):
-            img = np.array(img)
+        img = np.array(data['image'])
         data['image'] = img.transpose((2, 0, 1))
         return data
 
 
-class KeepKeys(object):
+class KeepKeys():
     def __init__(self, keep_keys, **kwargs):
         self.keep_keys = keep_keys
 

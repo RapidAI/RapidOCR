@@ -23,7 +23,7 @@ import numpy as np
 from utils.utils import get_resource_path, OrtInferSession
 
 
-class CTCLabelDecode(object):
+class CTCLabelDecode():
     """Convert between text-label and text-index"""
 
     def __init__(self, characters: List[str]):
@@ -86,7 +86,7 @@ class CTCLabelDecode(object):
         return result_list
 
 
-class TextRecognizer(object):
+class TextRecognizer():
     def __init__(self, path, config):
         self.rec_batch_num = config.get('rec_batch_num', 6)
 

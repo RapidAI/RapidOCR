@@ -21,7 +21,7 @@ from utils.utils import OrtInferSession
 from .detect_process import DBPostProcess, create_operators, transform
 
 
-class TextDetector(object):
+class TextDetector():
     def __init__(self, path, config):
         self.preprocess_op = create_operators(config['pre_process'])
         self.postprocess_op = DBPostProcess(**config['post_process'])

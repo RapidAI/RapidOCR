@@ -27,7 +27,7 @@ import six
 from shapely.geometry import Polygon
 
 
-class DecodeImage(object):
+class DecodeImage():
     """decode image"""
 
     def __init__(self, img_mode='RGB', channel_first=False):
@@ -62,7 +62,7 @@ class DecodeImage(object):
         return data
 
 
-class NormalizeImage(object):
+class NormalizeImage():
     """normalize image such as substract mean, divide std"""
 
     def __init__(self, scale=None, mean=None, std=None, order='chw'):
@@ -79,7 +79,7 @@ class NormalizeImage(object):
         return data
 
 
-class ToCHWImage(object):
+class ToCHWImage():
     """convert hwc image to chw image"""
 
     def __init__(self):
@@ -91,7 +91,7 @@ class ToCHWImage(object):
         return data
 
 
-class KeepKeys(object):
+class KeepKeys():
     def __init__(self, keep_keys):
         self.keep_keys = keep_keys
 
@@ -102,7 +102,7 @@ class KeepKeys(object):
         return data_list
 
 
-class DetResizeForTest(object):
+class DetResizeForTest():
     def __init__(self, **kwargs):
         super(DetResizeForTest, self).__init__()
         self.resize_type = 0
@@ -247,7 +247,7 @@ def draw_text_det_res(dt_boxes, img_path):
     return src_im
 
 
-class DBPostProcess(object):
+class DBPostProcess():
     """The post process for Differentiable Binarization (DB)."""
 
     def __init__(

@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 
-class BaseModule(object):
+class BaseModule():
     def __init__(self, package_name: str = 'rapidocr_onnxruntime'):
         self.package_name = package_name
         self.root_dir = Path(__file__).resolve().parent.parent

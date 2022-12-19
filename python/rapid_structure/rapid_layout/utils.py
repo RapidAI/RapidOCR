@@ -11,7 +11,7 @@ from onnxruntime import (get_available_providers, get_device,
                          GraphOptimizationLevel)
 
 
-class OrtInferSession(object):
+class OrtInferSession():
     def __init__(self, config):
         sess_opt = SessionOptions()
         sess_opt.log_severity_level = 4
@@ -75,7 +75,7 @@ def create_operators(op_param_dict):
     return ops
 
 
-class Resize(object):
+class Resize():
     def __init__(self, size=(640, 640), **kwargs):
         self.size = size
 
@@ -105,7 +105,7 @@ class Resize(object):
         return data
 
 
-class NormalizeImage(object):
+class NormalizeImage():
     """ normalize image such as substract mean, divide std
     """
 
@@ -129,7 +129,7 @@ class NormalizeImage(object):
         return data
 
 
-class ToCHWImage(object):
+class ToCHWImage():
     """ convert hwc image to chw image
     """
     def __init__(self, **kwargs):
@@ -141,7 +141,7 @@ class ToCHWImage(object):
         return data
 
 
-class KeepKeys(object):
+class KeepKeys():
     def __init__(self, keep_keys, **kwargs):
         self.keep_keys = keep_keys
 
@@ -158,7 +158,7 @@ def read_yaml(yaml_path):
     return data
 
 
-class PicoDetPostProcess(object):
+class PicoDetPostProcess():
     """
     Args:
         input_shape (int): network input image size

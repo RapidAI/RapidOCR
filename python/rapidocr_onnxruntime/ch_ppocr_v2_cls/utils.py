@@ -21,7 +21,7 @@ from onnxruntime import (get_available_providers, get_device,
 root_dir = Path(__file__).resolve().parent.parent
 
 
-class OrtInferSession(object):
+class OrtInferSession():
     def __init__(self, config):
         sess_opt = SessionOptions()
         sess_opt.log_severity_level = 4
@@ -74,7 +74,7 @@ def read_yaml(yaml_path):
     return data
 
 
-class ClsPostProcess(object):
+class ClsPostProcess():
     """ Convert between text-label and text-index """
 
     def __init__(self, label_list):

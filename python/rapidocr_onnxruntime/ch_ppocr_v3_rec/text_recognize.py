@@ -25,7 +25,7 @@ except:
     from utils import CTCLabelDecode, read_yaml, OrtInferSession
 
 
-class TextRecognizer(object):
+class TextRecognizer():
     def __init__(self, config):
         session_instance = OrtInferSession(config)
         self.session = session_instance.session

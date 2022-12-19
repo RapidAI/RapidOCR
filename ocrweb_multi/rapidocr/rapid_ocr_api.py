@@ -61,7 +61,7 @@ def load_onnx_model(step, name):
     return model_class(model_config['path'], model_config.get('config'))
 
 
-class RapidOCR(object):
+class RapidOCR():
     def __init__(self, config):
         super(RapidOCR).__init__()
         self.config = config
@@ -134,7 +134,7 @@ class RapidOCR(object):
             sorted boxes(array) with shape [4, 2]
         """
 
-        class AlignBox(object):
+        class AlignBox():
             def __init__(self, data) -> None:
                 self.data = data
                 self.x = data[0][0]
