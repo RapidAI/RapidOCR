@@ -56,7 +56,7 @@ setuptools.setup(
     packages=[MODULE_NAME, f'{MODULE_NAME}.models'],
     package_data={'': ['layout_cdla.onnx', '*.yaml']},
     keywords=[
-        'ppstructure,layout,rapidocr'
+        'ppstructure,layout,rapidocr,rapid_layout'
     ],
     classifiers=[
         'Programming Language :: Python :: 3.7',

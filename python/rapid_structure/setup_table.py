@@ -60,7 +60,7 @@ setuptools.setup(
               f'{MODULE_NAME}.table_structure'],
     package_data={'': ['*.onnx']},
     keywords=[
-        'ppstructure,table,rapidocr'
+        'ppstructure,table,rapidocr,rapid_table'
     ],
     classifiers=[
         'Programming Language :: Python :: 3.7',

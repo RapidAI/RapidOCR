@@ -8,6 +8,7 @@ on:
       - 'docs/doc_whl_table.md'
       - 'python/rapid_structure/setup_table.py'
       - '.github/workflows/gen_whl_to_pypi_rapid_table.yml'
+      - 'python/rapid_structure/tests/test_table.py'
 
 jobs:
   UnitTesting:
