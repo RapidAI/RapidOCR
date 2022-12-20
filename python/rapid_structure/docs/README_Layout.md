@@ -52,5 +52,5 @@
         ```
    - 可视化结果
     <div align="center">
-        <img src="./test_images/layout_result.jpg" width="80%" height="80%">
+        <img src="../test_images/layout_result.jpg" width="80%" height="80%">
     </div>
