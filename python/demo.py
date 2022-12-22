@@ -88,11 +88,11 @@ def visualize(image_path, result, font_path="resources/fonts/FZYTK.TTF"):
 
 
 if __name__ == '__main__':
-    text_sys = RapidOCR()
+    rapid_ocr = RapidOCR()
 
     image_path = 'test_images/ch_en_num.jpg'
     img = cv2.imread(image_path)
-    result, elapse_list = text_sys(img)
+    result, elapse_list = rapid_ocr(img)
     print(result)
     print(elapse_list)
 

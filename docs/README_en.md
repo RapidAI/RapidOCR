@@ -63,6 +63,7 @@
 
 ## Navigation
 - [Python demo](../python/README.md)
+  - [rapidocr_openvino](../python/rapidocr_openvino/README.md)
 - [C++ demo(Windows/Linux/macOS)](../cpp)
 - [Jvm demo(Java/Kotlin)](../jvm)
 - [.Net demo(C#)](../dotnet)

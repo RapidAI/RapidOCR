@@ -66,6 +66,7 @@
 
 ## 文档导航
 - [Python范例](./python/README.md)
+  - [rapidocr_openvino](./python/rapidocr_openvino/README.md)
 - [C++范例(Windows/Linux/macOS)](./cpp)
 - [Jvm范例(Java/Kotlin)](./jvm)
 - [.Net范例(C#)](./dotnet)

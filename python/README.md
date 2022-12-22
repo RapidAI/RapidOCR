@@ -129,24 +129,23 @@
 3. 安装运行环境
    - 基于onnxruntime推理所需环境安装：
         ```bash
-        pip install onnxruntime>=1.7.0
+        $ pip install onnxruntime>=1.7.0
 
-        pip install -r requirements.txt -i https://pypi.douban.com/simple/
+        $ pip install -r requirements.txt
         ```
    - 基于openvino推理所需环境安装：
         ```bash
-        # Windows/Mac
-        pip install openvino==2022.2.0
+        $ pip install openvino
 
-        pip install -r requirements.txt -i https://pypi.douban.com/simple/
+        $ pip install -r requirements.txt
         ```
    - Note: 在Windows端，Shapely库自动安装可能会有问题，解决方案参见[Q15](../docs/FAQ.md#q-windows系统下装完环境之后运行示例程序之后报错oserror-winerror-126-找不到指定的模組)
 
 4. 运行示例
     - 运行单元测试
         ```bash
-        cd tests
-        pytest test_*.py
+        $ cd tests
+        $ pytest test_*.py
         ```
     - 接口调用
         ```python
@@ -158,12 +157,12 @@
         # 基于openvino引擎推理
         # from rapidocr_openvino import RapidOCR
 
-        text_sys = RapidOCR()
+        rapid_ocr = RapidOCR()
 
         image_path = r'test_images/det_images/ch_en_num.jpg'
         img = cv2.imread(image_path)
 
-        result = text_sys(img)
+        result = rapid_ocr(img)
         print(result)
 
         # result: [[文本框坐标], 文本内容, 置信度]
@@ -171,7 +170,7 @@
         ```
     - 直接运行`demo.py`，可直接可视化查看结果。
         ```bash
-        python demo.py
+        $ python demo.py
         ```
 
 ### [`config.yaml`](./rapidocr_onnxruntime/config.yaml)中常用参数介绍

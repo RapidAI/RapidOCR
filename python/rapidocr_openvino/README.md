@@ -1,11 +1,11 @@
 ## rapidocr_openvino
 
-**🚩注意：基于目前`openvino==2022.2.0`版，在推理批量图像时，存在申请内存不释放的问题，详情可参见[issue11939](https://github.com/openvinotoolkit/openvino/issues/11939)**
+❗❗❗注意：基于目前`openvino==2022.3.0`版，存在申请内存不释放的问题，这也就意味着当推理图像很大时，推理完之后，内存会一直占用。详情可参见[issue11939](https://github.com/openvinotoolkit/openvino/issues/11939)
 
 <details open>
 <summary>目录</summary>
 
-- [rapidocr_openvino](#rapidocr_openvino)
+- [rapidocr\_openvino](#rapidocr_openvino)
     - [安装](#安装)
     - [模型问题](#模型问题)
     - [关于OpenVINO](#关于openvino)
@@ -16,11 +16,10 @@
 
 #### 安装
 ```bash
-# Windows端
-pip install openvino==2022.2.0
+$ pip install openvino
 
 # 里面含有mo
-pip install openvino-dev==2022.2.0
+$ pip install openvino-dev
 ```
 
 #### 模型问题
