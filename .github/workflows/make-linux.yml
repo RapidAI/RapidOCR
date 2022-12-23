@@ -3,7 +3,7 @@ name: CMake-linux
 on:
   push:
     branches:
-      - main
+      - develop
     paths:
       - '!python/**'
       - '!ocrweb/**'

@@ -33,14 +33,12 @@
       - [🤖2022-12-14 update:](#2022-12-14-update)
       - [🧻2022-11-20 update:](#2022-11-20-update)
   - [生态框架](#生态框架)
-  - [SDK 编译状态](#sdk-编译状态)
   - [在线demo](#在线demo)
   - [TODO](#todo)
   - [模型相关](#模型相关)
     - [各个版本ONNX模型效果对比](#各个版本onnx模型效果对比)
       - [文本检测模型(仅供参考)](#文本检测模型仅供参考)
       - [文本识别模型(仅供参考)](#文本识别模型仅供参考)
-    - [模型转onnx](#模型转onnx)
   - [原始发起者及初创作者](#原始发起者及初创作者)
   - [致谢](#致谢)
   - [赞助](#赞助)
@@ -68,10 +66,14 @@
 - [Python范例](./python/README.md)
   - [rapidocr_openvino](./python/rapidocr_openvino/README.md)
 - [C++范例(Windows/Linux/macOS)](./cpp)
+  - [RapidOcrOnnx](https://github.com/RapidAI/RapidOcrOnnx)
+  - [RapidOcrNcnn](https://github.com/RapidAI/RapidOcrNcnn)
 - [Jvm范例(Java/Kotlin)](./jvm)
-- [.Net范例(C#)](./dotnet)
-- [Android范例](./android)
-- 网页版范例:
+  - [RapidOcrOnnxJvm](https://github.com/RapidAI/RapidOcrOnnxJvm)
+  - [RapidOcrNcnnJvm](https://github.com/RapidAI/RapidOcrNcnnJvm)
+- [.Net范例(C#)](./dotnet/RapidOcrOnnxCs/README.md)
+- [Android范例](https://github.com/RapidAI/RapidOcrAndroidOnnx)
+- 网页版范例
   - [网页版OCR](./ocrweb/README.md)
   - [多语言网页版OCR](./ocrweb_multi/README.md)
 - [版面结构化](./python/rapid_structure/README.md)
@@ -82,6 +84,10 @@
 - [垂直项目](./docs/related_projects.md)
   - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR)：基于RapidOCR，提取视频中的硬字幕
   - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): 表格结构还原 | [博客解读论文和源码](http://t.csdn.cn/QNN3S)
+- 模型转换
+  - [PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter)
+  - [Paddle2OnnxConvertor](https://github.com/RapidAI/Paddle2OnnxConvertor)
+  - [手把手教你使用ONNXRunTime部署PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0)
 - [常见问题 FAQ](./docs/FAQ.md)
 
 
@@ -112,14 +118,6 @@ flowchart LR
 
     click B "https://github.com/PaddlePaddle/PaddleOCR" _blank
 ```
-
-## SDK 编译状态
-鉴于ubuntu用户都是商业用户，也有编译能力，暂不提供预编译包使用，可自行编译。
-
-| 平台            | 编译状态 |   提供状态 |
-| --------------- | -------- | -------- |
-| Windows x86/x64 |  [![CMake-windows-x86-x64](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml)        |  [下载链接](https://github.com/RapidAI/RapidOCR/releases) |
-| Linux x64       |  [![CMake-linux](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml) |  暂不提供，自行编译 |
 
 ## 在线demo
 - [自建在线demo](https://rapidai.deepdatasec.com:9003/)
@@ -177,12 +175,6 @@ flowchart LR
 | ch_PP-OCRv3_rec_train_teacher.onnx  |       0.0140        |  0.5381   |      0.3095      |     0.7667      | 11M  |
 
 
-### 模型转onnx
-  - [PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter) by @[SWHL](https://github.com/SWHL)
-  - [Paddle2OnnxConvertor](https://github.com/RapidAI/Paddle2OnnxConvertor) by @[benjaminwan](https://github.com/benjaminwan)
-  - [手把手教你使用ONNXRunTime部署PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0) by @[Channingss](https://github.com/Channingss)
-
-
 ## 原始发起者及初创作者
 <p align="left">
     <a href="https://github.com/benjaminwan"><img src="https://avatars.githubusercontent.com/u/2362051?v=4" width=65 height=65></a>
@@ -211,7 +203,7 @@ flowchart LR
 
 ## 授权
 - OCR模型版权归百度所有，其它工程代码版权归本仓库所有者所有。
-- 本软件采用Apache 授权方式，欢迎大家贡献代码，提交issue 甚至pr.
+- 本软件采用Apache 授权方式，欢迎大家贡献代码，提交issue 甚至PR。
 
 ## 联系我们
 - 您可以通过QQ群联系到我们：**887298230**

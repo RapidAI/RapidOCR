@@ -31,12 +31,10 @@
       - [🤖2022-12-14 update:](#2022-12-14-update)
       - [🧻2022-11-20 update:](#2022-11-20-update)
   - [Overall Framework](#overall-framework)
-  - [SDK compilation status](#sdk-compilation-status)
   - [Demo](#demo)
   - [TODO](#todo)
   - [Model related](#model-related)
       - [Download models(Baidu NetDisk | Google Drive)](#download-modelsbaidu-netdisk--google-drive)
-      - [Model to onnx](#model-to-onnx)
     - [Compared](#compared)
       - [Text Det](#text-det)
       - [Text Recognition](#text-recognition)
@@ -65,9 +63,13 @@
 - [Python demo](../python/README.md)
   - [rapidocr_openvino](../python/rapidocr_openvino/README.md)
 - [C++ demo(Windows/Linux/macOS)](../cpp)
+  - [RapidOcrOnnx](https://github.com/RapidAI/RapidOcrOnnx)
+  - [RapidOcrNcnn](https://github.com/RapidAI/RapidOcrNcnn)
 - [Jvm demo(Java/Kotlin)](../jvm)
+  - [RapidOcrOnnxJvm](https://github.com/RapidAI/RapidOcrOnnxJvm)
+  - [RapidOcrNcnnJvm](https://github.com/RapidAI/RapidOcrNcnnJvm)
 - [.Net demo(C#)](../dotnet)
-- [Android demo](../android)
+- [Android demo](https://github.com/RapidAI/RapidOcrAndroidOnnx)
 - Web demo:
   - [Web OCR](../ocrweb/README.md)
   - [Multi Web OCR](../ocrweb_multi/README.md)
@@ -79,6 +81,10 @@
 - [Related projects](../docs/related_projects.md)
   - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR): Extract hard subtitles in videos based on RapidOCR
   - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): table structure restoration | [blog interpretation papers and source code](http://t.csdn.cn/QNN3S)
+- Model Convert
+   - [PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter)
+   - [Paddle2OnnxConvertor](https://github.com/RapidAI/Paddle2OnnxConvertor)
+   - [Teach you to use ONNXRunTime to deploy PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0)
 - [FAQ](../docs/FAQ.md)
 
 ## Recently updates([more](./change_log_en.md))
@@ -108,14 +114,6 @@ flowchart LR
     click B "https://github.com/PaddlePaddle/PaddleOCR" _blank
 ```
 
-## SDK compilation status
-Since ubuntu users are all commercial users and have the ability to compile, pre-compiled packages are not provided for the time being, and they can be compiled by themselves.
-
-| Platform | Compilation Status | Offer Status |
-| --------------- | -------- | -------- |
-| Windows x86/x64 | [![CMake-windows-x86-x64](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/windows-all-build.yaml) | [Download Link](https://github.com/RapidAI/RapidOCR/releases) |
-| Linux x64 | [![CMake-linux](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml/badge.svg)](https://github.com/RapidAI/RapidOCR/actions/workflows/make-linux.yml) | Not available yet, compile by yourself |
-
 ## Demo
 - [Online demo](https://rapidai.deepdatasec.com:9003/)
     - If the demo fails, you can visit the demo on Hugging Face: [RapidOCRDemo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
@@ -144,10 +142,6 @@ Since ubuntu users are all commercial users and have the ability to compile, pre
 ## Model related
 #### Download models([Baidu NetDisk](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing))
 
-#### Model to onnx
-   - [PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter) by @[SWHL](https://github.com/SWHL)
-   - [Paddle2OnnxConvertor](https://github.com/RapidAI/Paddle2OnnxConvertor) by @[benjaminwan](https://github.com/benjaminwan)
-   - [Teach you to use ONNXRunTime to deploy PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0) by @[Channingss](https://github.com/Channingss)
 
 ### Compared
 #### Text Det
