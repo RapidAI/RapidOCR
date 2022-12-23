@@ -175,7 +175,7 @@ flowchart LR
 - Many thanks to [DeliciaLaniD](https://github.com/DeliciaLaniD) for fixing the misplaced start position of scan animation in ocrweb.
 - Many thanks to [zhsunlight](https://github.com/zhsunlight) for the suggestion about parameterized call GPU reasoning and the careful and thoughtful testing.
 - Many thanks to [lzh111222334](https://github.com/lzh111222334) for fixing some bugs of rec preprocessing under python version.
-- Many thanks to [AutumnSun1996](https://github.com/AutumnSun1996) for the suggestiong in the [#42](https://github.com/RapidAI/RapidOCR/issues/42).
+- Many thanks to [AutumnSun1996](https://github.com/AutumnSun1996) for the suggestion in the [#42](https://github.com/RapidAI/RapidOCR/issues/42).
 
 ## Sponsor
 
