@@ -3,7 +3,7 @@
   <img src="../assets/RapidOCR_LOGO.png" width="55%" height="55%"/>
 </div>
 
-# RapidOCR （Open source OCR for the security of the digital world)
+# RapidOCR (Open source OCR for the security of the digital world)
 
 [简体中文](../README.md) | English
 
@@ -23,7 +23,7 @@
 <details>
     <summary>Contents</summary>
 
-- [RapidOCR （Open source OCR for the security of the digital world)](#rapidocr-open-source-ocr-for-the-security-of-the-digital-world)
+- [RapidOCR (Open source OCR for the security of the digital world)](#rapidocr-open-source-ocr-for-the-security-of-the-digital-world)
   - [Introduction](#introduction)
   - [Navigation](#navigation)
   - [Recently updates(more)](#recently-updatesmore)
@@ -33,16 +33,11 @@
   - [Overall Framework](#overall-framework)
   - [Demo](#demo)
   - [TODO](#todo)
-  - [Model related](#model-related)
-      - [Download models(Baidu NetDisk | Google Drive)](#download-modelsbaidu-netdisk--google-drive)
-    - [Compared](#compared)
-      - [Text Det](#text-det)
-      - [Text Recognition](#text-recognition)
   - [Original initiator and start-up author](#original-initiator-and-start-up-author)
   - [Acknowledgements](#acknowledgements)
   - [Sponsor](#sponsor)
   - [Authorization](#authorization)
-  - [Contact us](#contact-us)
+  - [Join us](#join-us)
   - [Demo](#demo-1)
       - [Demonstration with C++/JVM](#demonstration-with-cjvm)
       - [Demonstration with .Net](#demonstration-with-net)
@@ -85,6 +80,9 @@
    - [PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter)
    - [Paddle2OnnxConvertor](https://github.com/RapidAI/Paddle2OnnxConvertor)
    - [Teach you to use ONNXRunTime to deploy PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0)
+- [About model](../docs/models.md)
+  - [Model Convert](../docs/models.md#模型转换)
+  - [Model Download](../docs/models.md#模型下载)
 - [FAQ](../docs/FAQ.md)
 
 ## Recently updates([more](./change_log_en.md))
@@ -139,31 +137,6 @@ flowchart LR
 - [ ] iOS example: waiting for someone to contribute code
 - [ ] Rewrite the C++ reasoning code according to the python version to improve the reasoning effect, and add support for gif/tga/webp format pictures
 
-## Model related
-#### Download models([Baidu NetDisk](https://pan.baidu.com/s/1mkirNltJS481In4g81jP3w?pwd=zy37) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing))
-
-
-### Compared
-#### Text Det
-- test dataset: `Chinese and English (111, including cards, documents and natural images)`
-
-|                Model                  | infer_Speed(s/img) | precision | recall | hmean  | Model Size |
-| :---------------------------------: | :----------------: | :-------: | :----: | :----: | :------: |
-| ch_ppocr_mobile_v2.0_det_infer.onnx |     0.4345742      |  0.7277   | 0.8413 | 0.7785 |   2.3M   |
-|     ch_PP-OCRv2_det_infer.onnx      |     0.5116553      |  0.7817   | 0.8472 | 0.8123 |   2.3M   |
-|     ch_PP-OCRv3_det_infer.onnx      |     0.5723512      |  **0.7740**   | **0.8837** | **0.8237** |   2.4M   |
-
-#### Text Recognition
-- test dataset: `Chinese and English (168)`
-
-|                Model                 | infer_speed(s/img)   | Score     |    Exact_Match   |   Char_Match | Model Size |
-| :---------------------------------: | ------------------: | :-------: | :--------------: | :-------------: | :--: |
-| ch_ppocr_mobile_v2.0_rec_infer.onnx |       0.0111        |  **0.7287**   |      **0.5595**      |     0.8979      | 4.3M |
-|     ch_PP-OCRv2_rec_infer.onnx      |       0.0193        |  0.6955   |      0.4881      |     **0.9029**      | 8.0M |
-|     ch_PP-OCRv3_rec_infer.onnx      |       0.0145        |  0.5537   |      0.3274      |     0.7800      |  11M |
-| ch_PP-OCRv3_rec_train_student.onnx  |       0.0157        |  0.5537   |      0.3274      |     0.7800      | 11M  |
-| ch_PP-OCRv3_rec_train_teacher.onnx  |       0.0140        |  0.5381   |      0.3095      |     0.7667      | 11M  |
-
 ## Original initiator and start-up author
 <p align="left">
     <a href="https://github.com/benjaminwan"><img src="https://avatars.githubusercontent.com/u/2362051?v=4" width=65 height=65></a>
@@ -188,11 +161,10 @@ flowchart LR
 
 ## Authorization
 - The copyright of the OCR model belongs to Baidu, and the copyright of other engineering codes belongs to the owner of this warehouse.
-- This software is licensed under LGPL. You are welcome to contribute code, submit an issue or even pr.
+- This software is licensed under LGPL. You are welcome to contribute code, submit an issue or even PR.
 
-## Contact us
+## Join us
 - You can contact us through QQ group: **887298230**
-- If you can’t find the group number, please click here [**link**](https://jq.qq.com/?_wv=1027&k=P9b3olx6) to find the organization
 - Scan the following QR code with QQ:
 
     <div align="center">

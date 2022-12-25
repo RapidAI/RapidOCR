@@ -1,11 +1,13 @@
 ## RapidOCR C++ version
 
 ### C++项目使用onnxruntime和ncnn两种推理框架，实现了2种版本
-### onnxruntime版：[RapidOcrOnnx](https://github.com/RapidAI/RapidOcrOnnx)
-### ncnn版：[RapidOcrNcnn](https://github.com/RapidAI/RapidOcrNcnn)
-### 以下内容停止更新
+- onnxruntime版：[RapidOcrOnnx](https://github.com/RapidAI/RapidOcrOnnx)
+- ncnn版：[RapidOcrNcnn](https://github.com/RapidAI/RapidOcrNcnn)
 
+### 以下内容停止更新
 - [RapidOCR C++ version](#rapidocr-c-version)
+  - [C++项目使用onnxruntime和ncnn两种推理框架，实现了2种版本](#c项目使用onnxruntime和ncnn两种推理框架实现了2种版本)
+  - [以下内容停止更新](#以下内容停止更新)
   - [Project下载](#project下载)
   - [Demo下载(Win、mac、linux)](#demo下载winmaclinux)
   - [模型下载](#模型下载)
