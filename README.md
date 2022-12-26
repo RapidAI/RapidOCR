@@ -172,8 +172,12 @@ flowchart LR
 - 本软件采用Apache 授权方式，欢迎大家贡献代码，提交issue 甚至PR。
 
 ## 加入我们
-- 可以通过QQ群加入我们：**887298230**
-- 用QQ扫描以下二维码:
+- 微信扫描以下二维码，关注**RapidAI公众号**，回复OCR即可加入RapidOCR微信交流群：
+    <div align="center">
+        <img src="https://raw.githubusercontent.com/RapidAI/.github/main/assets/RapidAI_WeChatAccount.jpg" width="25%" height="25%" align="center">
+    </div>
+
+- 可以通过QQ群加入我们：**887298230**，或者用QQ扫描以下二维码:
 
     <div align="center">
         <img src="./assets/qq_team.jpg" width="25%" height="25%" align="center">

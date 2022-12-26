@@ -164,12 +164,7 @@ flowchart LR
 - This software is licensed under LGPL. You are welcome to contribute code, submit an issue or even PR.
 
 ## Join us
-- You can contact us through QQ group: **887298230**
-- Scan the following QR code with QQ:
-
-    <div align="center">
-        <img src="../assets/qq_team.jpg" width="25%" height="25%" align="center">
-     </div>
+- For international developers, we regard [RapidOCR Disscussions](https://github.com/RapidAI/RapidOCR/discussions) as our international community platform. All ideas and questions can be discussed here in English.
 
 ## Demo
 #### Demonstration with C++/JVM
