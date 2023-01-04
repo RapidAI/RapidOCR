@@ -1,9 +1,10 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-from pathlib import Path
-import setuptools
 import subprocess
+from pathlib import Path
+
+import setuptools
 
 
 def get_latest_version(package_name):

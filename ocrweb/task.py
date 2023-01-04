@@ -12,7 +12,7 @@ import numpy as np
 
 from rapidocr_onnxruntime import RapidOCR
 
-text_sys = RapidOCR()
+rapid_ocr = RapidOCR()
 
 
 def detect_recognize(image_path, is_api=False):
@@ -23,7 +23,7 @@ def detect_recognize(image_path, is_api=False):
     else:
         raise TypeError(f'{image_path} is not str or ndarray.')
 
-    final_result, elapse_part = text_sys(copy.deepcopy(image))
+    final_result, elapse_part = rapid_ocr(copy.deepcopy(image))
 
     if is_api:
         final_reuslt_json = json.dumps(final_result,

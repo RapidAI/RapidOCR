@@ -39,14 +39,6 @@
         rec_img_shape: [3, 48, 320]
         rec_batch_num: 6
         ```
-- onnxruntime和openvino调用方式如下:
-    ```python
-    # 基于onnxruntime引擎推理
-    from rapidocr_onnxruntime import RapidOCR
-
-    # 基于openvino引擎推理
-    from rapidocr_openvino import RapidOCR
-    ```
 - 关于openvino详细的使用方法，参见[openvino_readme](./rapidocr_openvino/README.md)。
 - 关于选择哪个推理引擎（onnxruntime 或者 openvino）?
     |推理引擎|推理速度更快|占用内存更少|
@@ -57,20 +49,21 @@
 
 ### （推荐）pip安装快速使用
 1. 安装`rapidocr`包
-   - <a href="https://pypi.org/project/rapidocr-onnxruntime/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-onnxruntime?style=plastic"></a> `rapidocr_onnxruntime` → `pip install rapidocr-onnxruntime`
-   - <a href="https://pypi.org/project/rapidocr-openvino/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-openvino?style=plastic"></a> `rapidocr_openvino` → `pip install rapidocr-openvino`
+   - <a href="https://pypi.org/project/rapidocr-onnxruntime/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-onnxruntime?style=flat-square"></a> `rapidocr_onnxruntime` → `pip install rapidocr-onnxruntime`
+   - <a href="https://pypi.org/project/rapidocr-openvino/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-openvino?"></a> `rapidocr_openvino` → `pip install rapidocr-openvino`
 
 2. 推理使用
+    - 📌初始化RapidOCR可不提供`config.yaml`，默认使用**rapidocr_onnxruntime**目录下的。如有特殊需求，可以自行更改目录下的`config.yaml`。
     ```python
     import cv2
     from rapidocr_onnxruntime import RapidOCR
     # from rapidocr_openvino import RapidOCR
 
-    text_sys = RapidOCR('config.yaml')
+    rapid_ocr = RapidOCR()
 
     img = cv2.imread('test_images/ch_en_num.jpg')
 
-    result = text_sys(img)
+    result = rapid_ocr(img)
     print(result)
 
     # result: [[文本框坐标], 文本内容, 置信度]

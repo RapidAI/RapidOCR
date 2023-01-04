@@ -176,10 +176,10 @@ class RapidOCR():
 
 
 if __name__ == '__main__':
-    text_sys = RapidOCR('config.yaml')
+    rapid_ocr = RapidOCR('config.yaml')
 
     import cv2
     img = cv2.imread('resources/test_images/det_images/ch_en_num.jpg')
 
-    result = text_sys(img)
+    result = rapid_ocr(img)
     print(result)

@@ -14,11 +14,11 @@ $ pip install rapidocr-onnxruntime
 import cv2
 from rapidocr_onnxruntime import RapidOCR
 
-text_sys = RapidOCR()
+rapid_ocr = RapidOCR()
 
 img = cv2.imread('test_images/ch_en_num.jpg')
 
-result, elapse_list = text_sys(img)
+result, elapse_list = rapid_ocr(img)
 print(result)
 print(elapse_list)
 

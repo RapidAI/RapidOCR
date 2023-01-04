@@ -1,10 +1,3 @@
-onnxruntime>=1.7.0
-opencv_python==4.5.1.48
-six
 Pillow
-PyYAML
 requests
 Flask>=2.1.0
-numpy>=1.20.0
-pyclipper>=1.2.1
-Shapely>=1.7.1
