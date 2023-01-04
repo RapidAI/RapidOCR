@@ -50,7 +50,7 @@
 ### （推荐）pip安装快速使用
 1. 安装`rapidocr`包
    - <a href="https://pypi.org/project/rapidocr-onnxruntime/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-onnxruntime?style=flat-square"></a> `rapidocr_onnxruntime` → `pip install rapidocr-onnxruntime`
-   - <a href="https://pypi.org/project/rapidocr-openvino/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-openvino?"></a> `rapidocr_openvino` → `pip install rapidocr-openvino`
+   - <a href="https://pypi.org/project/rapidocr-openvino/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-openvino?style=flat-square"></a> `rapidocr_openvino` → `pip install rapidocr-openvino`
 
 2. 推理使用
     - 📌初始化RapidOCR可不提供`config.yaml`，默认使用**rapidocr_onnxruntime**目录下的。如有特殊需求，可以自行更改目录下的`config.yaml`。
