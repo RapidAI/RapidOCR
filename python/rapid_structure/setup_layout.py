@@ -13,7 +13,7 @@ def get_latest_version(package_name):
     output = output.stdout.decode('utf-8')
     if output:
         output = list(filter(lambda x: len(x) > 0, output.split('\n')))
-        return output[0].split(' ')[-1][1:-1]
+        return output[0].strip().split(' ')[-1][1:-1]
     return None
 
 

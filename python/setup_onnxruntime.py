@@ -13,8 +13,7 @@ def get_latest_version(package_name):
     output = output.stdout.decode('utf-8')
     if output:
         output = list(filter(lambda x: len(x) > 0, output.split('\n')))
-        latest_version = output[0].split(' ')[-1][1:-1]
-        return latest_version
+        return output[0].strip().split(' ')[-1][1:-1]
     return None
 
 
@@ -40,6 +39,8 @@ def get_readme():
 MODULE_NAME = 'rapidocr_onnxruntime'
 latest_version = get_latest_version(MODULE_NAME)
 VERSION_NUM = version_add_one(latest_version)
+print(VERSION_NUM)
+exit()
 
 setuptools.setup(
     name=MODULE_NAME,
