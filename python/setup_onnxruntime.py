@@ -39,8 +39,6 @@ def get_readme():
 MODULE_NAME = 'rapidocr_onnxruntime'
 latest_version = get_latest_version(MODULE_NAME)
 VERSION_NUM = version_add_one(latest_version)
-print(VERSION_NUM)
-exit()
 
 setuptools.setup(
     name=MODULE_NAME,
