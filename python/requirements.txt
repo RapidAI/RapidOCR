@@ -6,3 +6,4 @@ numpy>=1.19.5
 Pillow
 PyYAML
 pytest
+pip==22.3.1
