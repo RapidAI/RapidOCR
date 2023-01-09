@@ -3,3 +3,4 @@ opencv_python>=4.6.0.66
 setuptools>=61.2.0
 PyYAML
 pytest
+pip==22.3.1
