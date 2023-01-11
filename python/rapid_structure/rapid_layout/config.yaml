@@ -1,4 +1,4 @@
-model_path: models/layout_table.onnx
+model_path: models/layout_cdla.onnx
 
 use_cuda: false
 CUDAExecutionProvider:

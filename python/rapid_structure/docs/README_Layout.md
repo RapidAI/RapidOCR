@@ -29,6 +29,8 @@
     import cv2
     from rapid_layout import RapidLayout
 
+    # 提供model_path参数，可以自行指定上述3个模型，默认是layout_cdla.onnx
+    # model_path='xxx.onnx'
     layout_engine = RapidLayout()
 
     img = cv2.imread('test_images/layout.png')
