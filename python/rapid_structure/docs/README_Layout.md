@@ -6,7 +6,7 @@
     <a href="https://pypi.org/project/rapid-layout/"><img src="https://img.shields.io/pypi/dm/rapid-layout?color=9cf"></a>
 </p>
 
-##### 简介和说明
+#### 简介和说明
 - 该部分主要是做文档类图像的版面分析。
 - 具体来说，就是分析给定的文档类别图像（论文截图等），定位其中类别和位置，如标题、段落、表格和图片等各个部分。
 - 目前支持三种类别的版面分析模型：中文、英文和表格版面分析模型，具体可参见下面表格：
