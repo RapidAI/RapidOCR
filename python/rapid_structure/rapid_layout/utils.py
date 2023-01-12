@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+import copy
 import warnings
 
 import yaml
@@ -63,9 +64,6 @@ def transform(data, ops=None):
 
 
 def create_operators(op_param_dict):
-    """
-    create operators based on the config
-    """
     ops = []
     for op_name, param in op_param_dict.items():
         if param is None:
@@ -106,9 +104,6 @@ class Resize():
 
 
 class NormalizeImage():
-    """ normalize image such as substract mean, divide std
-    """
-
     def __init__(self, scale=None, mean=None, std=None, order='chw', **kwargs):
         if isinstance(scale, str):
             scale = eval(scale)
@@ -130,8 +125,6 @@ class NormalizeImage():
 
 
 class ToCHWImage():
-    """ convert hwc image to chw image
-    """
     def __init__(self, **kwargs):
         pass
 
@@ -159,13 +152,6 @@ def read_yaml(yaml_path):
 
 
 class PicoDetPostProcess():
-    """
-    Args:
-        input_shape (int): network input image size
-        ori_shape (int): ori image shape of before padding
-        scale_factor (float): scale factor of ori image
-        enable_mkldnn (bool): whether to open MKLDNN
-    """
     def __init__(self,
                  labels,
                  strides=[8, 16, 32, 64],
@@ -409,3 +395,28 @@ class PicoDetPostProcess():
         """
         hw = np.clip(right_bottom - left_top, 0.0, None)
         return hw[..., 0] * hw[..., 1]
+
+
+def vis_layout(img: np.ndarray, layout_res: list, save_path: str) -> None:
+    font = cv2.FONT_HERSHEY_COMPLEX
+    font_scale = 1
+    font_color = (0, 0, 255)
+    font_thickness = 1
+
+    tmp_img = copy.deepcopy(img)
+    for v in layout_res:
+        bbox = np.round(v['bbox']).astype(np.int32)
+        label = v['label']
+
+        start_point = (bbox[0], bbox[1])
+        end_point = (bbox[2], bbox[3])
+
+        cv2.rectangle(tmp_img, start_point, end_point, (0, 255, 0), 2)
+
+        (w, h), _ = cv2.getTextSize(label, font, font_scale, font_thickness)
+        put_point = start_point[0], start_point[1] + h
+        cv2.putText(tmp_img, label, put_point, font, font_scale,
+                    font_color, font_thickness)
+
+    cv2.imwrite(save_path, tmp_img)
+    print(f'The infer result has saved in {save_path}')

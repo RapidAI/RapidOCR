@@ -2,7 +2,7 @@
 <p align="left">
     <a href=""><img src="https://img.shields.io/badge/Python->=3.7,<=3.10-aff.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
-    <a href="https://pypi.org/project/rapid-layout/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapid-layout?style=plastic"></a>
+    <a href="https://pypi.org/project/rapid-layout/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapid-layout"></a>
     <a href="https://pypi.org/project/rapid-layout/"><img src="https://img.shields.io/pypi/dm/rapid-layout?color=9cf"></a>
 </p>
 
@@ -29,19 +29,34 @@
     import cv2
     from rapid_layout import RapidLayout
 
-    # 提供model_path参数，可以自行指定上述3个模型，默认是layout_cdla.onnx
-    # model_path='xxx.onnx'
+    # RapidLayout类提供model_path参数，可以自行指定上述3个模型，默认是layout_cdla.onnx
+    # layout_engine = RapidLayout(model_path='layout_publaynet.onnx')
     layout_engine = RapidLayout()
 
     img = cv2.imread('test_images/layout.png')
 
     layout_res, elapse = layout_engine(img)
    ```
+
 3. 终端运行
-   ```bash
-   # 假设在rapid_structure目录下
-   $ rapid_layout --img_path test_images/layout.png
-   ```
+   - 用法:
+       ```bash
+       $ rapid_layout -h
+       usage: rapid_layout [-h] [-v] -img IMG_PATH [-m MODEL_PATH]
+
+       optional arguments:
+       -h, --help            show this help message and exit
+       -v, --vis             Wheter to visualize the layout results.
+       -img IMG_PATH, --img_path IMG_PATH
+                               Path to image for layout.
+       -m MODEL_PATH, --model_path MODEL_PATH
+                               The model path used for inference.
+       ```
+   - 示例:
+       ```bash
+       $ rapid_layout -v -img layout.png
+       ```
+
 4. 结果
     - 返回结果
         ```python

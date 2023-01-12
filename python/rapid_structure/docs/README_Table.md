@@ -2,7 +2,7 @@
 <p align="left">
     <a href=""><img src="https://img.shields.io/badge/Python->=3.7,<=3.10-aff.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
-    <a href="https://pypi.org/project/rapid-table/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapid-table?style=plastic"></a>
+    <a href="https://pypi.org/project/rapid-table/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapid-table"></a>
     <a href="https://pypi.org/project/rapid-table/"><img src="https://img.shields.io/pypi/dm/rapid-table?color=9cf"></a>
 </p>
 
