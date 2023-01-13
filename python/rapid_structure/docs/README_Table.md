@@ -28,17 +28,33 @@
     import cv2
     from rapid_table import RapidTable
 
-    rapid_table = RapidTable()
+    # RapidTable类提供model_path参数，可以自行指定上述2个模型，默认是en_ppstructure_mobile_v2_SLANet.onnx
+    # table_engine = RapidTable(model_path='ch_ppstructure_mobile_v2_SLANet.onnx')
+    table_engine = RapidTable()
 
     img = cv2.imread('test_images/table.jpg')
-    table_html_str, _ = rapid_table(img)
+    table_html_str, _ = table_engine(img)
     print(table_html_str)
    ```
 3. 终端运行
-   ```bash
-   # 假设在rapid_structure目录下
-   $ rapid_table --img_path test_images/table.jpg
-   ```
+   - 用法:
+     ```bash
+     $ rapid_table -h
+     usage: rapid_table [-h] [-v] -img IMG_PATH [-m MODEL_PATH]
+
+     optional arguments:
+     -h, --help            show this help message and exit
+     -v, --vis             Wheter to visualize the layout results.
+     -img IMG_PATH, --img_path IMG_PATH
+                           Path to image for layout.
+     -m MODEL_PATH, --model_path MODEL_PATH
+                           The model path used for inference.
+     ```
+   - 示例:
+     ```bash
+     $ rapid_table -v -img test_images/table.jpg
+     ```
+
 4. 结果
     - 返回结果
         ```html

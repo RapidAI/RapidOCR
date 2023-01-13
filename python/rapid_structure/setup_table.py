@@ -75,7 +75,7 @@ setuptools.setup(
               f'{MODULE_NAME}.models',
               f'{MODULE_NAME}.table_matcher',
               f'{MODULE_NAME}.table_structure'],
-    package_data={'': ['*.onnx']},
+    package_data={'': ['en_ppstructure_mobile_v2_SLANet.onnx']},
     keywords=[
         'ppstructure,table,rapidocr,rapid_table'
     ],

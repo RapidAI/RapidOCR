@@ -7,7 +7,7 @@
 
 ### 1. Install package by pypi.
 ```bash
-$ pip install rapidocr-layout
+$ pip install rapid-layout
 ```
 
 ### 2. Run by script.

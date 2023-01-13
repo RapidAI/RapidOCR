@@ -6,24 +6,28 @@
 
 ### 1. Install package by pypi.
 ```bash
-$ pip install rapidocr-table
+$ pip install rapid-table
 ```
 
 ### 2. Run by script.
+- RapidTable has the default `model_path` value, you can set the different value of `model_path` to use different models, e.g. `table_engine = RapidTable(model_path='ch_ppstructure_mobile_v2_SLANet.onnx')`
+- See details, for [README_Table](https://github.com/RapidAI/RapidOCR/blob/a87133a6fc3b8ee696e246028e529f7b2319d138/python/rapid_structure/docs/README_Table.md) .
+- 📌 `table.jpg` source: [link](https://github.com/RapidAI/RapidOCR/blob/a87133a6fc3b8ee696e246028e529f7b2319d138/python/rapid_structure/test_images/table.jpg)
+
 ```python
 import cv2
 from rapid_table import RapidTable
 
-rapid_table = RapidTable()
+table_engine = RapidTable()
 
-img = cv2.imread('test_images/table.jpg')
-table_html_str, _ = rapid_table(img)
+img = cv2.imread('table.jpg')
+table_html_str, _ = table_engine(img)
 print(table_html_str)
 ```
 
 ### 3. Run by command line.
 ```bash
-$ rapid_table --img_path test_images/table.jpg
+$ rapid_table -v -img table.jpg
 ```
 
 ### 4. Result.

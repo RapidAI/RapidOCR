@@ -40,22 +40,22 @@
 
 3. 终端运行
    - 用法:
-       ```bash
-       $ rapid_layout -h
-       usage: rapid_layout [-h] [-v] -img IMG_PATH [-m MODEL_PATH]
+     ```bash
+     $ rapid_layout -h
+     usage: rapid_layout [-h] [-v] -img IMG_PATH [-m MODEL_PATH]
 
-       optional arguments:
-       -h, --help            show this help message and exit
-       -v, --vis             Wheter to visualize the layout results.
-       -img IMG_PATH, --img_path IMG_PATH
-                               Path to image for layout.
-       -m MODEL_PATH, --model_path MODEL_PATH
-                               The model path used for inference.
-       ```
+     optional arguments:
+     -h, --help            show this help message and exit
+     -v, --vis             Wheter to visualize the layout results.
+     -img IMG_PATH, --img_path IMG_PATH
+                           Path to image for layout.
+     -m MODEL_PATH, --model_path MODEL_PATH
+                           The model path used for inference.
+     ```
    - 示例:
-       ```bash
-       $ rapid_layout -v -img layout.png
-       ```
+     ```bash
+     $ rapid_layout -v -img test_images/layout.png
+     ```
 
 4. 结果
     - 返回结果

@@ -1,10 +1,12 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-import time
+import argparse
 import copy
+import time
 from pathlib import Path
 
+import cv2
 import numpy as np
 from rapidocr_onnxruntime import RapidOCR
 
@@ -54,23 +56,39 @@ class RapidTable():
         return dt_boxes, rec_res
 
 
-def main():
-    import argparse
-    import cv2
+def vis_table(table_res: str, save_path: str) -> None:
+    style_res = '''<style>td {border-left: 1px solid;border-bottom:1px solid;}
+                   table, th {border-top:1px solid;font-size: 10px;
+                   border-collapse: collapse;border-right: 1px solid;}
+                </style>'''
+    prefix_table, suffix_table = table_res.split('<body>')
+    new_table_res = f'{prefix_table}{style_res}<body>{suffix_table}'
+    with open(save_path, 'w', encoding='utf-8') as f:
+        f.write(new_table_res)
+    print(f'The infer result has saved in {save_path}')
 
+
+def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--img_path', type=str, required=True)
-    parser.add_argument('--model_path', type=str,
-                        default=str(root_dir / 'models' / 'en_ppstructure_mobile_v2_SLANet.onnx'))
+    parser.add_argument('-v', '--vis', action='store_true',
+                        help='Wheter to visualize the layout results.')
+    parser.add_argument('-img', '--img_path', type=str, required=True,
+                        help='Path to image for layout.')
+    parser.add_argument('-m', '--model_path', type=str,
+                        default=str(root_dir / 'models' / 'en_ppstructure_mobile_v2_SLANet.onnx'),
+                        help='The model path used for inference.')
     args = parser.parse_args()
 
     rapid_table = RapidTable(args.model_path)
 
     img = cv2.imread(args.img_path)
-
     table_html_str, elapse = rapid_table(img)
-
     print(table_html_str)
+
+    if args.vis:
+        img_path = Path(args.img_path)
+        save_path = img_path.resolve().parent / f'vis_{img_path.stem}.html'
+        vis_table(table_html_str, str(save_path))
 
 
 if __name__ == '__main__':
