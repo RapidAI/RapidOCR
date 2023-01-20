@@ -135,6 +135,12 @@
                     },
 
                     success:function (data) {
+                         var sanitizeHTML = function(str) {
+                            var temp = document.createElement("div");
+                            temp.textContent = str;
+                            return temp.innerHTML;
+                        };
+
                         $("#wrapper").hide();
                         if (data){
                             if (data['image']){
@@ -178,7 +184,7 @@
 
                                     data += "<tr>"
                                     data += "<td>" + num + "</td>";
-                                    data += "<td align='left'>" + rec_result + "</td>";
+                                    data += "<td align='left'>" + sanitizeHTML(rec_result) + "</td>";
                                     data += "<td>" + score + "</td>";
                                     data += "</tr>"
                                 }
