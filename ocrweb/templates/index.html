@@ -135,10 +135,11 @@
                     },
 
                     success:function (data) {
+                        //对可能造成XSS的识别内容进行编码处理
                          var sanitizeHTML = function(str) {
-                            var temp = document.createElement("div");
-                            temp.textContent = str;
-                            return temp.innerHTML;
+		                    var tempDiv = document.createElement('div');
+		                    (tempDiv.textContent != undefined) ? (tempDiv.textContent = str) : (tempDiv.innerText = str);
+		                    return tempDiv.innerHTML;
                         };
 
                         $("#wrapper").hide();
