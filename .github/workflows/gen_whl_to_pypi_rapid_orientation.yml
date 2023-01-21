@@ -11,7 +11,7 @@ on:
       - 'python/rapid_structure/tests/test_orientation.py'
 
 jobs:
-   UnitTesting:
+  UnitTesting:
     runs-on: ubuntu-latest
     steps:
       - name: Pull latest code
