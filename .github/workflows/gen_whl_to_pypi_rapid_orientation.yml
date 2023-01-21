@@ -11,42 +11,21 @@ on:
       - 'python/rapid_structure/tests/test_orientation.py'
 
 jobs:
-  UnitTesting:
-    runs-on: windows-latest
+   UnitTesting:
+    runs-on: ubuntu-latest
     steps:
-      - name: Install 7Zip PowerShell Module
-        shell: powershell
-        run: Install-Module 7Zip4PowerShell -Force -Verbose
-
       - name: Pull latest code
         uses: actions/checkout@v3
 
-      - name: Download rapid orientation model
-        uses: suisei-cn/actions-download-file@v1
-        id: downloadfile3
-        with:
-            url: "https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/rapid_orientation_models.zip"
-            target: ./
-
-      - name: Decompress
-        shell: powershell
-        run: |
-              Expand-7Zip -ArchiveFileName ./rapid_orientation_models.zip -TargetPath .\
-
-      - name: List all file
-        shell: cmd
-        run:  |
-              dir .
-
       - name: Unit testings
-        shell: cmd
         run: |
-          set git_keep_path=%cur_dir%\python\rapid_structure\rapid_orientation\models\.gitkeep
-          del %git_keep_path%
-          move rapid_orientation_models\* python\rapid_structure\rapid_orientation\models\
+          wget https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/rapid_orientation_models.zip
+          unzip rapid_orientation_models.zip
+          rm python/rapid_structure/rapid_orientation/models/.gitkeep
+          mv rapid_orientation_models/* python/rapid_structure/rapid_orientation/models/
           cd python/rapid_structure
           pip install -r requirements.txt
-          pip install onnxruntime==1.12.1
+          pip install onnxruntime
           cd tests
           pytest test_orientation.py
 
