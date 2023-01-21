@@ -47,6 +47,7 @@ class RapidOrientation():
         for ops in self.preprocess_ops:
             images = ops(images)
         image = np.array(images)
+        image = image[np.newaxis, ...]
 
         input_dict = {self.input_name: image}
         pred_output = self.predictor.run(None, input_feed=input_dict)[0]

@@ -74,7 +74,7 @@ def demo_table():
 
 def demo_orientation():
     orientation_engine = RapidOrientation()
-    img = cv2.imread('test_images/table.jpg')
+    img = cv2.imread('tests/test_files/img_rot180_demo.jpg')
     cls_result, _ = orientation_engine(img)
     print(cls_result)
 

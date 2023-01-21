@@ -12,12 +12,8 @@ on:
 
 jobs:
   UnitTesting:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
-      - name: Install 7Zip PowerShell Module
-        shell: powershell
-        run: Install-Module 7Zip4PowerShell -Force -Verbose
-
       - name: Pull latest code
         uses: actions/checkout@v3
 
@@ -33,13 +29,7 @@ jobs:
         run: |
               Expand-7Zip -ArchiveFileName ./rapid_orientation_models.zip -TargetPath .\
 
-      - name: List all file
-        shell: cmd
-        run:  |
-              dir .
-
       - name: Unit testings
-        shell: cmd
         run: |
           set git_keep_path=%cur_dir%\python\rapid_structure\rapid_orientation\models\.gitkeep
           del %git_keep_path%
