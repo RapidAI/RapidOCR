@@ -6,7 +6,6 @@ from pathlib import Path
 
 import cv2
 
-# rapid_structure路径
 root_dir = Path(__file__).resolve().parent.parent
 
 sys.path.append(str(root_dir))

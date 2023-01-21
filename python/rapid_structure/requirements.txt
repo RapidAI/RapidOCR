@@ -4,3 +4,4 @@ setuptools>=61.2.0
 PyYAML
 pytest
 pip==22.3.1
+onnxruntime

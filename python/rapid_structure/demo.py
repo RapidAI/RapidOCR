@@ -6,7 +6,9 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+
 from rapid_layout import RapidLayout
+from rapid_orientation import RapidOrientation
 from rapid_table import RapidTable
 
 
@@ -51,8 +53,7 @@ def vis_table(table_res):
 
 
 def demo_layout():
-    model_path = 'rapid_layout/models/layout_cdla.onnx'
-    layout_engine = RapidLayout(model_path)
+    layout_engine = RapidLayout()
 
     img = cv2.imread('test_images/layout.png')
 
@@ -63,14 +64,22 @@ def demo_layout():
 
 
 def demo_table():
-    rapid_table = RapidTable()
+    table_engine = RapidTable()
     img = cv2.imread('test_images/table.jpg')
-    table_html_str, _ = rapid_table(img)
+    table_html_str, _ = table_engine(img)
 
     vis_table(table_html_str)
     print(table_html_str)
 
 
+def demo_orientation():
+    orientation_engine = RapidOrientation()
+    img = cv2.imread('test_images/table.jpg')
+    cls_result, _ = orientation_engine(img)
+    print(cls_result)
+
+
 if __name__ == '__main__':
     # demo_layout()
-    demo_table()
+    # demo_table()
+    demo_orientation()

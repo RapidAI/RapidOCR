@@ -83,10 +83,10 @@ def main():
                         help='The model path used for inference.')
     args = parser.parse_args()
 
-    rapid_layout = RapidLayout(args.model_path)
+    layout_engine = RapidLayout(args.model_path)
 
     img = cv2.imread(args.img_path)
-    layout_res, elapse = rapid_layout(img)
+    layout_res, elapse = layout_engine(img)
     print(layout_res)
 
     if args.vis:

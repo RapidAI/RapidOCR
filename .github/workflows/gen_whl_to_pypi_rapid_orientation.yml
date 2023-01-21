@@ -1,0 +1,89 @@
+name: Push rapidocr_orientation to pypi
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'python/rapid_structure/rapid_orientation/**'
+      - 'docs/doc_whl_rapid_orientation.md'
+      - 'python/rapid_structure/setup_orientation.py'
+      - '.github/workflows/gen_whl_to_pypi_rapid_orientation.yml'
+      - 'python/rapid_structure/tests/test_orientation.py'
+
+jobs:
+  UnitTesting:
+    runs-on: windows-latest
+    steps:
+      - name: Install 7Zip PowerShell Module
+        shell: powershell
+        run: Install-Module 7Zip4PowerShell -Force -Verbose
+
+      - name: Pull latest code
+        uses: actions/checkout@v3
+
+      - name: Download rapid orientation model
+        uses: suisei-cn/actions-download-file@v1
+        id: downloadfile3
+        with:
+            url: "https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/rapid_orientation_models.zip"
+            target: ./
+
+      - name: Decompress
+        shell: powershell
+        run: |
+              Expand-7Zip -ArchiveFileName ./rapid_orientation_models.zip -TargetPath .\
+
+      - name: List all file
+        shell: cmd
+        run:  |
+              dir .
+
+      - name: Unit testings
+        shell: cmd
+        run: |
+          set git_keep_path=%cur_dir%\python\rapid_structure\rapid_orientation\models\.gitkeep
+          del %git_keep_path%
+          move rapid_orientation_models\* python\rapid_structure\rapid_orientation\models\
+          cd python/rapid_structure
+          pip install -r requirements.txt
+          pip install onnxruntime
+          cd tests
+          pytest test_orientation.py
+
+  GenerateWHL_PushPyPi:
+    needs: UnitTesting
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set SSH Environment
+        env:
+          DEPLOY_KEYS: ${{ secrets.GEN_PYTHON_SDK }}
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$DEPLOY_KEYS" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          chmod 700 ~/.ssh && chmod 600 ~/.ssh/*
+
+      - name: Run setup
+        run: |
+          cd python/rapid_structure
+          python -m pip install --upgrade pip
+          wget https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/rapid_orientation_models.zip
+          unzip rapid_orientation_models.zip
+          mv rapid_orientation_models/*.onnx rapid_orientation/models/
+          python setup_orientation.py bdist_wheel ${{ github.event.head_commit.message }}
+
+      - name: Publish distribution 📦 to Test PyPI
+        uses: pypa/gh-action-pypi-publish@v1.5.0
+        with:
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+          packages_dir: python/rapid_structure/dist/
+
+      # - name: Publish distribution 📦 to PyPI
+      #   uses: pypa/gh-action-pypi-publish@v1.5.0
+      #   with:
+      #     password: ${{ secrets.RAPIDOCR_OPENVINO }}
+      #     packages_dir: python/rapid_structure/dist/
