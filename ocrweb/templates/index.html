@@ -135,6 +135,13 @@
                     },
 
                     success:function (data) {
+                        //对可能造成XSS的识别内容进行编码处理
+                         var sanitizeHTML = function(str) {
+		                    var tempDiv = document.createElement('div');
+		                    (tempDiv.textContent != undefined) ? (tempDiv.textContent = str) : (tempDiv.innerText = str);
+		                    return tempDiv.innerHTML;
+                        };
+
                         $("#wrapper").hide();
                         if (data){
                             if (data['image']){
@@ -178,7 +185,7 @@
 
                                     data += "<tr>"
                                     data += "<td>" + num + "</td>";
-                                    data += "<td align='left'>" + rec_result + "</td>";
+                                    data += "<td align='left'>" + sanitizeHTML(rec_result) + "</td>";
                                     data += "<td>" + score + "</td>";
                                     data += "</tr>"
                                 }
