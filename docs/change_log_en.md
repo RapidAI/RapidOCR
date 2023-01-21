@@ -1,3 +1,6 @@
+#### 🎉 2023-01-21 update:
+- \[python\] Add an image orientation classification module containing text. For details, see [Rapid Orientation](../python/rapid_structure/docs/README_Orientation.md)
+
 #### ⚽2022-12-19 update:
 - \[python\] Add the table recovery module, See [Rapid Table](../python/rapid_structure/docs/README_Table.md) for details.
 

@@ -29,9 +29,9 @@
   - [简介](#简介)
   - [文档导航](#文档导航)
   - [近期更新(more)](#近期更新more)
+      - [🎉2023-01-21 update:](#2023-01-21-update)
       - [⚽2022-12-19 update:](#2022-12-19-update)
       - [🤖2022-12-14 update:](#2022-12-14-update)
-      - [🧻2022-11-20 update:](#2022-11-20-update)
   - [生态框架](#生态框架)
   - [在线demo](#在线demo)
   - [TODO](#todo)
@@ -75,6 +75,7 @@
   - [网页版OCR](./ocrweb/README.md)
   - [多语言网页版OCR](./ocrweb_multi/README.md)
 - [版面结构化](./python/rapid_structure/README.md)
+  - [含文本的图像方向分类](./python/rapid_structure/docs/README_Orientation.md)
   - [版面分析](./python/rapid_structure/docs/README_Layout.md)
   - [表格还原](./python/rapid_structure/docs/README_Table.md)
 - 衍生项目
@@ -89,6 +90,9 @@
 
 
 ## 近期更新([more](./docs/change_log.md))
+#### 🎉2023-01-21 update:
+- \[python\] 添加含有文字的图像方向分类模块，具体参见[Rapid Orientation](./python/rapid_structure/docs/README_Orientation.md)
+
 #### ⚽2022-12-19 update:
 - \[python\] 添加表格结构还原模块，具体参见[Rapid Table](./python/rapid_structure/docs/README_Table.md)
 
@@ -96,9 +100,6 @@
 - \[python\] 将配置参数和模型移到模块里面，同时将模型打到whl包内，可以直接pip安装使用，更加方便快捷。
 - 详情参见：[README](./python/README.md#推荐pip安装快速使用)
 - 优化ocrweb部分代码，统一ocrweb中`rapidocr_onnxruntime`包与`python`目录下的`rapidocr_onnxruntime`为一个
-
-#### 🧻2022-11-20 update:
-- \[python\] 添加版面分析部分,支持中文、英文和表格三种版面的检测分析。详情参见:[Rapid Structure](./python/rapid_structure/README.md)部分。
 
 
 ## 生态框架

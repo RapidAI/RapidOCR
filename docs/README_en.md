@@ -27,9 +27,9 @@
   - [Introduction](#introduction)
   - [Navigation](#navigation)
   - [Recently updates(more)](#recently-updatesmore)
+      - [🎉 2023-01-21 update:](#-2023-01-21-update)
       - [⚽2022-12-19 update:](#2022-12-19-update)
       - [🤖2022-12-14 update:](#2022-12-14-update)
-      - [🧻2022-11-20 update:](#2022-11-20-update)
   - [Overall Framework](#overall-framework)
   - [Demo](#demo)
   - [TODO](#todo)
@@ -69,6 +69,7 @@
   - [Web OCR](../ocrweb/README.md)
   - [Multi Web OCR](../ocrweb_multi/README.md)
 - [Structure](../python/rapid_structure/README.md)
+  - [orientation](../python/rapid_structure/docs/README_Orientation.md)
   - [layout](../python/rapid_structure/docs/README_Layout.md)
   - [table recovery](../python/rapid_structure/docs/README_Table.md)
 - Derivatives
@@ -86,16 +87,15 @@
 - [FAQ](../docs/FAQ.md)
 
 ## Recently updates([more](./change_log_en.md))
+#### 🎉 2023-01-21 update:
+- \[python\] Add an image orientation classification module containing text. For details, see [Rapid Orientation](../python/rapid_structure/docs/README_Orientation.md)
+
 #### ⚽2022-12-19 update:
 - \[python\] Add the table recovery module, See [Rapid Table](../python/rapid_structure/docs/README_Table.md) for details.
 
 #### 🤖2022-12-14 update:
 - \[python\] Move the configuration parameters and model into the module, and at the same time put the model into the whl package, which can be directly installed and used by pip, which is more convenient and quicker.
 - For details, see: [README](../python/README.md#推荐pip安装快速使用)
-
-#### 🧻2022-11-20 update:
-- \[python\] Add the layout analysis part, which supports the detection and analysis of three layouts: Chinese, English and tables. See: [Rapid Structure](../python/rapid_structure/README.md) section for details.
-
 
 ## Overall Framework
 ```mermaid
