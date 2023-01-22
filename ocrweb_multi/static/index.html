@@ -82,6 +82,19 @@
         $('body').on('dragover', function (e) {
             e.preventDefault();
         });
+
+        function htmlEncodeByRegExp(str) {
+            var s = "";
+            if (str.length == 0) return "";
+            s = str.replace(/&/g, "&amp;");
+            s = s.replace(/</g, "&lt;");
+            s = s.replace(/>/g, "&gt;");
+            s = s.replace(/ /g, "&nbsp;");
+            s = s.replace(/\'/g, "&#39;");
+            s = s.replace(/\"/g, "&quot;");
+            return s;
+        }
+
         function handleData(trans) {
             if (trans.items) {
                 for (let i = 0; i < trans.items.length; i++) {
@@ -215,9 +228,9 @@
                         ctx.fillText(idx, result.box[0][0], result.box[0][1]);
                         ctx.strokeText(idx, result.box[0][0], result.box[0][1]);
                         html.push('<tr><td>');
-                        html.push(idx);
+                        html.push(htmlEncodeByRegExp(String(idx)));
                         html.push('</td><td>');
-                        html.push(result.text);
+                        html.push(htmlEncodeByRegExp(String(result.text)));
                         html.push('</td><td>');
                         html.push(result.score.toFixed(4));
                         html.push('</td></tr>');

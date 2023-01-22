@@ -91,6 +91,18 @@
             }
         }
 
+        function htmlEncodeByRegExp(str) {
+            var s = "";
+            if (str.length == 0) return "";
+            s = str.replace(/&/g, "&amp;");
+            s = s.replace(/</g, "&lt;");
+            s = s.replace(/>/g, "&gt;");
+            s = s.replace(/ /g, "&nbsp;");
+            s = s.replace(/\'/g, "&#39;");
+            s = s.replace(/\"/g, "&quot;");
+            return s;
+        }
+
         function requestOCR(){
             if (!targetFile){
                 return;
@@ -158,9 +170,9 @@
                                 }
                                 var data = "";
                                 data += "<tr>" +
-                                            '<th align="right">Det: ' + elapse_list[0] + 's</th>' +
-                                            '<th align="center">Cls: ' + elapse_list[1] + 's</th>' +
-                                            '<th align="left">Rec: ' + elapse_list[2] + 's</th>' +
+                                            '<th align="right">Det: ' + htmlEncodeByRegExp(String(elapse_list[0])) + 's</th>' +
+                                            '<th align="center">Cls: ' + htmlEncodeByRegExp(String(elapse_list[1])) + 's</th>' +
+                                            '<th align="left">Rec: ' +  htmlEncodeByRegExp((elapse_list[2])) + 's</th>' +
                                         "</tr>"
                                 data += "<tr>" +
                                             '<th bgcolor="#C0C0C0">序号</th>' +
@@ -169,11 +181,16 @@
                                         "</tr>"
                                 for (let i = 0; i < rec_res.length; i++) {
                                     const element = rec_res[i];
-                                    let num = element[0];
+                                    let num = String(element[0]);
 
-                                    let rec_result = element[1];
+                                    num = htmlEncodeByRegExp(num);
+
+                                    let rec_result = String(element[1]);
+
+                                    rec_result = htmlEncodeByRegExp(rec_result);
 
                                     let score = Number(element[2]);
+
                                     score = score.toFixed(4);
 
                                     data += "<tr>"

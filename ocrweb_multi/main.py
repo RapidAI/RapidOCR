@@ -16,7 +16,11 @@ app = Flask(__name__)
 log = logging.getLogger('app')
 # 设置上传文件大小
 app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024
-
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+)
 
 @app.route('/')
 def index():
