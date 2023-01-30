@@ -7,7 +7,7 @@
 </p>
 
 #### 简介和说明
-- 该部分主要是做文档类图像的表格结构还原。该包依赖`rapidocr_onnxruntime`。
+- 该部分主要是做文档类图像的表格结构还原。模型来源：[PaddleOCR 表格识别](https://github.com/PaddlePaddle/PaddleOCR/blob/133d67f27dc8a241d6b2e30a9f047a0fb75bebbe/ppstructure/table/README_ch.md)
 - 具体来说，就是分析给定的表格图像，将表格还原为对应的html格式。
 - 目前支持两种类别的表格识别模型：中文和英文表格识别模型，具体可参见下面表格：
 

@@ -7,7 +7,7 @@
 </p>
 
 #### 简介和说明
-- 该部分主要是做含文字图像方向分类模型。
+- 该部分主要是做含文字图像方向分类模型。模型来源：[PaddleClas 含文字图像方向分类模型](https://github.com/PaddlePaddle/PaddleClas/blob/177e4be74639c0960efeae2c5166d3226c9a02eb/docs/zh_CN/models/PULC/PULC_text_image_orientation.md)
 
     | 模型类型  |        模型名称         | 模型大小 |                           支持种类                           |
     |:---:|:---:|:---:|:---:|
