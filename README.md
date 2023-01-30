@@ -59,6 +59,7 @@
 - **使用**：
   - 如果仓库下已有模型满足要求 → RapidOCR部署使用即可。
   - 不满足要求 → 基于[PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)在自己数据上微调 → RapidOCR部署。
+- 如果该仓库有帮助到你，还请点个小星星呗！
 
 ## 文档导航
 - [Python范例](./python/README.md)
