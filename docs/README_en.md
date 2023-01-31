@@ -77,6 +77,8 @@
 - [Related projects](../docs/related_projects.md)
   - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR): Extract hard subtitles in videos based on RapidOCR
   - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): table structure restoration | [blog interpretation papers and source code](http://t.csdn.cn/QNN3S)
+  - [Document Unwarping-PaperEdge](https://github.com/cvlab-stonybrook/PaperEdge) | [Demo](https://huggingface.co/spaces/SWHL/PaperEdgeDemo)
+  - [Text Removal-CTRNet](https://github.com/lcy0604/CTRNet) | [Demo](https://huggingface.co/spaces/SWHL/CTRNetDemo)
 - Model Convert
    - [PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter)
    - [Paddle2OnnxConvertor](https://github.com/RapidAI/Paddle2OnnxConvertor)

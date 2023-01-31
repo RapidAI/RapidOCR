@@ -84,6 +84,8 @@
 - [垂直项目](./docs/related_projects.md)
   - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR)：基于RapidOCR，提取视频中的硬字幕
   - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): 表格结构还原 | [博客解读论文和源码](http://t.csdn.cn/QNN3S)
+  - [文档图像矫正-PaperEdge](https://github.com/cvlab-stonybrook/PaperEdge) | [Demo](https://huggingface.co/spaces/SWHL/PaperEdgeDemo)
+  - [图像文字擦除-CTRNet](https://github.com/lcy0604/CTRNet) | [Demo](https://huggingface.co/spaces/SWHL/CTRNetDemo)
 - [模型相关](./docs/models.md)
   - [模型转换](./docs/models.md#模型转换)
   - [模型下载及效果对比](./docs/models.md#模型下载)
