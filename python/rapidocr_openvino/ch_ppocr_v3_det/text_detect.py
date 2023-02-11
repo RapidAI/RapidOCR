@@ -31,8 +31,7 @@ class TextDetector():
         self.preprocess_op = create_operators(config['pre_process'])
         self.postprocess_op = DBPostProcess(**config['post_process'])
 
-        openvino_instance = OpenVINOInferSession(config)
-        self.session = openvino_instance.session
+        self.infer = OpenVINOInferSession(config)
 
     def __call__(self, img):
         ori_im = img.copy()
@@ -46,9 +45,7 @@ class TextDetector():
         shape_list = np.expand_dims(shape_list, axis=0)
 
         starttime = time.time()
-        self.session.infer(inputs=[img])
-        preds = self.session.get_output_tensor().data
-
+        preds = self.infer(img)
         post_result = self.postprocess_op(preds, shape_list)
         dt_boxes = post_result[0]['points']
         dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im.shape)

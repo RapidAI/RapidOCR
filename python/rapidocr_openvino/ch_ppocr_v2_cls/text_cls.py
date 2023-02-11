@@ -33,8 +33,7 @@ class TextClassifier():
         self.cls_thresh = config['cls_thresh']
         self.postprocess_op = ClsPostProcess(config['label_list'])
 
-        openvino_instance = OpenVINOInferSession(config)
-        self.session = openvino_instance.session
+        self.infer = OpenVINOInferSession(config)
 
     def __call__(self, img_list: List[np.ndarray]):
         if isinstance(img_list, np.ndarray):
@@ -63,9 +62,7 @@ class TextClassifier():
             norm_img_batch = np.concatenate(norm_img_batch).astype(np.float32)
 
             starttime = time.time()
-            self.session.infer(inputs=[norm_img_batch])
-            prob_out = self.session.get_output_tensor().data
-
+            prob_out = self.infer(norm_img_batch)
             cls_result = self.postprocess_op(prob_out)
             elapse += time.time() - starttime
 

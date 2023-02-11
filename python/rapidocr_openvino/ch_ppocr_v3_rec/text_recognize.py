@@ -38,8 +38,7 @@ class TextRecognizer():
         self.character_dict_path =  config.get( 'keys_path', dict_path)
         self.postprocess_op = CTCLabelDecode(self.character_dict_path)
 
-        openvino_instance = OpenVINOInferSession(config)
-        self.session = openvino_instance.session
+        self.infer = OpenVINOInferSession(config)
 
     def __call__(self, img_list: List[np.ndarray]):
         if isinstance(img_list, np.ndarray):
@@ -72,9 +71,7 @@ class TextRecognizer():
             norm_img_batch = np.concatenate(norm_img_batch).astype(np.float32)
 
             starttime = time.time()
-            self.session.infer(inputs=[norm_img_batch])
-            preds = self.session.get_output_tensor().data
-
+            preds = self.infer(norm_img_batch)
             rec_result = self.postprocess_op(preds)
             for rno in range(len(rec_result)):
                 rec_res[indices[beg_img_no + rno]] = rec_result[rno]

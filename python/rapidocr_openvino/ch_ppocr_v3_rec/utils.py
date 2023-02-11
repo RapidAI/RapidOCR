@@ -20,6 +20,10 @@ class OpenVINOInferSession():
         compile_model = ie.compile_model(model=model_onnx, device_name='CPU')
         self.session = compile_model.create_infer_request()
 
+    def __call__(self, input_content: np.ndarray) -> np.ndarray:
+        self.session.infer(inputs=[input_content])
+        return self.session.get_output_tensor().data
+
     @staticmethod
     def _verify_model(model_path):
         model_path = Path(model_path)

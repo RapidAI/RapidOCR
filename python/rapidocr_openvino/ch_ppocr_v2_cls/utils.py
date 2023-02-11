@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from pathlib import Path
+import numpy as np
 import yaml
 from openvino.runtime import Core
 
@@ -28,6 +29,10 @@ class OpenVINOInferSession():
         model_onnx = ie.read_model(config['model_path'])
         compile_model = ie.compile_model(model=model_onnx, device_name='CPU')
         self.session = compile_model.create_infer_request()
+
+    def __call__(self, input_content: np.ndarray) -> np.ndarray:
+        self.session.infer(inputs=[input_content])
+        return self.session.get_output_tensor().data
 
     @staticmethod
     def _verify_model(model_path):
