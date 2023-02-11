@@ -64,11 +64,18 @@ class OrtInferSession():
                           'https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html',
                           RuntimeWarning)
 
-    def get_input_name(self, input_idx=0):
-        return self.session.get_inputs()[input_idx].name
+    def __call__(self, input_content: np.ndarray) -> np.ndarray:
+        input_dict = dict(zip(self.get_input_names(), input_content))
+        try:
+            return self.session.run(self.get_output_names(), input_dict)
+        except Exception as e:
+            raise ONNXRuntimeError('ONNXRuntime inferece failed.') from e
 
-    def get_output_name(self, output_idx=0):
-        return self.session.get_outputs()[output_idx].name
+    def get_input_names(self, )
+        return [v.name for v in self.session.get_inputs()]
+
+    def get_output_names(self,):
+        return [v.name for v in self.session.get_outputs()]
 
     @staticmethod
     def _verify_model(model_path):
@@ -77,6 +84,10 @@ class OrtInferSession():
             raise FileNotFoundError(f'{model_path} does not exists.')
         if not model_path.is_file():
             raise FileExistsError(f'{model_path} is not a file.')
+
+
+class ONNXRuntimeError(Exception):
+    pass
 
 
 def read_yaml(yaml_path):

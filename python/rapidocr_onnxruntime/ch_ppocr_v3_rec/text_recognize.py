@@ -27,12 +27,10 @@ except:
 
 class TextRecognizer():
     def __init__(self, config):
-        session_instance = OrtInferSession(config)
-        self.session = session_instance.session
-        self.input_name = session_instance.get_input_name()
+        self.session = OrtInferSession(config)
 
-        if session_instance.have_key():
-            self.character_dict_path = session_instance.get_character_list()
+        if self.session.have_key():
+            self.character_dict_path = self.session.get_character_list()
         else:
             self.character_dict_path = config.get('keys_path', None)
         self.postprocess_op = CTCLabelDecode(self.character_dict_path)
@@ -71,8 +69,7 @@ class TextRecognizer():
             norm_img_batch = np.concatenate(norm_img_batch).astype(np.float32)
 
             starttime = time.time()
-            onnx_inputs = {self.input_name: norm_img_batch}
-            preds = self.session.run(None, onnx_inputs)[0]
+            preds = self.session(norm_img_batch)[0]
             rec_result = self.postprocess_op(preds)
 
             for rno in range(len(rec_result)):

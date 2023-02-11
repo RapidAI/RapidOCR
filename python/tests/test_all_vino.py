@@ -16,7 +16,7 @@ from rapidocr_openvino import RapidOCR
 
 rapid_ocr = RapidOCR()
 
-tests_dir = root_dir / 'test_files'
+tests_dir = root_dir / 'tests' / 'test_files'
 
 
 def test_normal():

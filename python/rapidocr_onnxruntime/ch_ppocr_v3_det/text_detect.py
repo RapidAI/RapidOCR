@@ -33,11 +33,9 @@ class TextDetector():
         self.preprocess_op = create_operators(config['pre_process'])
         self.postprocess_op = DBPostProcess(**config['post_process'])
 
-        session_instance = OrtInferSession(config)
-        self.session = session_instance.session
-        self.input_name = session_instance.get_input_name()
+        self.infer = OrtInferSession(config)
 
-    def __call__(self, img):
+    def __call__(self, img: np.ndarry):
         if img is None:
             raise ValueError('img is None')
 
@@ -53,9 +51,8 @@ class TextDetector():
         shape_list = np.expand_dims(shape_list, axis=0)
 
         starttime = time.time()
-        preds = self.session.run(None, {self.input_name: img})
-
-        post_result = self.postprocess_op(preds[0], shape_list)
+        preds = self.infer(img)[0]
+        post_result = self.postprocess_op(preds, shape_list)
 
         dt_boxes = post_result[0]['points']
         dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im_shape)
