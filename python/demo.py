@@ -90,8 +90,9 @@ def visualize(image_path, result, font_path="resources/fonts/FZYTK.TTF"):
 if __name__ == '__main__':
     rapid_ocr = RapidOCR()
 
-    image_path = 'test_images/ch_en_num.jpg'
+    image_path = 'tests/test_files/ch_en_num.jpg'
     img = cv2.imread(image_path)
+    img = np.zeros([640, 640, 3])
     result, elapse_list = rapid_ocr(img)
     print(result)
     print(elapse_list)

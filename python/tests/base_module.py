@@ -13,6 +13,7 @@ class BaseModule():
         self.package_name = package_name
         self.root_dir = Path(__file__).resolve().parent.parent
         self.package_dir = self.root_dir / self.package_name
+        self.tests_dir = self.root_dir / 'tests'
 
         sys.path.append(str(self.root_dir))
         sys.path.append(str(self.package_dir))

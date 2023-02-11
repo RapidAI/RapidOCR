@@ -61,7 +61,7 @@
 
     rapid_ocr = RapidOCR()
 
-    img = cv2.imread('test_images/ch_en_num.jpg')
+    img = cv2.imread('tests/test_files/ch_en_num.jpg')
 
     result = rapid_ocr(img)
     print(result)
@@ -111,12 +111,10 @@
         │        ├── ch_ppocr_mobile_v2.0_cls_infer.onnx
         │        └── ch_PP-OCRv3_rec_infer.onnx
         ├── requirements.txt
-        ├── resources
-        │     └── fonts
-        │        └── FZYTK.TTF
-        └── test_images
-            ├── ch_en_num.jpg
-            └── single_line_text.jpg
+        └── resources
+              └── fonts
+                 └── FZYTK.TTF
+
         ```
 
 3. 安装运行环境
@@ -178,7 +176,7 @@
 
     - `min_height`是用来过滤只有一行文本的图像（如下图），这类图像不会进入文本检测模块，直接进入后续过程。
 
-      ![](./test_images/single_line_text.jpg)
+      ![](https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/single_line_text.jpg)
 
 - `Det`部分
     |    参数名称      | 取值范围   | 默认值   |                       作用                       |
