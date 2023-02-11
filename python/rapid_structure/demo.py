@@ -80,6 +80,6 @@ def demo_orientation():
 
 
 if __name__ == '__main__':
-    # demo_layout()
+    demo_layout()
     # demo_table()
-    demo_orientation()
+    # demo_orientation()

@@ -21,11 +21,9 @@ class TableStructurer():
     def __init__(self, model_path: str):
         self.preprocess_op = TablePreprocess()
 
-        session_instance = OrtInferSession(model_path)
-        self.predictor = session_instance.session
-        self.input_name = session_instance.get_input_name()
+        self.session = OrtInferSession(model_path)
 
-        self.character = session_instance.get_metadata()
+        self.character = self.session.get_metadata()
         self.postprocess_op = TableLabelDecode(self.character)
 
     def __call__(self, img):
@@ -38,8 +36,7 @@ class TableStructurer():
         img = np.expand_dims(img, axis=0)
         img = img.copy()
 
-        input_dict = {self.input_name: img}
-        outputs = self.predictor.run(None, input_dict)
+        outputs = self.session(img)
 
         preds = {
             'loc_preds': outputs[0],

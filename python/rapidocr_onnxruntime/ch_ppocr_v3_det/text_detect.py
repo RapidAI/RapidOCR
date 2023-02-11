@@ -35,7 +35,7 @@ class TextDetector():
 
         self.infer = OrtInferSession(config)
 
-    def __call__(self, img: np.ndarry):
+    def __call__(self, img):
         if img is None:
             raise ValueError('img is None')
 

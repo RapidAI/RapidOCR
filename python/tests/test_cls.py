@@ -8,14 +8,14 @@ from base_module import BaseModule
 
 @pytest.mark.parametrize(
     'package_name',
-    ['rapidocr_onnxruntime', 'rapidocr_openvino']
+    [('rapidocr_onnxruntime'),
+     ('rapidocr_openvino')]
 )
 def test_cls(package_name: str):
     module_name = 'ch_ppocr_v2_cls'
     class_name = 'TextClassifier'
 
     base = BaseModule(package_name=package_name)
-
     TextClassifier = base.init_module(module_name, class_name)
 
     yaml_path = base.package_dir / module_name / 'config.yaml'

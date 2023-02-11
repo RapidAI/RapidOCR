@@ -24,7 +24,7 @@ from onnxruntime import (GraphOptimizationLevel, InferenceSession,
 
 class OrtInferSession():
     def __init__(self, onnx_path: str):
-        self.__verify_model(onnx_path)
+        self._verify_model(onnx_path)
 
         sess_opt = SessionOptions()
         sess_opt.log_severity_level = 4
@@ -35,15 +35,23 @@ class OrtInferSession():
         cpu_provider_options = {"arena_extend_strategy": "kSameAsRequested",}
         EP_list = [(cpu_ep, cpu_provider_options)]
 
+        self._verify_model(onnx_path)
         self.session = InferenceSession(onnx_path,
                                         sess_options=sess_opt,
                                         providers=EP_list)
 
-    def get_input_name(self, input_idx=0):
-        return self.session.get_inputs()[input_idx].name
+    def __call__(self, input_content: np.ndarray) -> np.ndarray:
+        input_dict = dict(zip(self.get_input_names(), [input_content]))
+        try:
+            return self.session.run(self.get_output_names(), input_dict)
+        except Exception as e:
+            raise ONNXRuntimeError('ONNXRuntime inferece failed.') from e
 
-    def get_output_name(self, output_idx=0):
-        return self.session.get_outputs()[output_idx].name
+    def get_input_names(self, ):
+        return [v.name for v in self.session.get_inputs()]
+
+    def get_output_names(self,):
+        return [v.name for v in self.session.get_outputs()]
 
     def get_metadata(self, key: str = 'character') -> list:
         meta_dict = self.session.get_modelmeta().custom_metadata_map
@@ -51,12 +59,16 @@ class OrtInferSession():
         return content_list
 
     @staticmethod
-    def __verify_model(model_path):
+    def _verify_model(model_path):
         model_path = Path(model_path)
         if not model_path.exists():
             raise FileNotFoundError(f'{model_path} does not exists.')
         if not model_path.is_file():
             raise FileExistsError(f'{model_path} is not a file.')
+
+
+class ONNXRuntimeError(Exception):
+    pass
 
 
 class TableLabelDecode():

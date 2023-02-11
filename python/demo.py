@@ -92,7 +92,6 @@ if __name__ == '__main__':
 
     image_path = 'tests/test_files/ch_en_num.jpg'
     img = cv2.imread(image_path)
-    img = np.zeros([640, 640, 3])
     result, elapse_list = rapid_ocr(img)
     print(result)
     print(elapse_list)

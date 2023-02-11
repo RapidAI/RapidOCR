@@ -2,6 +2,7 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import importlib
+from pathlib import Path
 import warnings
 
 import cv2
@@ -27,6 +28,7 @@ class OrtInferSession():
             EP_list = [(cuda_ep, config[cuda_ep])]
         EP_list.append((cpu_ep, cpu_provider_options))
 
+        self._verify_model(config['model_path'])
         self.session = InferenceSession(config['model_path'],
                                         sess_options=sess_opt,
                                         providers=EP_list)
@@ -42,15 +44,34 @@ class OrtInferSession():
                           f'https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html',
                           RuntimeWarning)
 
-    def get_input_name(self, input_idx=0):
-        return self.session.get_inputs()[input_idx].name
+    def __call__(self, input_content: np.ndarray) -> np.ndarray:
+        input_dict = dict(zip(self.get_input_names(), [input_content]))
+        try:
+            return self.session.run(self.get_output_names(), input_dict)
+        except Exception as e:
+            raise ONNXRuntimeError('ONNXRuntime inferece failed.') from e
 
-    def get_output_name(self, output_idx=0):
-        return self.session.get_outputs()[output_idx].name
+    def get_input_names(self, ):
+        return [v.name for v in self.session.get_inputs()]
+
+    def get_output_names(self,):
+        return [v.name for v in self.session.get_outputs()]
 
     def get_metadata(self):
         meta_dict = self.session.get_modelmeta().custom_metadata_map
         return meta_dict
+
+    @staticmethod
+    def _verify_model(model_path):
+        model_path = Path(model_path)
+        if not model_path.exists():
+            raise FileNotFoundError(f'{model_path} does not exists.')
+        if not model_path.is_file():
+            raise FileExistsError(f'{model_path} is not a file.')
+
+
+class ONNXRuntimeError(Exception):
+    pass
 
 
 def create_operators(params):

@@ -33,10 +33,8 @@ class RapidLayout():
             model_path = str(root_dir / 'models' / 'layout_cdla.onnx')
         config['model_path'] = model_path
 
-        session_instance = OrtInferSession(config)
-        self.predictor = session_instance.session
-        self.input_name = session_instance.get_input_name()
-        labels = session_instance.get_metadata()['character'].splitlines()
+        self.session = OrtInferSession(config)
+        labels = self.session.get_metadata()['character'].splitlines()
 
         self.preprocess_op = create_operators(config['pre_process'])
         self.postprocess_op = PicoDetPostProcess(labels,
@@ -57,16 +55,14 @@ class RapidLayout():
         preds, elapse = 0, 1
         starttime = time.time()
 
-        input_dict = {self.input_name: img}
-        preds_onnx = self.predictor.run(None, input_dict)
+        preds = self.session(img)[0]
 
-        np_score_list, np_boxes_list = [], []
-        num_outs = int(len(preds_onnx) / 2)
+        score_list, boxes_list = [], []
+        num_outs = int(len(preds) / 2)
         for out_idx in range(num_outs):
-            np_score_list.append(preds_onnx[out_idx])
-            np_boxes_list.append(preds_onnx[out_idx + num_outs])
-        preds = dict(boxes=np_score_list, boxes_num=np_boxes_list)
-
+            score_list.append(preds[out_idx])
+            boxes_list.append(preds[out_idx + num_outs])
+        preds = dict(boxes=score_list, boxes_num=boxes_list)
         post_preds = self.postprocess_op(ori_im, img, preds)
         elapse = time.time() - starttime
         return post_preds, elapse

@@ -35,10 +35,8 @@ class RapidOrientation():
             model_path = str(root_dir / 'models' / 'rapid_orientation.onnx')
         config['model_path'] = model_path
 
-        session_instance = OrtInferSession(config)
-        self.predictor = session_instance.session
-        self.input_name = session_instance.get_input_name()
-        self.labels = session_instance.get_metadata()['character'].splitlines()
+        self.session = OrtInferSession(config)
+        self.labels = self.session.get_metadata()['character'].splitlines()
 
         self.preprocess_ops = create_operators(config["PreProcess"])
 
@@ -46,11 +44,10 @@ class RapidOrientation():
         s = time.time()
         for ops in self.preprocess_ops:
             images = ops(images)
-        image = np.array(images)
-        image = image[np.newaxis, ...]
+        image = np.array(images)[None, ...]
 
-        input_dict = {self.input_name: image}
-        pred_output = self.predictor.run(None, input_feed=input_dict)[0]
+        pred_output = self.session(image)[0]
+
         pred_output = pred_output.squeeze()
         pred_idx = np.argmax(pred_output)
         pred_txt = self.labels[pred_idx]
