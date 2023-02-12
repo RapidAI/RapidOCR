@@ -10,45 +10,35 @@ on:
       - '.github/workflows/gen_whl_to_pypi_rapid_layout.yml'
       - 'python/rapid_structure/tests/test_layout.py'
 
+env:
+  RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/rapid_layout_models.zip
+
 jobs:
   UnitTesting:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
-      - name: Install 7Zip PowerShell Module
-        shell: powershell
-        run: Install-Module 7Zip4PowerShell -Force -Verbose
-
       - name: Pull latest code
         uses: actions/checkout@v3
 
-      - name: Download rapid layout model
-        uses: suisei-cn/actions-download-file@v1
-        id: downloadfile3  # Remember to give an ID if you need the output filename
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v4
         with:
-            url: "https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/rapid_layout_models.zip"
-            target: ./
+          python-version: '3.7'
+          architecture: 'x64'
 
-      - name: Decompress
-        shell: powershell
-        run: |
-              Expand-7Zip -ArchiveFileName ./rapid_layout_models.zip -TargetPath .\
-
-      - name: List all file
-        shell: cmd
-        run:  |
-              dir .
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
 
       - name: Unit testings
-        shell: cmd
         run: |
-          set git_keep_path=%cur_dir%\python\rapid_structure\rapid_layout\models\.gitkeep
-          del %git_keep_path%
-          move rapid_layout_models\* python\rapid_structure\rapid_layout\models\
+          wget $RESOURCES_URL
+          ZIP_NAME=${RESOURCES_URL##*/}
+          DIR_NAME=${ZIP_NAME%.*}
+          unzip $DIR_NAME
+          cp $DIR_NAME/resources/*.onnx python/rapid_structure/rapid_layout/models/
           cd python/rapid_structure
           pip install -r requirements.txt
-          pip install onnxruntime
-          cd tests
-          pytest test_layout.py
+          pytest tests/test_layout.py
 
   GenerateWHL_PushPyPi:
     needs: UnitTesting
@@ -70,9 +60,11 @@ jobs:
         run: |
           cd python/rapid_structure
           python -m pip install --upgrade pip
-          wget https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/rapid_layout_models.zip
-          unzip rapid_layout_models.zip
-          mv rapid_layout_models/*.onnx rapid_layout/models/
+          wget $RESOURCES_URL
+          ZIP_NAME=${RESOURCES_URL##*/}
+          DIR_NAME=${ZIP_NAME%.*}
+          unzip $ZIP_NAME
+          mv $DIR_NAME/*.onnx rapid_layout/models/
           python setup_layout.py bdist_wheel ${{ github.event.head_commit.message }}
 
       # - name: Publish distribution 📦 to Test PyPI

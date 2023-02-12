@@ -10,6 +10,9 @@ on:
       - '.github/workflows/gen_whl_to_pypi_rapid_orientation.yml'
       - 'python/rapid_structure/tests/test_orientation.py'
 
+env:
+  RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/rapid_orientation_models.zip
+
 jobs:
   UnitTesting:
     runs-on: ubuntu-latest
@@ -17,15 +20,22 @@ jobs:
       - name: Pull latest code
         uses: actions/checkout@v3
 
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+          architecture: 'x64'
+
       - name: Unit testings
         run: |
-          wget https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/rapid_orientation_models.zip
-          unzip rapid_orientation_models.zip
+          wget $RESOURCES_URL
+          ZIP_NAME=${RESOURCES_URL##*/}
+          DIR_NAME=${ZIP_NAME%.*}
+          unzip $ZIP_NAME
           rm python/rapid_structure/rapid_orientation/models/.gitkeep
-          mv rapid_orientation_models/* python/rapid_structure/rapid_orientation/models/
+          mv $DIR_NAME/* python/rapid_structure/rapid_orientation/models/
           cd python/rapid_structure
           pip install -r requirements.txt
-          pip install onnxruntime
           cd tests
           pytest test_orientation.py
 
@@ -35,6 +45,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+          architecture: 'x64'
 
       - name: Set SSH Environment
         env:
@@ -49,9 +65,11 @@ jobs:
         run: |
           cd python/rapid_structure
           python -m pip install --upgrade pip
-          wget https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/rapid_orientation_models.zip
-          unzip rapid_orientation_models.zip
-          mv rapid_orientation_models/*.onnx rapid_orientation/models/
+          wget $RESOURCES_URL
+          ZIP_NAME=${RESOURCES_URL##*/}
+          DIR_NAME=${ZIP_NAME%.*}
+          unzip $ZIP_NAME
+          mv $DIR_NAME/*.onnx rapid_orientation/models/
           python setup_orientation.py bdist_wheel ${{ github.event.head_commit.message }}
 
       # - name: Publish distribution 📦 to Test PyPI

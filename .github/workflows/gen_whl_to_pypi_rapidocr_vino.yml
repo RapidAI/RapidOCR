@@ -7,49 +7,37 @@ on:
       - 'python/rapidocr_openvino/**'
       - 'docs/doc_whl_rapidocr_vino.md'
       - 'python/setup_openvino.py'
+      - '.github/workflows/gen_whl_to_pypi_rapidocr_vino.yml'
 
 env:
   RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip
 
-
 jobs:
   UnitTesting:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
-      - name: Install 7Zip PowerShell Module
-        shell: powershell
-        run: Install-Module 7Zip4PowerShell -Force -Verbose
-
       - name: Pull latest code
         uses: actions/checkout@v3
 
-      - name: Download required_for_whl_v1.1.0
-        uses: suisei-cn/actions-download-file@v1
-        id: downloadfile3  # Remember to give an ID if you need the output filename
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v4
         with:
-            url: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip
-            target: ./
+          python-version: '3.7'
+          architecture: 'x64'
 
-      - name: Decompress
-        shell: powershell
-        run: |
-              Expand-7Zip -ArchiveFileName ./required_for_whl_v1.1.0.zip -TargetPath .\
-
-      - name: List all file
-        shell: cmd
-        run:  |
-              dir .
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
 
       - name: Unit testings
-        shell: cmd
         run: |
-          set git_keep_path=%cur_dir%\python\resoureces\models\.gitkeep
-          del %git_keep_path%
-          copy required_for_whl_v1.1.0\resources\models\* python\rapidocr_onnxruntime\models\
-          copy required_for_whl_v1.1.0\resources\models\* python\rapidocr_openvino\models\
+          wget $RESOURCES_URL
+          ZIP_NAME=${RESOURCES_URL##*/}
+          DIR_NAME=${ZIP_NAME%.*}
+          unzip $DIR_NAME
+          cp $DIR_NAME/resources/models/*.onnx python/rapidocr_onnxruntime/models/
+          cp $DIR_NAME/resources/models/*.onnx python/rapidocr_openvino/models/
           cd python
           pip install -r requirements.txt
-          pip install onnxruntime==1.11.0 openvino==2022.2.0
           cd tests
           pytest test_det.py test_cls.py test_rec.py test_all_vino.py
 
@@ -59,6 +47,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+          architecture: 'x64'
 
       - name: Set SSH Environment
         env:
@@ -73,8 +67,10 @@ jobs:
         run: |
           cd python
           wget $RESOURCES_URL
-          unzip required_for_whl_v1.1.0.zip
-          cp required_for_whl_v1.1.0/resources/models/*.onnx rapidocr_openvino/models
+          ZIP_NAME=${RESOURCES_URL##*/}
+          DIR_NAME=${ZIP_NAME%.*}
+          unzip $ZIP_NAME
+          cp $DIR_NAME/resources/models/*.onnx rapidocr_openvino/models
 
       - name: Run setup_openvino.py
         run: |
