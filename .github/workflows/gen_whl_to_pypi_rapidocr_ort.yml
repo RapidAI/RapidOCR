@@ -74,8 +74,8 @@ jobs:
 
       - name: Run setup_onnxruntime.py
         run: |
-          pip install -r requirements.txt
           cd python
+          pip install -r requirements.txt
           mkdir rapidocr_onnxruntime_t
           mv rapidocr_onnxruntime rapidocr_onnxruntime_t
           mv rapidocr_onnxruntime_t rapidocr_onnxruntime

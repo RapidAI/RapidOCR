@@ -55,7 +55,7 @@ class RapidLayout():
         preds, elapse = 0, 1
         starttime = time.time()
 
-        preds = self.session(img)[0]
+        preds = self.session(img)
 
         score_list, boxes_list = [], []
         num_outs = int(len(preds) / 2)
