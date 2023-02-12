@@ -35,7 +35,7 @@ jobs:
           ZIP_NAME=${RESOURCES_URL##*/}
           DIR_NAME=${ZIP_NAME%.*}
           unzip $DIR_NAME
-          cp $DIR_NAME/resources/*.onnx python/rapid_structure/rapid_layout/models/
+          cp $DIR_NAME/*.onnx python/rapid_structure/rapid_layout/models/
           cd python/rapid_structure
           pip install -r requirements.txt
           pytest tests/test_layout.py
