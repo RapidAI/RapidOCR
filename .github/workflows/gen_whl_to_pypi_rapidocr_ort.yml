@@ -33,6 +33,10 @@ jobs:
       - name: Unit testings
         run: |
           wget $RESOURCES_URL
+          ZIP_NAME=${RESOURCES_URL##*/}
+          DIR_NAME=${ZIP_NAME%.*}
+          echo $ZIP_NAME
+          echo $DIR_NAME
           unzip $DIR_NAME
           cp $DIR_NAME/resources/models/*.onnx python/rapidocr_onnxruntime/models/
           cp $DIR_NAME/resources/models/*.onnx python/rapidocr_openvino/models/
