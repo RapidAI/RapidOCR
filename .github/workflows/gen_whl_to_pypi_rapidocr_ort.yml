@@ -32,10 +32,10 @@ jobs:
 
       - name: Unit testings
         run: |
-          wget ${RESOURCES_URL}
-          unzip ${DIR_NAME}
-          cp ${DIR_NAME}/resources/models/*.onnx python/rapidocr_onnxruntime/models/
-          cp ${DIR_NAME}/resources/models/*.onnx python/rapidocr_openvino/models/
+          wget $RESOURCES_URL
+          unzip $DIR_NAME
+          cp $DIR_NAME/resources/models/*.onnx python/rapidocr_onnxruntime/models/
+          cp $DIR_NAME/resources/models/*.onnx python/rapidocr_openvino/models/
           cd python
           pip install -r requirements.txt
           cd tests
