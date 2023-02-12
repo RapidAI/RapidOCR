@@ -11,6 +11,8 @@ on:
 
 env:
   RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip
+  ZIP_NAME: ${RESOURCES_URL##*/}  # required_for_whl_v1.1.0.zip
+  DIR_NAME: ${ZIP_NAME%.*}  # required_for_whl_v1.1.0
 
 jobs:
   UnitTesting:
@@ -30,11 +32,10 @@ jobs:
 
       - name: Unit testings
         run: |
-          wget https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip
-          unzip required_for_whl_v1.1.0.zip
-          ls
-          cp required_for_whl_v1.1.0/resources/models/*.onnx python/rapidocr_onnxruntime/models/
-          cp required_for_whl_v1.1.0/resources/models/*.onnx python/rapidocr_openvino/models/
+          wget ${RESOURCES_URL}
+          unzip ${DIR_NAME}
+          cp ${DIR_NAME}/resources/models/*.onnx python/rapidocr_onnxruntime/models/
+          cp ${DIR_NAME}/resources/models/*.onnx python/rapidocr_openvino/models/
           cd python
           pip install -r requirements.txt
           cd tests
@@ -58,6 +59,7 @@ jobs:
 
       - name: Download models
         run: |
+          ls rapidocr_onnxruntime/models
           cd python
           wget $RESOURCES_URL
           unzip required_for_whl_v1.1.0.zip
@@ -84,8 +86,8 @@ jobs:
       #     repository_url: https://test.pypi.org/legacy/
       #     packages_dir: dist/
 
-      - name: Publish distribution 📦 to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.5.0
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          packages_dir: dist/
+      # - name: Publish distribution 📦 to PyPI
+      #   uses: pypa/gh-action-pypi-publish@v1.5.0
+      #   with:
+      #     password: ${{ secrets.PYPI_API_TOKEN }}
+      #     packages_dir: dist/
