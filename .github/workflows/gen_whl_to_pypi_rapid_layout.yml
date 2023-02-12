@@ -59,7 +59,7 @@ jobs:
       - name: Run setup
         run: |
           cd python/rapid_structure
-          python -m pip install --upgrade pip
+          pip install -r requirements.txt
           wget $RESOURCES_URL
           ZIP_NAME=${RESOURCES_URL##*/}
           DIR_NAME=${ZIP_NAME%.*}

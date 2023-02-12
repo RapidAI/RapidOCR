@@ -74,6 +74,7 @@ jobs:
 
       - name: Run setup_openvino.py
         run: |
+          pip install -r requirements.txt
           cd python
           mkdir rapidocr_openvino_t
           mv rapidocr_openvino rapidocr_openvino_t
