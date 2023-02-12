@@ -7,48 +7,27 @@ on:
       - 'python/rapidocr_onnxruntime/**'
       - 'docs/doc_whl_rapidocr_ort.md'
       - 'python/setup_onnxruntime.py'
+      - '.github/workflows/gen_whl_to_pypi_rapidocr_ort.yml'
 
 env:
   RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip
 
 jobs:
   UnitTesting:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
-      - name: Install 7Zip PowerShell Module
-        shell: powershell
-        run: Install-Module 7Zip4PowerShell -Force -Verbose
-
       - name: Pull latest code
         uses: actions/checkout@v3
 
-      - name: Download required_for_whl_v1.1.0
-        uses: suisei-cn/actions-download-file@v1
-        id: downloadfile3  # Remember to give an ID if you need the output filename
-        with:
-            url: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip
-            target: ./
-
-      - name: Decompress
-        shell: powershell
-        run: |
-              Expand-7Zip -ArchiveFileName ./required_for_whl_v1.1.0.zip -TargetPath .\
-
-      - name: List all file
-        shell: cmd
-        run:  |
-              dir .
-
       - name: Unit testings
-        shell: cmd
         run: |
-          set git_keep_path=%cur_dir%\python\resoureces\models\.gitkeep
-          del %git_keep_path%
-          copy required_for_whl_v1.1.0\resources\models\* python\rapidocr_onnxruntime\models\
-          copy required_for_whl_v1.1.0\resources\models\* python\rapidocr_openvino\models\
+          wget https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/rapid_orientation_models.zip
+          unzip rapid_orientation_models.zip
+          cp required_for_whl_v1.1.0/resources/models/* python/rapidocr_onnxruntime/models/
+          cp required_for_whl_v1.1.0/resources/models/* python/rapidocr_openvino/models/
           cd python
           pip install -r requirements.txt
-          pip install onnxruntime==1.11.0 openvino==2022.2.0
+          pip install onnxruntime==1.11.0 openvino==2022.3.0
           cd tests
           pytest test_det.py test_cls.py test_rec.py test_all_ort.py
 
