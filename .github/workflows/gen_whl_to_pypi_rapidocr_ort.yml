@@ -21,8 +21,9 @@ jobs:
 
       - name: Unit testings
         run: |
-          wget https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/rapid_orientation_models.zip
+          wget https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.1.0.zip
           unzip rapid_orientation_models.zip
+          ls
           cp required_for_whl_v1.1.0/resources/models/* python/rapidocr_onnxruntime/models/
           cp required_for_whl_v1.1.0/resources/models/* python/rapidocr_openvino/models/
           cd python
