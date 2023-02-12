@@ -69,6 +69,7 @@ jobs:
           ZIP_NAME=${RESOURCES_URL##*/}
           DIR_NAME=${ZIP_NAME%.*}
           unzip $ZIP_NAME
+          ls
           mv $DIR_NAME/*.onnx rapid_orientation/models/
           python setup_orientation.py bdist_wheel ${{ github.event.head_commit.message }}
 
