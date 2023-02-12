@@ -92,7 +92,7 @@ jobs:
       #   with:
       #     password: ${{ secrets.TEST_PYPI_API_TOKEN }}
       #     repository_url: https://test.pypi.org/legacy/
-      #     packages_dir: dist/
+      #     packages_dir:  dist/
 
       - name: Publish distribution 📦 to PyPI
         uses: pypa/gh-action-pypi-publish@v1.5.0
