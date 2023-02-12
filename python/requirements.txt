@@ -5,5 +5,5 @@ six>=1.15.0
 numpy>=1.19.5
 Pillow
 PyYAML
-pytest
+pytest>=7.2.1
 pip==22.3.1

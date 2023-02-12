@@ -47,8 +47,7 @@ jobs:
           cd python/rapid_structure
           pip install -r requirements.txt
           pip install onnxruntime rapidocr_onnxruntime
-          cd tests
-          pytest test_table.py
+          pytest tests\test_table.py
 
   GenerateWHL_PushPyPi:
     needs: UnitTesting

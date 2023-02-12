@@ -50,7 +50,7 @@ jobs:
           pip install -r requirements.txt
           pip install onnxruntime==1.11.0 openvino==2022.2.0
           cd tests
-          pytest test_det.py test_cls.py test_rec.py
+          pytest test_det.py test_cls.py test_rec.py test_all_ort.py
 
   GenerateWHL_PushPyPi:
     needs: UnitTesting
