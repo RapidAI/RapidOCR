@@ -20,10 +20,8 @@ from typing import List
 import cv2
 import numpy as np
 
-try:
-    from .utils import ClsPostProcess, read_yaml, OpenVINOInferSession
-except:
-    from utils import ClsPostProcess, read_yaml, OpenVINOInferSession
+from .utils import ClsPostProcess
+from rapidocr_openvino.utils import read_yaml, OpenVINOInferSession
 
 
 class TextClassifier():

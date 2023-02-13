@@ -23,10 +23,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-try:
-    from .utils import CTCLabelDecode, OpenVINOInferSession
-except:
-    from utils import CTCLabelDecode, OpenVINOInferSession
+from .utils import CTCLabelDecode
+from rapidocr_openvino.utils import read_yaml, OpenVINOInferSession
 
 
 class TextRecognizer():
@@ -35,7 +33,7 @@ class TextRecognizer():
         self.rec_batch_num = config['rec_batch_num']
 
         dict_path = str(Path(__file__).parent / 'ppocr_keys_v1.txt')
-        self.character_dict_path =  config.get( 'keys_path', dict_path)
+        self.character_dict_path = config.get('keys_path', dict_path)
         self.postprocess_op = CTCLabelDecode(self.character_dict_path)
 
         self.infer = OpenVINOInferSession(config)
@@ -109,7 +107,6 @@ if __name__ == "__main__":
     parser.add_argument('--config_path', type=str, default='config.yaml')
     args = parser.parse_args()
 
-    from utils import read_yaml
     config = read_yaml(args.config_path)
     text_recognizer = TextRecognizer(config)
 

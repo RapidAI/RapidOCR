@@ -18,12 +18,8 @@ import time
 import cv2
 import numpy as np
 
-try:
-    from .utils import (DBPostProcess, create_operators,
-                        transform, OpenVINOInferSession)
-except:
-    from utils import (DBPostProcess, create_operators,
-                       transform, OpenVINOInferSession)
+from .utils import DBPostProcess, create_operators, transform
+from rapidocr_openvino.utils import read_yaml, OpenVINOInferSession
 
 
 class TextDetector():
@@ -103,7 +99,6 @@ if __name__ == "__main__":
     parser.add_argument('--image_path', type=str, default=None)
     args = parser.parse_args()
 
-    from utils import read_yaml
     config = read_yaml(args.config_path)
 
     text_detector = TextDetector(config)

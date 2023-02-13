@@ -20,12 +20,8 @@ import time
 import cv2
 import numpy as np
 
-try:
-    from .utils import (DBPostProcess, create_operators,
-                        transform, read_yaml, OrtInferSession)
-except:
-    from utils import (DBPostProcess, create_operators,
-                       transform, read_yaml, OrtInferSession)
+from .utils import DBPostProcess, create_operators, transform
+from rapidocr_onnxruntime.utils import read_yaml, OrtInferSession
 
 
 class TextDetector():

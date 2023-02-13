@@ -19,10 +19,8 @@ from typing import List
 import cv2
 import numpy as np
 
-try:
-    from .utils import CTCLabelDecode, read_yaml, OrtInferSession
-except:
-    from utils import CTCLabelDecode, read_yaml, OrtInferSession
+from .utils import CTCLabelDecode
+from rapidocr_onnxruntime.utils import read_yaml, OrtInferSession
 
 
 class TextRecognizer():
