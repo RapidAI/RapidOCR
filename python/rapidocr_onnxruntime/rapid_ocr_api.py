@@ -5,10 +5,12 @@ import copy
 import importlib
 import sys
 from pathlib import Path
+from typing import Union
 
 import cv2
 import numpy as np
-import yaml
+
+from .utils import LoadImage, read_yaml
 
 root_dir = Path(__file__).resolve().parent
 sys.path.append(str(root_dir))
@@ -20,7 +22,7 @@ class RapidOCR():
         if not Path(config_path).exists():
             raise FileExistsError(f'{config_path} does not exist!')
 
-        config = self.read_yaml(config_path)
+        config = read_yaml(config_path)
 
         global_config = config['Global']
         self.print_verbose = global_config['print_verbose']
@@ -44,18 +46,19 @@ class RapidOCR():
                                               config['Cls']['class_name'])
             self.text_cls = TextClassifier(config['Cls'])
 
-    def __call__(self, img: np.ndarray, **kwargs):
+        self.load_img = LoadImage()
+
+    def __call__(self, img_content: Union[str, np.ndarray, bytes], **kwargs):
         if kwargs:
-            # 获得超参数
             box_thresh = kwargs.get('box_thresh', 0.5)
             unclip_ratio = kwargs.get('unclip_ratio', 1.6)
             text_score = kwargs.get('text_score', 0.5)
 
-            # 更新超参数
             self.text_detector.postprocess_op.box_thresh = box_thresh
             self.text_detector.postprocess_op.unclip_ratio = unclip_ratio
             self.text_score = text_score
 
+        img = self.load_img(img_content)
         h, w = img.shape[:2]
         if self.width_height_ratio == -1:
             use_limit_ratio = False
@@ -94,12 +97,6 @@ class RapidOCR():
         fina_result = [[dt.tolist(), rec[0], str(rec[1])]
                        for dt, rec in zip(filter_boxes, filter_rec_res)]
         return fina_result, [det_elapse, cls_elapse, rec_elapse]
-
-    @staticmethod
-    def read_yaml(yaml_path):
-        with open(yaml_path, 'rb') as f:
-            data = yaml.load(f, Loader=yaml.Loader)
-        return data
 
     @staticmethod
     def init_module(module_name, class_name):

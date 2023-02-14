@@ -13,6 +13,7 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
 from rapidocr_onnxruntime import RapidOCR
+from rapidocr_onnxruntime.utils import LoadImageError
 
 rapid_ocr = RapidOCR()
 tests_dir = root_dir / 'tests' / 'test_files'
@@ -28,13 +29,28 @@ def test_normal():
 
 def test_empty():
     img = None
-    with pytest.raises(AttributeError) as exc_info:
+    with pytest.raises(LoadImageError) as exc_info:
         rapid_ocr(img)
-        raise AttributeError
-    assert exc_info.type is AttributeError
+        raise LoadImageError
+    assert exc_info.type is LoadImageError
 
 
 def test_zeros():
     img = np.zeros([640, 640, 3])
     result, _ = rapid_ocr(img)
     assert result is None
+
+
+def test_input_str():
+    image_path = tests_dir / 'ch_en_num.jpg'
+    result, _ = rapid_ocr(str(image_path))
+    assert result[0][1] == '正品促销'
+    assert len(result) == 17
+
+
+def test_input_bytes():
+    image_path = tests_dir / 'ch_en_num.jpg'
+    with open(image_path, 'rb') as f:
+        result, _ = rapid_ocr(f.read())
+    assert result[0][1] == '正品促销'
+    assert len(result) == 17
