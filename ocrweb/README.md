@@ -2,7 +2,7 @@
 
 - [RapidOCR Web Demo](#rapidocr-web-demo)
   - [简要说明](#简要说明)
-  - [以Web方式运行](#以web方式运行)
+  - [使用步骤](#使用步骤)
   - [以API方式运行](#以api方式运行)
 
 
@@ -18,10 +18,10 @@
         <img src="../assets/ocrweb_time.jpg" width="80%" height="80%">
     </div>
 
-### 以Web方式运行
+### 使用步骤
 1. 安装`rapidocr_onnxruntime`
    ```bash
-   $ pip install rapidocr_onnxruntime
+   pip install rapidocr_web
    ```
 
 2. 安装`ocrweb`目录下的`requirements.txt`下相关包
