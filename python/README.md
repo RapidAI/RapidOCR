@@ -61,9 +61,22 @@
 
     rapid_ocr = RapidOCR()
 
-    img = cv2.imread('tests/test_files/ch_en_num.jpg')
+    img_path = 'tests/test_files/ch_en_num.jpg'
 
+    # 支持四种格式的输入：Union[str, np.ndarray, bytes, Path]
+    # str
+    result = rapid_ocr(img_path)
+
+    # np.ndarray
+    img = cv2.imread('tests/test_files/ch_en_num.jpg')
     result = rapid_ocr(img)
+
+    # bytes
+    with open(img_path, 'rb') as f:
+        result = rapid_ocr(f.read())
+
+    # Path
+    result = rapid_ocr(Path(img_path))
     print(result)
 
     # result: [[文本框坐标], 文本内容, 置信度]
