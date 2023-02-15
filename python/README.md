@@ -69,6 +69,18 @@
     # result: [[文本框坐标], 文本内容, 置信度]
     # 示例：[[左上, 右上, 右下, 左下], '小明', '0.99']
     ```
+    - 命令行使用：
+    ```bash
+    $ rapidocr_onnxruntime -h / rapidocr_openvino -h
+    usage: rapidocr_onnxruntime [-h] [-img IMG_PATH] [-p]
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    -img IMG_PATH, --img_path IMG_PATH
+    -p, --print_cost
+
+    $ rapidocr_onnxruntime -img tests/test_files/ch_en_num.jpg
+    ```
 
 ### 源码使用步骤
 1. 下载整个项目到本地
