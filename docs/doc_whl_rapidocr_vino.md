@@ -11,21 +11,46 @@ $ pip install rapidocr-openvino
 
 
 ### 2. Use.
-```python
-import cv2
-from rapidocr_openvino import RapidOCR
+- Run by script.
+    ```python
+    import cv2
+    from rapidocr_openvino import RapidOCR
 
-rapid_ocr = RapidOCR()
+    rapid_ocr = RapidOCR()
 
-img = cv2.imread('test_images/ch_en_num.jpg')
+    img_path = 'tests/test_files/ch_en_num.jpg'
 
-result, elapse_list = rapid_ocr(img)
-print(result)
-print(elapse_list)
+    # str
+    result = rapid_ocr(img_path)
 
-# result: [[dt_boxes], txt, score]
-# 示例：[[左上, 右上, 右下, 左下], '小明', '0.99']
+    # np.ndarray
+    img = cv2.imread('tests/test_files/ch_en_num.jpg')
+    result = rapid_ocr(img)
 
-# elapse_list: [det_elapse, cls_elapse, rec_elapse]
-# all_elapse = det_elapse + cls_elapse + rec_elapse
-```
+    # bytes
+    with open(img_path, 'rb') as f:
+        result = rapid_ocr(f.read())
+
+    # Path
+    result = rapid_ocr(Path(img_path))
+    print(result)
+
+    # result: [[dt_boxes], txt, score]
+    # 示例：[[左上, 右上, 右下, 左下], '小明', '0.99']
+
+    # elapse_list: [det_elapse, cls_elapse, rec_elapse]
+    # all_elapse = det_elapse + cls_elapse + rec_elapse
+    ```
+
+- Run by command line.
+  ```bash
+  $ rapidocr_openvino -h
+    usage: rapidocr_openvino [-h] [-img IMG_PATH] [-p]
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    -img IMG_PATH, --img_path IMG_PATH
+    -p, --print_cost
+
+  $ rapidocr_openvino -img tests/test_files/ch_en_num.jpg
+  ```

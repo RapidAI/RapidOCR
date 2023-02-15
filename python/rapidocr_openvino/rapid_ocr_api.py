@@ -175,7 +175,7 @@ class RapidOCR():
 
 
 def main():
-    parser = argparse.ArgumentParser('RapidOCR')
+    parser = argparse.ArgumentParser()
     parser.add_argument('-img', '--img_path', type=str, default=None)
     parser.add_argument('-p', '--print_cost',
                         action='store_true', default=False)
