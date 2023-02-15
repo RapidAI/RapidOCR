@@ -27,7 +27,7 @@ def detect_recognize(image, lang='ch', detect=True, classify=True):
 
 
 def check_and_read_gif(img_path):
-    if Path(img_path).name[-3:] in ['gif', 'GIF']:
+    if Path(img_path).suffix.lower() == 'gif':
         gif = cv2.VideoCapture(img_path)
         ret, frame = gif.read()
         if not ret:
