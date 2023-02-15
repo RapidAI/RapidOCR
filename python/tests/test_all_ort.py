@@ -54,3 +54,10 @@ def test_input_bytes():
         result, _ = rapid_ocr(f.read())
     assert result[0][1] == '正品促销'
     assert len(result) == 17
+
+
+def test_input_path():
+    image_path = tests_dir / 'ch_en_num.jpg'
+    result, _ = rapid_ocr(image_path)
+    assert result[0][1] == '正品促销'
+    assert len(result) == 17

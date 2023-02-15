@@ -8,7 +8,8 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-import yaml
+from typing import Union
+from .utils import LoadImage, read_yaml
 
 root_dir = Path(__file__).resolve().parent
 sys.path.append(str(root_dir))
@@ -20,7 +21,7 @@ class RapidOCR():
         if not Path(config_path).exists():
             raise FileExistsError(f'{config_path} does not exist!')
 
-        config = self.read_yaml(config_path)
+        config = read_yaml(config_path)
 
         global_config = config['Global']
         self.print_verbose = global_config['print_verbose']
@@ -44,7 +45,10 @@ class RapidOCR():
                                               config['Cls']['class_name'])
             self.text_cls = TextClassifier(config['Cls'])
 
-    def __call__(self, img: np.ndarray, **kwargs):
+        self.load_img = LoadImage()
+
+    def __call__(self,
+                 img_content: Union[str, np.ndarray, bytes, Path], **kwargs):
         if kwargs:
             # 获得超参数
             box_thresh = kwargs.get('box_thresh', 0.5)
@@ -56,6 +60,7 @@ class RapidOCR():
             self.text_detector.postprocess_op.unclip_ratio = unclip_ratio
             self.text_score = text_score
 
+        img = self.load_img(img_content)
         h, w = img.shape[:2]
         if self.width_height_ratio == -1:
             use_limit_ratio = False

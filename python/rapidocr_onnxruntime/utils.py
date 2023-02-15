@@ -15,7 +15,7 @@ from onnxruntime import (GraphOptimizationLevel, InferenceSession,
                          SessionOptions, get_available_providers, get_device)
 
 root_dir = Path(__file__).resolve().parent
-InputType = Union[str, np.ndarray, bytes]
+InputType = Union[str, np.ndarray, bytes, Path]
 
 
 class OrtInferSession():
@@ -98,7 +98,7 @@ class LoadImage():
         self.ndarray_format = ['ndarray']
 
     def __call__(self, img: InputType):
-        if not isinstance(img, (str, bytes, np.ndarray)):
+        if not isinstance(img, InputType.__args__):
             raise LoadImageError(
                 f'The img type {type(img)} does not in [str, np.ndarray, bytes]')
 
@@ -110,13 +110,13 @@ class LoadImage():
         img_suffix = self._which_format(img)
 
         if img_suffix in self.gif_format:
-            if isinstance(img, str):
+            if isinstance(img, (str, Path)):
                 return self._read_gif_str(img)
 
             if isinstance(img, bytes):
                 return self._read_gif_bytes(img)
         elif img_suffix in self.valid_format:
-            if isinstance(img, str):
+            if isinstance(img, (str, Path)):
                 return self._read_valid_img_str(img)
 
             if isinstance(img, bytes):
@@ -138,7 +138,7 @@ class LoadImage():
         return img_content
 
     def _which_format(self, img_content: InputType) -> Optional[str]:
-        if isinstance(img_content, str):
+        if isinstance(img_content, (str, Path)):
             with open(img_content, 'rb') as f:
                 return imghdr.what(f).lower()
 
@@ -151,10 +151,10 @@ class LoadImage():
         if isinstance(img_content, np.ndarray):
             return self.ndarray_format[0]
 
-    def _read_gif_str(self, img: str) -> np.ndarray:
+    def _read_gif_str(self, img: Union[str, Path]) -> np.ndarray:
         @contextmanager
         def video_capture(img):
-            cap = cv2.VideoCapture(img)
+            cap = cv2.VideoCapture(str(img))
             try:
                 yield cap
             finally:
@@ -170,7 +170,7 @@ class LoadImage():
         img = frame[:, :, ::-1]
         return img
 
-    def _read_valid_img_str(self, img: str) -> np.ndarray:
+    def _read_valid_img_str(self, img: Union[str, Path]) -> np.ndarray:
         with open(img, 'rb') as f:
             img = self._read_valid_img_bytes(f.read())
         return img
@@ -179,7 +179,7 @@ class LoadImage():
         with tempfile.NamedTemporaryFile(delete=True) as fp:
             fp.write(img)
             fp.seek(0)
-            img = self._read_gif_str(fp.name)
+            img = self._read_gif_str(fp)
         return img
 
     def _read_valid_img_bytes(self, img: bytes) -> np.ndarray:

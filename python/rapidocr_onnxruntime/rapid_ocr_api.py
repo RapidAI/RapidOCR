@@ -48,7 +48,8 @@ class RapidOCR():
 
         self.load_img = LoadImage()
 
-    def __call__(self, img_content: Union[str, np.ndarray, bytes], **kwargs):
+    def __call__(self,
+                 img_content: Union[str, np.ndarray, bytes, Path], **kwargs):
         if kwargs:
             box_thresh = kwargs.get('box_thresh', 0.5)
             unclip_ratio = kwargs.get('unclip_ratio', 1.6)
