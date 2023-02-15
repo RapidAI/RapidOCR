@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+import argparse
 import copy
 import importlib
 import sys
@@ -173,11 +174,20 @@ class RapidOCR():
         return filter_boxes, filter_rec_res
 
 
-if __name__ == '__main__':
-    rapid_ocr = RapidOCR('config.yaml')
+def main():
+    parser = argparse.ArgumentParser('RapidOCR')
+    parser.add_argument('-img', '--img_path', type=str, default=None)
+    parser.add_argument('-p', '--print_cost',
+                        action='store_true', default=False)
+    args = parser.parse_args()
 
-    import cv2
-    img = cv2.imread('resources/test_images/det_images/ch_en_num.jpg')
+    ocr_engine = RapidOCR()
 
-    result = rapid_ocr(img)
+    result, elapse_list = ocr_engine(args.img_path)
     print(result)
+    if args.print_cost:
+        print(elapse_list)
+
+
+if __name__ == '__main__':
+    main()

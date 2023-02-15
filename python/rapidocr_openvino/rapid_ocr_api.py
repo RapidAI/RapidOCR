@@ -1,14 +1,16 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+import argparse
 import copy
 import importlib
 import sys
 from pathlib import Path
+from typing import Union
 
 import cv2
 import numpy as np
-from typing import Union
+
 from .utils import LoadImage, read_yaml
 
 root_dir = Path(__file__).resolve().parent
@@ -50,12 +52,10 @@ class RapidOCR():
     def __call__(self,
                  img_content: Union[str, np.ndarray, bytes, Path], **kwargs):
         if kwargs:
-            # 获得超参数
             box_thresh = kwargs.get('box_thresh', 0.5)
             unclip_ratio = kwargs.get('unclip_ratio', 1.6)
             text_score = kwargs.get('text_score', 0.5)
 
-            # 更新超参数
             self.text_detector.postprocess_op.box_thresh = box_thresh
             self.text_detector.postprocess_op.unclip_ratio = unclip_ratio
             self.text_score = text_score
@@ -99,12 +99,6 @@ class RapidOCR():
         fina_result = [[dt.tolist(), rec[0], str(rec[1])]
                        for dt, rec in zip(filter_boxes, filter_rec_res)]
         return fina_result, [det_elapse, cls_elapse, rec_elapse]
-
-    @staticmethod
-    def read_yaml(yaml_path):
-        with open(yaml_path, 'rb') as f:
-            data = yaml.load(f, Loader=yaml.Loader)
-        return data
 
     @staticmethod
     def init_module(module_name, class_name):
@@ -180,11 +174,20 @@ class RapidOCR():
         return filter_boxes, filter_rec_res
 
 
-if __name__ == '__main__':
-    rapid_ocr = RapidOCR('config.yaml')
+def main():
+    parser = argparse.ArgumentParser('RapidOCR')
+    parser.add_argument('-img', '--img_path', type=str, default=None)
+    parser.add_argument('-p', '--print_cost',
+                        action='store_true', default=False)
+    args = parser.parse_args()
 
-    import cv2
-    img = cv2.imread('resources/test_images/det_images/ch_en_num.jpg')
+    ocr_engine = RapidOCR()
 
-    result = rapid_ocr(img)
+    result, elapse_list = ocr_engine(args.img_path)
     print(result)
+    if args.print_cost:
+        print(elapse_list)
+
+
+if __name__ == '__main__':
+    main()
