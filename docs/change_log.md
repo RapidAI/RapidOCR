@@ -1,3 +1,7 @@
+#### ⛸ 2023-02-16 update:
+- 优化ocrweb部分代码，可直接pip安装，快速使用，详情参见[README](../ocrweb/README.md)。
+- 优化python中各个部分的推理代码，更加紧凑，同时易于维护。
+
 #### 🎉2023-01-21 update:
 - \[python\] 添加含有文字的图像方向分类模块，具体参见[Rapid Orientation](../python/rapid_structure/docs/README_Orientation.md)
 

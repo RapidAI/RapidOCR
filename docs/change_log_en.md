@@ -1,3 +1,7 @@
+#### ⛸ 2023-02-16 update:
+- Optimize some codes of ocrweb, which can be directly installed by pip and used quickly. For details, please refer to [README](../ocrweb/README.md).
+- Optimize the inference code of each part in python, which is more compact and easy to maintain.
+
 #### 🎉 2023-01-21 update:
 - \[python\] Add an image orientation classification module containing text. For details, see [Rapid Orientation](../python/rapid_structure/docs/README_Orientation.md)
 
