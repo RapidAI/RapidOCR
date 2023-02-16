@@ -39,7 +39,6 @@ jobs:
 
           python -m pip install --upgrade pip
           python setup.py bdist_wheel ${{ github.event.head_commit.message }}
-          mv dist ../
 
       # - name: Publish distribution 📦 to Test PyPI
       #   uses: pypa/gh-action-pypi-publish@v1.5.0
@@ -51,5 +50,5 @@ jobs:
       - name: Publish distribution 📦 to PyPI
         uses: pypa/gh-action-pypi-publish@v1.5.0
         with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          password: ${{ secrets.RAPIDOCR_OPENVINO }}
           packages_dir: dist/

@@ -25,7 +25,7 @@ def version_add_one(version, add_loc=-1):
         version_list[add_loc] = mini_version
         new_version = '.'.join(version_list)
         return new_version
-    return '0.0.0'
+    return '0.0.1'
 
 
 def get_readme():
