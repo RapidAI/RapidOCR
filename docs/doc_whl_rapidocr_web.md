@@ -2,7 +2,7 @@
 <p>
     <a href=""><img src="https://img.shields.io/badge/Python->=3.7,<=3.10-aff.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
-    <a href="https://pypi.org/project/rapid-layout/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapid-layout"></a>
+    <a href="https://pypi.org/project/rapidocr-web/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-web"></a>
 </p>
 
 ### 1. Install package by pypi.
@@ -10,24 +10,7 @@
 $ pip install rapidocr-web
 ```
 
-### 2. Run by script.
-- RapidLayout has the default `model_path` value, you can set the different value of `model_path` to use different models, e.g. `layout_engine = RapidLayout(model_path='layout_publaynet.onnx')`
-- See details, for [README_Layout](https://github.com/RapidAI/RapidOCR/blob/f133ff008a1c60edd6e0ed882da83873aa7b113a/python/rapid_structure/docs/README_Layout.md) .
-- 📌 `layout.png` source: [link](https://github.com/RapidAI/RapidOCR/blob/f133ff008a1c60edd6e0ed882da83873aa7b113a/python/rapid_structure/test_images/layout.png)
-
-```python
-import cv2
-from rapid_layout import RapidLayout
-
-layout_engine = RapidLayout()
-
-img = cv2.imread('layout.png')
-
-layout_res, elapse = layout_engine(img)
-print(layout_res)
-```
-
-### 3. Run by command line.
+### 2. Run by command line.
 - Usage:
     ```bash
     $ rapidocr_web -h
@@ -41,18 +24,44 @@ print(layout_res)
     ```
 - Example:
     ```bash
+    # Web mode
     $ rapidocr_web -ip "0.0.0.0" -p 9003
+
+    # API mode
+    $ rapidocr_web -ip "0.0.0.0" -p 9003 -api
     ```
 
-### 4. Result.
-- Return value.
+### 3. Use.
+- Web mode: Open `http://localhost:9003/` to view, enjoy it.
+- API mode:
     ```python
-    [
-        {'bbox': array([321.4160495, 91.53214898, 562.06141263, 199.85522603]), 'label': 'text'},
-        {'bbox': array([58.67292211, 107.29000663, 300.25448676, 199.68142]), 'label': 'table_caption'}
-    ]
+    import ast
+    import base64
+    import json
+
+    import requests
+
+
+    def get_json_format(img_path):
+        with open(img_path, 'rb') as f:
+            img_byte = base64.b64encode(f.read())
+        img_json = json.dumps({'file': img_byte.decode('ascii')})
+        return img_json
+
+
+    if __name__ == '__main__':
+        url = 'http://localhost:9003/ocr'
+        header = {'Content-Type': 'application/json; charset=UTF-8'}
+
+        img_path = '1.jpg'
+        img_json = get_json_format(img_path)
+
+        response = requests.post(url, data=img_json, headers=header)
+        if response.status_code == 200:
+            rec_res = ast.literal_eval(response.text)
+            print(rec_res)
+        else:
+            print(response.status_code)
     ```
-- Visualize result.
-    <div align="center">
-        <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/947c6958d30f47c7c7b016f7dc308f235acec3ee/python/rapid_structure/test_images/layout_result.jpg" width="80%" height="80%">
-    </div>
+
+### See details for [RapidOCR](https://github.com/RapidAI/RapidOCR/tree/main/ocrweb).

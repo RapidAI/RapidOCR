@@ -6,7 +6,10 @@ from pathlib import Path
 from wsgiref.simple_server import make_server
 
 from flask import Flask, render_template, request
-from .task import OCRWebUtils
+try:
+    from .task import OCRWebUtils
+except:
+    from task import OCRWebUtils
 
 root_dir = Path(__file__).resolve().parent
 

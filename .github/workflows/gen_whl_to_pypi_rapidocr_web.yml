@@ -1,0 +1,55 @@
+name: Push rapidocr_web to pypi
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'ocrweb/rapidocr_web/**'
+      - 'docs/doc_whl_rapidocr_web.md'
+      - 'ocrweb/setup.py'
+      - '.github/workflows/gen_whl_to_pypi_rapidocr_web.yml'
+
+jobs:
+  GenerateWHL_PushPyPi:
+    needs: UnitTesting
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+          architecture: 'x64'
+
+      - name: Set SSH Environment
+        env:
+          DEPLOY_KEYS: ${{ secrets.GEN_PYTHON_SDK }}
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$DEPLOY_KEYS" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          chmod 700 ~/.ssh && chmod 600 ~/.ssh/*
+
+      - name: Run setup.py
+        run: |
+          cd ocrweb
+          pip install -r requirements.txt
+
+          python -m pip install --upgrade pip
+          python setup.py bdist_wheel ${{ github.event.head_commit.message }}
+          mv dist ../
+
+      # - name: Publish distribution 📦 to Test PyPI
+      #   uses: pypa/gh-action-pypi-publish@v1.5.0
+      #   with:
+      #     password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+      #     repository_url: https://test.pypi.org/legacy/
+      #     packages_dir:  dist/
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.5.0
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages_dir: dist/

@@ -67,6 +67,7 @@ setuptools.setup(
     author="SWHL",
     author_email="liekkaskono@163.com",
     url="https://github.com/RapidAI/RapidOCR",
+    download_url='https://github.com/RapidAI/RapidOCR.git',
     license='Apache-2.0',
     include_package_data=True,
     install_requires=["Pillow>=1.2.1", "requests",
