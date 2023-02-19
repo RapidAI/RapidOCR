@@ -1,0 +1,5 @@
+flask
+flask-restful
+flask-jwt-extended
+passlib
+flask-sqlalchemy
