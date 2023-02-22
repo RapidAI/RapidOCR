@@ -71,8 +71,8 @@ class TextRecognizer():
             starttime = time.time()
             preds = self.infer(norm_img_batch)
             rec_result = self.postprocess_op(preds)
-            for rno in range(len(rec_result)):
-                rec_res[indices[beg_img_no + rno]] = rec_result[rno]
+            for rno, one_res in enumerate(rec_result):
+                rec_res[indices[beg_img_no + rno]] = one_res
             elapse += time.time() - starttime
         return rec_res, elapse
 

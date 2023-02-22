@@ -98,7 +98,9 @@ class RapidOCR():
                                                                       rec_res)
         fina_result = [[dt.tolist(), rec[0], str(rec[1])]
                        for dt, rec in zip(filter_boxes, filter_rec_res)]
-        return fina_result, [det_elapse, cls_elapse, rec_elapse]
+        if fina_result:
+            return fina_result, [det_elapse, cls_elapse, rec_elapse]
+        return None, None
 
     @staticmethod
     def init_module(module_name, class_name):
