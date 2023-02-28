@@ -14,6 +14,7 @@
 
 
 ### 简要说明
+- 该模块依赖`rapidocr_onnxruntime`库，如果想要离线部署，可以先手动下载`rapidocr_onnxruntime`whl包，再手动安装`rapidocr_web`whl包来使用
 - 所用模型组合（最优组合）为：
   ```text
   ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec
