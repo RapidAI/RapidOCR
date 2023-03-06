@@ -244,6 +244,11 @@ class ParseArgs():
 
     def init_args(self):
         parser = argparse.ArgumentParser()
+        parser.add_argument('-img', '--img_path', type=str, default=None,
+                            required=True)
+        parser.add_argument('-p', '--print_cost',
+                            action='store_true', default=False)
+
         global_group = parser.add_argument_group(title='Global')
         global_group.add_argument('--text_score', type=float, default=0.5)
         global_group.add_argument('--use_angle_cls', type=bool, default=True)
@@ -253,8 +258,7 @@ class ParseArgs():
         global_group.add_argument('--width_height_ratio', type=int, default=8)
 
         det_group = parser.add_argument_group(title='Det')
-        det_group.add_argument('--det_model_path', type=str,
-                               default='models/ch_PP-OCRv3_det_infer.onnx')
+        det_group.add_argument('--det_model_path', type=str, default=None)
         det_group.add_argument('--det_limit_side_len', type=float, default=736)
         det_group.add_argument('--det_limit_type', type=str, default='min',
                                choices=['max', 'min'])
@@ -266,16 +270,14 @@ class ParseArgs():
                                choices=['slow', 'fast'])
 
         cls_group = parser.add_argument_group(title='Cls')
-        cls_group.add_argument('--cls_model_path', type=str,
-                               default='models/ch_ppocr_mobile_v2.0_cls_infer.onnx')
+        cls_group.add_argument('--cls_model_path', type=str, default=None)
         cls_group.add_argument('--cls_image_shape', type=list, default=[3, 48, 192])
         cls_group.add_argument('--cls_label_list', type=list, default=['0', '180'])
         cls_group.add_argument('--cls_batch_num', type=int, default=6)
         cls_group.add_argument('--cls_thresh', type=float, default=0.9)
 
         rec_group = parser.add_argument_group(title='Rec')
-        rec_group.add_argument('--rec_model_path', type=str,
-                               default='models/ch_PP-OCRv3_rec_infer.onnx')
+        rec_group.add_argument('--rec_model_path', type=str, default=None)
         rec_group.add_argument('--rec_image_shape', type=list,
                                default=[0, 48, 320])
         rec_group.add_argument('--rec_batch_num', type=int, default=6)
@@ -287,9 +289,6 @@ class ParseArgs():
 
         global_dict, det_dict, cls_dict, rec_dict = {}, {}, {}, {}
         for k, v in kwargs.items():
-            if k not in self.args_dict.keys():
-                raise KeyError(f'{k} not in param list.')
-
             if k.startswith('det'):
                 det_dict[k] = v
             elif k.startswith('cls'):
@@ -317,7 +316,7 @@ class ParseArgs():
 
     def update_det_params(self, config, det_dict):
         det_dict = {k.split('det_')[1]: v for k, v in det_dict.items()}
-        if 'model_path' not in det_dict:
+        if not det_dict['model_path']:
             det_dict['model_path'] = str(root_dir / config['model_path'])
         config.update(det_dict)
         return config
@@ -330,7 +329,7 @@ class ParseArgs():
                 k = k.split('cls_')[1]
             new_cls_dict[k] = v
 
-        if 'model_path' not in new_cls_dict:
+        if not new_cls_dict['model_path']:
             new_cls_dict['model_path'] = str(root_dir / config['model_path'])
         config.update(new_cls_dict)
         return config
@@ -343,8 +342,7 @@ class ParseArgs():
                 k = k.split('rec_')[1]
             new_rec_dict[k] = v
 
-        if 'model_path' not in new_rec_dict:
+        if not new_rec_dict['model_path']:
             new_rec_dict['model_path'] = str(root_dir / config['model_path'])
-
         config.update(new_rec_dict)
         return config

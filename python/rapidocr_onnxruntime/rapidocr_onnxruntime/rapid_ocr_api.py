@@ -11,7 +11,10 @@ from typing import Union
 import cv2
 import numpy as np
 
-from .utils import LoadImage, read_yaml, ParseArgs, concat_model_path
+try:
+    from .utils import LoadImage, read_yaml, ParseArgs, concat_model_path
+except:
+    from utils import LoadImage, read_yaml, ParseArgs, concat_model_path
 
 root_dir = Path(__file__).resolve().parent
 sys.path.append(str(root_dir))
@@ -183,13 +186,13 @@ class RapidOCR():
 def main():
     init_args = ParseArgs()
     parser = init_args.parser
-    parser.add_argument('-img', '--img_path', type=str, default=None)
-    parser.add_argument('-p', '--print_cost',
-                        action='store_true', default=False)
     args = parser.parse_args()
+    print(args)
 
     ocr_engine = RapidOCR(**vars(args))
 
+    print('----------')
+    print(args)
     result, elapse_list = ocr_engine(args.img_path)
     print(result)
     if args.print_cost:
