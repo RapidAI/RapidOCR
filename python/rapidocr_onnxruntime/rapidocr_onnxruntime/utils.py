@@ -240,7 +240,7 @@ def concat_model_path(config):
 
 class ParseArgs():
     def __init__(self, ):
-        pass
+        self.parser = self.init_args()
 
     def init_args(self):
         parser = argparse.ArgumentParser()
@@ -282,7 +282,6 @@ class ParseArgs():
         return parser
 
     def parse_kwargs(self, **kwargs):
-        self.parser = self.init_args()
         self.args = self.parser.parse_args()
         self.args_dict = vars(self.args)
 

@@ -181,13 +181,14 @@ class RapidOCR():
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    init_args = ParseArgs()
+    parser = init_args.parser
     parser.add_argument('-img', '--img_path', type=str, default=None)
     parser.add_argument('-p', '--print_cost',
                         action='store_true', default=False)
     args = parser.parse_args()
 
-    ocr_engine = RapidOCR()
+    ocr_engine = RapidOCR(**vars(args))
 
     result, elapse_list = ocr_engine(args.img_path)
     print(result)
