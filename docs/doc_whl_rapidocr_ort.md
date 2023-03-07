@@ -40,7 +40,7 @@ $ pip install rapidocr-onnxruntime
     # elapse_list: [det_elapse, cls_elapse, rec_elapse]
     # all_elapse = det_elapse + cls_elapse + rec_elapse
 
-    # If without valid texts, result: (None, None)
+    # If without valid texts, result: (None, None )
     ```
 
 - Run by command line.
