@@ -12,6 +12,7 @@
 - [RapidOCR Python](#rapidocr-python)
   - [简介和说明](#简介和说明)
   - [（推荐）pip安装快速使用](#推荐pip安装快速使用)
+  - [源码使用步骤](#源码使用步骤)
   - [`config.yaml`中常用参数介绍](#configyaml中常用参数介绍)
   - [onnxruntime-gpu版相关说明](#onnxruntime-gpu版相关说明)
   - [onnxruntime-gpu版推理配置](#onnxruntime-gpu版推理配置)
@@ -52,6 +53,7 @@
 1. 安装`rapidocr`包
    - <a href="https://pypi.org/project/rapidocr-onnxruntime/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-onnxruntime?style=flat-square"></a> `rapidocr_onnxruntime` → `pip install rapidocr-onnxruntime`
    - <a href="https://pypi.org/project/rapidocr-openvino/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-openvino?style=flat-square"></a> `rapidocr_openvino` → `pip install rapidocr-openvino`
+   - 注意：两个包接口一致，只是推理引擎不同而已
 
 2. 推理使用
     - 📌初始化RapidOCR可不提供`config.yaml`，默认使用**rapidocr_onnxruntime**目录下的。如有特殊需求，可以自行更改目录下的`config.yaml`。
@@ -87,7 +89,7 @@
     # 如果没有有效文本，则result: (None, None)
     ```
     - 命令行使用：
- ```bash
+    ```bash
     $ rapidocr_onnxruntime -h
     usage: rapidocr_onnxruntime [-h] -img IMG_PATH [-p] [--text_score TEXT_SCORE]
                                 [--use_angle_cls USE_ANGLE_CLS]

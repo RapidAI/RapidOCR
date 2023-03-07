@@ -2,6 +2,7 @@
 <p>
     <a href=""><img src="https://img.shields.io/badge/Python->=3.7,<=3.10-aff.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
+    <a href="https://pepy.tech/project/rapidocr_openvino"><img src="https://static.pepy.tech/personalized-badge/rapidocr_openvino?period=total&units=abbreviation&left_color=grey&right_color=blue&left_text=Downloads%20Vino"></a>
 </p>
 
 ### 1. Install package by pypi.
@@ -45,14 +46,65 @@ $ pip install rapidocr-openvino
     ```
 
 - Run by command line.
-  ```bash
-  $ rapidocr_openvino -h
-    usage: rapidocr_openvino [-h] [-img IMG_PATH] [-p]
+    ```bash
+    $ rapidocr_openvino -h
+    usage: rapidocr_openvino [-h] -img IMG_PATH [-p] [--text_score TEXT_SCORE]
+                            [--use_angle_cls USE_ANGLE_CLS]
+                            [--use_text_det USE_TEXT_DET]
+                            [--print_verbose PRINT_VERBOSE]
+                            [--min_height MIN_HEIGHT]
+                            [--width_height_ratio WIDTH_HEIGHT_RATIO]
+                            [--det_model_path DET_MODEL_PATH]
+                            [--det_limit_side_len DET_LIMIT_SIDE_LEN]
+                            [--det_limit_type {max,min}]
+                            [--det_thresh DET_THRESH]
+                            [--det_box_thresh DET_BOX_THRESH]
+                            [--det_unclip_ratio DET_UNCLIP_RATIO]
+                            [--det_use_dilation DET_USE_DILATION]
+                            [--det_score_mode {slow,fast}]
+                            [--cls_model_path CLS_MODEL_PATH]
+                            [--cls_image_shape CLS_IMAGE_SHAPE]
+                            [--cls_label_list CLS_LABEL_LIST]
+                            [--cls_batch_num CLS_BATCH_NUM]
+                            [--cls_thresh CLS_THRESH]
+                            [--rec_model_path REC_MODEL_PATH]
+                            [--rec_image_shape REC_IMAGE_SHAPE]
+                            [--rec_batch_num REC_BATCH_NUM]
 
     optional arguments:
     -h, --help            show this help message and exit
     -img IMG_PATH, --img_path IMG_PATH
     -p, --print_cost
 
-  $ rapidocr_openvino -img tests/test_files/ch_en_num.jpg
-  ```
+    Global:
+    --text_score TEXT_SCORE
+    --use_angle_cls USE_ANGLE_CLS
+    --use_text_det USE_TEXT_DET
+    --print_verbose PRINT_VERBOSE
+    --min_height MIN_HEIGHT
+    --width_height_ratio WIDTH_HEIGHT_RATIO
+
+    Det:
+    --det_model_path DET_MODEL_PATH
+    --det_limit_side_len DET_LIMIT_SIDE_LEN
+    --det_limit_type {max,min}
+    --det_thresh DET_THRESH
+    --det_box_thresh DET_BOX_THRESH
+    --det_unclip_ratio DET_UNCLIP_RATIO
+    --det_use_dilation DET_USE_DILATION
+    --det_score_mode {slow,fast}
+
+    Cls:
+    --cls_model_path CLS_MODEL_PATH
+    --cls_image_shape CLS_IMAGE_SHAPE
+    --cls_label_list CLS_LABEL_LIST
+    --cls_batch_num CLS_BATCH_NUM
+    --cls_thresh CLS_THRESH
+
+    Rec:
+    --rec_model_path REC_MODEL_PATH
+    --rec_image_shape REC_IMAGE_SHAPE
+    --rec_batch_num REC_BATCH_NUM
+
+    $ rapidocr_openvino -img tests/test_files/ch_en_num.jpg
+    ```

@@ -1,7 +1,6 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-import argparse
 import copy
 import importlib
 import sys
@@ -11,19 +10,23 @@ from typing import Union
 import cv2
 import numpy as np
 
-from .utils import LoadImage, read_yaml
+from .utils import LoadImage, ParseArgs, concat_model_path, read_yaml
 
 root_dir = Path(__file__).resolve().parent
 sys.path.append(str(root_dir))
 
 
 class RapidOCR():
-    def __init__(self, config_path=str(root_dir / 'config.yaml')):
-        super(RapidOCR).__init__()
+    def __init__(self, **kwargs):
+        config_path = str(root_dir / 'config.yaml')
         if not Path(config_path).exists():
             raise FileExistsError(f'{config_path} does not exist!')
-
         config = read_yaml(config_path)
+        config = concat_model_path(config)
+
+        if kwargs:
+            parser = ParseArgs()
+            config = parser.update_config(config, **kwargs)
 
         global_config = config['Global']
         self.print_verbose = global_config['print_verbose']
@@ -177,13 +180,8 @@ class RapidOCR():
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-img', '--img_path', type=str, default=None)
-    parser.add_argument('-p', '--print_cost',
-                        action='store_true', default=False)
-    args = parser.parse_args()
-
-    ocr_engine = RapidOCR()
+    args = ParseArgs().args
+    ocr_engine = RapidOCR(**vars(args))
 
     result, elapse_list = ocr_engine(args.img_path)
     print(result)
