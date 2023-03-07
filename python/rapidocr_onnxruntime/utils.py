@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+import argparse
 import imghdr
 import tempfile
 import warnings
@@ -25,19 +26,25 @@ class OrtInferSession():
         sess_opt.enable_cpu_mem_arena = False
         sess_opt.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
 
-        cuda_ep = 'CUDAExecutionProvider'
         cpu_ep = 'CPUExecutionProvider'
         cpu_provider_options = {
-            "arena_extend_strategy": "kSameAsRequested",
+            'arena_extend_strategy': 'kSameAsRequested',
+        }
+
+        cuda_ep = 'CUDAExecutionProvider'
+        cuda_provider_options = {
+            'device_id': 0,
+            'arena_extend_strategy': 'kNextPowerOfTwo',
+            'cudnn_conv_algo_search': 'EXHAUSTIVE',
+            'do_copy_in_default_stream': True
         }
 
         EP_list = []
         if config['use_cuda'] and get_device() == 'GPU' \
                 and cuda_ep in get_available_providers():
-            EP_list = [(cuda_ep, config[cuda_ep])]
+            EP_list = [(cuda_ep, cuda_provider_options)]
         EP_list.append((cpu_ep, cpu_provider_options))
 
-        config['model_path'] = str(root_dir / config['model_path'])
         self._verify_model(config['model_path'])
         self.session = InferenceSession(config['model_path'],
                                         sess_options=sess_opt,
@@ -83,12 +90,6 @@ class OrtInferSession():
 
 class ONNXRuntimeError(Exception):
     pass
-
-
-def read_yaml(yaml_path):
-    with open(yaml_path, 'rb') as f:
-        data = yaml.load(f, Loader=yaml.Loader)
-    return data
 
 
 class LoadImage():
@@ -221,3 +222,129 @@ class LoadImage():
 
 class LoadImageError(Exception):
     pass
+
+
+def read_yaml(yaml_path):
+    with open(yaml_path, 'rb') as f:
+        data = yaml.load(f, Loader=yaml.Loader)
+    return data
+
+
+def concat_model_path(config):
+    key = 'model_path'
+    config['Det'][key] = str(root_dir / config['Det'][key])
+    config['Rec'][key] = str(root_dir / config['Rec'][key])
+    config['Cls'][key] = str(root_dir / config['Cls'][key])
+    return config
+
+
+class ParseArgs():
+    def __init__(self, ):
+        self.args = self.init_args()
+        self.args_dict = vars(self.args)
+
+    def init_args(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-img', '--img_path', type=str, default=None,
+                            required=True)
+        parser.add_argument('-p', '--print_cost',
+                            action='store_true', default=False)
+
+        global_group = parser.add_argument_group(title='Global')
+        global_group.add_argument('--text_score', type=float, default=0.5)
+        global_group.add_argument('--use_angle_cls', type=bool, default=True)
+        global_group.add_argument('--use_text_det', type=bool, default=True)
+        global_group.add_argument('--print_verbose', type=bool, default=False)
+        global_group.add_argument('--min_height', type=int, default=30)
+        global_group.add_argument('--width_height_ratio', type=int, default=8)
+
+        det_group = parser.add_argument_group(title='Det')
+        det_group.add_argument('--det_model_path', type=str, default=None)
+        det_group.add_argument('--det_limit_side_len', type=float, default=736)
+        det_group.add_argument('--det_limit_type', type=str, default='min',
+                               choices=['max', 'min'])
+        det_group.add_argument('--det_thresh', type=float, default=0.3)
+        det_group.add_argument('--det_box_thresh', type=float, default=0.5)
+        det_group.add_argument('--det_unclip_ratio', type=float, default=1.6)
+        det_group.add_argument('--det_use_dilation', type=bool, default=True)
+        det_group.add_argument('--det_score_mode', type=str, default='fast',
+                               choices=['slow', 'fast'])
+
+        cls_group = parser.add_argument_group(title='Cls')
+        cls_group.add_argument('--cls_model_path', type=str, default=None)
+        cls_group.add_argument('--cls_image_shape', type=list,
+                               default=[3, 48, 192])
+        cls_group.add_argument('--cls_label_list', type=list,
+                               default=['0', '180'])
+        cls_group.add_argument('--cls_batch_num', type=int, default=6)
+        cls_group.add_argument('--cls_thresh', type=float, default=0.9)
+
+        rec_group = parser.add_argument_group(title='Rec')
+        rec_group.add_argument('--rec_model_path', type=str, default=None)
+        rec_group.add_argument('--rec_image_shape', type=list,
+                               default=[3, 48, 320])
+        rec_group.add_argument('--rec_batch_num', type=int, default=6)
+
+        args = parser.parse_args()
+        return args
+
+    def parse_kwargs(self, **kwargs):
+        global_dict, det_dict, cls_dict, rec_dict = {}, {}, {}, {}
+        for k, v in kwargs.items():
+            if k.startswith('det'):
+                det_dict[k] = v
+            elif k.startswith('cls'):
+                cls_dict[k] = v
+            elif k.startswith('rec'):
+                rec_dict[k] = v
+            else:
+                global_dict[k] = v
+        return global_dict, det_dict, cls_dict, rec_dict
+
+    def update_config(self, config, **kwargs):
+        global_dict, det_dict, cls_dict, rec_dict = self.parse_kwargs(**kwargs)
+        new_config = {
+            'Global': self.update_global_params(config['Global'],
+                                                global_dict),
+            'Det': self.update_det_params(config['Det'], det_dict),
+            'Cls': self.update_cls_params(config['Cls'], cls_dict),
+            'Rec': self.update_rec_params(config['Rec'], rec_dict)
+        }
+        return new_config
+
+    def update_global_params(self, config, global_dict):
+        config.update(global_dict)
+        return config
+
+    def update_det_params(self, config, det_dict):
+        det_dict = {k.split('det_')[1]: v for k, v in det_dict.items()}
+        if not det_dict['model_path']:
+            det_dict['model_path'] = str(root_dir / config['model_path'])
+        config.update(det_dict)
+        return config
+
+    def update_cls_params(self, config, cls_dict):
+        need_remove_prefix = ['cls_label_list', 'cls_model_path']
+        new_cls_dict = {}
+        for k, v in cls_dict.items():
+            if k in need_remove_prefix:
+                k = k.split('cls_')[1]
+            new_cls_dict[k] = v
+
+        if not new_cls_dict['model_path']:
+            new_cls_dict['model_path'] = str(root_dir / config['model_path'])
+        config.update(new_cls_dict)
+        return config
+
+    def update_rec_params(self, config, rec_dict):
+        need_remove_prefix = ['rec_model_path']
+        new_rec_dict = {}
+        for k, v in rec_dict.items():
+            if k in need_remove_prefix:
+                k = k.split('rec_')[1]
+            new_rec_dict[k] = v
+
+        if not new_rec_dict['model_path']:
+            new_rec_dict['model_path'] = str(root_dir / config['model_path'])
+        config.update(new_rec_dict)
+        return config
