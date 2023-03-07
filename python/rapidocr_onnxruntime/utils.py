@@ -240,7 +240,8 @@ def concat_model_path(config):
 
 class ParseArgs():
     def __init__(self, ):
-        self.parser = self.init_args()
+        self.args = self.init_args()
+        self.args_dict = vars(self.args)
 
     def init_args(self):
         parser = argparse.ArgumentParser()
@@ -271,22 +272,23 @@ class ParseArgs():
 
         cls_group = parser.add_argument_group(title='Cls')
         cls_group.add_argument('--cls_model_path', type=str, default=None)
-        cls_group.add_argument('--cls_image_shape', type=list, default=[3, 48, 192])
-        cls_group.add_argument('--cls_label_list', type=list, default=['0', '180'])
+        cls_group.add_argument('--cls_image_shape', type=list,
+                               default=[3, 48, 192])
+        cls_group.add_argument('--cls_label_list', type=list,
+                               default=['0', '180'])
         cls_group.add_argument('--cls_batch_num', type=int, default=6)
         cls_group.add_argument('--cls_thresh', type=float, default=0.9)
 
         rec_group = parser.add_argument_group(title='Rec')
         rec_group.add_argument('--rec_model_path', type=str, default=None)
         rec_group.add_argument('--rec_image_shape', type=list,
-                               default=[0, 48, 320])
+                               default=[3, 48, 320])
         rec_group.add_argument('--rec_batch_num', type=int, default=6)
-        return parser
+
+        args = parser.parse_args()
+        return args
 
     def parse_kwargs(self, **kwargs):
-        self.args = self.parser.parse_args()
-        self.args_dict = vars(self.args)
-
         global_dict, det_dict, cls_dict, rec_dict = {}, {}, {}, {}
         for k, v in kwargs.items():
             if k.startswith('det'):

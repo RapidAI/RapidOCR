@@ -1,7 +1,6 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-import argparse
 import copy
 import importlib
 import sys
@@ -11,10 +10,7 @@ from typing import Union
 import cv2
 import numpy as np
 
-try:
-    from .utils import LoadImage, read_yaml, ParseArgs, concat_model_path
-except:
-    from utils import LoadImage, read_yaml, ParseArgs, concat_model_path
+from .utils import LoadImage, ParseArgs, concat_model_path, read_yaml
 
 root_dir = Path(__file__).resolve().parent
 sys.path.append(str(root_dir))
@@ -184,15 +180,9 @@ class RapidOCR():
 
 
 def main():
-    init_args = ParseArgs()
-    parser = init_args.parser
-    args = parser.parse_args()
-    print(args)
-
+    args = ParseArgs().args
     ocr_engine = RapidOCR(**vars(args))
 
-    print('----------')
-    print(args)
     result, elapse_list = ocr_engine(args.img_path)
     print(result)
     if args.print_cost:
