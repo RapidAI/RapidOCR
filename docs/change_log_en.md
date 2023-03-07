@@ -1,3 +1,9 @@
+#### 🧢2023-03-07 update:
+- `rapidocr` series package updated to `v1.2.0`
+- Optimize the interface input parameters of the rapidocr series package under python, and support the dynamic setting of each parameter when instantiating a class, which is more flexible.
+- If not specified, the default parameters under `config.yaml` will be used.
+- For details, please refer to: [Input parameters](https://github.com/RapidAI/RapidOCR/blob/0a603b4e8919386f3647eca5cdeba7620b4988e0/python/README.md#%E6%8E%A8%E8%8D%90pip%E5%AE%89%E8%A3%85%E5%BF%AB%E9%80%9F%E4%BD%BF%E7%94%A8)
+
 #### ⛸ 2023-02-16 update:
 - Optimize some codes of ocrweb, which can be directly installed by pip and used quickly. For details, please refer to [README](../ocrweb/README.md).
 - Optimize the inference code of each part in python, which is more compact and easy to maintain.

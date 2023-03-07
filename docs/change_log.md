@@ -1,4 +1,10 @@
-#### ⛸ 2023-02-16 update:
+#### 🧢2023-03-07 update:
+- `rapidocr`系列包更新到`v1.2.0`
+- 优化python下rapidocr系列包的接口传入参数，支持实例化类时，动态给定各个参数，更加灵活。
+- 如果不指定，则用`config.yaml`下的默认参数。
+- 具体可参见：[传入参数](https://github.com/RapidAI/RapidOCR/blob/0a603b4e8919386f3647eca5cdeba7620b4988e0/python/README.md#%E6%8E%A8%E8%8D%90pip%E5%AE%89%E8%A3%85%E5%BF%AB%E9%80%9F%E4%BD%BF%E7%94%A8)
+
+#### ⛸2023-02-16 update:
 - 优化ocrweb部分代码，可直接pip安装，快速使用，详情参见[README](../ocrweb/README.md)。
 - 优化python中各个部分的推理代码，更加紧凑，同时易于维护。
 
