@@ -71,7 +71,7 @@ setuptools.setup(
     include_package_data=True,
     install_requires=["pyclipper>=1.2.1", "openvino>=2022.2.0",
                       "opencv_python>=4.5.1.48", "numpy>=1.19.3",
-                      "six>=1.15.0", "Shapely>=1.7.1", 'PyYAML'],
+                      "six>=1.15.0", "Shapely>=1.7.1", 'PyYAML', 'Pillow'],
     package_dir={'': MODULE_NAME},
     packages=setuptools.find_namespace_packages(where=MODULE_NAME),
     package_data={'': ['*.onnx', '*.yaml', '*.txt']},
