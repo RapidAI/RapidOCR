@@ -62,3 +62,38 @@ def test_input_path():
     result, _ = rapid_ocr(image_path)
     assert result[0][1] == '正品促销'
     assert len(result) == 17
+
+
+def test_input_parameters():
+    image_path = tests_dir / 'ch_en_num.jpg'
+    rapid_ocr = RapidOCR(text_score=1)
+    result, _ = rapid_ocr(image_path)
+
+    assert result is None
+
+
+def test_input_det_parameters():
+    image_path = tests_dir / 'ch_en_num.jpg'
+    with pytest.raises(FileNotFoundError) as exc_info:
+        rapid_ocr = RapidOCR(det_model_path='1.onnx')
+        result, _ = rapid_ocr(image_path)
+        raise FileNotFoundError()
+    assert exc_info.type is FileNotFoundError
+
+
+def test_input_cls_parameters():
+    image_path = tests_dir / 'ch_en_num.jpg'
+    with pytest.raises(FileNotFoundError) as exc_info:
+        rapid_ocr = RapidOCR(cls_model_path='1.onnx')
+        result, _ = rapid_ocr(image_path)
+        raise FileNotFoundError()
+    assert exc_info.type is FileNotFoundError
+
+
+def test_input_rec_parameters():
+    image_path = tests_dir / 'ch_en_num.jpg'
+    with pytest.raises(FileNotFoundError) as exc_info:
+        rapid_ocr = RapidOCR(rec_model_path='1.onnx')
+        result, _ = rapid_ocr(image_path)
+        raise FileNotFoundError()
+    assert exc_info.type is FileNotFoundError

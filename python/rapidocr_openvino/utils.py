@@ -81,7 +81,7 @@ class LoadImage():
         '''RGBA → RGB
         '''
         r, g, b, a = cv2.split(img)
-        new_img  = cv2.merge((b, g, r))
+        new_img = cv2.merge((b, g, r))
 
         not_a = cv2.bitwise_not(a)
         not_a = cv2.cvtColor(not_a, cv2.COLOR_GRAY2BGR)
@@ -114,55 +114,55 @@ def concat_model_path(config):
     return config
 
 
-class ParseArgs():
-    def __init__(self, ):
-        self.args = self.init_args()
-        self.args_dict = vars(self.args)
+def init_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-img', '--img_path', type=str, default=None,
+                        required=True)
+    parser.add_argument('-p', '--print_cost',
+                        action='store_true', default=False)
 
-    def init_args(self):
-        parser = argparse.ArgumentParser()
-        parser.add_argument('-img', '--img_path', type=str, default=None,
-                            required=True)
-        parser.add_argument('-p', '--print_cost',
-                            action='store_true', default=False)
+    global_group = parser.add_argument_group(title='Global')
+    global_group.add_argument('--text_score', type=float, default=0.5)
+    global_group.add_argument('--use_angle_cls', type=bool, default=True)
+    global_group.add_argument('--use_text_det', type=bool, default=True)
+    global_group.add_argument('--print_verbose', type=bool, default=False)
+    global_group.add_argument('--min_height', type=int, default=30)
+    global_group.add_argument('--width_height_ratio', type=int, default=8)
 
-        global_group = parser.add_argument_group(title='Global')
-        global_group.add_argument('--text_score', type=float, default=0.5)
-        global_group.add_argument('--use_angle_cls', type=bool, default=True)
-        global_group.add_argument('--use_text_det', type=bool, default=True)
-        global_group.add_argument('--print_verbose', type=bool, default=False)
-        global_group.add_argument('--min_height', type=int, default=30)
-        global_group.add_argument('--width_height_ratio', type=int, default=8)
+    det_group = parser.add_argument_group(title='Det')
+    det_group.add_argument('--det_model_path', type=str, default=None)
+    det_group.add_argument('--det_limit_side_len', type=float, default=736)
+    det_group.add_argument('--det_limit_type', type=str, default='min',
+                           choices=['max', 'min'])
+    det_group.add_argument('--det_thresh', type=float, default=0.3)
+    det_group.add_argument('--det_box_thresh', type=float, default=0.5)
+    det_group.add_argument('--det_unclip_ratio', type=float, default=1.6)
+    det_group.add_argument('--det_use_dilation', type=bool, default=True)
+    det_group.add_argument('--det_score_mode', type=str, default='fast',
+                           choices=['slow', 'fast'])
 
-        det_group = parser.add_argument_group(title='Det')
-        det_group.add_argument('--det_model_path', type=str, default=None)
-        det_group.add_argument('--det_limit_side_len', type=float, default=736)
-        det_group.add_argument('--det_limit_type', type=str, default='min',
-                               choices=['max', 'min'])
-        det_group.add_argument('--det_thresh', type=float, default=0.3)
-        det_group.add_argument('--det_box_thresh', type=float, default=0.5)
-        det_group.add_argument('--det_unclip_ratio', type=float, default=1.6)
-        det_group.add_argument('--det_use_dilation', type=bool, default=True)
-        det_group.add_argument('--det_score_mode', type=str, default='fast',
-                               choices=['slow', 'fast'])
+    cls_group = parser.add_argument_group(title='Cls')
+    cls_group.add_argument('--cls_model_path', type=str, default=None)
+    cls_group.add_argument('--cls_image_shape', type=list,
+                           default=[3, 48, 192])
+    cls_group.add_argument('--cls_label_list', type=list,
+                           default=['0', '180'])
+    cls_group.add_argument('--cls_batch_num', type=int, default=6)
+    cls_group.add_argument('--cls_thresh', type=float, default=0.9)
 
-        cls_group = parser.add_argument_group(title='Cls')
-        cls_group.add_argument('--cls_model_path', type=str, default=None)
-        cls_group.add_argument('--cls_image_shape', type=list,
-                               default=[3, 48, 192])
-        cls_group.add_argument('--cls_label_list', type=list,
-                               default=['0', '180'])
-        cls_group.add_argument('--cls_batch_num', type=int, default=6)
-        cls_group.add_argument('--cls_thresh', type=float, default=0.9)
+    rec_group = parser.add_argument_group(title='Rec')
+    rec_group.add_argument('--rec_model_path', type=str, default=None)
+    rec_group.add_argument('--rec_image_shape', type=list,
+                           default=[3, 48, 320])
+    rec_group.add_argument('--rec_batch_num', type=int, default=6)
 
-        rec_group = parser.add_argument_group(title='Rec')
-        rec_group.add_argument('--rec_model_path', type=str, default=None)
-        rec_group.add_argument('--rec_image_shape', type=list,
-                               default=[3, 48, 320])
-        rec_group.add_argument('--rec_batch_num', type=int, default=6)
+    args = parser.parse_args()
+    return args
 
-        args = parser.parse_args()
-        return args
+
+class UpdateParameters():
+    def __init__(self) -> None:
+        pass
 
     def parse_kwargs(self, **kwargs):
         global_dict, det_dict, cls_dict, rec_dict = {}, {}, {}, {}
@@ -177,7 +177,7 @@ class ParseArgs():
                 global_dict[k] = v
         return global_dict, det_dict, cls_dict, rec_dict
 
-    def update_config(self, config, **kwargs):
+    def __call__(self, config, **kwargs):
         global_dict, det_dict, cls_dict, rec_dict = self.parse_kwargs(**kwargs)
         new_config = {
             'Global': self.update_global_params(config['Global'],
@@ -189,38 +189,44 @@ class ParseArgs():
         return new_config
 
     def update_global_params(self, config, global_dict):
-        config.update(global_dict)
+        if global_dict:
+            config.update(global_dict)
         return config
 
     def update_det_params(self, config, det_dict):
-        det_dict = {k.split('det_')[1]: v for k, v in det_dict.items()}
-        if not det_dict['model_path']:
-            det_dict['model_path'] = str(root_dir / config['model_path'])
-        config.update(det_dict)
+        if det_dict:
+            det_dict = {k.split('det_')[1]: v for k, v in det_dict.items()}
+            if not det_dict['model_path']:
+                det_dict['model_path'] = str(root_dir / config['model_path'])
+            config.update(det_dict)
         return config
 
     def update_cls_params(self, config, cls_dict):
-        need_remove_prefix = ['cls_label_list', 'cls_model_path']
-        new_cls_dict = {}
-        for k, v in cls_dict.items():
-            if k in need_remove_prefix:
-                k = k.split('cls_')[1]
-            new_cls_dict[k] = v
+        if cls_dict:
+            need_remove_prefix = ['cls_label_list', 'cls_model_path']
+            new_cls_dict = {}
+            for k, v in cls_dict.items():
+                if k in need_remove_prefix:
+                    k = k.split('cls_')[1]
+                new_cls_dict[k] = v
 
-        if not new_cls_dict['model_path']:
-            new_cls_dict['model_path'] = str(root_dir / config['model_path'])
-        config.update(new_cls_dict)
+            if not new_cls_dict['model_path']:
+                new_cls_dict['model_path'] = str(
+                    root_dir / config['model_path'])
+            config.update(new_cls_dict)
         return config
 
     def update_rec_params(self, config, rec_dict):
-        need_remove_prefix = ['rec_model_path']
-        new_rec_dict = {}
-        for k, v in rec_dict.items():
-            if k in need_remove_prefix:
-                k = k.split('rec_')[1]
-            new_rec_dict[k] = v
+        if rec_dict:
+            need_remove_prefix = ['rec_model_path']
+            new_rec_dict = {}
+            for k, v in rec_dict.items():
+                if k in need_remove_prefix:
+                    k = k.split('rec_')[1]
+                new_rec_dict[k] = v
 
-        if not new_rec_dict['model_path']:
-            new_rec_dict['model_path'] = str(root_dir / config['model_path'])
-        config.update(new_rec_dict)
+            if not new_rec_dict['model_path']:
+                new_rec_dict['model_path'] = str(
+                    root_dir / config['model_path'])
+            config.update(new_rec_dict)
         return config
