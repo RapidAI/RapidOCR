@@ -185,7 +185,7 @@ flowchart LR
         <img src="https://raw.githubusercontent.com/RapidAI/.github/main/assets/RapidAI_WeChatAccount.jpg" width="25%" height="25%" align="center">
     </div>
 
-- 可以通过QQ群加入我们：**887298230**，或者用QQ扫描以下二维码:
+- 可以通过QQ群加入我们：**755960114**，或者用QQ扫描以下二维码:
 
     <div align="center">
         <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/qq_group2.png" width="25%" height="25%" align="center">
