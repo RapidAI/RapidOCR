@@ -1,4 +1,7 @@
-#### 🧢2023-03-07 update:
+#### 🎮2023-03-11 v1.2.2 update:
+- Fix the incoming parameter error of RapidOCR class in instantiation python
+
+#### 🧢2023-03-07 v1.2.1 update:
 - `rapidocr` series package updated to `v1.2.0`
 - Optimize the interface input parameters of the rapidocr series package under python, and support the dynamic setting of each parameter when instantiating a class, which is more flexible.
 - If not specified, the default parameters under `config.yaml` will be used.

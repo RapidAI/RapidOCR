@@ -28,9 +28,9 @@
   - [Introduction](#introduction)
   - [Navigation](#navigation)
   - [Recently updates(more)](#recently-updatesmore)
-      - [🧢2023-03-07 update:](#2023-03-07-update)
+      - [🎮2023-03-11 v1.2.2 update:](#2023-03-11-v122-update)
+      - [🧢2023-03-07 v1.2.1 update:](#2023-03-07-v121-update)
       - [⛸ 2023-02-16 update:](#-2023-02-16-update)
-      - [🎉 2023-01-21 update:](#-2023-01-21-update)
   - [Overall Framework](#overall-framework)
   - [Demo](#demo)
   - [TODO](#todo)
@@ -90,7 +90,10 @@
 - [FAQ](../docs/FAQ.md)
 
 ## Recently updates([more](./change_log_en.md))
-#### 🧢2023-03-07 update:
+#### 🎮2023-03-11 v1.2.2 update:
+- Fix the incoming parameter error of RapidOCR class in instantiation python
+
+#### 🧢2023-03-07 v1.2.1 update:
 - `rapidocr` series package updated to `v1.2.0`
 - Optimize the interface input parameters of the rapidocr series package under python, and support the dynamic setting of each parameter when instantiating a class, which is more flexible.
 - If not specified, the default parameters under `config.yaml` will be used.
@@ -99,9 +102,6 @@
 #### ⛸ 2023-02-16 update:
 - Optimize some codes of ocrweb, which can be directly installed by pip and used quickly. For details, please refer to [README](../ocrweb/README.md).
 - Optimize the inference code of each part in python, which is more compact and easy to maintain.
-
-#### 🎉 2023-01-21 update:
-- \[python\] Add an image orientation classification module containing text. For details, see [Rapid Orientation](../python/rapid_structure/docs/README_Orientation.md)
 
 
 ## Overall Framework
