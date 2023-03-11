@@ -93,7 +93,6 @@ if __name__ == '__main__':
     image_path = 'tests/test_files/ch_en_num.jpg'
     with open(image_path, 'rb') as f:
         img = f.read()
-        # img = cv2.imread(image_path)
     result, elapse_list = rapid_ocr(img)
     print(result)
     print(elapse_list)

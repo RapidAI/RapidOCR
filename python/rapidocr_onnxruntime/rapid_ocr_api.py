@@ -10,7 +10,8 @@ from typing import Union
 import cv2
 import numpy as np
 
-from .utils import LoadImage, ParseArgs, concat_model_path, read_yaml
+from .utils import (LoadImage, init_args, UpdateParameters, concat_model_path,
+                    read_yaml)
 
 root_dir = Path(__file__).resolve().parent
 sys.path.append(str(root_dir))
@@ -25,8 +26,8 @@ class RapidOCR():
         config = concat_model_path(config)
 
         if kwargs:
-            parser = ParseArgs()
-            config = parser.update_config(config, **kwargs)
+            updater = UpdateParameters()
+            config = updater(config, **kwargs)
 
         global_config = config['Global']
         self.print_verbose = global_config['print_verbose']
@@ -180,7 +181,7 @@ class RapidOCR():
 
 
 def main():
-    args = ParseArgs().args
+    args = init_args()
     ocr_engine = RapidOCR(**vars(args))
 
     result, elapse_list = ocr_engine(args.img_path)
