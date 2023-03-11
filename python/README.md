@@ -69,22 +69,25 @@
 
     # 支持四种格式的输入：Union[str, np.ndarray, bytes, Path]
     # str
-    result = rapid_ocr(img_path)
+    result, elapse = rapid_ocr(img_path)
 
     # np.ndarray
     img = cv2.imread('tests/test_files/ch_en_num.jpg')
-    result = rapid_ocr(img)
+    result, elapse = rapid_ocr(img)
 
     # bytes
     with open(img_path, 'rb') as f:
-        result = rapid_ocr(f.read())
+        result, elapse = rapid_ocr(f.read())
 
     # Path
-    result = rapid_ocr(Path(img_path))
+    result, elapse = rapid_ocr(Path(img_path))
     print(result)
 
     # result: [[文本框坐标], 文本内容, 置信度]
     # 示例：[[左上, 右上, 右下, 左下], '小明', '0.99']
+
+    # elapse: [det_elapse, cls_elapse, rec_elapse]
+    # all_elapse = det_elapse + cls_elapse + rec_elapse
 
     # 如果没有有效文本，则result: (None, None)
     ```

@@ -20,25 +20,26 @@ $ pip install rapidocr-onnxruntime
 
     img_path = 'tests/test_files/ch_en_num.jpg'
 
+    # Support：Union[str, np.ndarray, bytes, Path]
     # str
-    result = rapid_ocr(img_path)
+    result, elapse = rapid_ocr(img_path)
 
     # np.ndarray
     img = cv2.imread('tests/test_files/ch_en_num.jpg')
-    result = rapid_ocr(img)
+    result, elapse = rapid_ocr(img)
 
     # bytes
     with open(img_path, 'rb') as f:
-        result = rapid_ocr(f.read())
+        result, elapse = rapid_ocr(f.read())
 
     # Path
-    result = rapid_ocr(Path(img_path))
+    result, elapse = rapid_ocr(Path(img_path))
     print(result)
 
     # result: [[dt_boxes], txt, score]
-    # 示例：[[左上, 右上, 右下, 左下], '小明', '0.99']
+    # e.g.：[[left-top, right-top, right-down, left-top], '小明', '0.99']
 
-    # elapse_list: [det_elapse, cls_elapse, rec_elapse]
+    # elapse: [det_elapse, cls_elapse, rec_elapse]
     # all_elapse = det_elapse + cls_elapse + rec_elapse
 
     # If without valid texts, result: (None, None )
