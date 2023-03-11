@@ -54,7 +54,7 @@
 
 ## 简介
 - 💖目前已知**运行速度最快、支持最广**，完全开源免费并支持离线快速部署的多平台多语言OCR。
-- **中文广告**： 欢迎加入我们的QQ群下载模型及测试程序，QQ群号：887298230
+- **中文广告**： 欢迎加入我们的QQ群下载模型及测试程序，QQ群号：887298230(已满)，2群(755960114)
 - **缘起**：百度paddlepaddle工程化不是太好，为了方便大家在各种端上进行ocr推理，我们将它转换为onnx格式，使用`Python/C++/Java/Swift/C#` 将它移植到各个平台。
 - **名称来源**： 轻快好省并智能。基于深度学习技术的OCR技术，主打人工智能优势及小模型，以速度为使命，效果为主导。
 - **使用**：
@@ -188,7 +188,7 @@ flowchart LR
 - 可以通过QQ群加入我们：**887298230**，或者用QQ扫描以下二维码:
 
     <div align="center">
-        <img src="./assets/qq_team.jpg" width="25%" height="25%" align="center">
+        <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/qq_group2.png" width="25%" height="25%" align="center">
     </div>
 
 ## 示例图
