@@ -1,3 +1,4 @@
 Pillow
 requests
 Flask>=2.1.0
+rapidocr_onnxruntime
