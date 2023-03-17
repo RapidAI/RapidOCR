@@ -22,8 +22,8 @@
 
 ### 简介和说明
 - **各个版本的ONNX模型下载地址：**[百度网盘](https://pan.baidu.com/s/1PTcgXG2zEgQU6A_A3kGJ3Q?pwd=jhai) | [Google Drive](https://drive.google.com/drive/folders/1x_a9KpCo_1blxH1xFOfgKVkw1HYRVywY?usp=sharing)
-- 所有常用的参数配置都在[`config.yaml`](./rapidocr_onnxruntime/config.yaml)下，一目了然，更加便捷
-- **目前[`config.yaml`](./rapidocr_onnxruntime/config.yaml)中配置为权衡速度和准确度的最优组合。**
+- 所有常用的参数配置都在[`config.yaml`](https://github.com/RapidAI/RapidOCR/blob/main/python/rapidocr_onnxruntime/config.yaml)下，一目了然，更加便捷
+- **目前[`config.yaml`](https://github.com/RapidAI/RapidOCR/blob/main/python/rapidocr_onnxruntime/config.yaml)中配置为权衡速度和准确度的最优组合。**
 - 每个独立的模块下均有独立的`config.yaml`配置文件，可以单独使用
 - `det`部分：
   - `det`中`mobile`和`server`版，推理代码一致，直接更改配置文件中模型路径即可
@@ -215,7 +215,7 @@
 
         pip install -r requirements.txt
         ```
-   - Note: 在Windows端，Shapely库自动安装可能会有问题，解决方案参见[Q15](../docs/FAQ.md#q-windows系统下装完环境之后运行示例程序之后报错oserror-winerror-126-找不到指定的模組)
+   - Note: 在Windows端，Shapely库自动安装可能会有问题，解决方案参见[Q15](https://github.com/RapidAI/RapidOCR/blob/main/docs/FAQ.md#q-windows系统下装完环境之后运行示例程序之后报错oserror-winerror-126-找不到指定的模組)
 
 4. 运行示例
     - 运行单元测试
@@ -248,7 +248,7 @@
         python demo.py
         ```
 
-### [`config.yaml`](./rapidocr_onnxruntime/config.yaml)中常用参数介绍
+### [`config.yaml`](https://github.com/RapidAI/RapidOCR/blob/main/python/rapidocr_onnxruntime/config.yaml)中常用参数介绍
 - `Global`部分
    |    参数名称      | 取值范围   | 默认值   |                       作用                       |
    |------------: | :----------: | :-----: | :----------------------------------------------|
@@ -337,7 +337,7 @@
                 # 如果输出中含有CUDAExecutionProvider,则证明可以正常调用GPU
                 # ['CUDAExecutionProvider', 'CPUExecutionProvider']
                 ```
-2. 更改[`config.yaml`](./rapidocr_onnxruntime/config.yaml)中对应部分的参数即可，详细参数介绍参见[官方文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)。
+2. 更改[`config.yaml`](https://github.com/RapidAI/RapidOCR/blob/main/python/rapidocr_onnxruntime/config.yaml)中对应部分的参数即可，详细参数介绍参见[官方文档](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html)。
     ```yaml
     use_cuda: true
     CUDAExecutionProvider:
