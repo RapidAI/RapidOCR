@@ -89,7 +89,7 @@
   - [Model Download](https://github.com/RapidAI/RapidOCR/blob/main/docs/models.md#模型下载)
 - [FAQ](https://github.com/RapidAI/RapidOCR/blob/main/docs/FAQ.md)
 
-## Recently updates([more](https://github.com/RapidAI/RapidOCR/blob/main/change_log_en.md))
+## Recently updates([more](https://github.com/RapidAI/RapidOCR/blob/main/docs/change_log_en.md))
 #### 🎮2023-03-11 v1.2.2 update:
 - Fix the incoming parameter error of RapidOCR class in instantiation python
 
