@@ -1,11 +1,11 @@
 
 <div align="center">
-  <img src="./assets/RapidOCR_LOGO.png" width="65%" height="65%"/>
+  <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/RapidOCR_LOGO.png" width="65%" height="65%"/>
 </div>
 
 # RapidOCR (捷智OCR- 信创级开源OCR - 为世界内容安全贡献力量)
 
-简体中文 | [English](./docs/README_en.md)
+简体中文 | [English](https://github.com/RapidAI/RapidOCR/blob/main/docs/README_en.md)
 
 <p align="left">
     <a href="https://rapidai.deepdatasec.com:9003/" target="_blank"><img src="https://img.shields.io/badge/%E2%9A%A1%EF%B8%8E-Online%20Demo-blue"></a>
@@ -63,37 +63,37 @@
 - 如果该仓库有帮助到你，还请点个小星星⭐呗！
 
 ## 文档导航
-- [Python范例](./python/README.md)
-  - [rapidocr_openvino](./python/rapidocr_openvino/README.md)
-- [C++范例(Windows/Linux/macOS)](./cpp)
+- [Python范例](https://github.com/RapidAI/RapidOCR/blob/main/python/README.md)
+  - [rapidocr_openvino](https://github.com/RapidAI/RapidOCR/blob/main/python/rapidocr_openvino/README.md)
+- [C++范例(Windows/Linux/macOS)](https://github.com/RapidAI/RapidOCR/blob/main/cpp)
   - [RapidOcrOnnx](https://github.com/RapidAI/RapidOcrOnnx)
   - [RapidOcrNcnn](https://github.com/RapidAI/RapidOcrNcnn)
-- [Jvm范例(Java/Kotlin)](./jvm)
+- [Jvm范例(Java/Kotlin)](https://github.com/RapidAI/RapidOCR/blob/main/jvm)
   - [RapidOcrOnnxJvm](https://github.com/RapidAI/RapidOcrOnnxJvm)
   - [RapidOcrNcnnJvm](https://github.com/RapidAI/RapidOcrNcnnJvm)
-- [.Net范例(C#)](./dotnet/RapidOcrOnnxCs/README.md)
+- [.Net范例(C#)](https://github.com/RapidAI/RapidOCR/blob/main/dotnet/RapidOcrOnnxCs/README.md)
 - [Android范例](https://github.com/RapidAI/RapidOcrAndroidOnnx)
 - 网页版范例
-  - [网页版OCR](./ocrweb/README.md)
-  - [多语言网页版OCR](./ocrweb_multi/README.md)
-- [版面结构化](./python/rapid_structure/README.md)
-  - [含文本的图像方向分类](./python/rapid_structure/docs/README_Orientation.md)
-  - [版面分析](./python/rapid_structure/docs/README_Layout.md)
-  - [表格还原](./python/rapid_structure/docs/README_Table.md)
+  - [网页版OCR](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
+  - [多语言网页版OCR](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb_multi/README.md)
+- [版面结构化](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/README.md)
+  - [含文本的图像方向分类](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/docs/README_Orientation.md)
+  - [版面分析](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/docs/README_Layout.md)
+  - [表格还原](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/docs/README_Table.md)
 - 衍生项目
   - [RapidOCR HTTP服务/win32程序/易语言编写](https://github.com/Physton/RapidOCRServer)
-- [垂直项目](./docs/related_projects.md)
+- [垂直项目](https://github.com/RapidAI/RapidOCR/blob/main/docs/related_projects.md)
   - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR)：基于RapidOCR，提取视频中的硬字幕
   - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): 表格结构还原 | [博客解读论文和源码](http://t.csdn.cn/QNN3S)
   - [文档图像矫正-PaperEdge](https://github.com/cvlab-stonybrook/PaperEdge) | [Demo](https://huggingface.co/spaces/SWHL/PaperEdgeDemo)
   - [图像文字擦除-CTRNet](https://github.com/lcy0604/CTRNet) | [Demo](https://huggingface.co/spaces/SWHL/CTRNetDemo)
-- [模型相关](./docs/models.md)
-  - [模型转换](./docs/models.md#模型转换)
-  - [模型下载及效果对比](./docs/models.md#模型下载)
-- [常见问题 FAQ](./docs/FAQ.md)
+- [模型相关](https://github.com/RapidAI/RapidOCR/blob/main/docs/models.md)
+  - [模型转换](https://github.com/RapidAI/RapidOCR/blob/main/docs/models.md#模型转换)
+  - [模型下载及效果对比](https://github.com/RapidAI/RapidOCR/blob/main/docs/models.md#模型下载)
+- [常见问题 FAQ](https://github.com/RapidAI/RapidOCR/blob/main/docs/FAQ.md)
 
 
-## 近期更新([more](./docs/change_log.md))
+## 近期更新([more](https://github.com/RapidAI/RapidOCR/blob/main/docs/change_log.md))
 #### 🎮2023-03-11 v1.2.2 update:
 - 修复实例化python中RapidOCR类传入参数错误
 
@@ -103,7 +103,7 @@
 - 具体可参见：[传入参数](https://github.com/RapidAI/RapidOCR/blob/0a603b4e8919386f3647eca5cdeba7620b4988e0/python/README.md#%E6%8E%A8%E8%8D%90pip%E5%AE%89%E8%A3%85%E5%BF%AB%E9%80%9F%E4%BD%BF%E7%94%A8)
 
 #### ⛸2023-02-16 update:
-- 优化ocrweb部分代码，可直接pip安装，快速使用，详情参见[README](./ocrweb/README.md)。
+- 优化ocrweb部分代码，可直接pip安装，快速使用，详情参见[README](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)。
 - 优化python中各个部分的推理代码，更加紧凑，同时易于维护。
 
 
@@ -124,15 +124,15 @@ flowchart LR
 
 ## 在线demo
 - [自建在线demo](https://rapidai.deepdatasec.com:9003/)
-    - **说明**: 本在线demo不存储小伙伴们上传测试的任何图像数据，详情参见：[ocrweb/README](./ocrweb/README.md)
+    - **说明**: 本在线demo不存储小伙伴们上传测试的任何图像数据，详情参见：[ocrweb/README](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
     - **demo所用模型组合（最优组合）为**:
-    ```text
-    ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec
-    ```
+      ```text
+      ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec
+      ```
     - **运行机器配置**: `4核 AMD EPYC 7K62 48-Core Processor `
     - **示例图**:
         <div align="center">
-            <img src="./assets/demo.gif" width="100%" height="100%">
+            <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/demo.gif" width="100%" height="100%">
         </div>
 - [Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
   - 该demo依托于Hugging Face的Spaces构建，采用Gradio库生成，同时添加三个超参数:
@@ -141,7 +141,7 @@ flowchart LR
     - `text_score`: 文本识别结果是正确的置信度，值越大，显示出的识别结果更准确
   - 示例图：
     <div align="center">
-        <img src="./assets/huggingfacedemo.jpg" width="100%" height="100%">
+        <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/huggingfacedemo.jpg" width="100%" height="100%">
     </div>
 
 ## TODO
@@ -165,7 +165,7 @@ flowchart LR
 ## 赞助
 |赞助者|应用的产品|
 |:---:|:---:|
-|<a href="https://github.com/cuiliang" title="cuiliang"><img src="https://avatars.githubusercontent.com/u/1972649?v=4" width=65 height=65></a>|<a href="https://getquicker.net/" title="Quicker指尖工具箱"><img src="https://tvax2.sinaimg.cn/crop.0.0.600.600.180/82cedfe9ly8h0gd3koj1qj20go0goq34.jpg?KID=imgbed,tva&Expires=1657299650&ssig=7MKPeFM6RU" width=65 height=65></a>|
+|<a href="https://github.com/cuiliang" title="cuiliang"><img src="https://avatars.githubusercontent.com/u/1972649?v=4" width=65 height=65></a>|<a href="https://getquicker.net/" title="Quicker指尖工具箱"><img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Quicker.jpg" width=65 height=65></a>|
 |<a href="https://github.com/Eunsolfs" title="Eunsolfs"><img src="https://avatars.githubusercontent.com/u/53815751?v=4" width=65 height=65></a>| - |
 
 - 如果您想要赞助该项目，可直接点击当前页最上面的Sponsor按钮，请写好备注(**您的Github账号名称**)，方便添加到上面赞助列表中。
@@ -194,15 +194,15 @@ flowchart LR
 ## 示例图
 #### C++/JVM示例图像
 <div align="center">
-    <img src="./assets/demo_cpp.png" width="100%" height="100%">
+    <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/demo_cpp.png" width="100%" height="100%">
 </div>
 
 #### .Net示例图像
 <div align="center">
-    <img src="./assets/demo_cs.png" width="100%" height="100%">
+    <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/demo_cs.png" width="100%" height="100%">
 </div>
 
 #### 多语言示例图像
 <div align="center">
-    <img src="./assets/demo_multi_language.jpg" width="80%" height="80%">
+    <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/demo_multi_language.jpg" width="80%" height="80%">
 </div>

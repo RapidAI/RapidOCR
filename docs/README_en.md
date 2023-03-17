@@ -1,16 +1,16 @@
 
 <div align="center">
-  <img src="../assets/RapidOCR_LOGO.png" width="55%" height="55%"/>
+  <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/RapidOCR_LOGO.png" width="55%" height="55%"/>
 </div>
 
 # RapidOCR (Open source OCR for the security of the digital world)
 
-[简体中文](../README.md) | English
+[简体中文](https://github.com/RapidAI/RapidOCR/blob/main/README.md) | English
 
 <p align="left">
     <a href="https://rapidai.deepdatasec.com:9003/" target="_blank"><img src="https://img.shields.io/badge/%E2%9A%A1%EF%B8%8E-Online%20Demo-blue"></a>
     <a href="https://huggingface.co/spaces/SWHL/RapidOCRDemo" target="_blank"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Hugging Face Demo-blue"></a>
-    <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="../assets/colab-badge.svg" alt="Open in Colab"></a>
+    <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/colab-badge.svg" alt="Open in Colab"></a>
     <a href="https://aistudio.baidu.com/aistudio/projectdetail/4444785?sUid=57084&shared=1&ts=1660896122332" target="_blank"><img src="https://img.shields.io/badge/PP-Open in AI Studio-blue.svg"></a><br/>
     <a href=""><img src="https://img.shields.io/badge/Python->=3.7,<=3.10-aff.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
@@ -56,26 +56,26 @@
 - Based on Baidu's open source PaddleOCR model and training, anyone can use this inference library, or use Baidu's PaddlePaddle framework for model optimization according to their own needs.
 
 ## Navigation
-- [Python demo](../python/README.md)
-  - [rapidocr_openvino](../python/rapidocr_openvino/README.md)
-- [C++ demo(Windows/Linux/macOS)](../cpp)
+- [Python demo](https://github.com/RapidAI/RapidOCR/blob/main/python/README.md)
+  - [rapidocr_openvino](https://github.com/RapidAI/RapidOCR/blob/main/python/rapidocr_openvino/README.md)
+- [C++ demo(Windows/Linux/macOS)](https://github.com/RapidAI/RapidOCR/blob/main/cpp)
   - [RapidOcrOnnx](https://github.com/RapidAI/RapidOcrOnnx)
   - [RapidOcrNcnn](https://github.com/RapidAI/RapidOcrNcnn)
-- [Jvm demo(Java/Kotlin)](../jvm)
+- [Jvm demo(Java/Kotlin)](https://github.com/RapidAI/RapidOCR/blob/main/jvm)
   - [RapidOcrOnnxJvm](https://github.com/RapidAI/RapidOcrOnnxJvm)
   - [RapidOcrNcnnJvm](https://github.com/RapidAI/RapidOcrNcnnJvm)
-- [.Net demo(C#)](../dotnet)
+- [.Net demo(C#)](https://github.com/RapidAI/RapidOCR/blob/main/dotnet)
 - [Android demo](https://github.com/RapidAI/RapidOcrAndroidOnnx)
 - Web demo:
-  - [Web OCR](../ocrweb/README.md)
-  - [Multi Web OCR](../ocrweb_multi/README.md)
-- [Structure](../python/rapid_structure/README.md)
-  - [orientation](../python/rapid_structure/docs/README_Orientation.md)
-  - [layout](../python/rapid_structure/docs/README_Layout.md)
-  - [table recovery](../python/rapid_structure/docs/README_Table.md)
+  - [Web OCR](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
+  - [Multi Web OCR](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb_multi/README.md)
+- [Structure](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/README.md)
+  - [orientation](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/docs/README_Orientation.md)
+  - [layout](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/docs/README_Layout.md)
+  - [table recovery](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/docs/README_Table.md)
 - Derivatives
   - [RapidOCR HTTP service/win32 program/easy language writing](https://github.com/Physton/RapidOCRServer)
-- [Related projects](../docs/related_projects.md)
+- [Related projects](https://github.com/RapidAI/RapidOCR/blob/main/docs/related_projects.md)
   - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR): Extract hard subtitles in videos based on RapidOCR
   - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): table structure restoration | [blog interpretation papers and source code](http://t.csdn.cn/QNN3S)
   - [Document Unwarping-PaperEdge](https://github.com/cvlab-stonybrook/PaperEdge) | [Demo](https://huggingface.co/spaces/SWHL/PaperEdgeDemo)
@@ -84,12 +84,12 @@
    - [PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter)
    - [Paddle2OnnxConvertor](https://github.com/RapidAI/Paddle2OnnxConvertor)
    - [Teach you to use ONNXRunTime to deploy PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0)
-- [About model](../docs/models.md)
-  - [Model Convert](../docs/models.md#模型转换)
-  - [Model Download](../docs/models.md#模型下载)
-- [FAQ](../docs/FAQ.md)
+- [About model](https://github.com/RapidAI/RapidOCR/blob/main/docs/models.md)
+  - [Model Convert](https://github.com/RapidAI/RapidOCR/blob/main/docs/models.md#模型转换)
+  - [Model Download](https://github.com/RapidAI/RapidOCR/blob/main/docs/models.md#模型下载)
+- [FAQ](https://github.com/RapidAI/RapidOCR/blob/main/docs/FAQ.md)
 
-## Recently updates([more](./change_log_en.md))
+## Recently updates([more](https://github.com/RapidAI/RapidOCR/blob/main/change_log_en.md))
 #### 🎮2023-03-11 v1.2.2 update:
 - Fix the incoming parameter error of RapidOCR class in instantiation python
 
@@ -100,7 +100,7 @@
 - For details, please refer to: [Input parameters](https://github.com/RapidAI/RapidOCR/blob/0a603b4e8919386f3647eca5cdeba7620b4988e0/python/README.md#%E6%8E%A8%E8%8D%90pip%E5%AE%89%E8%A3%85%E5%BF%AB%E9%80%9F%E4%BD%BF%E7%94%A8)
 
 #### ⛸ 2023-02-16 update:
-- Optimize some codes of ocrweb, which can be directly installed by pip and used quickly. For details, please refer to [README](../ocrweb/README.md).
+- Optimize some codes of ocrweb, which can be directly installed by pip and used quickly. For details, please refer to [README](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md).
 - Optimize the inference code of each part in python, which is more compact and easy to maintain.
 
 
@@ -122,12 +122,12 @@ flowchart LR
 ## Demo
 - [Online demo](https://rapidai.deepdatasec.com:9003/)
     - If the demo fails, you can visit the demo on Hugging Face: [RapidOCRDemo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
-    - **Note**: This online demo does not store any image data uploaded and tested by friends. For details, please refer to: [ocrweb/README](../ocrweb/README.md)
+    - **Note**: This online demo does not store any image data uploaded and tested by friends. For details, please refer to: [ocrweb/README](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
     - The model combination (optimal combination) used for the demo is: `ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec`
     - Environment: `4 Core AMD EPYC 7K62 48-Core Processor `
     - **Gif Demo**:
         <div align="center">
-            <img src="../assets/demo.gif" width="100%" height="100%">
+            <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/demo.gif" width="100%" height="100%">
         </div>
 - [Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
   - The demo is built on Hugging Face's Spaces, generated by the Gradio library, and adds three hyperparameters:
@@ -136,7 +136,7 @@ flowchart LR
        - `text_score`: The confidence that the text recognition result is correct, the larger the value, the more accurate the displayed recognition result.
   - Demo:
     <div align="center">
-        <img src="../assets/huggingfacedemo.jpg" width="100%" height="100%">
+        <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/huggingfacedemo.jpg" width="100%" height="100%">
     </div>
 
 
@@ -161,7 +161,7 @@ flowchart LR
 
 |Sponsor|Applied Products|
 |:---:|:---:|
-|<a href="https://github.com/cuiliang" title="cuiliang"><img src="https://avatars.githubusercontent.com/u/1972649?v=4" width=65 height=65></a>|<a href="https://getquicker.net/" title="Quicker"><img src="https://tvax2.sinaimg.cn/crop.0.0.600.600.180/82cedfe9ly8h0gd3koj1qj20go0goq34.jpg?KID=imgbed,tva&Expires=1657299650&ssig=7MKPeFM6RU" width=65 height=65></a>|
+|<a href="https://github.com/cuiliang" title="cuiliang"><img src="https://avatars.githubusercontent.com/u/1972649?v=4" width=65 height=65></a>|<a href="https://getquicker.net/" title="Quicker"><img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Quicker.jpg" width=65 height=65></a>|
 |<a href="https://github.com/Eunsolfs" title="Eunsolfs"><img src="https://avatars.githubusercontent.com/u/53815751?v=4" width=65 height=65></a>| - |
 
 - If you want to sponsor the project, you can directly click the Sponsor button at the top of the current page, please write a note (e.g. your github account name) to facilitate adding to the sponsorship list above.
@@ -176,15 +176,15 @@ flowchart LR
 ## Demo
 #### Demonstration with C++/JVM
 <div align="center">
-    <img src="../assets/demo_cpp.png" width="100%" height="100%">
+    <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/demo_cpp.png" width="100%" height="100%">
 </div>
 
 #### Demonstration with .Net
 <div align="center">
-    <img src="../assets/demo_cs.png" width="100%" height="100%">
+    <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/demo_cs.png" width="100%" height="100%">
 </div>
 
 #### Demonstratioin with multi_language
 <div align="center">
-    <img src="../assets/demo_multi_language.jpg" width="80%" height="80%">
+    <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/demo_multi_language.jpg" width="80%" height="80%">
 </div>

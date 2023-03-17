@@ -14,7 +14,8 @@
 
 
 ### 简要说明
-- 该模块依赖`rapidocr_onnxruntime`库，如果想要离线部署，可以先手动下载`rapidocr_onnxruntime`whl包，再手动安装`rapidocr_web`whl包来使用
+- 该模块依赖`rapidocr_onnxruntime`库。
+- 如果想要离线部署，可以先手动下载[`rapidocr_onnxruntime`](https://pypi.org/project/rapidocr-onnxruntime/#files) whl包，再手动安装[`rapidocr_web`](https://pypi.org/project/rapidocr-web/#files) whl包来使用。
 - 所用模型组合（最优组合）为：
   ```text
   ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec
@@ -57,6 +58,7 @@
    - 界面模式：浏览器打开`http://localhost:9003/`，enjoy it.
    - API模式:
         ```python
+        # python 示例，本质就是发送一个POST请求，其他语言同理。
         import ast
         import base64
         import json
@@ -98,7 +100,7 @@
             [[[493.0, 261.0], [617.0, 384.0], [577.0, 423.0], [454.0, 300.0]], '可邮寄', 0.7494295984506607]
         ]
         ```
-   - 输出结果说明，如果图像中存在文字，则会输出`List`类型，具体格式介绍如下：
+   - 输出结果说明：如果图像中存在文字，则会输出`List`类型，具体格式介绍如下：
         ```text
         [
             # 坐标为左上角 → 右上角 → 右下角 → 左下角
