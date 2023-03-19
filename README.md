@@ -10,7 +10,7 @@
 <p align="left">
     <a href="https://rapidai.deepdatasec.com:9003/" target="_blank"><img src="https://img.shields.io/badge/%E2%9A%A1%EF%B8%8E-Online%20Demo-blue"></a>
     <a href="https://huggingface.co/spaces/SWHL/RapidOCRDemo" target="_blank"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Hugging Face Demo-blue"></a>
-    <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/colab-badge.svg" alt="Open in Colab"></a>
+    <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/colab-badge.svg" alt="Open in Colab"></a>
     <a href="https://aistudio.baidu.com/aistudio/projectdetail/4444785?sUid=57084&shared=1&ts=1660896122332" target="_blank"><img src="https://img.shields.io/badge/PP-Open in AI Studio-blue.svg"></a><br/>
     <a href=""><img src="https://img.shields.io/badge/Python->=3.7,<=3.10-aff.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
@@ -132,7 +132,7 @@ flowchart LR
     - **运行机器配置**: `4核 AMD EPYC 7K62 48-Core Processor `
     - **示例图**:
         <div align="center">
-            <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/demo.gif" width="100%" height="100%">
+            <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/demo.gif" width="100%" height="100%">
         </div>
 - [Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
   - 该demo依托于Hugging Face的Spaces构建，采用Gradio库生成，同时添加三个超参数:
@@ -141,7 +141,7 @@ flowchart LR
     - `text_score`: 文本识别结果是正确的置信度，值越大，显示出的识别结果更准确
   - 示例图：
     <div align="center">
-        <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/huggingfacedemo.jpg" width="100%" height="100%">
+        <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/huggingfacedemo.jpg" width="100%" height="100%">
     </div>
 
 ## TODO
@@ -194,15 +194,15 @@ flowchart LR
 ## 示例图
 #### C++/JVM示例图像
 <div align="center">
-    <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/demo_cpp.png" width="100%" height="100%">
+    <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/demo_cpp.png" width="100%" height="100%">
 </div>
 
 #### .Net示例图像
 <div align="center">
-    <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/demo_cs.png" width="100%" height="100%">
+    <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/demo_cs.png" width="100%" height="100%">
 </div>
 
 #### 多语言示例图像
 <div align="center">
-    <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/demo_multi_language.jpg" width="80%" height="80%">
+    <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/demo_multi_language.jpg" width="80%" height="80%">
 </div>
