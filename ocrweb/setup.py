@@ -10,7 +10,7 @@ import setuptools
 
 
 def get_latest_version(package_name):
-    output = subprocess.run(["pip", "index", "versions", package_name],
+    output = subprocess.run(['pip', 'index', 'versions', package_name],
                             capture_output=True)
     output = output.stdout.decode('utf-8')
     if output:
@@ -19,13 +19,14 @@ def get_latest_version(package_name):
 
 
 def version_add_one(version, add_loc=-1):
-    if version:
-        version_list = version.split('.')
-        mini_version = str(int(version_list[add_loc]) + 1)
-        version_list[add_loc] = mini_version
-        new_version = '.'.join(version_list)
-        return new_version
-    return '0.0.1'
+    if not version:
+        return '0.0.1'
+
+    version_list = version.split('.')
+    mini_version = str(int(version_list[add_loc]) + 1)
+    version_list[add_loc] = mini_version
+    new_version = '.'.join(version_list)
+    return new_version
 
 
 def get_readme():
@@ -59,18 +60,17 @@ sys.argv = sys.argv[:2]
 setuptools.setup(
     name=MODULE_NAME,
     version=VERSION_NUM,
-    platforms="Any",
-    description="A cross platform OCR Library based on OnnxRuntime.",
+    platforms='Any',
+    description='A cross platform OCR Library based on OnnxRuntime.',
     long_description=get_readme(),
     long_description_content_type='text/markdown',
-    author="SWHL",
-    author_email="liekkaskono@163.com",
-    url="https://github.com/RapidAI/RapidOCR",
+    author='SWHL',
+    author_email='liekkaskono@163.com',
+    url='https://github.com/RapidAI/RapidOCR',
     download_url='https://github.com/RapidAI/RapidOCR.git',
     license='Apache-2.0',
     include_package_data=True,
-    install_requires=["Pillow>=1.2.1", "requests",
-                      "Flask>=2.1.0", 'rapidocr_onnxruntime'],
+    install_requires=['requests', 'Flask>=2.1.0'],
     packages=[MODULE_NAME,
               f'{MODULE_NAME}.static.css',
               f'{MODULE_NAME}.static.js',
@@ -88,5 +88,9 @@ setuptools.setup(
     ],
     entry_points={
         'console_scripts': [f'{MODULE_NAME}={MODULE_NAME}.ocrweb:main'],
+    },
+    extras_require={
+        'onnxruntime': ['rapidocr_onnxruntime'],
+        'openvino': ['rapidocr_openvino']
     }
 )
