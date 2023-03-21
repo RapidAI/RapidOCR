@@ -70,7 +70,7 @@ setuptools.setup(
     download_url='https://github.com/RapidAI/RapidOCR.git',
     license='Apache-2.0',
     include_package_data=True,
-    install_requires=['requests', 'Flask>=2.1.0'],
+    install_requires=['requests', 'Flask>=2.1.0', 'rapidocr_onnxruntime'],
     packages=[MODULE_NAME,
               f'{MODULE_NAME}.static.css',
               f'{MODULE_NAME}.static.js',
@@ -89,8 +89,8 @@ setuptools.setup(
     entry_points={
         'console_scripts': [f'{MODULE_NAME}={MODULE_NAME}.ocrweb:main'],
     },
-    extras_require={
-        'onnxruntime': ['rapidocr_onnxruntime'],
-        'openvino': ['rapidocr_openvino']
-    }
+    # extras_require={
+    #     'onnxruntime': ['rapidocr_onnxruntime'],
+    #     'openvino': ['rapidocr_openvino']
+    # }
 )

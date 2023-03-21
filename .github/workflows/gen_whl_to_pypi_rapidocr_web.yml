@@ -40,15 +40,15 @@ jobs:
           python -m pip install --upgrade pip
           python setup.py bdist_wheel ${{ github.event.head_commit.message }}
 
-      - name: Publish distribution 📦 to Test PyPI
-        uses: pypa/gh-action-pypi-publish@v1.5.0
-        with:
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
-          packages_dir:  ocrweb/dist/
-
-      # - name: Publish distribution 📦 to PyPI
+      # - name: Publish distribution 📦 to Test PyPI
       #   uses: pypa/gh-action-pypi-publish@v1.5.0
       #   with:
-      #     password: ${{ secrets.RAPIDOCR_OPENVINO }}
-      #     packages_dir: ocrweb/dist/
+      #     password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+      #     repository_url: https://test.pypi.org/legacy/
+      #     packages_dir:  ocrweb/dist/
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.5.0
+        with:
+          password: ${{ secrets.RAPIDOCR_OPENVINO }}
+          packages_dir: ocrweb/dist/
