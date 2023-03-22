@@ -115,11 +115,12 @@ flowchart LR
     C(Text Det) --> D(Text Cls) --> E(Text Rec)
     end
 
-    A[/OurSelf Dataset/] --> B(PaddleOCR) --Train--> Step --Convert--> F(ONNX)
-    F --> G{RapidOCR Deploy\n<b>Python/C++/Java/C#</b>}
+    A[/OurSelf Dataset/] --> B(PaddleOCR) --Train--> Step --> F(PaddleOCRModelConverter)
+    F --ONNX--> G{RapidOCR Deploy\n<b>Python/C++/Java/C#</b>}
     G --> H(Windows x86/x64) & I(Linux) & J(Android) & K(Web) & L(Raspberry Pi)
 
     click B "https://github.com/PaddlePaddle/PaddleOCR" _blank
+    click F "https://github.com/RapidAI/PaddleOCRModelConverter" _blank
 ```
 
 ## 在线demo
