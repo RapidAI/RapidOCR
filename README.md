@@ -75,6 +75,7 @@
 - [Android范例](https://github.com/RapidAI/RapidOcrAndroidOnnx)
 - 网页版范例
   - [网页版OCR](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
+  - [Nuitka打包rapdocr_web](https://github.com/RapidAI/RapidOCR/wiki/Nuitka%E6%89%93%E5%8C%85rapidocr_web%E6%93%8D%E4%BD%9C%E6%96%87%E6%A1%A3)
   - [多语言网页版OCR](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb_multi/README.md)
 - [版面结构化](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/README.md)
   - [含文本的图像方向分类](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/docs/README_Orientation.md)
@@ -162,6 +163,7 @@ flowchart LR
 - 非常感谢[zhsunlight](https://github.com/zhsunlight)关于参数化调用GPU推理的建议以及细致周到的测试。
 - 非常感谢[lzh111222334](https://github.com/lzh111222334)修复python版本下rec前处理部分bug。
 - 非常感谢[AutumnSun1996](https://github.com/AutumnSun1996)在[#42](https://github.com/RapidAI/RapidOCR/issues/42)中的建议。
+- 非常感谢[DeadWood8](https://github.com/DeadWood8)提供了[Nuitka打包rapidocr_web的操作文档和可执行exe](https://github.com/RapidAI/RapidOCR/wiki/Nuitka%E6%89%93%E5%8C%85rapidocr_web%E6%93%8D%E4%BD%9C%E6%96%87%E6%A1%A3)。
 
 ## 赞助
 |赞助者|应用的产品|
