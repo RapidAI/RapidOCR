@@ -10,10 +10,10 @@ import pytest
 
 
 root_dir = Path(__file__).resolve().parent.parent
+print(root_dir)
 sys.path.append(str(root_dir))
 
-from rapidocr_onnxruntime import RapidOCR
-from rapidocr_onnxruntime.utils import LoadImageError
+from rapidocr_onnxruntime import RapidOCR, LoadImageError
 
 rapid_ocr = RapidOCR()
 tests_dir = root_dir / 'tests' / 'test_files'

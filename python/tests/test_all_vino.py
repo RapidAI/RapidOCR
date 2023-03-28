@@ -12,8 +12,7 @@ import pytest
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
-from rapidocr_openvino import RapidOCR
-from rapidocr_openvino.utils import LoadImageError
+from rapidocr_openvino import RapidOCR, LoadImageError
 
 rapid_ocr = RapidOCR()
 

@@ -2,7 +2,6 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import argparse
-from io import BytesIO
 from pathlib import Path
 from typing import Union
 
@@ -63,13 +62,16 @@ class LoadImage():
             self.verify_exist(img)
             try:
                 img = np.array(Image.open(img))
+                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
             except UnidentifiedImageError as e:
                 raise LoadImageError(
                     f'cannot identify image file {img}') from e
             return img
 
         if isinstance(img, bytes):
-            return np.array(Image.open(BytesIO(img)))
+            img = np.frombuffer(img, dtype=np.uint8)
+            img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+            return img
 
         if isinstance(img, np.ndarray):
             return img
