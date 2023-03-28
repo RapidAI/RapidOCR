@@ -10,3 +10,4 @@ pip==22.3.1
 onnxruntime>=1.11.0
 openvino>=2022.2.0
 wheel
+get_pypi_latest_version
