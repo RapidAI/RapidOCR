@@ -148,9 +148,9 @@ flowchart LR
 
 ## Original initiator and start-up author
 <p align="left">
-    <a href="https://github.com/benjaminwan"><img src="https://avatars.githubusercontent.com/u/2362051?v=4" width=65 height=65></a>
-    <a href="https://github.com/znsoftm"><img src="https://avatars.githubusercontent.com/u/15354249?v=4" width=65 height=65></a>
-    <a href="https://github.com/SWHL"><img src="https://avatars.githubusercontent.com/u/28639377?v=4" width=65 height=65></a>
+  <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=RapidAI/RapidOCR" width="60%"/>
+  </a>
 </p>
 
 ## Acknowledgements
