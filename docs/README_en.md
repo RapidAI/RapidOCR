@@ -149,7 +149,7 @@ flowchart LR
 ## Original initiator and start-up author
 <p align="left">
   <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=RapidAI/RapidOCR" width="60%"/>
+    <img src="https://contrib.rocks/image?repo=RapidAI/RapidOCR" width="55%"/>
   </a>
 </p>
 
