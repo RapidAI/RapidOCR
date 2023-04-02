@@ -65,7 +65,7 @@ jobs:
 
           echo "Generate the api doc"
           pip install sphinx
-          sphinx-apidoc -o source/API/ ./${PACKAGE_NAME} -f -E -M
+          sphinx-apidoc -o source/API python/ -f -E -M --implicit-namespaces -d 6
           sed -i '1d' source/API/modules.rst
           sed -i '1i\API' source/API/modules.rst
 
