@@ -51,7 +51,7 @@ jobs:
           rm source/README.md || true
           rm source/API || true
 
-          echo "====================="
+          echo "======================"
           echo ${SUBMMIT_BRANCH}
           cp -r ../python .
           cp -r ../ocrweb .
