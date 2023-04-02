@@ -47,11 +47,13 @@ jobs:
           git clone -b ${SUBMMIT_BRANCH} $CLONE_URL ${SUBMMIT_BRANCH}
           cd ${SUBMMIT_BRANCH}
           rm -r python || true
+          rm -r ocrweb || true
           rm source/README.md || true
 
           echo "====================="
           echo ${SUBMMIT_BRANCH}
           cp -r ../python .
+          cp -r ../ocrweb .
 
           echo "Update requirements and add packages needed by sphinx"
           echo -e '\nsphinx_rtd_theme\nsphinxcontrib.mermaid\nmyst-parser\nsphinx_copybutton\nget_pypi_latest_version' >> ../python/requirements.txt
@@ -65,9 +67,9 @@ jobs:
 
           echo "Generate the api doc"
           pip install sphinx
-          sphinx-apidoc -o source/API python/ -f -E -M --implicit-namespaces -d 6
-          sed -i '1d' source/API/modules.rst
-          sed -i '1i\API' source/API/modules.rst
+          sphinx-apidoc -o source/API/python python/ -f -E -M --implicit-namespaces -d 6
+          sphinx-apidoc -o source/API/ocrweb ocrweb/ -f -E -M --implicit-namespaces -d 6
+          echo -e "API\n======\n\n.. toctree::\n   :maxdepth: 6\n\n   python/modules\n   ocrweb/modules\n" >> source/API/modules.rst
 
           git add .
           git status
