@@ -52,7 +52,7 @@ jobs:
           rm -r python || true
           rm -r ocrweb || true
           rm source/README.md || true
-          rm source/API || true
+          rm -r source/API || true
 
           echo "======================"
           echo ${SUBMMIT_BRANCH}
