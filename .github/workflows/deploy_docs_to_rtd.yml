@@ -44,6 +44,7 @@ jobs:
           ls
           rm -r docs || true
 
+          echo -e '\n' >> python/requirements.txt
           cat ocrweb/requirements.txt >> python/requirements.txt
 
           git clone -b ${SUBMMIT_BRANCH} $CLONE_URL ${SUBMMIT_BRANCH}
