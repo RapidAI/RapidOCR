@@ -8,7 +8,6 @@
 简体中文 | [English](https://github.com/RapidAI/RapidOCR/blob/main/docs/README_en.md)
 
 <p align="left">
-    <a href="https://rapidai.deepdatasec.com:9003/" target="_blank"><img src="https://img.shields.io/badge/%E2%9A%A1%EF%B8%8E-Online%20Demo-blue"></a>
     <a href="https://huggingface.co/spaces/SWHL/RapidOCRDemo" target="_blank"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Hugging Face Demo-blue"></a>
     <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/colab-badge.svg" alt="Open in Colab"></a>
     <a href="https://aistudio.baidu.com/aistudio/projectdetail/4444785?sUid=57084&shared=1&ts=1660896122332" target="_blank"><img src="https://img.shields.io/badge/PP-Open in AI Studio-blue.svg"></a><br/>
@@ -128,7 +127,7 @@ flowchart LR
 ```
 
 ## 在线demo
-- [自建在线demo](https://rapidai.deepdatasec.com:9003/)
+- 自建在线demo
     - **说明**: 本在线demo不存储小伙伴们上传测试的任何图像数据，详情参见：[ocrweb/README](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
     - **demo所用模型组合（最优组合）为**:
       ```text
@@ -146,7 +145,7 @@ flowchart LR
     - `text_score`: 文本识别结果是正确的置信度，值越大，显示出的识别结果更准确
   - 示例图：
     <div align="center">
-        <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/huggingfacedemo.jpg" width="100%" height="100%">
+        <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/hf_demo.png" width="100%" height="100%">
     </div>
 
 ## TODO
