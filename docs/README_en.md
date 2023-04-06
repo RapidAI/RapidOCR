@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/RapidOCR_LOGO.png" width="55%" height="55%"/>
 </div>
 
-# RapidOCR (Open source OCR for the security of the digital world)
+# Open source OCR for the security of the digital world
 
 [简体中文](https://github.com/RapidAI/RapidOCR/blob/main/README.md) | English
 
@@ -26,7 +26,7 @@
 <details>
     <summary>Contents</summary>
 
-- [RapidOCR (Open source OCR for the security of the digital world)](#rapidocr-open-source-ocr-for-the-security-of-the-digital-world)
+- [Open source OCR for the security of the digital world](#open-source-ocr-for-the-security-of-the-digital-world)
   - [Introduction](#introduction)
   - [Navigation](#navigation)
   - [Recently updates(more)](#recently-updatesmore)
