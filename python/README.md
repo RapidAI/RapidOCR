@@ -56,104 +56,108 @@
    - 注意：两个包接口一致，只是推理引擎不同而已
 
 2. 推理使用
-    - 📌初始化RapidOCR可不提供`config.yaml`，默认使用**rapidocr_onnxruntime**目录下的。如有特殊需求，可以自行更改目录下的`config.yaml`。
-    ```python
-    import cv2
-    from rapidocr_onnxruntime import RapidOCR
-    # from rapidocr_openvino import RapidOCR
+    - 脚本使用：
+      - 📌初始化RapidOCR可不提供`config.yaml`，默认使用**rapidocr_onnxruntime**目录下的。如有自定义需求，可直接通过初始化参数传入。详情参数参考命令行部分，和`config.yaml`基本对应。
+      - 输入：`Union[str, np.ndarray, bytes, Path]`
+      - 输出：`[[文本框坐标], 文本内容, 置信度]`, 为空：`(None, None)`
+      - 示例：
+        ```python
+        import cv2
+        from rapidocr_onnxruntime import RapidOCR
+        # from rapidocr_openvino import RapidOCR
 
-    # RapidOCR可传入参数参考下面的命令行部分
-    rapid_ocr = RapidOCR()
+        # RapidOCR可传入参数参考下面的命令行部分
+        rapid_ocr = RapidOCR()
 
-    img_path = 'tests/test_files/ch_en_num.jpg'
+        img_path = 'tests/test_files/ch_en_num.jpg'
 
-    # 支持四种格式的输入：Union[str, np.ndarray, bytes, Path]
-    # str
-    result, elapse = rapid_ocr(img_path)
+        # 输入格式一：str
+        result, elapse = rapid_ocr(img_path)
 
-    # np.ndarray
-    img = cv2.imread('tests/test_files/ch_en_num.jpg')
-    result, elapse = rapid_ocr(img)
+        # 输入格式二：np.ndarray
+        img = cv2.imread('tests/test_files/ch_en_num.jpg')
+        result, elapse = rapid_ocr(img)
 
-    # bytes
-    with open(img_path, 'rb') as f:
-        result, elapse = rapid_ocr(f.read())
+        # 输入格式三：bytes
+        with open(img_path, 'rb') as f:
+            img = f.read()
+        result, elapse = rapid_ocr(img)
 
-    # Path
-    result, elapse = rapid_ocr(Path(img_path))
-    print(result)
+        # 输入格式四：Path
+        result, elapse = rapid_ocr(Path(img_path))
+        print(result)
 
-    # result: [[文本框坐标], 文本内容, 置信度]
-    # 示例：[[左上, 右上, 右下, 左下], '小明', '0.99']
+        # result: [[文本框坐标], 文本内容, 置信度]
+        # 示例：[[左上, 右上, 右下, 左下], '小明', '0.99']
 
-    # elapse: [det_elapse, cls_elapse, rec_elapse]
-    # all_elapse = det_elapse + cls_elapse + rec_elapse
+        # elapse: [det_elapse, cls_elapse, rec_elapse]
+        # all_elapse = det_elapse + cls_elapse + rec_elapse
 
-    # 如果没有有效文本，则result: (None, None)
-    ```
+        # 如果没有有效文本，则result: (None, None)
+        ```
     - 命令行使用：
-    ```bash
-    $ rapidocr_onnxruntime -h
-    usage: rapidocr_onnxruntime [-h] -img IMG_PATH [-p] [--text_score TEXT_SCORE]
-                                [--use_angle_cls USE_ANGLE_CLS]
-                                [--use_text_det USE_TEXT_DET]
-                                [--print_verbose PRINT_VERBOSE]
-                                [--min_height MIN_HEIGHT]
-                                [--width_height_ratio WIDTH_HEIGHT_RATIO]
-                                [--det_model_path DET_MODEL_PATH]
-                                [--det_limit_side_len DET_LIMIT_SIDE_LEN]
-                                [--det_limit_type {max,min}]
-                                [--det_thresh DET_THRESH]
-                                [--det_box_thresh DET_BOX_THRESH]
-                                [--det_unclip_ratio DET_UNCLIP_RATIO]
-                                [--det_use_dilation DET_USE_DILATION]
-                                [--det_score_mode {slow,fast}]
-                                [--cls_model_path CLS_MODEL_PATH]
-                                [--cls_image_shape CLS_IMAGE_SHAPE]
-                                [--cls_label_list CLS_LABEL_LIST]
-                                [--cls_batch_num CLS_BATCH_NUM]
-                                [--cls_thresh CLS_THRESH]
-                                [--rec_model_path REC_MODEL_PATH]
-                                [--rec_image_shape REC_IMAGE_SHAPE]
-                                [--rec_batch_num REC_BATCH_NUM]
+        ```bash
+        $ rapidocr_onnxruntime -h
+        usage: rapidocr_onnxruntime [-h] -img IMG_PATH [-p] [--text_score TEXT_SCORE]
+                                    [--use_angle_cls USE_ANGLE_CLS]
+                                    [--use_text_det USE_TEXT_DET]
+                                    [--print_verbose PRINT_VERBOSE]
+                                    [--min_height MIN_HEIGHT]
+                                    [--width_height_ratio WIDTH_HEIGHT_RATIO]
+                                    [--det_model_path DET_MODEL_PATH]
+                                    [--det_limit_side_len DET_LIMIT_SIDE_LEN]
+                                    [--det_limit_type {max,min}]
+                                    [--det_thresh DET_THRESH]
+                                    [--det_box_thresh DET_BOX_THRESH]
+                                    [--det_unclip_ratio DET_UNCLIP_RATIO]
+                                    [--det_use_dilation DET_USE_DILATION]
+                                    [--det_score_mode {slow,fast}]
+                                    [--cls_model_path CLS_MODEL_PATH]
+                                    [--cls_image_shape CLS_IMAGE_SHAPE]
+                                    [--cls_label_list CLS_LABEL_LIST]
+                                    [--cls_batch_num CLS_BATCH_NUM]
+                                    [--cls_thresh CLS_THRESH]
+                                    [--rec_model_path REC_MODEL_PATH]
+                                    [--rec_image_shape REC_IMAGE_SHAPE]
+                                    [--rec_batch_num REC_BATCH_NUM]
 
-    optional arguments:
-    -h, --help            show this help message and exit
-    -img IMG_PATH, --img_path IMG_PATH MUST
-    -p, --print_cost
+        optional arguments:
+        -h, --help            show this help message and exit
+        -img IMG_PATH, --img_path IMG_PATH MUST
+        -p, --print_cost
 
-    Global:
-    --text_score TEXT_SCORE
-    --use_angle_cls USE_ANGLE_CLS
-    --use_text_det USE_TEXT_DET
-    --print_verbose PRINT_VERBOSE
-    --min_height MIN_HEIGHT
-    --width_height_ratio WIDTH_HEIGHT_RATIO
+        Global:
+        --text_score TEXT_SCORE
+        --use_angle_cls USE_ANGLE_CLS
+        --use_text_det USE_TEXT_DET
+        --print_verbose PRINT_VERBOSE
+        --min_height MIN_HEIGHT
+        --width_height_ratio WIDTH_HEIGHT_RATIO
 
-    Det:
-    --det_model_path DET_MODEL_PATH
-    --det_limit_side_len DET_LIMIT_SIDE_LEN
-    --det_limit_type {max,min}
-    --det_thresh DET_THRESH
-    --det_box_thresh DET_BOX_THRESH
-    --det_unclip_ratio DET_UNCLIP_RATIO
-    --det_use_dilation DET_USE_DILATION
-    --det_score_mode {slow,fast}
+        Det:
+        --det_model_path DET_MODEL_PATH
+        --det_limit_side_len DET_LIMIT_SIDE_LEN
+        --det_limit_type {max,min}
+        --det_thresh DET_THRESH
+        --det_box_thresh DET_BOX_THRESH
+        --det_unclip_ratio DET_UNCLIP_RATIO
+        --det_use_dilation DET_USE_DILATION
+        --det_score_mode {slow,fast}
 
-    Cls:
-    --cls_model_path CLS_MODEL_PATH
-    --cls_image_shape CLS_IMAGE_SHAPE
-    --cls_label_list CLS_LABEL_LIST
-    --cls_batch_num CLS_BATCH_NUM
-    --cls_thresh CLS_THRESH
+        Cls:
+        --cls_model_path CLS_MODEL_PATH
+        --cls_image_shape CLS_IMAGE_SHAPE
+        --cls_label_list CLS_LABEL_LIST
+        --cls_batch_num CLS_BATCH_NUM
+        --cls_thresh CLS_THRESH
 
-    Rec:
-    --rec_model_path REC_MODEL_PATH
-    --rec_image_shape REC_IMAGE_SHAPE
-    --rec_batch_num REC_BATCH_NUM
+        Rec:
+        --rec_model_path REC_MODEL_PATH
+        --rec_image_shape REC_IMAGE_SHAPE
+        --rec_batch_num REC_BATCH_NUM
 
-    $ rapidocr_onnxruntime -img tests/test_files/ch_en_num.jpg
-    ```
+        $ rapidocr_onnxruntime -img tests/test_files/ch_en_num.jpg
+        ```
 
 ### 源码使用步骤
 1. 下载整个项目到本地
@@ -206,13 +210,11 @@
    - 基于onnxruntime推理所需环境安装：
         ```bash
         pip install onnxruntime>=1.7.0
-
         pip install -r requirements.txt
         ```
    - 基于openvino推理所需环境安装：
         ```bash
         pip install openvino
-
         pip install -r requirements.txt
         ```
    - Note: 在Windows端，Shapely库自动安装可能会有问题，解决方案参见[Q15](https://github.com/RapidAI/RapidOCR/blob/main/docs/FAQ.md#q-windows系统下装完环境之后运行示例程序之后报错oserror-winerror-126-找不到指定的模組)
