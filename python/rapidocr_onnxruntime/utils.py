@@ -3,6 +3,7 @@
 # @Contact: liekkaskono@163.com
 import argparse
 import warnings
+from io import BytesIO
 from pathlib import Path
 from typing import Union
 
@@ -121,8 +122,8 @@ class LoadImage():
             return img
 
         if isinstance(img, bytes):
-            img = np.frombuffer(img, dtype=np.uint8)
-            img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+            img = np.array(Image.open(BytesIO(img)))
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
             return img
 
         if isinstance(img, np.ndarray):
