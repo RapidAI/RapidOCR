@@ -207,7 +207,7 @@ def init_args():
 
     rec_group = parser.add_argument_group(title='Rec')
     rec_group.add_argument('--rec_model_path', type=str, default=None)
-    rec_group.add_argument('--rec_image_shape', type=list,
+    rec_group.add_argument('--rec_img_shape', type=list,
                            default=[3, 48, 320])
     rec_group.add_argument('--rec_batch_num', type=int, default=6)
 

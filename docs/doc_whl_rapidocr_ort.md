@@ -68,7 +68,7 @@ $ pip install rapidocr-onnxruntime
                                 [--cls_batch_num CLS_BATCH_NUM]
                                 [--cls_thresh CLS_THRESH]
                                 [--rec_model_path REC_MODEL_PATH]
-                                [--rec_image_shape REC_IMAGE_SHAPE]
+                                [--rec_img_shape REC_IMAGE_SHAPE]
                                 [--rec_batch_num REC_BATCH_NUM]
 
     optional arguments:
@@ -103,7 +103,7 @@ $ pip install rapidocr-onnxruntime
 
     Rec:
     --rec_model_path REC_MODEL_PATH
-    --rec_image_shape REC_IMAGE_SHAPE
+    --rec_img_shape REC_IMAGE_SHAPE
     --rec_batch_num REC_BATCH_NUM
 
   $ rapidocr_onnxruntime -img tests/test_files/ch_en_num.jpg
