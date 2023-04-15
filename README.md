@@ -67,6 +67,7 @@
 
 ## 文档导航
 - [Python范例](https://github.com/RapidAI/RapidOCR/blob/main/python/README.md)
+  - [RapidOCR调优尝试教程](https://github.com/RapidAI/RapidOCR/wiki/RapidOCR%E8%B0%83%E4%BC%98%E5%B0%9D%E8%AF%95%E6%95%99%E7%A8%8B)
   - [rapidocr_openvino](https://github.com/RapidAI/RapidOCR/blob/main/python/rapidocr_openvino/README.md)
 - [C++范例(Windows/Linux/macOS)](https://github.com/RapidAI/RapidOCR/blob/main/cpp)
   - [RapidOcrOnnx](https://github.com/RapidAI/RapidOcrOnnx)
