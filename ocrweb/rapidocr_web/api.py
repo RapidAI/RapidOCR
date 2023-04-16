@@ -54,7 +54,7 @@ def main():
     parser.add_argument('-p', '--port', type=int, default=9003,
                         help='IP port')
     args = parser.parse_args()
-    uvicorn.run(app, host=args.ip, port=args.port)
+    uvicorn.run(app, host=args.ip, port=args.port, reload=True)
 
 
 if __name__ == '__main__':
