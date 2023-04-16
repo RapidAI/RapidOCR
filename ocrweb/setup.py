@@ -63,7 +63,8 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             f'{MODULE_NAME}={MODULE_NAME}.ocrweb:main',
-            f'rapidocr_api={MODULE_NAME}.api.main'],
+            f'rapidocr_api={MODULE_NAME}.api:main'
+        ],
     },
     extras_require={
         'api': ['fastapi', 'uvicorn[standard]']
