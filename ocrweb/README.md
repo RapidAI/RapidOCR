@@ -30,7 +30,7 @@
 ### 界面版使用步骤
 1. 安装`rapidocr_web`
    ```bash
-   pip install rapidocr_web
+   $ pip install rapidocr_web
    ```
 
 2. 运行
