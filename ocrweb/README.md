@@ -10,7 +10,8 @@
 
 - [RapidOCR Web Demo](#rapidocr-web-demo)
   - [简要说明](#简要说明)
-  - [使用步骤](#使用步骤)
+  - [界面版使用步骤](#界面版使用步骤)
+  - [API版使用步骤](#api版使用步骤)
 
 
 ### 简要说明
@@ -20,14 +21,13 @@
   ```text
   ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec
   ```
-- **在线demo运行机器配置:** `4核 AMD EPYC 7K62 48-Core Processor`
 - 网页上显示的推理时间具体解释如下：
 
     <div align="center">
         <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/ocrweb_time.jpg" width="80%" height="80%">
     </div>
 
-### 使用步骤
+### 界面版使用步骤
 1. 安装`rapidocr_web`
    ```bash
    pip install rapidocr_web
@@ -37,86 +37,143 @@
    - 用法:
        ```bash
        $ rapidocr_web -h
-       usage: rapidocr_web [-h] [-ip IP] [-p PORT] [-api]
+       usage: rapidocr_web [-h] [-ip IP] [-p PORT]
 
        optional arguments:
        -h, --help            show this help message and exit
        -ip IP, --ip IP       IP Address
        -p PORT, --port PORT  IP port
-       -api, --is_api        Whether to use the api format.
        ```
    - 示例:
        ```bash
-       # 界面模式
-       $ rapidocr_web -ip "0.0.0.0" -p 9003
-
-       # API调用模式
-       $ rapidocr_web -ip "0.0.0.0" -p 9003 -api
+       $ rapidocr_web -ip 0.0.0.0 -p 9003
        ```
 
 3. 使用
-   - 界面模式：浏览器打开`http://localhost:9003/`，enjoy it.
-   - API模式:
-        ```python
-        # python 示例，本质就是发送一个POST请求，其他语言同理。
-        import base64
-        import json
-
-        import requests
+   - 浏览器打开`http://localhost:9003/`，enjoy it.
 
 
-        class WebAPI():
-            def __init__(self, url: str) -> None:
-                self.url = url
-                self.header = {'Content-Type': 'application/json; charset=UTF-8'}
+### API版使用步骤
+1. 安装`rapidocr_web[api]`
+   ```bash
+   $ pip install rapidocr_web[api]
+   ```
+2. 运行
+   - 用法:
+       ```bash
+       $ rapidocr_api -h
+       usage: rapidocr_api [-h] [-ip IP] [-p PORT]
 
-            def __call__(self, img_path: str):
-                img_json = self.get_json_format(img_path)
-                response = requests.post(self.url,
-                                        data=img_json,
-                                        headers=self.header)
-                status_code = response.status_code
-                if status_code == 200:
-                    return response.json()
-                raise ValueError(f'requests post error, status code is {status_code}')
+       optional arguments:
+       -h, --help            show this help message and exit
+       -ip IP, --ip IP       IP Address
+       -p PORT, --port PORT  IP port
+       ```
+   - 示例:
+       ```bash
+       $ rapidocr_api -ip 0.0.0.0 -p 9003
+       ```
+3. 使用
+    ```python
+    # python 示例，本质就是发送一个POST请求，其他语言同理。
+    import requests
 
-            @staticmethod
-            def get_json_format(img_path: str):
-                with open(img_path, 'rb') as f:
-                    img_byte = base64.b64encode(f.read())
+    url = 'http://localhost:9003/ocr'
+    img_path = '../python/tests/test_files/ch_en_num.jpg'
 
-                img_json = json.dumps({'file': img_byte.decode('ascii')})
-                return img_json
+    with open(img_path, 'rb') as f:
+        file_dict = {'image': (img_path, f, 'image/png')}
+        response = requests.post(url, files=file_dict, timeout=60)
 
-
-        if __name__ == '__main__':
-            web_url = 'http://localhost:9003/ocr'
-            img_path = '../images/1.jpg'
-
-            web_api = WebAPI(web_url)
-
-            res_rec = web_api(img_path)
-            print(res_rec)
-        ```
-
+    res_rec = response.json()
+    print(res_rec)
+    ```
 4. API输出
    - 示例结果：
-       ```text
-       [
-           [[[265.0, 18.0], [472.0, 231.0], [431.0, 271.0], [223.0, 59.0]], '香港深圳抽血', 0.8021483932222638],
-           [[[388.0, 15.0], [636.0, 257.0], [587.0, 307.0], [339.0, 65.0]], '专业查性别', 0.7488822937011719],
-           [[[215.0, 84.0], [509.0, 413.0], [453.0, 463.0], [159.0, 134.0]], '专业鉴定B超单', 0.8711239919066429],
-           [[[128.0, 135.0], [430.0, 478.0], [366.0, 534.0], [64.0, 192.0]], 'b超仪器查性别', 0.8705329671502113],
-           [[[58.0, 189.0], [268.0, 450.0], [209.0, 498.0], [0.0, 236.0]], '加微信eee', 0.8492027946880886],
-           [[[493.0, 261.0], [617.0, 384.0], [577.0, 423.0], [454.0, 300.0]], '可邮寄', 0.7494295984506607]
-       ]
+        <details>
+        <summary>详情</summary>
+
+       ```json
+        {
+            "0": {
+                "rec_txt": "香港深圳抽血，",
+                "dt_boxes": [
+                    [265, 18],
+                    [472, 231],
+                    [431, 271],
+                    [223, 59]
+                ],
+                "score": "0.8175641223788261"
+            },
+            "1": {
+                "rec_txt": "专业查性别",
+                "dt_boxes": [
+                    [388, 15],
+                    [636, 257],
+                    [587, 307],
+                    [339, 65]
+                ],
+                "score": "0.8293875356515249"
+            },
+            "2": {
+                "rec_txt": "专业鉴定B超单",
+                "dt_boxes": [
+                    [215, 84],
+                    [509, 413],
+                    [453, 463],
+                    [159, 134]
+                ],
+                "score": "0.8626169338822365"
+            },
+            "3": {
+                "rec_txt": "b超仪器查性别",
+                "dt_boxes": [
+                    [128, 135],
+                    [430, 478],
+                    [366, 534],
+                    [64, 192]
+                ],
+                "score": "0.8449362441897392"
+            },
+            "4": {
+                "rec_txt": "加微信eee",
+                "dt_boxes": [
+                    [58, 189],
+                    [268, 450],
+                    [209, 498],
+                    [0, 236]
+                ],
+                "score": "0.8176911813872201"
+            },
+            "5": {
+                "rec_txt": "可邮寄",
+                "dt_boxes": [
+                    [493, 261],
+                    [617, 384],
+                    [577, 423],
+                    [454, 300]
+                ],
+                "score": "0.7494261413812637"
+            }
+        }
        ```
-   - 输出结果说明：如果图像中存在文字，则会输出`List`类型，具体格式介绍如下：
-       ```text
-       [
-           # 坐标为左上角 → 右上角 → 右下角 → 左下角
-           [[[left, top], [right, top], [right, bottom], [left, bottom]], 识别文本, 置信度]
-       ]
+       </details>
+
+   - 输出结果说明：
+     - 如果图像中存在文字，则会输出json格式，具体格式介绍如下：
+       ```python
+       {
+        "0": {
+            "rec_txt": "香港深圳抽血，",  # 识别的文本
+            "dt_boxes": [  # 依次为左上角 → 右上角 → 右下角 → 左下角
+                [265, 18],
+                [472, 231],
+                [431, 271],
+                [223, 59]
+            ],
+            "score": "0.8175641223788261"  # 置信度
+            }
+       }
        ```
-   - 如果没有检测到文字，则会输出空列表(`[]`)。
+     - 如果没有检测到文字，则会输出空json(`{}`)。
 5. **!!说明：OCR的输出结果为最原始结果，大家可按需进一步扩展。**

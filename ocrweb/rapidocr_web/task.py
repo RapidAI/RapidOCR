@@ -4,13 +4,12 @@
 import base64
 import copy
 import json
+from collections import namedtuple
 from functools import reduce
 from typing import List, Tuple, Union
-from collections import namedtuple
 
 import cv2
 import numpy as np
-
 from rapidocr_onnxruntime import RapidOCR
 
 
@@ -21,30 +20,21 @@ class OCRWebUtils():
             'WebReturn',
             ['image', 'total_elapse', 'elapse_part', 'rec_res'])
 
-    def __call__(self, img_content: str, is_api=False) -> namedtuple:
+    def __call__(self, img_content: str) -> namedtuple:
         if img_content is None:
             raise ValueError('img is None')
-
-        img = self.prepare_img(img_content, is_api)
+        img = self.prepare_img(img_content)
         ocr_res, elapse = self.ocr(img)
-
-        if is_api:
-            return self.get_api_result(ocr_res)
         return self.get_web_result(img, ocr_res, elapse)
 
-    def prepare_img(self, img_str: str, is_api: bool) -> np.ndarray:
-        if not is_api:
-            img_str = img_str.split(',')[1]
-
+    def prepare_img(self, img_str: str) -> np.ndarray:
+        img_str = img_str.split(',')[1]
         image = base64.b64decode(img_str + '=' * (-len(img_str) % 4))
         nparr = np.frombuffer(image, np.uint8)
         image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         if image.ndim == 2:
             image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
         return image
-
-    def get_api_result(self, ocr_res: List) -> str:
-        return json.dumps(ocr_res, indent=2, ensure_ascii=False)
 
     def get_web_result(self,
                        img: np.ndarray,
@@ -73,7 +63,7 @@ class OCRWebUtils():
 
     @staticmethod
     def img_to_base64(img) -> str:
-        img = cv2.imencode('.jpg', img)[1]
+        img = cv2.imencode('.png', img)[1]
         img_str = str(base64.b64encode(img))[2:-1]
         return img_str
 
