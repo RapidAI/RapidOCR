@@ -1,3 +1,8 @@
+#### 🏸2023-04-16 ocrweb v0.1.1 update:
+- API deployment changed to FastAPI library support.
+- Decouple the API mode from the Web, which can be installed selectively through `pip install rapidocr_web[api]`.
+- See details for [link](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md).
+
 #### 🎮2023-03-11 v1.2.2 update:
 - Fix the incoming parameter error of RapidOCR class in instantiation python
 

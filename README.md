@@ -32,9 +32,9 @@
   - [简介](#简介)
   - [文档导航](#文档导航)
   - [近期更新(more)](#近期更新more)
+      - [🏸2023-04-16 ocrweb v0.1.1 update:](#2023-04-16-ocrweb-v011-update)
       - [🎮2023-03-11 v1.2.2 update:](#2023-03-11-v122-update)
       - [🧢2023-03-07 v1.2.1 update:](#2023-03-07-v121-update)
-      - [⛸2023-02-16 update:](#2023-02-16-update)
   - [生态框架](#生态框架)
   - [在线demo](#在线demo)
   - [TODO](#todo)
@@ -99,6 +99,11 @@
 
 
 ## 近期更新([more](https://github.com/RapidAI/RapidOCR/blob/main/docs/change_log.md))
+#### 🏸2023-04-16 ocrweb v0.1.1 update:
+- API部署改为FastAPI库支持
+- 将API模式与Web解耦合，可通过`pip install rapidocr_web[api]`来选择性安装
+- 详情参见：[link](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
+
 #### 🎮2023-03-11 v1.2.2 update:
 - 修复实例化python中RapidOCR类传入参数错误
 
@@ -106,11 +111,6 @@
 - 优化python下rapidocr系列包的接口传入参数，支持实例化类时，动态给定各个参数，更加灵活。
 - 如果不指定，则用`config.yaml`下的默认参数。
 - 具体可参见：[传入参数](https://github.com/RapidAI/RapidOCR/blob/0a603b4e8919386f3647eca5cdeba7620b4988e0/python/README.md#%E6%8E%A8%E8%8D%90pip%E5%AE%89%E8%A3%85%E5%BF%AB%E9%80%9F%E4%BD%BF%E7%94%A8)
-
-#### ⛸2023-02-16 update:
-- 优化ocrweb部分代码，可直接pip安装，快速使用，详情参见[README](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)。
-- 优化python中各个部分的推理代码，更加紧凑，同时易于维护。
-
 
 ## 生态框架
 ```mermaid

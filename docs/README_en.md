@@ -30,9 +30,9 @@
   - [Introduction](#introduction)
   - [Navigation](#navigation)
   - [Recently updates(more)](#recently-updatesmore)
+      - [🏸2023-04-16 ocrweb v0.1.1 update:](#2023-04-16-ocrweb-v011-update)
       - [🎮2023-03-11 v1.2.2 update:](#2023-03-11-v122-update)
       - [🧢2023-03-07 v1.2.1 update:](#2023-03-07-v121-update)
-      - [⛸ 2023-02-16 update:](#-2023-02-16-update)
   - [Overall Framework](#overall-framework)
   - [Demo](#demo)
   - [TODO](#todo)
@@ -94,6 +94,11 @@
 - [FAQ](https://github.com/RapidAI/RapidOCR/blob/main/docs/FAQ.md)
 
 ## Recently updates([more](https://github.com/RapidAI/RapidOCR/blob/main/docs/change_log_en.md))
+#### 🏸2023-04-16 ocrweb v0.1.1 update:
+- API deployment changed to FastAPI library support.
+- Decouple the API mode from the Web, which can be installed selectively through `pip install rapidocr_web[api]`.
+- See details for [link](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md).
+
 #### 🎮2023-03-11 v1.2.2 update:
 - Fix the incoming parameter error of RapidOCR class in instantiation python
 
@@ -102,11 +107,6 @@
 - Optimize the interface input parameters of the rapidocr series package under python, and support the dynamic setting of each parameter when instantiating a class, which is more flexible.
 - If not specified, the default parameters under `config.yaml` will be used.
 - For details, please refer to: [Input parameters](https://github.com/RapidAI/RapidOCR/blob/0a603b4e8919386f3647eca5cdeba7620b4988e0/python/README.md#%E6%8E%A8%E8%8D%90pip%E5%AE%89%E8%A3%85%E5%BF%AB%E9%80%9F%E4%BD%BF%E7%94%A8)
-
-#### ⛸ 2023-02-16 update:
-- Optimize some codes of ocrweb, which can be directly installed by pip and used quickly. For details, please refer to [README](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md).
-- Optimize the inference code of each part in python, which is more compact and easy to maintain.
-
 
 ## Overall Framework
 ```mermaid
