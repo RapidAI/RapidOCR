@@ -3,6 +3,7 @@
 # @Contact: liekkaskono@163.com
 import argparse
 import json
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -54,7 +55,8 @@ def main():
     parser.add_argument('-p', '--port', type=int, default=9003,
                         help='IP port')
     args = parser.parse_args()
-    uvicorn.run(app, host=args.ip, port=args.port, reload=True)
+    uvicorn.run(f"{Path(__file__).stem}:app",
+                host=args.ip, port=args.port, reload=True)
 
 
 if __name__ == '__main__':
