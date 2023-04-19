@@ -81,13 +81,14 @@
   - [网页版OCR](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
   - [Nuitka打包rapdocr_web](https://github.com/RapidAI/RapidOCR/wiki/Nuitka%E6%89%93%E5%8C%85rapidocr_web%E6%93%8D%E4%BD%9C%E6%96%87%E6%A1%A3)
   - [多语言网页版OCR](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb_multi/README.md)
-- [版面结构化](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/README.md)
-  - [含文本的图像方向分类](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/docs/README_Orientation.md)
-  - [版面分析](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/docs/README_Layout.md)
-  - [表格还原](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/docs/README_Table.md)
+- [版面结构化-RapidStructure](https://github.com/RapidAI/RapidStructure)
+  - [含文本的图像方向分类](https://github.com/RapidAI/RapidStructure/blob/main/docs/README_Orientation.md)
+  - [版面分析](https://github.com/RapidAI/RapidStructure/blob/main/docs/README_Layout.md)
+  - [表格还原](https://github.com/RapidAI/RapidStructure/blob/main/docs/README_Table.md)
 - 衍生项目
   - [RapidOCR HTTP服务/win32程序/易语言编写](https://github.com/Physton/RapidOCRServer)
 - [垂直项目](https://github.com/RapidAI/RapidOCR/blob/main/docs/related_projects.md)
+  - [RapidOCRPDF](https://github.com/RapidAI/RapidOCRPDF)：解析PDF文件
   - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR)：基于RapidOCR，提取视频中的硬字幕
   - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): 表格结构还原 | [博客解读论文和源码](http://t.csdn.cn/QNN3S)
   - [文档图像矫正-PaperEdge](https://github.com/cvlab-stonybrook/PaperEdge) | [Demo](https://huggingface.co/spaces/SWHL/PaperEdgeDemo)

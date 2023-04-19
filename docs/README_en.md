@@ -73,13 +73,14 @@
   - [Web OCR](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
   - [Nuitka package rapdocr_web](https://github.com/RapidAI/RapidOCR/wiki/Nuitka%E6%89%93%E5%8C%85rapidocr_web%E6%93%8D%E4%BD%9C%E6%96%87%E6%A1%A3)
   - [Multi Web OCR](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb_multi/README.md)
-- [Structure](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/README.md)
-  - [orientation](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/docs/README_Orientation.md)
-  - [layout](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/docs/README_Layout.md)
-  - [table recovery](https://github.com/RapidAI/RapidOCR/blob/main/python/rapid_structure/docs/README_Table.md)
+- [RapidStructure](https://github.com/RapidAI/RapidStructure)
+  - [orientation](https://github.com/RapidAI/RapidStructure/blob/main/docs/README_Orientation.md)
+  - [layout](https://github.com/RapidAI/RapidStructure/blob/main/docs/README_Layout.md)
+  - [table recovery](https://github.com/RapidAI/RapidStructure/blob/main/docs/README_Table.md)
 - Derivatives
   - [RapidOCR HTTP service/win32 program/easy language writing](https://github.com/Physton/RapidOCRServer)
 - [Related projects](https://github.com/RapidAI/RapidOCR/blob/main/docs/related_projects.md)
+  - [RapidOCRPDF](https://github.com/RapidAI/RapidOCRPDF)：extract PDF content.
   - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR): Extract hard subtitles in videos based on RapidOCR
   - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): table structure restoration | [blog interpretation papers and source code](http://t.csdn.cn/QNN3S)
   - [Document Unwarping-PaperEdge](https://github.com/cvlab-stonybrook/PaperEdge) | [Demo](https://huggingface.co/spaces/SWHL/PaperEdgeDemo)
