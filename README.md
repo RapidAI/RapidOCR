@@ -37,7 +37,7 @@
       - [🧢2023-03-07 v1.2.1 update:](#2023-03-07-v121-update)
   - [生态框架](#生态框架)
   - [在线demo](#在线demo)
-  - [TODO](#todo)
+  - [TODO以及任务认领](#todo以及任务认领)
   - [原始发起者及初创作者](#原始发起者及初创作者)
   - [致谢](#致谢)
   - [赞助](#赞助)
@@ -131,30 +131,24 @@ flowchart LR
 
 ## 在线demo
 - 自建在线demo
-    - **说明**: 本在线demo不存储小伙伴们上传测试的任何图像数据，详情参见：[ocrweb/README](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
+    - 详情参见：[ocrweb/README](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
     - **demo所用模型组合（最优组合）为**:
       ```text
       ch_PP-OCRv3_det + ch_ppocr_mobile_v2.0_cls + ch_PP-OCRv3_rec
       ```
-    - **运行机器配置**: `4核 AMD EPYC 7K62 48-Core Processor `
     - **示例图**:
         <div align="center">
             <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/demo.gif" width="100%" height="100%">
         </div>
 - [Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
-  - 该demo依托于Hugging Face的Spaces构建，采用Gradio库生成，同时添加三个超参数:
-    - `box_thresh`: 检测到的框是文本的概率，值越大，框中是文本的概率就越大
-    - `unclip_ratio`: 控制检测到文本框的大小，值越大，检测框整体越大
-    - `text_score`: 文本识别结果是正确的置信度，值越大，显示出的识别结果更准确
+  - 该demo依托于Hugging Face的Spaces构建，采用Gradio库搭建。
   - 示例图：
     <div align="center">
         <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/hf_demo.png" width="100%" height="100%">
     </div>
 
-## TODO
-- [ ] iOS范例: 等待有缘人贡献代码
-- [ ] 依据python版本重写C++推理代码，以提升推理效果，并增加对gif/tga/webp 格式图片的支持
-
+## TODO以及任务认领
+- 参见这里：[link](https://github.com/RapidAI/RapidOCR/issues/76)
 
 ## 原始发起者及初创作者
 <p align="left">
