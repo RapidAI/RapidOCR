@@ -59,8 +59,10 @@
 -If this repo is helpful to you, please click on a small star ⭐ Bah!
 
 ## Navigation
-- [Python demo](https://github.com/RapidAI/RapidOCR/blob/main/python/README.md)
+- [Wiki](https://github.com/RapidAI/RapidOCR/wiki)
+  - [ONNXRuntime inference optim](https://github.com/RapidAI/RapidOCR/wiki/ONNXRuntime%E6%8E%A8%E7%90%86%E8%B0%83%E4%BC%98%E6%8C%87%E5%8D%97)
   - [RapidOCR Optim](https://github.com/RapidAI/RapidOCR/wiki/RapidOCR%E8%B0%83%E4%BC%98%E5%B0%9D%E8%AF%95%E6%95%99%E7%A8%8B)
+- [Python demo](https://github.com/RapidAI/RapidOCR/blob/main/python/README.md)
   - [rapidocr_openvino](https://github.com/RapidAI/RapidOCR/blob/main/python/rapidocr_openvino/README.md)
 - [C++ demo(Windows/Linux/macOS)](https://github.com/RapidAI/RapidOCR/blob/main/cpp)
   - [RapidOcrOnnx](https://github.com/RapidAI/RapidOcrOnnx)

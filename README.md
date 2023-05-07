@@ -66,8 +66,10 @@
 - 如果该仓库有帮助到你，还请点个小星星⭐呗！
 
 ## 文档导航
-- [Python范例](https://github.com/RapidAI/RapidOCR/blob/main/python/README.md)
+- [Wiki](https://github.com/RapidAI/RapidOCR/wiki)
+  - [ONNXRuntime推理调优指南](https://github.com/RapidAI/RapidOCR/wiki/ONNXRuntime%E6%8E%A8%E7%90%86%E8%B0%83%E4%BC%98%E6%8C%87%E5%8D%97)
   - [RapidOCR调优尝试教程](https://github.com/RapidAI/RapidOCR/wiki/RapidOCR%E8%B0%83%E4%BC%98%E5%B0%9D%E8%AF%95%E6%95%99%E7%A8%8B)
+- [Python范例](https://github.com/RapidAI/RapidOCR/blob/main/python/README.md)
   - [rapidocr_openvino](https://github.com/RapidAI/RapidOCR/blob/main/python/rapidocr_openvino/README.md)
 - [C++范例(Windows/Linux/macOS)](https://github.com/RapidAI/RapidOCR/blob/main/cpp)
   - [RapidOcrOnnx](https://github.com/RapidAI/RapidOcrOnnx)
