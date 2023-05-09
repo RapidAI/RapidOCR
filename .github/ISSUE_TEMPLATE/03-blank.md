@@ -1,7 +1,7 @@
 ---
 name: Blank Template
 about: Blank Template
-title: 'Blank Template'
+title: ''
 labels: 'Blank Template'
 assignees: ''
 
