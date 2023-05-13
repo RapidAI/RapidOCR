@@ -3,18 +3,19 @@
 # @Contact: liekkaskono@163.com
 import copy
 import importlib
-import sys
 from pathlib import Path
 from typing import Union
 
 import cv2
 import numpy as np
 
-from .utils import (LoadImage, init_args, UpdateParameters, concat_model_path,
+from .ch_ppocr_v2_cls import TextClassifier
+from .ch_ppocr_v3_det import TextDetector
+from .ch_ppocr_v3_rec import TextRecognizer
+from .utils import (LoadImage, UpdateParameters, concat_model_path, init_args,
                     read_yaml)
 
 root_dir = Path(__file__).resolve().parent
-sys.path.append(str(root_dir))
 
 
 class RapidOCR():
@@ -37,18 +38,12 @@ class RapidOCR():
 
         self.use_text_det = config['Global']['use_text_det']
         if self.use_text_det:
-            TextDetector = self.init_module(config['Det']['module_name'],
-                                            config['Det']['class_name'])
             self.text_detector = TextDetector(config['Det'])
 
-        TextRecognizer = self.init_module(config['Rec']['module_name'],
-                                          config['Rec']['class_name'])
         self.text_recognizer = TextRecognizer(config['Rec'])
 
         self.use_angle_cls = config['Global']['use_angle_cls']
         if self.use_angle_cls:
-            TextClassifier = self.init_module(config['Cls']['module_name'],
-                                              config['Cls']['class_name'])
             self.text_cls = TextClassifier(config['Cls'])
 
         self.load_img = LoadImage()

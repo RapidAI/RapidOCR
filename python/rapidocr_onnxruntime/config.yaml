@@ -9,8 +9,6 @@ Global:
 Det:
     use_cuda: false
 
-    module_name: ch_ppocr_v3_det
-    class_name: TextDetector
     model_path: models/ch_PP-OCRv3_det_infer.onnx
 
     limit_side_len: 736
@@ -26,8 +24,6 @@ Det:
 Cls:
     use_cuda: false
 
-    module_name: ch_ppocr_v2_cls
-    class_name: TextClassifier
     model_path: models/ch_ppocr_mobile_v2.0_cls_infer.onnx
 
     cls_image_shape: [3, 48, 192]
@@ -38,8 +34,6 @@ Cls:
 Rec:
     use_cuda: false
 
-    module_name: ch_ppocr_v3_rec
-    class_name: TextRecognizer
     model_path: models/ch_PP-OCRv3_rec_infer.onnx
 
     rec_img_shape: [3, 48, 320]
