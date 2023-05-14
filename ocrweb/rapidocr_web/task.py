@@ -18,7 +18,7 @@ class OCRWebUtils():
         self.ocr = RapidOCR()
         self.WebReturn = namedtuple(
             'WebReturn',
-            ['image', 'total_elapse', 'elapse_part', 'rec_res'])
+            ['image', 'total_elapse', 'elapse_part', 'rec_res', 'det_boxes'])
 
     def __call__(self, img_content: str) -> namedtuple:
         if img_content is None:
@@ -44,6 +44,7 @@ class OCRWebUtils():
             total_elapse, elapse_part = 0, ''
             img_str = self.img_to_base64(img)
             rec_res = json.dumps([], indent=2, ensure_ascii=False)
+            boxes = ''
         else:
             boxes, txts, scores = list(zip(*ocr_res))
             rec_res = list(zip(range(len(txts)), txts, scores))
@@ -58,7 +59,8 @@ class OCRWebUtils():
         web_return = self.WebReturn(image=img_str,
                                     total_elapse=f'{total_elapse:.4f}',
                                     elapse_part=elapse_part,
-                                    rec_res=rec_res)
+                                    rec_res=rec_res,
+                                    det_boxes=boxes)
         return json.dumps(web_return._asdict())
 
     @staticmethod
