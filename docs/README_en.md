@@ -30,9 +30,9 @@
   - [Introduction](#introduction)
   - [Navigation](#navigation)
   - [Recently updates(more)](#recently-updatesmore)
+      - [🌹 2023-05-14 ocrweb v0.1.5 update:](#-2023-05-14-ocrweb-v015-update)
       - [🏸2023-04-16 ocrweb v0.1.1 update:](#2023-04-16-ocrweb-v011-update)
       - [🎮2023-03-11 v1.2.2 update:](#2023-03-11-v122-update)
-      - [🧢2023-03-07 v1.2.1 update:](#2023-03-07-v121-update)
   - [Overall Framework](#overall-framework)
   - [Demo](#demo)
   - [TODO and Task Claim](#todo-and-task-claim)
@@ -98,19 +98,16 @@
 - [FAQ](https://github.com/RapidAI/RapidOCR/blob/main/docs/FAQ.md)
 
 ## Recently updates([more](https://github.com/RapidAI/RapidOCR/blob/main/docs/change_log_en.md))
+####  🌹 2023-05-14 ocrweb v0.1.5 update:
+- Add the return value of the interface version's return coordinate box ([issue #85](https://github.com/RapidAI/RapidOCR/issues/85))
+- API mode adds base64 format input
+- For details, please refer to: [link](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
 #### 🏸2023-04-16 ocrweb v0.1.1 update:
 - API deployment changed to FastAPI library support.
 - Decouple the API mode from the Web, which can be installed selectively through `pip install rapidocr_web[api]`.
 - See details for [link](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md).
-
 #### 🎮2023-03-11 v1.2.2 update:
 - Fix the incoming parameter error of RapidOCR class in instantiation python
-
-#### 🧢2023-03-07 v1.2.1 update:
-- `rapidocr` series package updated to `v1.2.0`
-- Optimize the interface input parameters of the rapidocr series package under python, and support the dynamic setting of each parameter when instantiating a class, which is more flexible.
-- If not specified, the default parameters under `config.yaml` will be used.
-- For details, please refer to: [Input parameters](https://github.com/RapidAI/RapidOCR/blob/0a603b4e8919386f3647eca5cdeba7620b4988e0/python/README.md#%E6%8E%A8%E8%8D%90pip%E5%AE%89%E8%A3%85%E5%BF%AB%E9%80%9F%E4%BD%BF%E7%94%A8)
 
 ## Overall Framework
 ```mermaid

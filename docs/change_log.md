@@ -1,3 +1,8 @@
+#### 🌹2023-05-14 ocrweb v0.1.5 update:
+- 增加界面版返回坐标框的返回值([issue #85](https://github.com/RapidAI/RapidOCR/issues/85))
+- API模式增加base64格式传入
+- 详情参见：[link](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
+
 #### 🏸2023-04-16 ocrweb v0.1.1 update:
 - API部署改为FastAPI库支持
 - 将API模式与Web解耦合，可通过`pip install rapidocr_web[api]`来选择性安装

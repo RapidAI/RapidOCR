@@ -1,3 +1,8 @@
+####  🌹 2023-05-14 ocrweb v0.1.5 update:
+- Add the return value of the interface version's return coordinate box ([issue #85](https://github.com/RapidAI/RapidOCR/issues/85))
+- API mode adds base64 format input
+- For details, please refer to: [link](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
+
 #### 🏸2023-04-16 ocrweb v0.1.1 update:
 - API deployment changed to FastAPI library support.
 - Decouple the API mode from the Web, which can be installed selectively through `pip install rapidocr_web[api]`.
