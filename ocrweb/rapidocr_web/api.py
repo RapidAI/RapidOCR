@@ -2,13 +2,15 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import argparse
+import base64
+import io
 import json
 from pathlib import Path
 
 import cv2
 import numpy as np
 import uvicorn
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, Form, UploadFile
 from PIL import Image
 from rapidocr_onnxruntime import RapidOCR
 
@@ -42,9 +44,18 @@ async def root():
 
 
 @app.post('/ocr')
-async def ocr(image: UploadFile):
-    image = Image.open(image.file)
-    ocr_res = processor(image)
+async def ocr(image_file: UploadFile = None, image_data: str = Form(None)):
+    if image_file:
+        img = Image.open(image_file.file)
+    elif image_data:
+        img_bytes = str.encode(image_data)
+        img_b64decode = base64.b64decode(img_bytes)
+        img = Image.open(io.BytesIO(img_b64decode))
+    else:
+        raise ValueError(
+            'When sending a post request, data or files must have a value.')
+
+    ocr_res = processor(img)
     return ocr_res
 
 

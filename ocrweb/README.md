@@ -73,21 +73,36 @@
        ```bash
        $ rapidocr_api -ip 0.0.0.0 -p 9003
        ```
-3. 使用
-    ```python
-    # python 示例，本质就是发送一个POST请求，其他语言同理。
-    import requests
+3. 使用（本质就是发送一个POST请求，其他语言同理）
+    - 以文件的方式发送请求
+        ```python
+        import requests
 
-    url = 'http://localhost:9003/ocr'
-    img_path = '../python/tests/test_files/ch_en_num.jpg'
+        url = 'http://localhost:9003/ocr'
+        img_path = '../python/tests/test_files/ch_en_num.jpg'
 
-    with open(img_path, 'rb') as f:
-        file_dict = {'image': (img_path, f, 'image/png')}
-        response = requests.post(url, files=file_dict, timeout=60)
+        with open(img_path, 'rb') as f:
+            file_dict = {'image_file': (img_path, f, 'image/png')}
+            response = requests.post(url, files=file_dict, timeout=60)
 
-    res_rec = response.json()
-    print(res_rec)
-    ```
+        print(response.json())
+        ```
+    - 以`base64`方式发送post请求
+        ```python
+        import base64
+        import requests
+
+        url = 'http://localhost:9003/ocr'
+        img_path = '../python/tests/test_files/ch_en_num.jpg'
+
+        with open(img_path, 'rb') as fa:
+            img_str = base64.b64encode(fa.read())
+
+        payload = {'image_data': img_str}
+        resp = requests.post(url, data=payload)
+
+        print(resp.json())
+        ```
 4. API输出
    - 示例结果：
         <details>

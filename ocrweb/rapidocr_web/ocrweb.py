@@ -6,6 +6,7 @@ from pathlib import Path
 from wsgiref.simple_server import make_server
 
 from flask import Flask, render_template, request
+
 try:
     from rapidocr_web.task import OCRWebUtils
 except:
