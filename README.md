@@ -148,7 +148,7 @@ flowchart LR
     </div>
 
 ## TODO以及任务认领
-- 参见这里：[link](https://github.com/RapidAI/RapidOCR/issues/76)
+- 参见这里：[link](https://github.com/orgs/RapidAI/projects/7)
 
 ## 原始发起者及初创作者
 <p align="left">

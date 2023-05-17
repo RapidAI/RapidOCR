@@ -145,7 +145,7 @@ flowchart LR
 
 
 ## TODO and Task Claim
-- See here: [link](https://github.com/RapidAI/RapidOCR/issues/76)
+- See here: [link](https://github.com/orgs/RapidAI/projects/7)
 
 ## Original initiator and start-up author
 <p align="left">
