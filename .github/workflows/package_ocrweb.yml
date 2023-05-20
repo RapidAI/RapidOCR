@@ -1,10 +1,14 @@
-name: Auto generate exe
+name: Package ocrweb
 
 on:
   push:
     branches: main
-    # paths:
-    #     - 'rapid_videocr/**'
+    paths:
+        - 'ocrweb/rapidocr_web/ocrweb.py'
+        - 'ocrweb/rapidocr_web/task.py'
+        - 'ocrweb/rapidocr_web/static/**'
+        - 'ocrweb/rapidocr_web/templates/**'
+
 
 env:
   package_name: RapidOCRWeb
