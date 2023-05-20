@@ -137,7 +137,7 @@ flowchart LR
       ```
     - **示例图**:
         <div align="center">
-            <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/demo.gif" width="100%" height="100%">
+            <img src="https://github.com/RapidAI/RapidOCR/blob/ae529c2ba79e6cbf04c54caf2d24feb75e947ca4/assets/demo.gif" width="100%" height="100%">
         </div>
 - [Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
   - 该demo依托于Hugging Face的Spaces构建，采用Gradio库搭建。
@@ -197,15 +197,15 @@ flowchart LR
 ## 示例图
 #### C++/JVM示例图像
 <div align="center">
-    <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/demo_cpp.png" width="100%" height="100%">
+    <img src="https://github.com/RapidAI/RapidOCR/blob/ae529c2ba79e6cbf04c54caf2d24feb75e947ca4/assets/demo_cpp.png" width="100%" height="100%">
 </div>
 
 #### .Net示例图像
 <div align="center">
-    <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/demo_cs.png" width="100%" height="100%">
+    <img src="https://github.com/RapidAI/RapidOCR/blob/ae529c2ba79e6cbf04c54caf2d24feb75e947ca4/assets/demo_cs.png" width="100%" height="100%">
 </div>
 
 #### 多语言示例图像
 <div align="center">
-    <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/demo_multi_language.jpg" width="80%" height="80%">
+    <img src="https://github.com/RapidAI/RapidOCR/blob/ae529c2ba79e6cbf04c54caf2d24feb75e947ca4/assets/demo_multi_language.jpg" width="80%" height="80%">
 </div>

@@ -25,7 +25,7 @@
 - 网页上显示的推理时间具体解释如下：
 
     <div align="center">
-        <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/ocrweb_time.jpg" width="80%" height="80%">
+        <img src="https://github.com/RapidAI/RapidOCR/blob/ae529c2ba79e6cbf04c54caf2d24feb75e947ca4/assets/ocrweb_time.jpg" width="80%" height="80%">
     </div>
 
 ### [桌面版使用教程](https://github.com/RapidAI/RapidOCR/wiki/%5BRapidOCRWeb%5D-%E6%A1%8C%E9%9D%A2%E7%89%88%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B)
