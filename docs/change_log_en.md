@@ -1,3 +1,6 @@
+#### ❤2023-05-20 ocrweb update:
+- Add desktop version of RapidOCRWeb, for details, please refer to [RapidOCRWeb desktop version tutorial](https://github.com/RapidAI/RapidOCR/wiki/%5BRapidOCRWeb%5D-%E6%A1%8C%E9%9D%A2%E7%89%88%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B)
+
 ####  🌹 2023-05-14 ocrweb v0.1.5 update:
 - Add the return value of the interface version's return coordinate box ([issue #85](https://github.com/RapidAI/RapidOCR/issues/85))
 - API mode adds base64 format input

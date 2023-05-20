@@ -10,6 +10,7 @@
 
 - [RapidOCR Web Demo](#rapidocr-web-demo)
   - [简要说明](#简要说明)
+  - [桌面版使用教程](#桌面版使用教程)
   - [界面版使用步骤](#界面版使用步骤)
   - [API版使用步骤](#api版使用步骤)
 
@@ -27,12 +28,13 @@
         <img src="https://github.com/RapidAI/RapidOCR/blob/main/assets/ocrweb_time.jpg" width="80%" height="80%">
     </div>
 
+### [桌面版使用教程](https://github.com/RapidAI/RapidOCR/wiki/%5BRapidOCRWeb%5D-%E6%A1%8C%E9%9D%A2%E7%89%88%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B)
+
 ### 界面版使用步骤
 1. 安装`rapidocr_web`
    ```bash
    $ pip install rapidocr_web
    ```
-
 2. 运行
    - 用法:
        ```bash
@@ -48,10 +50,8 @@
        ```bash
        $ rapidocr_web -ip 0.0.0.0 -p 9003
        ```
-
 3. 使用
    - 浏览器打开`http://localhost:9003/`，enjoy it.
-
 
 ### API版使用步骤
 1. 安装`rapidocr_web[api]`

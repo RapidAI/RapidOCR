@@ -1,3 +1,6 @@
+#### ❤2023-05-20 ocrweb update:
+- 增加桌面版RapidOCRWeb，详情可参见[RapidOCRWeb桌面版使用教程](https://github.com/RapidAI/RapidOCR/wiki/%5BRapidOCRWeb%5D-%E6%A1%8C%E9%9D%A2%E7%89%88%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B)
+
 #### 🌹2023-05-14 ocrweb v0.1.5 update:
 - 增加界面版返回坐标框的返回值([issue #85](https://github.com/RapidAI/RapidOCR/issues/85))
 - API模式增加base64格式传入
