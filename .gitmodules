@@ -1,0 +1,3 @@
+[submodule "android/RapidOcrAndroidOnnx"]
+	path = android/RapidOcrAndroidOnnx
+	url = git@github.com:RapidAI/RapidOcrAndroidOnnx.git
