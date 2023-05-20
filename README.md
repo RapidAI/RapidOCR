@@ -77,7 +77,7 @@
 - [Jvm范例(Java/Kotlin)](https://github.com/RapidAI/RapidOCR/blob/main/jvm)
   - [RapidOcrOnnxJvm](https://github.com/RapidAI/RapidOcrOnnxJvm)
   - [RapidOcrNcnnJvm](https://github.com/RapidAI/RapidOcrNcnnJvm)
-- [.Net范例(C#)](https://github.com/RapidAI/RapidOCR/blob/main/dotnet/RapidOcrOnnxCs/README.md)
+- [.Net范例(C#)](https://github.com/RapidAI/RapidOCRCSharp)
 - [Android范例](https://github.com/RapidAI/RapidOcrAndroidOnnx)
 - 网页版范例
   - [网页版OCR](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)

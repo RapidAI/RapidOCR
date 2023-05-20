@@ -69,7 +69,7 @@
 - [Jvm demo(Java/Kotlin)](https://github.com/RapidAI/RapidOCR/blob/main/jvm)
   - [RapidOcrOnnxJvm](https://github.com/RapidAI/RapidOcrOnnxJvm)
   - [RapidOcrNcnnJvm](https://github.com/RapidAI/RapidOcrNcnnJvm)
-- [.Net demo(C#)](https://github.com/RapidAI/RapidOCR/blob/main/dotnet)
+- [.Net demo(C#)](https://github.com/RapidAI/RapidOCRCSharp)
 - [Android demo](https://github.com/RapidAI/RapidOcrAndroidOnnx)
 - Web demo:
   - [Web OCR](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)

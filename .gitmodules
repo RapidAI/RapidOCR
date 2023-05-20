@@ -13,3 +13,6 @@
 [submodule "jvm/RapidOcrOnnxJvm"]
 	path = jvm/RapidOcrOnnxJvm
 	url = git@github.com:RapidAI/RapidOcrOnnxJvm.git
+[submodule "dotnet/RapidOCRCSharp"]
+	path = dotnet/RapidOCRCSharp
+	url = git@github.com:RapidAI/RapidOCRCSharp.git
