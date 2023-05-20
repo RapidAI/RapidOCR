@@ -61,8 +61,8 @@
 - [Wiki](https://github.com/RapidAI/RapidOCR/wiki)
   - [ONNXRuntime inference optim](https://github.com/RapidAI/RapidOCR/wiki/ONNXRuntime%E6%8E%A8%E7%90%86%E8%B0%83%E4%BC%98%E6%8C%87%E5%8D%97)
   - [RapidOCR Optim](https://github.com/RapidAI/RapidOCR/wiki/RapidOCR%E8%B0%83%E4%BC%98%E5%B0%9D%E8%AF%95%E6%95%99%E7%A8%8B)
+  - [config.yaml parameter](https://github.com/RapidAI/RapidOCR/wiki/config_parameter)
 - [Python demo](https://github.com/RapidAI/RapidOCR/blob/main/python/README.md)
-  - [rapidocr_openvino](https://github.com/RapidAI/RapidOCR/blob/main/python/rapidocr_openvino/README.md)
 - [C++ demo(Windows/Linux/macOS)](https://github.com/RapidAI/RapidOCR/blob/main/cpp)
   - [RapidOcrOnnx](https://github.com/RapidAI/RapidOcrOnnx)
   - [RapidOcrNcnn](https://github.com/RapidAI/RapidOcrNcnn)
@@ -96,7 +96,7 @@
   - [Model Download](https://github.com/RapidAI/RapidOCR/blob/main/docs/models.md#模型下载)
 - [FAQ](https://github.com/RapidAI/RapidOCR/blob/main/docs/FAQ.md)
 
-## Recently updates([more](https://github.com/RapidAI/RapidOCR/blob/main/docs/change_log_en.md))
+## Recently updates([more](https://github.com/RapidAI/RapidOCR/wiki/Changelog))
 #### ❤2023-05-20 ocrweb update:
 - Add desktop version of RapidOCRWeb, for details, please refer to [RapidOCRWeb desktop version tutorial](https://github.com/RapidAI/RapidOCR/wiki/%5BRapidOCRWeb%5D-%E6%A1%8C%E9%9D%A2%E7%89%88%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B)
 ####  🌹 2023-05-14 ocrweb v0.1.5 update:

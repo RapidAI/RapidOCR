@@ -69,8 +69,8 @@
 - [Wiki](https://github.com/RapidAI/RapidOCR/wiki)
   - [ONNXRuntime推理调优指南](https://github.com/RapidAI/RapidOCR/wiki/ONNXRuntime%E6%8E%A8%E7%90%86%E8%B0%83%E4%BC%98%E6%8C%87%E5%8D%97)
   - [RapidOCR调优尝试教程](https://github.com/RapidAI/RapidOCR/wiki/RapidOCR%E8%B0%83%E4%BC%98%E5%B0%9D%E8%AF%95%E6%95%99%E7%A8%8B)
+  - [config.yaml参数详解](https://github.com/RapidAI/RapidOCR/wiki/config_parameter)
 - [Python范例](https://github.com/RapidAI/RapidOCR/blob/main/python/README.md)
-  - [rapidocr_openvino](https://github.com/RapidAI/RapidOCR/blob/main/python/rapidocr_openvino/README.md)
 - [C++范例(Windows/Linux/macOS)](https://github.com/RapidAI/RapidOCR/blob/main/cpp)
   - [RapidOcrOnnx](https://github.com/RapidAI/RapidOcrOnnx)
   - [RapidOcrNcnn](https://github.com/RapidAI/RapidOcrNcnn)
@@ -95,15 +95,14 @@
   - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): 表格结构还原 | [博客解读论文和源码](http://t.csdn.cn/QNN3S)
   - [文档图像矫正-PaperEdge](https://github.com/cvlab-stonybrook/PaperEdge) | [Demo](https://huggingface.co/spaces/SWHL/PaperEdgeDemo)
   - [图像文字擦除-CTRNet](https://github.com/lcy0604/CTRNet) | [Demo](https://huggingface.co/spaces/SWHL/CTRNetDemo)
-- [模型相关](https://github.com/RapidAI/RapidOCR/blob/main/docs/models.md)
-  - [模型转换](https://github.com/RapidAI/RapidOCR/blob/main/docs/models.md#模型转换)
-  - [模型下载及效果对比](https://github.com/RapidAI/RapidOCR/blob/main/docs/models.md#模型下载)
-- [常见问题 FAQ](https://github.com/RapidAI/RapidOCR/blob/main/docs/FAQ.md)
+- [模型相关](https://github.com/RapidAI/RapidOCR/wiki/%E6%A8%A1%E5%9E%8B%E7%9B%B8%E5%85%B3)
+- [常见问题 FAQ](https://github.com/RapidAI/RapidOCR/wiki/FAQ)
 
 
-## 近期更新([more](https://github.com/RapidAI/RapidOCR/blob/main/docs/change_log.md))
+## 近期更新([more](https://github.com/RapidAI/RapidOCR/wiki/%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97))
 #### ❤2023-05-20 ocrweb update:
 - 增加桌面版RapidOCRWeb，详情可参见[RapidOCRWeb桌面版使用教程](https://github.com/RapidAI/RapidOCR/wiki/%5BRapidOCRWeb%5D-%E6%A1%8C%E9%9D%A2%E7%89%88%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B)
+- 对仓库文档做了整理，大部分文档放到了[Wiki](https://github.com/RapidAI/RapidOCR/wiki)
 #### 🌹2023-05-14 ocrweb v0.1.5 update:
 - 增加界面版返回坐标框的返回值([issue #85](https://github.com/RapidAI/RapidOCR/issues/85))
 - API模式增加base64格式传入
