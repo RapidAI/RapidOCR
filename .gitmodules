@@ -10,3 +10,6 @@
 [submodule "jvm/RapidOcrNcnnJvm"]
 	path = jvm/RapidOcrNcnnJvm
 	url = git@github.com:RapidAI/RapidOcrNcnnJvm.git
+[submodule "jvm/RapidOcrOnnxJvm"]
+	path = jvm/RapidOcrOnnxJvm
+	url = git@github.com:RapidAI/RapidOcrOnnxJvm.git
