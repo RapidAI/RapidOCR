@@ -36,7 +36,7 @@ jobs:
     needs: create_release
     strategy:
         matrix:
-            os: ['winodws-2022', 'windows-2019']
+            os: ['windows-2022', 'windows-2019']
 
     steps:
       - name: Pull latest code
