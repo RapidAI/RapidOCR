@@ -1,0 +1,154 @@
+name: Auto generate exe
+
+on:
+  push:
+    branches: main
+    # paths:
+    #     - 'rapid_videocr/**'
+
+env:
+  package_name: RapidOCRWeb
+  rapidocr_web_dir: ocrweb/rapidocr_web/
+
+jobs:
+  create_release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: get_cur_time
+        uses: srfrnk/current-time@master
+        id:  get_cur_time
+        with:
+            format: YYYY-MM-DD-HH-mm-ss
+      - name: create_release
+        id: create_release
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: Draft-${{ steps.get_cur_time.outputs.formattedTime }}
+          prerelease: false
+          draft: true
+
+  build_windows:
+    name: build_windows
+    runs-on: ${{ matrix.os }}
+    needs: create_release
+    strategy:
+        matrix:
+            os: ['winodws-2022', 'windows-2019']
+
+    steps:
+      - name: Pull latest code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+          architecture: 'x64'
+
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
+
+      - name: Install environments
+        run: |
+          pip3 install Pillow pyinstaller Flask>=2.1.0 rapidocr_onnxruntime>=1.2.8 get_pypi_latest_version
+
+      - name: Run pyinstaller
+        id: run_pyinstaller
+        shell: bash
+        run: |
+          cd ${{ env.rapidocr_web_dir }}
+          pyinstaller ocrweb.spec
+          cp -r static templates dist/${{ env.package_name }}
+          rm dist/${{ env.package_name }}/cv2/opencv_videoio_ffmpe*.dll || echo "未找到opencv_videoio_ffmpeg"
+          echo "VERSION=$(get_pypi_latest_version rapid_videocr)" >> $GITHUB_OUTPUT
+
+      - name: Concat file path
+        id: concat_file_path
+        shell: bash
+        env:
+            ZIP_WIN_NAME: ${{ env.package_name }}-${{ steps.run_pyinstaller.outputs.VERSION }}-${{ matrix.os }}-${{ runner.arch }}-no-installer.zip
+            Win_DIST_DIR: ${{ github.workspace }}\ocrweb\rapidocr_web\dist
+        run: |
+          echo "ZIP_NAME=$ZIP_WIN_NAME" >> $GITHUB_OUTPUT
+          echo "Win_PACKAGE_DIR=$Win_DIST_DIR\${{ env.package_name }}" >> $GITHUB_OUTPUT
+          echo "Win_ZIP_FULL_PATH=$Win_DIST_DIR\\$ZIP_WIN_NAME" >> $GITHUB_OUTPUT
+
+      - name: Zip package
+        run: |
+          powershell Compress-Archive ${{ steps.concat_file_path.outputs.Win_PACKAGE_DIR }} ${{ steps.concat_file_path.outputs.Win_ZIP_FULL_PATH }}
+
+      - name: Upload release asset
+        id: upload-release-asset-windows
+        uses: actions/upload-release-asset@v1
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+            upload_url: ${{ needs.create_release.outputs.upload_url }}
+            asset_path: ${{ steps.concat_file_path.outputs.Win_ZIP_FULL_PATH }}
+            asset_name: ${{ steps.concat_file_path.outputs.ZIP_NAME }}
+            asset_content_type: application/zip
+
+  build_linux:
+    name: build_linux
+    runs-on: ${{ matrix.os }}
+    needs: create_release
+    strategy:
+        matrix:
+            os: ['ubuntu-20.04', 'ubuntu-22.04', 'macos-13', 'macos-12', 'macos-11']
+
+    steps:
+      - name: Pull latest code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+          architecture: 'x64'
+
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
+
+      - name: Install environments
+        run: |
+          pip3 install Pillow pyinstaller Flask>=2.1.0 rapidocr_onnxruntime>=1.2.8 get_pypi_latest_version
+
+      - name: Run pyinstaller
+        id: run_pyinstaller
+        shell: bash
+        run: |
+          cd ocrweb/rapidocr_web/
+          pyinstaller ocrweb.spec
+          cp -r static templates dist/${{ env.package_name }}
+          rm dist/${{ env.package_name }}/cv2/opencv_videoio_ffmpe*.dll || echo "未找到opencv_videoio_ffmpeg"
+          echo "VERSION=$(get_pypi_latest_version rapid_videocr)" >> $GITHUB_OUTPUT
+
+      - name: Concat file path
+        id: concat_file_path
+        env:
+            ZIP_NAME: ${{ env.package_name }}-${{ steps.run_pyinstaller.outputs.VERSION }}-${{ matrix.os }}-${{ runner.arch }}-no-installer.zip
+            Linux_DIST_DIR: ${{ github.workspace }}/ocrweb/rapidocr_web/dist
+        run: |
+          echo "ZIP_NAME=$ZIP_NAME" >> $GITHUB_OUTPUT
+          echo "Linux_PACKAGE_DIR=$Linux_DIST_DIR/${{ env.package_name }}" >> $GITHUB_OUTPUT
+          echo "Linux_ZIP_FULL_PATH=$Linux_DIST_DIR/$ZIP_NAME" >> $GITHUB_OUTPUT
+          echo "Linux_DIST_DIR=$Linux_DIST_DIR" >> $GITHUB_OUTPUT
+
+      - name: Zip package
+        run: |
+          cd ${{ steps.concat_file_path.outputs.Linux_DIST_DIR }}
+          zip -r ${{ steps.concat_file_path.outputs.ZIP_NAME }} ${{ env.package_name }}
+
+      - name: Upload release asset
+        id: upload-release-asset-linux-macOS
+        uses: actions/upload-release-asset@v1
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+            upload_url: ${{ needs.create_release.outputs.upload_url }}
+            asset_path: ${{ steps.concat_file_path.outputs.Linux_ZIP_FULL_PATH }}
+            asset_name: ${{ steps.concat_file_path.outputs.ZIP_NAME }}
+            asset_content_type: application/zip

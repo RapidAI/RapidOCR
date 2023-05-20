@@ -24,12 +24,11 @@ for v in yaml_paths:
 
 add_data = list(set(yaml_add_data + onnx_add_data))
 
-
 a = Analysis(
-    ['ocrweb.py'],
+    ['api.py'],
     pathex=[],
     binaries=[],
-    datas=add_data,
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -47,7 +46,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='RapidOCRWeb',
+    name='api',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -68,5 +67,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='RapidOCRWeb',
+    name='api',
 )
