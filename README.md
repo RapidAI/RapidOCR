@@ -1,11 +1,11 @@
 
+简体中文 | [English](https://github.com/RapidAI/RapidOCR/blob/main/docs/README_en.md)
 <div align="center">
   <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/RapidOCR_LOGO.png" width="65%" height="65%"/>
 </div>
 
-# 捷智OCR - 信创级开源OCR - 为世界内容安全贡献力量
-
-简体中文 | [English](https://github.com/RapidAI/RapidOCR/blob/main/docs/README_en.md)
+# 捷智OCR
+*信创级开源OCR - 为世界内容安全贡献力量*
 
 <p align="left">
     <a href="https://huggingface.co/spaces/SWHL/RapidOCRDemo" target="_blank"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Hugging Face Demo-blue"></a>
@@ -27,7 +27,7 @@
 <details>
     <summary>目录</summary>
 
-- [捷智OCR - 信创级开源OCR - 为世界内容安全贡献力量](#捷智ocr---信创级开源ocr---为世界内容安全贡献力量)
+- [捷智OCR](#捷智ocr)
   - [商业支持](#商业支持)
   - [简介](#简介)
   - [文档导航](#文档导航)

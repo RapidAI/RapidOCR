@@ -1,11 +1,10 @@
 
+[简体中文](https://github.com/RapidAI/RapidOCR/blob/main/README.md) | English
 <div align="center">
   <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/RapidOCR_LOGO.png" width="55%" height="55%"/>
 </div>
 
-# Open source OCR for the security of the digital world
-
-[简体中文](https://github.com/RapidAI/RapidOCR/blob/main/README.md) | English
+*Open source OCR for the security of the digital world*
 
 <p align="left">
     <a href="https://huggingface.co/spaces/SWHL/RapidOCRDemo" target="_blank"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Hugging Face Demo-blue"></a>
@@ -26,26 +25,25 @@
 <details>
     <summary>Contents</summary>
 
-- [Open source OCR for the security of the digital world](#open-source-ocr-for-the-security-of-the-digital-world)
-  - [Introduction](#introduction)
-  - [Navigation](#navigation)
-  - [Recently updates(more)](#recently-updatesmore)
-      - [❤2023-05-20 ocrweb update:](#2023-05-20-ocrweb-update)
-      - [🌹 2023-05-14 ocrweb v0.1.5 update:](#-2023-05-14-ocrweb-v015-update)
-      - [🏸2023-04-16 ocrweb v0.1.1 update:](#2023-04-16-ocrweb-v011-update)
-      - [🎮2023-03-11 v1.2.2 update:](#2023-03-11-v122-update)
-  - [Overall Framework](#overall-framework)
-  - [Demo](#demo)
-  - [TODO and Task Claim](#todo-and-task-claim)
-  - [Original initiator and start-up author](#original-initiator-and-start-up-author)
-  - [Acknowledgements](#acknowledgements)
-  - [Sponsor](#sponsor)
-  - [Authorization](#authorization)
-  - [Join us](#join-us)
-  - [Demo](#demo-1)
-      - [Demonstration with C++/JVM](#demonstration-with-cjvm)
-      - [Demonstration with .Net](#demonstration-with-net)
-      - [Demonstratioin with multi\_language](#demonstratioin-with-multi_language)
+- [Introduction](#introduction)
+- [Navigation](#navigation)
+- [Recently updates(more)](#recently-updatesmore)
+    - [❤2023-05-20 ocrweb update:](#2023-05-20-ocrweb-update)
+    - [🌹 2023-05-14 ocrweb v0.1.5 update:](#-2023-05-14-ocrweb-v015-update)
+    - [🏸2023-04-16 ocrweb v0.1.1 update:](#2023-04-16-ocrweb-v011-update)
+    - [🎮2023-03-11 v1.2.2 update:](#2023-03-11-v122-update)
+- [Overall Framework](#overall-framework)
+- [Demo](#demo)
+- [TODO and Task Claim](#todo-and-task-claim)
+- [Original initiator and start-up author](#original-initiator-and-start-up-author)
+- [Acknowledgements](#acknowledgements)
+- [Sponsor](#sponsor)
+- [Authorization](#authorization)
+- [Join us](#join-us)
+- [Demo](#demo-1)
+    - [Demonstration with C++/JVM](#demonstration-with-cjvm)
+    - [Demonstration with .Net](#demonstration-with-net)
+    - [Demonstratioin with multi\_language](#demonstratioin-with-multi_language)
 </details>
 
 
