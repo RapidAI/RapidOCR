@@ -40,6 +40,7 @@ def main():
                         help='IP port')
     args = parser.parse_args()
 
+    print('Successfully launched and visit https://localhost:9003 to view.')
     server = make_server(args.ip, args.port, app)
     server.serve_forever()
 

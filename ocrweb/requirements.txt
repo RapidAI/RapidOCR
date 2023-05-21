@@ -4,5 +4,3 @@ Flask>=2.1.0
 rapidocr_onnxruntime
 get_pypi_latest_version
 wheel
-fastapi
-uvicorn[standard]

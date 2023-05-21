@@ -53,20 +53,15 @@ setuptools.setup(
         'ocr,text_detection,text_recognition,db,onnxruntime,paddleocr,openvino,rapidocr'
     ],
     classifiers=[
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
     ],
-    python_requires='>=3.6,<=3.10',
+    python_requires='>=3.7,<=3.10',
     entry_points={
         'console_scripts': [
             f'{MODULE_NAME}={MODULE_NAME}.ocrweb:main',
-            f'rapidocr_api={MODULE_NAME}.api:main'
         ],
     },
-    extras_require={
-        'api': ['fastapi', 'uvicorn[standard]']
-    }
 )
