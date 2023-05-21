@@ -1,0 +1,6 @@
+requests
+rapidocr_onnxruntime
+get_pypi_latest_version
+wheel
+fastapi
+uvicorn[standard]
