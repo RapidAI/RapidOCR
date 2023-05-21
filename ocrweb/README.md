@@ -16,6 +16,7 @@
 
 
 ### 简要说明
+- 该模块定位是一个快速搭建示例的demo，没有考虑多进程处理并发请求，如果有这需求的小伙伴，可以看看gunicorn等。
 - 该模块依赖`rapidocr_onnxruntime`库。
 - 如果想要离线部署，可以先手动下载[`rapidocr_onnxruntime`](https://pypi.org/project/rapidocr-onnxruntime/#files) whl包，再手动安装[`rapidocr_web`](https://pypi.org/project/rapidocr-web/#files) whl包来使用。
 - 所用模型组合（最优组合）为：
