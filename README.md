@@ -32,9 +32,9 @@
   - [简介](#简介)
   - [文档导航](#文档导航)
   - [近期更新(more)](#近期更新more)
+      - [🍜2023-05-22 api update:](#2023-05-22-api-update)
       - [❤2023-05-20 ocrweb update:](#2023-05-20-ocrweb-update)
       - [🌹2023-05-14 ocrweb v0.1.5 update:](#2023-05-14-ocrweb-v015-update)
-      - [🏸2023-04-16 ocrweb v0.1.1 update:](#2023-04-16-ocrweb-v011-update)
   - [生态框架](#生态框架)
   - [在线demo](#在线demo)
   - [TODO以及任务认领](#todo以及任务认领)
@@ -83,6 +83,7 @@
   - [网页版OCR](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
   - [Nuitka打包rapdocr_web](https://github.com/RapidAI/RapidOCR/wiki/Nuitka%E6%89%93%E5%8C%85rapidocr_web%E6%93%8D%E4%BD%9C%E6%96%87%E6%A1%A3)
   - [多语言网页版OCR](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb_multi/README.md)
+- [API版](https://github.com/RapidAI/RapidOCR/tree/main/api)
 - [版面结构化-RapidStructure](https://github.com/RapidAI/RapidStructure)
   - [含文本的图像方向分类](https://github.com/RapidAI/RapidStructure/blob/main/docs/README_Orientation.md)
   - [版面分析](https://github.com/RapidAI/RapidStructure/blob/main/docs/README_Layout.md)
@@ -100,16 +101,15 @@
 
 
 ## 近期更新([more](https://github.com/RapidAI/RapidOCR/wiki/%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97))
+#### 🍜2023-05-22 api update:
+- 将API从ocrweb中解耦出来，作为单独模块维护，详情参见[API](https://github.com/RapidAI/RapidOCR/tree/main/api)
+- `rapidocr_web>0.1.6`之后，将不支持`pip install rapidocr_web[api]`方式安装，可直接`pip install rapidocr_api`安装使用。
 #### ❤2023-05-20 ocrweb update:
 - 增加桌面版RapidOCRWeb，详情可参见[RapidOCRWeb桌面版使用教程](https://github.com/RapidAI/RapidOCR/wiki/%5BRapidOCRWeb%5D-%E6%A1%8C%E9%9D%A2%E7%89%88%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B)
 - 对仓库文档做了整理，大部分文档放到了[Wiki](https://github.com/RapidAI/RapidOCR/wiki)
 #### 🌹2023-05-14 ocrweb v0.1.5 update:
 - 增加界面版返回坐标框的返回值([issue #85](https://github.com/RapidAI/RapidOCR/issues/85))
 - API模式增加base64格式传入
-- 详情参见：[link](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
-#### 🏸2023-04-16 ocrweb v0.1.1 update:
-- API部署改为FastAPI库支持
-- 将API模式与Web解耦合，可通过`pip install rapidocr_web[api]`来选择性安装
 - 详情参见：[link](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
 
 ## 生态框架

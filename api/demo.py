@@ -11,4 +11,4 @@ with open(img_path, 'rb') as f:
     file_dict = {'image_file': (img_path, f, 'image/png')}
     response = requests.post(url, files=file_dict, timeout=60)
 
-print(response.json())
+print(response.text)

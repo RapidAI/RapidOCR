@@ -28,10 +28,9 @@
 - [Introduction](#introduction)
 - [Navigation](#navigation)
 - [Recently updates(more)](#recently-updatesmore)
+    - [🍜2023-05-22 api update:](#2023-05-22-api-update)
     - [❤2023-05-20 ocrweb update:](#2023-05-20-ocrweb-update)
     - [🌹 2023-05-14 ocrweb v0.1.5 update:](#-2023-05-14-ocrweb-v015-update)
-    - [🏸2023-04-16 ocrweb v0.1.1 update:](#2023-04-16-ocrweb-v011-update)
-    - [🎮2023-03-11 v1.2.2 update:](#2023-03-11-v122-update)
 - [Overall Framework](#overall-framework)
 - [Demo](#demo)
 - [TODO and Task Claim](#todo-and-task-claim)
@@ -71,6 +70,7 @@
   - [RapidOcrNcnnJvm](https://github.com/RapidAI/RapidOcrNcnnJvm)
 - [.Net demo(C#)](https://github.com/RapidAI/RapidOCRCSharp)
 - [Android demo](https://github.com/RapidAI/RapidOcrAndroidOnnx)
+- [API](https://github.com/RapidAI/RapidOCR/tree/main/api)
 - Web demo:
   - [Web OCR](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
   - [Nuitka package rapdocr_web](https://github.com/RapidAI/RapidOCR/wiki/Nuitka%E6%89%93%E5%8C%85rapidocr_web%E6%93%8D%E4%BD%9C%E6%96%87%E6%A1%A3)
@@ -97,18 +97,15 @@
 - [FAQ](https://github.com/RapidAI/RapidOCR/blob/main/docs/FAQ.md)
 
 ## Recently updates([more](https://github.com/RapidAI/RapidOCR/wiki/Changelog))
+#### 🍜2023-05-22 api update:
+- Decouple the API from ocrweb and maintain it as a separate module. For details, see [API](https://github.com/RapidAI/RapidOCR/tree/main/api)
+- After `rapidocr_web>0.1.6`, `pip install rapidocr_web[api]` will not be supported for installation, you can directly install and use `pip install rapidocr_api`.
 #### ❤2023-05-20 ocrweb update:
 - Add desktop version of RapidOCRWeb, for details, please refer to [RapidOCRWeb desktop version tutorial](https://github.com/RapidAI/RapidOCR/wiki/%5BRapidOCRWeb%5D-%E6%A1%8C%E9%9D%A2%E7%89%88%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B)
 ####  🌹 2023-05-14 ocrweb v0.1.5 update:
 - Add the return value of the interface version's return coordinate box ([issue #85](https://github.com/RapidAI/RapidOCR/issues/85))
 - API mode adds base64 format input
 - For details, please refer to: [link](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
-#### 🏸2023-04-16 ocrweb v0.1.1 update:
-- API deployment changed to FastAPI library support.
-- Decouple the API mode from the Web, which can be installed selectively through `pip install rapidocr_web[api]`.
-- See details for [link](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md).
-#### 🎮2023-03-11 v1.2.2 update:
-- Fix the incoming parameter error of RapidOCR class in instantiation python
 
 ## Overall Framework
 ```mermaid

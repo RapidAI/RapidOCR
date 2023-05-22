@@ -35,7 +35,7 @@ class OCRAPIUtils():
                              'dt_boxes': dt_box,
                              'score': score}
                     for i, (dt_box, rec, score) in enumerate(ocr_res)}
-        return json.dumps(out_dict, indent=2, ensure_ascii=False)
+        return out_dict
 
 
 app = FastAPI()

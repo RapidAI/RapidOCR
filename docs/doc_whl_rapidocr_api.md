@@ -27,35 +27,40 @@
        $ rapidocr_api -ip 0.0.0.0 -p 9003
        ```
 3. Use
-    - Send image data by file format.
-        ```python
-        import requests
-
-        url = 'http://localhost:9003/ocr'
-        img_path = '../python/tests/test_files/ch_en_num.jpg'
-
-        with open(img_path, 'rb') as f:
-            file_dict = {'image_file': (img_path, f, 'image/png')}
-            response = requests.post(url, files=file_dict, timeout=60)
-
-        print(response.json())
+    - with curl
+        ```bash
+        $ curl -F image_file=@1.png http://0.0.0.0:9003/ocr
         ```
-    - Send image data by base64 format.
-        ```python
-        import base64
-        import requests
+    - with python
+      - Send image data by file format.
+          ```python
+          import requests
 
-        url = 'http://localhost:9003/ocr'
-        img_path = '../python/tests/test_files/ch_en_num.jpg'
+          url = 'http://localhost:9003/ocr'
+          img_path = '../python/tests/test_files/ch_en_num.jpg'
 
-        with open(img_path, 'rb') as fa:
-            img_str = base64.b64encode(fa.read())
+          with open(img_path, 'rb') as f:
+              file_dict = {'image_file': (img_path, f, 'image/png')}
+              response = requests.post(url, files=file_dict, timeout=60)
 
-        payload = {'image_data': img_str}
-        resp = requests.post(url, data=payload)
+          print(response.json())
+          ```
+      - Send image data by base64 format.
+          ```python
+          import base64
+          import requests
 
-        print(resp.json())
-        ```
+          url = 'http://localhost:9003/ocr'
+          img_path = '../python/tests/test_files/ch_en_num.jpg'
+
+          with open(img_path, 'rb') as fa:
+              img_str = base64.b64encode(fa.read())
+
+          payload = {'image_data': img_str}
+          resp = requests.post(url, data=payload)
+
+          print(resp.json())
+          ```
 4. Output
     <details>
     <summary>Click to expand</summary>
