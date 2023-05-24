@@ -57,7 +57,8 @@
 
 ## 简介
 - 💖目前已知**运行速度最快、支持最广**，完全开源免费并支持离线快速部署的多平台多语言OCR。
-- **中文广告**： 欢迎加入我们的QQ群下载模型及测试程序，QQ群号：887298230(已满)，2群(755960114)
+- **中文广告**： 欢迎加入我们的QQ群下载模型及测试程序，QQ群号：887298230，2群(755960114)
+- **支持的语言**: 默认是中英文，其他语言识别需要自助转换。具体参考[这里](https://github.com/RapidAI/RapidOCR/wiki/support_language)
 - **缘起**：百度paddlepaddle工程化不是太好，为了方便大家在各种端上进行ocr推理，我们将它转换为onnx格式，使用`Python/C++/Java/Swift/C#` 将它移植到各个平台。
 - **名称来源**： 轻快好省并智能。基于深度学习技术的OCR技术，主打人工智能优势及小模型，以速度为使命，效果为主导。
 - **使用**：
@@ -67,6 +68,7 @@
 
 ## 文档导航
 - [Wiki](https://github.com/RapidAI/RapidOCR/wiki)
+  - [支持识别的语言列表](https://github.com/RapidAI/RapidOCR/wiki/support_language)
   - [ONNXRuntime推理调优指南](https://github.com/RapidAI/RapidOCR/wiki/ONNXRuntime%E6%8E%A8%E7%90%86%E8%B0%83%E4%BC%98%E6%8C%87%E5%8D%97)
   - [RapidOCR调优尝试教程](https://github.com/RapidAI/RapidOCR/wiki/RapidOCR%E8%B0%83%E4%BC%98%E5%B0%9D%E8%AF%95%E6%95%99%E7%A8%8B)
   - [config.yaml参数详解](https://github.com/RapidAI/RapidOCR/wiki/config_parameter)

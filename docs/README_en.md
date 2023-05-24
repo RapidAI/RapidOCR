@@ -58,6 +58,7 @@
 
 ## Navigation
 - [Wiki](https://github.com/RapidAI/RapidOCR/wiki)
+  - [Support Language](https://github.com/RapidAI/RapidOCR/wiki/support_language)
   - [ONNXRuntime inference optim](https://github.com/RapidAI/RapidOCR/wiki/ONNXRuntime%E6%8E%A8%E7%90%86%E8%B0%83%E4%BC%98%E6%8C%87%E5%8D%97)
   - [RapidOCR Optim](https://github.com/RapidAI/RapidOCR/wiki/RapidOCR%E8%B0%83%E4%BC%98%E5%B0%9D%E8%AF%95%E6%95%99%E7%A8%8B)
   - [config.yaml parameter](https://github.com/RapidAI/RapidOCR/wiki/config_parameter)
