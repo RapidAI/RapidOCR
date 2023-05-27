@@ -7,8 +7,7 @@
     <a href="https://pepy.tech/project/rapidocr_api"><img src="https://static.pepy.tech/personalized-badge/rapidocr_api?period=total&units=abbreviation&left_color=grey&right_color=blue&left_text=Downloads"></a>
 </p>
 
-- ⚠️ 由于[pypi网站处于维护之中](https://status.python.org/)，暂时不能上传whl包，后续如恢复，会再次上传。
-- 采用FastAPI+uvicorn实现。
+- 采用`FastAPI` + `uvicorn`实现。
 - 该模块定位是一个快速搭建示例的demo，没有考虑多进程处理并发请求，如果有这需求的小伙伴，可以看看gunicorn等。
 
 ### 使用步骤

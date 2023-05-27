@@ -7,9 +7,9 @@
 </p>
 
 ### Use
-1. Install`rapidocr_web[api]`
+1. Install`rapidocr_api`
    ```bash
-   $ pip install rapidocr_web[api]
+   $ pip install rapidocr_api
    ```
 2. Run
    - Usage:
