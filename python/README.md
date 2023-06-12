@@ -37,21 +37,21 @@
         rec_img_shape: [3, 48, 320]
         rec_batch_num: 6
         ```
-- 关于openvino详细的使用方法，参见[openvino_readme](./rapidocr_openvino/README.md)。
 - 关于选择哪个推理引擎（onnxruntime 或者 openvino）?
     |推理引擎|推理速度更快|占用内存更少|
     |:---:|:---:|:---:|
     |onnxruntime||✓|
-    |openvino|✓|存在内存不释放的问题|
+    |openvino|✓|存在内存不释放的问题，参见[wiki](https://github.com/RapidAI/RapidOCR/wiki/openvino%E5%85%A5%E9%97%A8)|
 
 
 ### （推荐）pip安装快速使用
-1. 安装`rapidocr`包
-   - <a href="https://pypi.org/project/rapidocr-onnxruntime/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-onnxruntime?style=flat-square"></a> `rapidocr_onnxruntime` → `pip install rapidocr-onnxruntime`
-   - <a href="https://pypi.org/project/rapidocr-openvino/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-openvino?style=flat-square"></a> `rapidocr_openvino` → `pip install rapidocr-openvino`
-   - 注意：两个包接口一致，只是推理引擎不同而已
+1. 安装包（⚠️注意：两个包接口一致，只是推理引擎不同而已）
+   |包名|版本|安装命令|
+   |:---|:---:|:---|
+   |`rapidocr_onnxruntime`|<a href="https://pypi.org/project/rapidocr-onnxruntime/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-onnxruntime?style=flat-square"></a>|`pip install rapidocr-onnxruntime`|
+   |`rapidocr_openvino`|<a href="https://pypi.org/project/rapidocr-openvino/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-openvino?style=flat-square"></a>|`pip install rapidocr-openvino`|
 
-2. 推理使用
+1. 推理使用
     - 脚本使用：
       - 📌初始化RapidOCR可不提供`config.yaml`，默认使用**rapidocr_onnxruntime**目录下的。如有自定义需求，可直接通过初始化参数传入。详情参数参考命令行部分，和`config.yaml`基本对应。
       - 输入：`Union[str, np.ndarray, bytes, Path]`
@@ -199,7 +199,6 @@
         └── resources
               └── fonts
                  └── FZYTK.TTF
-
         ```
 
 3. 安装运行环境
@@ -213,7 +212,7 @@
         pip install openvino
         pip install -r requirements.txt
         ```
-   - Note: 在Windows端，Shapely库自动安装可能会有问题，解决方案参见[Q15](https://github.com/RapidAI/RapidOCR/blob/main/docs/FAQ.md#q-windows系统下装完环境之后运行示例程序之后报错oserror-winerror-126-找不到指定的模組)
+   - ⚠️: 在Windows端，Shapely库自动安装可能会有问题，解决方案参见[Q15](https://github.com/RapidAI/RapidOCR/blob/main/docs/FAQ.md#q-windows系统下装完环境之后运行示例程序之后报错oserror-winerror-126-找不到指定的模組)
 
 4. 运行示例
     - 运行单元测试
