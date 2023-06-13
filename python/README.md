@@ -21,22 +21,23 @@
 - 所有常用的参数配置都在[`config.yaml`](https://github.com/RapidAI/RapidOCR/blob/main/python/rapidocr_onnxruntime/config.yaml)下，一目了然，更加便捷
 - **目前[`config.yaml`](https://github.com/RapidAI/RapidOCR/blob/main/python/rapidocr_onnxruntime/config.yaml)中配置为权衡速度和准确度的最优组合。**
 - 每个独立的模块下均有独立的`config.yaml`配置文件，可以单独使用
-- `det`部分：
-  - `det`中`mobile`和`server`版，推理代码一致，直接更改配置文件中模型路径即可
-  - `det`中`v2`和`v3`两个版本，推理代码一致。
-- `rec`部分：
-  - `rec`中`mobile`和`server`版本，推理代码一致，直接更改配置文件中模型路径即可
-  - `rec`中`v2`和`v3`两个版本，共用同一个推理代码。
-    - 两版本差别仅在输入shape和模型。经过测试，采用`v3 rec模型`+`[3, 48, 320]`效果最好。
-    - 目前配置文件`config.yaml`中（如下所示）已是最优组合。
-        ```yaml
-        module_name: ch_ppocr_v3_rec
-        class_name: TextRecognizer
-        model_path: resources/models/ch_PP-OCRv3_rec_infer.onnx
+- `det`部分，`mobile` | `server` | `v2` | `v3`推理代码均为一个
+  - 如果想要指定自己的模型，可以在初始化时，指定`det`模型路径，其他相关参数同理
+    ```python
+    from rapidocr_onnxruntime import RapidOCR
+    rapid_ocr = RapidOCR(det_model_path='xxxxx.onnx')
+    ```
+- `rec`部分，`mobile` | `server` | `v2` | `v3`推理代码均为一个
+  - `rec`中`v2`和`v3`两个版本，差别仅在输入shape和模型。经过测试，采用`v3 rec模型`+`[3, 48, 320]`效果最好
+  - 目前配置文件`config.yaml`中（如下所示）已是最优组合
+    ```yaml
+    module_name: ch_ppocr_v3_rec
+    class_name: TextRecognizer
+    model_path: resources/models/ch_PP-OCRv3_rec_infer.onnx
 
-        rec_img_shape: [3, 48, 320]
-        rec_batch_num: 6
-        ```
+    rec_img_shape: [3, 48, 320]
+    rec_batch_num: 6
+    ```
 - 关于选择哪个推理引擎（onnxruntime 或者 openvino）?
     |推理引擎|推理速度更快|占用内存更少|
     |:---:|:---:|:---:|
@@ -45,7 +46,7 @@
 
 
 ### （推荐）pip安装快速使用
-1. 安装包（⚠️注意：两个包接口一致，只是推理引擎不同而已）
+1. 安装包（⚠️注意：两个包接口一致，只是推理引擎不同而已，默认都是在CPU上运行）
    |包名|版本|安装命令|
    |:---|:---:|:---|
    |`rapidocr_onnxruntime`|<a href="https://pypi.org/project/rapidocr-onnxruntime/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr-onnxruntime?style=flat-square"></a>|`pip install rapidocr-onnxruntime`|
@@ -53,9 +54,12 @@
 
 1. 推理使用
     - 脚本使用：
-      - 📌初始化RapidOCR可不提供`config.yaml`，默认使用**rapidocr_onnxruntime**目录下的。如有自定义需求，可直接通过初始化参数传入。详情参数参考命令行部分，和`config.yaml`基本对应。
+      - ⚠️初始化RapidOCR可不提供`config.yaml`，默认使用安装目录下的`config.yaml`。如有自定义需求，可直接通过初始化参数传入。详细参数参考下面命令行部分，和`config.yaml`基本对应。
       - 输入：`Union[str, np.ndarray, bytes, Path]`
-      - 输出：`[[文本框坐标], 文本内容, 置信度]`, 为空：`(None, None)`
+      - 输出：
+          - 有值：`([[文本框坐标], 文本内容, 置信度], 推理时间)`，
+            - 示例：`[[左上, 右上, 右下, 左下], '小明', '0.99'], [0.02, 0.02, 0.85]`
+          - 为空：`(None, None)`
       - 示例：
         ```python
         import cv2
@@ -82,14 +86,6 @@
         # 输入格式四：Path
         result, elapse = rapid_ocr(Path(img_path))
         print(result)
-
-        # result: [[文本框坐标], 文本内容, 置信度]
-        # 示例：[[左上, 右上, 右下, 左下], '小明', '0.99']
-
-        # elapse: [det_elapse, cls_elapse, rec_elapse]
-        # all_elapse = det_elapse + cls_elapse + rec_elapse
-
-        # 如果没有有效文本，则result: (None, None)
         ```
     - 命令行使用：
         ```bash
