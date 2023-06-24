@@ -178,7 +178,16 @@ flowchart LR
 
 ## 版权声明
 - 如果你的产品使用了本仓库中的全部或部分代码、文字或材料
-- 请注明出处并包括我们的github url: `https://github.com/RapidAI/RapidOCR`
+- 如果你的研究用到了该项目，可以如下引用：
+- If you find this project useful in your research, please consider citing:
+  ```latex
+  @misc{RapidOCR 2021,
+      title={{Rapid OCR}: OCR Toolbox},
+      author={MindSpore Team},
+      howpublished = {\url{https://github.com/RapidAI/RapidOCR}},
+      year={2021}
+  }
+  ```
 
 ## 授权
 - OCR模型版权归百度所有，其它工程代码版权归本仓库所有者所有。

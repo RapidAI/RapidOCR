@@ -173,6 +173,15 @@ flowchart LR
 ## Authorization
 - The copyright of the OCR model belongs to Baidu, and the copyright of other engineering codes belongs to the owner of this warehouse.
 - This software is licensed under LGPL. You are welcome to contribute code, submit an issue or even PR.
+- If you find this project useful in your research, please consider citing:
+  ```latex
+  @misc{RapidOCR 2021,
+      title={{Rapid OCR}: OCR Toolbox},
+      author={MindSpore Team},
+      howpublished = {\url{https://github.com/RapidAI/RapidOCR}},
+      year={2021}
+  }
+  ```
 
 ## Join us
 - For international developers, we regard [RapidOCR Disscussions](https://github.com/RapidAI/RapidOCR/discussions) as our international community platform. All ideas and questions can be discussed here in English.
