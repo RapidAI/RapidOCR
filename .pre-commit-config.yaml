@@ -11,7 +11,9 @@ repos:
           "--remove-unused-variable",
           "--ignore-init-module-imports",
         ]
+      files: \.py$
 - repo: https://gitee.com/SWHL/black
   rev: 23.1.0
   hooks:
     - id: black
+      files: \.py$
