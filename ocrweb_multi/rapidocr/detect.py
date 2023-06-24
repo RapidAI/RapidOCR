@@ -21,10 +21,10 @@ from utils.utils import OrtInferSession
 from .detect_process import DBPostProcess, create_operators, transform
 
 
-class TextDetector():
+class TextDetector:
     def __init__(self, path, config):
-        self.preprocess_op = create_operators(config['pre_process'])
-        self.postprocess_op = DBPostProcess(**config['post_process'])
+        self.preprocess_op = create_operators(config["pre_process"])
+        self.postprocess_op = DBPostProcess(**config["post_process"])
 
         session_instance = OrtInferSession(path)
         self.session = session_instance.session
@@ -32,11 +32,11 @@ class TextDetector():
 
     def __call__(self, img):
         if img is None:
-            raise ValueError('img is None')
+            raise ValueError("img is None")
 
         ori_im_shape = img.shape[:2]
 
-        data = {'image': img}
+        data = {"image": img}
         data = transform(data, self.preprocess_op)
         img, shape_list = data
         if img is None:
@@ -49,7 +49,7 @@ class TextDetector():
 
         post_result = self.postprocess_op(preds[0], shape_list)
 
-        dt_boxes = post_result[0]['points']
+        dt_boxes = post_result[0]["points"]
         dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im_shape)
         return dt_boxes
 

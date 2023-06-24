@@ -25,12 +25,12 @@ from rapidocr_openvino.utils import OpenVINOInferSession, read_yaml
 from .utils import ClsPostProcess
 
 
-class TextClassifier():
+class TextClassifier:
     def __init__(self, config):
-        self.cls_image_shape = config['cls_image_shape']
-        self.cls_batch_num = config['cls_batch_num']
-        self.cls_thresh = config['cls_thresh']
-        self.postprocess_op = ClsPostProcess(config['label_list'])
+        self.cls_image_shape = config["cls_image_shape"]
+        self.cls_batch_num = config["cls_batch_num"]
+        self.cls_thresh = config["cls_thresh"]
+        self.postprocess_op = ClsPostProcess(config["label_list"])
 
         self.infer = OpenVINOInferSession(config)
 
@@ -47,7 +47,7 @@ class TextClassifier():
         indices = np.argsort(np.array(width_list))
 
         img_num = len(img_list)
-        cls_res = [['', 0.0]] * img_num
+        cls_res = [["", 0.0]] * img_num
         batch_num = self.cls_batch_num
         elapse = 0
         for beg_img_no in range(0, img_num, batch_num):
@@ -68,9 +68,10 @@ class TextClassifier():
             for rno in range(len(cls_result)):
                 label, score = cls_result[rno]
                 cls_res[indices[beg_img_no + rno]] = [label, score]
-                if '180' in label and score > self.cls_thresh:
+                if "180" in label and score > self.cls_thresh:
                     img_list[indices[beg_img_no + rno]] = cv2.rotate(
-                        img_list[indices[beg_img_no + rno]], 1)
+                        img_list[indices[beg_img_no + rno]], 1
+                    )
         return img_list, cls_res, elapse
 
     def resize_norm_img(self, img):
@@ -83,7 +84,7 @@ class TextClassifier():
             resized_w = int(math.ceil(img_h * ratio))
 
         resized_image = cv2.resize(img, (resized_w, img_h))
-        resized_image = resized_image.astype('float32')
+        resized_image = resized_image.astype("float32")
         if img_c == 1:
             resized_image = resized_image / 255
             resized_image = resized_image[np.newaxis, :]
@@ -99,8 +100,8 @@ class TextClassifier():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image_path', type=str, help='image_dir|image_path')
-    parser.add_argument('--config_path', type=str, default='config.yaml')
+    parser.add_argument("--image_path", type=str, help="image_dir|image_path")
+    parser.add_argument("--config_path", type=str, default="config.yaml")
     args = parser.parse_args()
 
     config = read_yaml(args.config_path)

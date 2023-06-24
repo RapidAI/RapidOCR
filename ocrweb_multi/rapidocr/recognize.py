@@ -11,26 +11,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import argparse
 import json
 import math
-import time
 from typing import List
 
 import cv2
 import numpy as np
 
-from utils.utils import get_resource_path, OrtInferSession
+from utils.utils import OrtInferSession
 
 
-class CTCLabelDecode():
+class CTCLabelDecode:
     """Convert between text-label and text-index"""
 
     def __init__(self, characters: List[str]):
         super(CTCLabelDecode, self).__init__()
 
         self.characters = characters
-        self.characters.append(' ')
+        self.characters.append(" ")
 
         dict_character = self.add_special_char(self.characters)
         self.character = dict_character
@@ -49,7 +47,7 @@ class CTCLabelDecode():
         return text, label
 
     def add_special_char(self, dict_character):
-        dict_character = ['blank'] + dict_character
+        dict_character = ["blank"] + dict_character
         return dict_character
 
     def get_ignored_tokens(self):
@@ -81,22 +79,22 @@ class CTCLabelDecode():
                     conf_list.append(1)
             # avoid `Mean of empty slice.` warning
             score = np.mean(conf_list) if conf_list else 0
-            text = ''.join(char_list)
+            text = "".join(char_list)
             result_list.append((text, score))
         return result_list
 
 
-class TextRecognizer():
+class TextRecognizer:
     def __init__(self, path, config):
-        self.rec_batch_num = config.get('rec_batch_num', 6)
+        self.rec_batch_num = config.get("rec_batch_num", 6)
 
         session_instance = OrtInferSession(path)
         self.session = session_instance.session
 
         metamap = session_instance.session.get_modelmeta().custom_metadata_map
-        chars = metamap['dictionary'].splitlines()
+        chars = metamap["dictionary"].splitlines()
         self.postprocess_op = CTCLabelDecode(chars)
-        self.rec_image_shape = json.loads(metamap['shape'])
+        self.rec_image_shape = json.loads(metamap["shape"])
         self.input_name = session_instance.get_input_name()
 
     def resize_norm_img(self, img, max_wh_ratio):
@@ -114,7 +112,7 @@ class TextRecognizer():
             resized_w = int(math.ceil(img_height * ratio))
 
         resized_image = cv2.resize(img, (resized_w, img_height))
-        resized_image = resized_image.astype('float32')
+        resized_image = resized_image.astype("float32")
         resized_image = resized_image.transpose((2, 0, 1)) / 255
         resized_image -= 0.5
         resized_image /= 0.5
@@ -134,7 +132,7 @@ class TextRecognizer():
         indices = np.argsort(np.array(width_list))
 
         img_num = len(img_list)
-        rec_res = [['', 0.0]] * img_num
+        rec_res = [["", 0.0]] * img_num
 
         batch_num = self.rec_batch_num
         for beg_img_no in range(0, img_num, batch_num):

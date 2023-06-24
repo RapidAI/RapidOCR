@@ -21,7 +21,7 @@ import numpy as np
 from utils.utils import OrtInferSession
 
 
-class ClsPostProcess():
+class ClsPostProcess:
     """Convert between text-label and text-index"""
 
     def __init__(self, label_list):
@@ -40,18 +40,18 @@ class ClsPostProcess():
         return decode_out, label
 
 
-class TextClassifier():
+class TextClassifier:
     def __init__(self, path, config):
-        self.cls_batch_num = config['batch_size']
-        self.cls_thresh = config['score_thresh']
+        self.cls_batch_num = config["batch_size"]
+        self.cls_thresh = config["score_thresh"]
 
         session_instance = OrtInferSession(path)
         self.session = session_instance.session
         metamap = self.session.get_modelmeta().custom_metadata_map
 
-        self.cls_image_shape = json.loads(metamap['shape'])
+        self.cls_image_shape = json.loads(metamap["shape"])
 
-        labels = json.loads(metamap['labels'])
+        labels = json.loads(metamap["labels"])
         self.postprocess_op = ClsPostProcess(labels)
         self.input_name = session_instance.get_input_name()
 
@@ -65,7 +65,7 @@ class TextClassifier():
             resized_w = int(math.ceil(img_h * ratio))
 
         resized_image = cv2.resize(img, (resized_w, img_h))
-        resized_image = resized_image.astype('float32')
+        resized_image = resized_image.astype("float32")
         if img_c == 1:
             resized_image = resized_image / 255
             resized_image = resized_image[np.newaxis, :]
@@ -91,7 +91,7 @@ class TextClassifier():
         indices = np.argsort(np.array(width_list))
 
         img_num = len(img_list)
-        cls_res = [['', 0.0]] * img_num
+        cls_res = [["", 0.0]] * img_num
         batch_num = self.cls_batch_num
         for beg_img_no in range(0, img_num, batch_num):
             end_img_no = min(img_num, beg_img_no + batch_num)
@@ -115,7 +115,7 @@ class TextClassifier():
             for rno in range(len(cls_result)):
                 label, score = cls_result[rno]
                 cls_res[indices[beg_img_no + rno]] = [label, score]
-                if label == '180' and score > self.cls_thresh:
+                if label == "180" and score > self.cls_thresh:
                     img_list[indices[beg_img_no + rno]] = cv2.rotate(
                         img_list[indices[beg_img_no + rno]], 1
                     )

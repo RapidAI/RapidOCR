@@ -25,69 +25,74 @@ import six
 from shapely.geometry import Polygon
 
 
-class DecodeImage():
-    """ decode image """
+class DecodeImage:
+    """decode image"""
 
-    def __init__(self, img_mode='RGB', channel_first=False):
+    def __init__(self, img_mode="RGB", channel_first=False):
         self.img_mode = img_mode
         self.channel_first = channel_first
 
     def __call__(self, data):
-        img = data['image']
+        img = data["image"]
         if six.PY2:
-            assert type(img) is str and len(img) > 0, "invalid input 'img' in DecodeImage"
+            assert (
+                type(img) is str and len(img) > 0
+            ), "invalid input 'img' in DecodeImage"
         else:
-            assert type(img) is bytes and len(img) > 0, "invalid input 'img' in DecodeImage"
+            assert (
+                type(img) is bytes and len(img) > 0
+            ), "invalid input 'img' in DecodeImage"
 
-        img = np.frombuffer(img, dtype='uint8')
+        img = np.frombuffer(img, dtype="uint8")
         img = cv2.imdecode(img, 1)
         if img is None:
             return None
 
-        if self.img_mode == 'GRAY':
+        if self.img_mode == "GRAY":
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-        elif self.img_mode == 'RGB':
-            assert img.shape[2] == 3, f'invalid shape of image[{img.shape}]'
+        elif self.img_mode == "RGB":
+            assert img.shape[2] == 3, f"invalid shape of image[{img.shape}]"
             img = img[:, :, ::-1]
 
         if self.channel_first:
             img = img.transpose((2, 0, 1))
-        data['image'] = img
+        data["image"] = img
         return data
 
 
-class NormalizeImage():
-    """ normalize image such as substract mean, divide std"""
+class NormalizeImage:
+    """normalize image such as substract mean, divide std"""
 
-    def __init__(self, scale=None, mean=None, std=None, order='chw'):
+    def __init__(self, scale=None, mean=None, std=None, order="chw"):
         if isinstance(scale, str):
             scale = eval(scale)
         self.scale = np.float32(scale if scale is not None else 1.0 / 255.0)
         mean = mean if mean is not None else [0.485, 0.456, 0.406]
         std = std if std is not None else [0.229, 0.224, 0.225]
 
-        shape = (3, 1, 1) if order == 'chw' else (1, 1, 3)
-        self.mean = np.array(mean).reshape(shape).astype('float32')
-        self.std = np.array(std).reshape(shape).astype('float32')
+        shape = (3, 1, 1) if order == "chw" else (1, 1, 3)
+        self.mean = np.array(mean).reshape(shape).astype("float32")
+        self.std = np.array(std).reshape(shape).astype("float32")
 
     def __call__(self, data):
-        img = np.array(data['image']).astype(np.float32)
-        data['image'] = (img * self.scale - self.mean) / self.std
+        img = np.array(data["image"]).astype(np.float32)
+        data["image"] = (img * self.scale - self.mean) / self.std
         return data
 
 
-class ToCHWImage():
-    """ convert hwc image to chw image"""
+class ToCHWImage:
+    """convert hwc image to chw image"""
+
     def __init__(self):
         pass
 
     def __call__(self, data):
-        img = np.array(data['image'])
-        data['image'] = img.transpose((2, 0, 1))
+        img = np.array(data["image"])
+        data["image"] = img.transpose((2, 0, 1))
         return data
 
 
-class KeepKeys():
+class KeepKeys:
     def __init__(self, keep_keys):
         self.keep_keys = keep_keys
 
@@ -98,26 +103,26 @@ class KeepKeys():
         return data_list
 
 
-class DetResizeForTest():
+class DetResizeForTest:
     def __init__(self, **kwargs):
         super(DetResizeForTest, self).__init__()
         self.resize_type = 0
-        if 'image_shape' in kwargs:
-            self.image_shape = kwargs['image_shape']
+        if "image_shape" in kwargs:
+            self.image_shape = kwargs["image_shape"]
             self.resize_type = 1
-        elif 'limit_side_len' in kwargs:
-            self.limit_side_len = kwargs.get('limit_side_len', 736)
-            self.limit_type = kwargs.get('limit_type', 'min')
+        elif "limit_side_len" in kwargs:
+            self.limit_side_len = kwargs.get("limit_side_len", 736)
+            self.limit_type = kwargs.get("limit_type", "min")
 
-        if 'resize_long' in kwargs:
+        if "resize_long" in kwargs:
             self.resize_type = 2
-            self.resize_long = kwargs.get('resize_long', 960)
+            self.resize_long = kwargs.get("resize_long", 960)
         else:
-            self.limit_side_len = kwargs.get('limit_side_len', 736)
-            self.limit_type = kwargs.get('limit_type', 'min')
+            self.limit_side_len = kwargs.get("limit_side_len", 736)
+            self.limit_type = kwargs.get("limit_type", "min")
 
     def __call__(self, data):
-        img = data['image']
+        img = data["image"]
         src_h, src_w = img.shape[:2]
 
         if self.resize_type == 0:
@@ -128,8 +133,8 @@ class DetResizeForTest():
         else:
             # img, shape = self.resize_image_type1(img)
             img, [ratio_h, ratio_w] = self.resize_image_type1(img)
-        data['image'] = img
-        data['shape'] = np.array([src_h, src_w, ratio_h, ratio_w])
+        data["image"] = img
+        data["shape"] = np.array([src_h, src_w, ratio_h, ratio_w])
         return data
 
     def resize_image_type1(self, img):
@@ -153,14 +158,14 @@ class DetResizeForTest():
         h, w = img.shape[:2]
 
         # limit the max side
-        if self.limit_type == 'max':
+        if self.limit_type == "max":
             if max(h, w) > limit_side_len:
                 if h > w:
                     ratio = float(limit_side_len) / h
                 else:
                     ratio = float(limit_side_len) / w
             else:
-                ratio = 1.
+                ratio = 1.0
         else:
             if min(h, w) < limit_side_len:
                 if h < w:
@@ -168,7 +173,7 @@ class DetResizeForTest():
                 else:
                     ratio = float(limit_side_len) / w
             else:
-                ratio = 1.
+                ratio = 1.0
         resize_h = int(h * ratio)
         resize_w = int(w * ratio)
 
@@ -212,7 +217,7 @@ class DetResizeForTest():
 
 
 def transform(data, ops=None):
-    """ transform """
+    """transform"""
     if ops is None:
         ops = []
 
@@ -240,21 +245,22 @@ def draw_text_det_res(dt_boxes, img_path):
     src_im = cv2.imread(img_path)
     for box in dt_boxes:
         box = np.array(box).astype(np.int32).reshape(-1, 2)
-        cv2.polylines(src_im, [box], True,
-                      color=(255, 255, 0), thickness=2)
+        cv2.polylines(src_im, [box], True, color=(255, 255, 0), thickness=2)
     return src_im
 
 
-class DBPostProcess():
+class DBPostProcess:
     """The post process for Differentiable Binarization (DB)."""
 
-    def __init__(self,
-                 thresh=0.3,
-                 box_thresh=0.7,
-                 max_candidates=1000,
-                 unclip_ratio=2.0,
-                 score_mode="fast",
-                 use_dilation=False):
+    def __init__(
+        self,
+        thresh=0.3,
+        box_thresh=0.7,
+        max_candidates=1000,
+        unclip_ratio=2.0,
+        score_mode="fast",
+        use_dilation=False,
+    ):
         self.thresh = thresh
         self.box_thresh = box_thresh
         self.max_candidates = max_candidates
@@ -268,16 +274,17 @@ class DBPostProcess():
             self.dilation_kernel = None
 
     def boxes_from_bitmap(self, pred, _bitmap, dest_width, dest_height):
-        '''
+        """
         _bitmap: single map with shape (1, H, W),
                 whose values are binarized as {0, 1}
-        '''
+        """
 
         bitmap = _bitmap
         height, width = bitmap.shape
 
-        outs = cv2.findContours((bitmap * 255).astype(np.uint8), cv2.RETR_LIST,
-                                cv2.CHAIN_APPROX_SIMPLE)
+        outs = cv2.findContours(
+            (bitmap * 255).astype(np.uint8), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE
+        )
         if len(outs) == 3:
             img, contours, _ = outs[0], outs[1], outs[2]
         elif len(outs) == 2:
@@ -306,10 +313,10 @@ class DBPostProcess():
                 continue
             box = np.array(box)
 
-            box[:, 0] = np.clip(
-                np.round(box[:, 0] / width * dest_width), 0, dest_width)
+            box[:, 0] = np.clip(np.round(box[:, 0] / width * dest_width), 0, dest_width)
             box[:, 1] = np.clip(
-                np.round(box[:, 1] / height * dest_height), 0, dest_height)
+                np.round(box[:, 1] / height * dest_height), 0, dest_height
+            )
             boxes.append(box.astype(np.int16))
             scores.append(score)
         return np.array(boxes, dtype=np.int16), scores
@@ -341,9 +348,7 @@ class DBPostProcess():
             index_2 = 3
             index_3 = 2
 
-        box = [
-            points[index_1], points[index_2], points[index_3], points[index_4]
-        ]
+        box = [points[index_1], points[index_2], points[index_3], points[index_4]]
         return box, min(bounding_box[1])
 
     def box_score_fast(self, bitmap, _box):
@@ -358,12 +363,12 @@ class DBPostProcess():
         box[:, 0] = box[:, 0] - xmin
         box[:, 1] = box[:, 1] - ymin
         cv2.fillPoly(mask, box.reshape(1, -1, 2).astype(np.int32), 1)
-        return cv2.mean(bitmap[ymin:ymax + 1, xmin:xmax + 1], mask)[0]
+        return cv2.mean(bitmap[ymin : ymax + 1, xmin : xmax + 1], mask)[0]
 
     def box_score_slow(self, bitmap, contour):
-        '''
+        """
         box_score_slow: use polyon mean score as the mean score
-        '''
+        """
         h, w = bitmap.shape[:2]
         contour = contour.copy()
         contour = np.reshape(contour, (-1, 2))
@@ -379,7 +384,7 @@ class DBPostProcess():
         contour[:, 1] = contour[:, 1] - ymin
 
         cv2.fillPoly(mask, contour.reshape(1, -1, 2).astype(np.int32), 1)
-        return cv2.mean(bitmap[ymin:ymax + 1, xmin:xmax + 1], mask)[0]
+        return cv2.mean(bitmap[ymin : ymax + 1, xmin : xmax + 1], mask)[0]
 
     def __call__(self, pred, shape_list):
         pred = pred[:, 0, :, :]
@@ -391,11 +396,13 @@ class DBPostProcess():
             if self.dilation_kernel is not None:
                 mask = cv2.dilate(
                     np.array(segmentation[batch_index]).astype(np.uint8),
-                    self.dilation_kernel)
+                    self.dilation_kernel,
+                )
             else:
                 mask = segmentation[batch_index]
-            boxes, scores = self.boxes_from_bitmap(pred[batch_index], mask,
-                                                   src_w, src_h)
+            boxes, scores = self.boxes_from_bitmap(
+                pred[batch_index], mask, src_w, src_h
+            )
 
-            boxes_batch.append({'points': boxes})
+            boxes_batch.append({"points": boxes})
         return boxes_batch

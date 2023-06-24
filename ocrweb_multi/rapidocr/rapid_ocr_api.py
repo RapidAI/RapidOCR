@@ -52,61 +52,61 @@ def get_rotate_crop_image(img, points):
 
 @lru_cache(maxsize=None)
 def load_onnx_model(step, name):
-    model_config = conf['models'][step][name]
+    model_config = conf["models"][step][name]
     model_class = {
-        'detect': TextDetector,
-        'classify': TextClassifier,
-        'recognize': TextRecognizer,
+        "detect": TextDetector,
+        "classify": TextClassifier,
+        "recognize": TextRecognizer,
     }[step]
-    return model_class(model_config['path'], model_config.get('config'))
+    return model_class(model_config["path"], model_config.get("config"))
 
 
-class RapidOCR():
+class RapidOCR:
     def __init__(self, config):
         super(RapidOCR).__init__()
         self.config = config
-        self.text_score = config['config']['text_score']
-        self.min_height = config['config']['min_height']
+        self.text_score = config["config"]["text_score"]
+        self.min_height = config["config"]["min_height"]
 
-        models = config['models']
-        self.text_detector = load_onnx_model('detect', models['detect'])
-        self.text_recognizer = load_onnx_model('recognize', models['recognize'])
-        self.text_cls = load_onnx_model('classify', models['classify'])
+        models = config["models"]
+        self.text_detector = load_onnx_model("detect", models["detect"])
+        self.text_recognizer = load_onnx_model("recognize", models["recognize"])
+        self.text_cls = load_onnx_model("classify", models["classify"])
 
     def __call__(self, img: np.ndarray, detect=True, classify=True):
         ticker = Ticker()
         h, w = img.shape[:2]
         if not detect or h < self.min_height:
             dt_boxes, img_crop_list = self.get_boxes_img_without_det(img, h, w)
-            ticker.tick('detect')
+            ticker.tick("detect")
         else:
             dt_boxes = self.text_detector(img)
-            ticker.tick('detect')
+            ticker.tick("detect")
 
             if dt_boxes is None or len(dt_boxes) < 1:
                 return [], ticker.maps
-            if conf['global']['verbose']:
-                print(f'boxes num: {len(dt_boxes)}')
+            if conf["global"]["verbose"]:
+                print(f"boxes num: {len(dt_boxes)}")
 
             dt_boxes = self.sorted_boxes(dt_boxes)
 
             img_crop_list = self.get_crop_img_list(img, dt_boxes)
-            ticker.tick('post-detect')
+            ticker.tick("post-detect")
 
         if classify:
             # 进行子图像角度修正
             img_crop_list, _ = self.text_cls(img_crop_list)
-            ticker.tick('classify')
-            if conf['global']['verbose']:
-                print(f'cls num: {len(img_crop_list)}')
+            ticker.tick("classify")
+            if conf["global"]["verbose"]:
+                print(f"cls num: {len(img_crop_list)}")
 
         recog_result = self.text_recognizer(img_crop_list)
-        ticker.tick('recognize')
-        if conf['global']['verbose']:
-            print(f'rec_res num: {len(recog_result)}')
+        ticker.tick("recognize")
+        if conf["global"]["verbose"]:
+            print(f"rec_res num: {len(recog_result)}")
 
         results = self.filter_boxes_rec_by_score(dt_boxes, recog_result)
-        ticker.tick('post-recognize')
+        ticker.tick("post-recognize")
         return results, ticker.maps
 
     def get_boxes_img_without_det(self, img, h, w):
@@ -134,13 +134,13 @@ class RapidOCR():
             sorted boxes(array) with shape [4, 2]
         """
 
-        class AlignBox():
+        class AlignBox:
             def __init__(self, data) -> None:
                 self.data = data
                 self.x = data[0][0]
                 self.y = data[0][1]
 
-            def __lt__(self, other: 'AlignBox'):
+            def __lt__(self, other: "AlignBox"):
                 dy = self.y - other.y
                 # y差距小于10, 视为相等, 根据x排序
                 if abs(dy) < 10:
@@ -156,5 +156,5 @@ class RapidOCR():
         for box, rec_reuslt in zip(dt_boxes, rec_res):
             text, score = rec_reuslt
             if score >= self.text_score:
-                results.append({'box': box, 'text': text, 'score': score})
+                results.append({"box": box, "text": text, "score": score})
         return results

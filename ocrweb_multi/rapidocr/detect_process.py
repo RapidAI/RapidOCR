@@ -18,7 +18,6 @@
 # @Contact: liekkaskono@163.com
 from copy import deepcopy
 import sys
-import warnings
 
 import cv2
 import numpy as np
@@ -27,15 +26,15 @@ import six
 from shapely.geometry import Polygon
 
 
-class DecodeImage():
+class DecodeImage:
     """decode image"""
 
-    def __init__(self, img_mode='RGB', channel_first=False):
+    def __init__(self, img_mode="RGB", channel_first=False):
         self.img_mode = img_mode
         self.channel_first = channel_first
 
     def __call__(self, data):
-        img = data['image']
+        img = data["image"]
         if six.PY2:
             assert (
                 type(img) is str and len(img) > 0
@@ -45,53 +44,53 @@ class DecodeImage():
                 type(img) is bytes and len(img) > 0
             ), "invalid input 'img' in DecodeImage"
 
-        img = np.frombuffer(img, dtype='uint8')
+        img = np.frombuffer(img, dtype="uint8")
         img = cv2.imdecode(img, 1)
         if img is None:
             return None
 
-        if self.img_mode == 'GRAY':
+        if self.img_mode == "GRAY":
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-        elif self.img_mode == 'RGB':
-            assert img.shape[2] == 3, f'invalid shape of image[{img.shape}]'
+        elif self.img_mode == "RGB":
+            assert img.shape[2] == 3, f"invalid shape of image[{img.shape}]"
             img = img[:, :, ::-1]
 
         if self.channel_first:
             img = img.transpose((2, 0, 1))
-        data['image'] = img
+        data["image"] = img
         return data
 
 
-class NormalizeImage():
+class NormalizeImage:
     """normalize image such as substract mean, divide std"""
 
-    def __init__(self, scale=None, mean=None, std=None, order='chw'):
+    def __init__(self, scale=None, mean=None, std=None, order="chw"):
         self.scale = np.float32(scale if scale is not None else 1.0 / 255.0)
         mean = mean if mean is not None else [0.485, 0.456, 0.406]
         std = std if std is not None else [0.229, 0.224, 0.225]
-        shape = (3, 1, 1) if order == 'chw' else (1, 1, 3)
-        self.mean = np.array(mean).reshape(shape).astype('float32')
-        self.std = np.array(std).reshape(shape).astype('float32')
+        shape = (3, 1, 1) if order == "chw" else (1, 1, 3)
+        self.mean = np.array(mean).reshape(shape).astype("float32")
+        self.std = np.array(std).reshape(shape).astype("float32")
 
     def __call__(self, data):
-        img = np.array(data['image']).astype(np.float32)
-        data['image'] = (img * self.scale - self.mean) / self.std
+        img = np.array(data["image"]).astype(np.float32)
+        data["image"] = (img * self.scale - self.mean) / self.std
         return data
 
 
-class ToCHWImage():
+class ToCHWImage:
     """convert hwc image to chw image"""
 
     def __init__(self):
         pass
 
     def __call__(self, data):
-        img = data['image']
-        data['image'] = img.transpose((2, 0, 1))
+        img = data["image"]
+        data["image"] = img.transpose((2, 0, 1))
         return data
 
 
-class KeepKeys():
+class KeepKeys:
     def __init__(self, keep_keys):
         self.keep_keys = keep_keys
 
@@ -102,25 +101,25 @@ class KeepKeys():
         return data_list
 
 
-class DetResizeForTest():
+class DetResizeForTest:
     def __init__(self, **kwargs):
         super(DetResizeForTest, self).__init__()
         self.resize_type = 0
-        if 'image_shape' in kwargs:
-            self.image_shape = kwargs['image_shape']
+        if "image_shape" in kwargs:
+            self.image_shape = kwargs["image_shape"]
             self.resize_type = 1
-        elif 'limit_side_len' in kwargs:
-            self.limit_side_len = kwargs['limit_side_len']
-            self.limit_type = kwargs.get('limit_type', 'min')
-        elif 'resize_long' in kwargs:
+        elif "limit_side_len" in kwargs:
+            self.limit_side_len = kwargs["limit_side_len"]
+            self.limit_type = kwargs.get("limit_type", "min")
+        elif "resize_long" in kwargs:
             self.resize_type = 2
-            self.resize_long = kwargs.get('resize_long', 960)
+            self.resize_long = kwargs.get("resize_long", 960)
         else:
             self.limit_side_len = 736
-            self.limit_type = 'min'
+            self.limit_type = "min"
 
     def __call__(self, data):
-        img = data['image']
+        img = data["image"]
         src_h, src_w, _ = img.shape
 
         if self.resize_type == 0:
@@ -131,8 +130,8 @@ class DetResizeForTest():
         else:
             # img, shape = self.resize_image_type1(img)
             img, [ratio_h, ratio_w] = self.resize_image_type1(img)
-        data['image'] = img
-        data['shape'] = np.array([src_h, src_w, ratio_h, ratio_w])
+        data["image"] = img
+        data["shape"] = np.array([src_h, src_w, ratio_h, ratio_w])
         return data
 
     def resize_image_type1(self, img):
@@ -156,7 +155,7 @@ class DetResizeForTest():
         h, w, _ = img.shape
 
         # limit the max side
-        if self.limit_type == 'max':
+        if self.limit_type == "max":
             if max(h, w) > limit_side_len:
                 if h > w:
                     ratio = float(limit_side_len) / h
@@ -234,7 +233,7 @@ def create_operators(op_param_list):
     ops = []
     for args in op_param_list:
         args = deepcopy(args)
-        op_class = op_map[args.pop('class')]
+        op_class = op_map[args.pop("class")]
         ops.append(op_class(**args))
     return ops
 
@@ -247,7 +246,7 @@ def draw_text_det_res(dt_boxes, img_path):
     return src_im
 
 
-class DBPostProcess():
+class DBPostProcess:
     """The post process for Differentiable Binarization (DB)."""
 
     def __init__(
@@ -270,10 +269,10 @@ class DBPostProcess():
             self.dilation_kernel = None
 
     def boxes_from_bitmap(self, pred, _bitmap, dest_width, dest_height):
-        '''
+        """
         _bitmap: single map with shape (1, H, W),
                 whose values are binarized as {0, 1}
-        '''
+        """
 
         bitmap = _bitmap
         height, width = bitmap.shape
@@ -376,5 +375,5 @@ class DBPostProcess():
                 pred[batch_index], mask, src_w, src_h
             )
 
-            boxes_batch.append({'points': boxes})
+            boxes_batch.append({"points": boxes})
         return boxes_batch

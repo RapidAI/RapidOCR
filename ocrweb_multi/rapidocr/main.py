@@ -13,21 +13,21 @@ from rapidocr.rapid_ocr_api import RapidOCR
 
 
 @lru_cache(maxsize=None)
-def load_language_model(lang='ch'):
-    models = conf['languages'][lang]
-    print('model', models)
+def load_language_model(lang="ch"):
+    models = conf["languages"][lang]
+    print("model", models)
     return RapidOCR(models)
 
 
-def detect_recognize(image, lang='ch', detect=True, classify=True):
+def detect_recognize(image, lang="ch", detect=True, classify=True):
     model = load_language_model(lang)
     results, ts = model(image, detect=detect, classify=classify)
-    ts['total'] = sum(ts.values())
-    return {'ts': ts, 'results': results}
+    ts["total"] = sum(ts.values())
+    return {"ts": ts, "results": results}
 
 
 def check_and_read_gif(img_path):
-    if Path(img_path).suffix.lower() == 'gif':
+    if Path(img_path).suffix.lower() == "gif":
         gif = cv2.VideoCapture(img_path)
         ret, frame = gif.read()
         if not ret:

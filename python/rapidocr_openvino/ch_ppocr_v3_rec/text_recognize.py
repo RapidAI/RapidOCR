@@ -28,13 +28,13 @@ from rapidocr_openvino.utils import OpenVINOInferSession, read_yaml
 from .utils import CTCLabelDecode
 
 
-class TextRecognizer():
+class TextRecognizer:
     def __init__(self, config):
-        self.rec_image_shape = config['rec_img_shape']
-        self.rec_batch_num = config['rec_batch_num']
+        self.rec_image_shape = config["rec_img_shape"]
+        self.rec_batch_num = config["rec_batch_num"]
 
-        dict_path = str(Path(__file__).parent / 'ppocr_keys_v1.txt')
-        self.character_dict_path = config.get('keys_path', dict_path)
+        dict_path = str(Path(__file__).parent / "ppocr_keys_v1.txt")
+        self.character_dict_path = config.get("keys_path", dict_path)
         self.postprocess_op = CTCLabelDecode(self.character_dict_path)
 
         self.infer = OpenVINOInferSession(config)
@@ -50,7 +50,7 @@ class TextRecognizer():
         indices = np.argsort(np.array(width_list))
 
         img_num = len(img_list)
-        rec_res = [['', 0.0]] * img_num
+        rec_res = [["", 0.0]] * img_num
 
         batch_num = self.rec_batch_num
         elapse = 0
@@ -64,8 +64,7 @@ class TextRecognizer():
 
             norm_img_batch = []
             for ino in range(beg_img_no, end_img_no):
-                norm_img = self.resize_norm_img(img_list[indices[ino]],
-                                                max_wh_ratio)
+                norm_img = self.resize_norm_img(img_list[indices[ino]], max_wh_ratio)
                 norm_img_batch.append(norm_img[np.newaxis, :])
             norm_img_batch = np.concatenate(norm_img_batch).astype(np.float32)
 
@@ -91,21 +90,20 @@ class TextRecognizer():
             resized_w = int(math.ceil(img_height * ratio))
 
         resized_image = cv2.resize(img, (resized_w, img_height))
-        resized_image = resized_image.astype('float32')
+        resized_image = resized_image.astype("float32")
         resized_image = resized_image.transpose((2, 0, 1)) / 255
         resized_image -= 0.5
         resized_image /= 0.5
 
-        padding_im = np.zeros((img_channel, img_height, img_width),
-                              dtype=np.float32)
+        padding_im = np.zeros((img_channel, img_height, img_width), dtype=np.float32)
         padding_im[:, :, 0:resized_w] = resized_image
         return padding_im
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image_path', type=str, help='image_dir|image_path')
-    parser.add_argument('--config_path', type=str, default='config.yaml')
+    parser.add_argument("--image_path", type=str, help="image_dir|image_path")
+    parser.add_argument("--config_path", type=str, default="config.yaml")
     args = parser.parse_args()
 
     config = read_yaml(args.config_path)
@@ -113,4 +111,4 @@ if __name__ == "__main__":
 
     img = cv2.imread(args.image_path)
     rec_res, predict_time = text_recognizer(img)
-    print(f'rec result: {rec_res}\t cost: {predict_time}s')
+    print(f"rec result: {rec_res}\t cost: {predict_time}s")

@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-class ClsPostProcess():
-    """ Convert between text-label and text-index """
+class ClsPostProcess:
+    """Convert between text-label and text-index"""
 
     def __init__(self, label_list):
         super(ClsPostProcess, self).__init__()
@@ -20,8 +20,9 @@ class ClsPostProcess():
 
     def __call__(self, preds, label=None):
         pred_idxs = preds.argmax(axis=1)
-        decode_out = [(self.label_list[idx], preds[i, idx])
-                      for i, idx in enumerate(pred_idxs)]
+        decode_out = [
+            (self.label_list[idx], preds[i, idx]) for i, idx in enumerate(pred_idxs)
+        ]
         if label is None:
             return decode_out
 

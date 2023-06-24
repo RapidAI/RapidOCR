@@ -23,16 +23,16 @@ from rapidocr_openvino.utils import OpenVINOInferSession, read_yaml
 from .utils import DBPostProcess, create_operators, transform
 
 
-class TextDetector():
+class TextDetector:
     def __init__(self, config):
-        self.preprocess_op = create_operators(config['pre_process'])
-        self.postprocess_op = DBPostProcess(**config['post_process'])
+        self.preprocess_op = create_operators(config["pre_process"])
+        self.postprocess_op = DBPostProcess(**config["post_process"])
 
         self.infer = OpenVINOInferSession(config)
 
     def __call__(self, img):
         ori_im = img.copy()
-        data = {'image': img}
+        data = {"image": img}
         data = transform(data, self.preprocess_op)
         img, shape_list = data
         if img is None:
@@ -44,7 +44,7 @@ class TextDetector():
         starttime = time.time()
         preds = self.infer(img)
         post_result = self.postprocess_op(preds, shape_list)
-        dt_boxes = post_result[0]['points']
+        dt_boxes = post_result[0]["points"]
         dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im.shape)
         elapse = time.time() - starttime
         return dt_boxes, elapse
@@ -96,8 +96,8 @@ class TextDetector():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_path', type=str, default='config.yaml')
-    parser.add_argument('--image_path', type=str, default=None)
+    parser.add_argument("--config_path", type=str, default="config.yaml")
+    parser.add_argument("--image_path", type=str, default=None)
     args = parser.parse_args()
 
     config = read_yaml(args.config_path)
@@ -108,6 +108,7 @@ if __name__ == "__main__":
     dt_boxes, elapse = text_detector(img)
 
     from utils import draw_text_det_res
+
     src_im = draw_text_det_res(dt_boxes, args.image_path)
-    cv2.imwrite('det_results.jpg', src_im)
-    print('The det_results.jpg has been saved in the current directory.')
+    cv2.imwrite("det_results.jpg", src_im)
+    print("The det_results.jpg has been saved in the current directory.")

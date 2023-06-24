@@ -19,9 +19,9 @@ def get_resource_path(name: str):
         Path(name),
     ]:
         if path.exists():
-            print('Loaded:', path)
+            print("Loaded:", path)
             return path
     raise FileNotFoundError(name)
 
 
-conf = yaml.safe_load(get_resource_path('config.yaml').read_text(encoding='utf-8'))
+conf = yaml.safe_load(get_resource_path("config.yaml").read_text(encoding="utf-8"))

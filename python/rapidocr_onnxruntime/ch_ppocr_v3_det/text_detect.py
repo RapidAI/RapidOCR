@@ -25,33 +25,31 @@ from rapidocr_onnxruntime.utils import OrtInferSession, read_yaml
 from .utils import DBPostProcess, create_operators, transform
 
 
-class TextDetector():
+class TextDetector:
     def __init__(self, config):
         pre_process_list = {
-            'DetResizeForTest': {
-                'limit_side_len': config.get('limit_side_len', 736),
-                'limit_type': config.get('limit_type', 'min')
+            "DetResizeForTest": {
+                "limit_side_len": config.get("limit_side_len", 736),
+                "limit_type": config.get("limit_type", "min"),
             },
-            'NormalizeImage': {
-                'std': [0.229, 0.224, 0.225],
-                'mean': [0.485, 0.456, 0.406],
-                'scale': '1./255.',
-                'order': 'hwc'
+            "NormalizeImage": {
+                "std": [0.229, 0.224, 0.225],
+                "mean": [0.485, 0.456, 0.406],
+                "scale": "1./255.",
+                "order": "hwc",
             },
-            'ToCHWImage': None,
-            'KeepKeys': {
-                'keep_keys': ['image', 'shape']
-            }
+            "ToCHWImage": None,
+            "KeepKeys": {"keep_keys": ["image", "shape"]},
         }
         self.preprocess_op = create_operators(pre_process_list)
 
         post_process = {
-            'thresh': config.get('thresh', 0.3),
-            'box_thresh': config.get('box_thresh', 0.5),
-            'max_candidates': config.get('max_candidates', 1000),
-            'unclip_ratio': config.get('unclip_ratio', 1.6),
-            'use_dilation': config.get('use_dilation', True),
-            'score_mode': config.get('score_mode', 'fast'),
+            "thresh": config.get("thresh", 0.3),
+            "box_thresh": config.get("box_thresh", 0.5),
+            "max_candidates": config.get("max_candidates", 1000),
+            "unclip_ratio": config.get("unclip_ratio", 1.6),
+            "use_dilation": config.get("use_dilation", True),
+            "score_mode": config.get("score_mode", "fast"),
         }
         self.postprocess_op = DBPostProcess(**post_process)
 
@@ -59,11 +57,11 @@ class TextDetector():
 
     def __call__(self, img):
         if img is None:
-            raise ValueError('img is None')
+            raise ValueError("img is None")
 
         ori_im_shape = img.shape[:2]
 
-        data = {'image': img}
+        data = {"image": img}
         data = transform(data, self.preprocess_op)
         img, shape_list = data
         if img is None:
@@ -76,7 +74,7 @@ class TextDetector():
         preds = self.infer(img)[0]
         post_result = self.postprocess_op(preds, shape_list)
 
-        dt_boxes = post_result[0]['points']
+        dt_boxes = post_result[0]["points"]
         dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im_shape)
         elapse = time.time() - starttime
         return dt_boxes, elapse
@@ -129,8 +127,8 @@ class TextDetector():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_path', type=str, default='config.yaml')
-    parser.add_argument('--image_path', type=str, default=None)
+    parser.add_argument("--config_path", type=str, default="config.yaml")
+    parser.add_argument("--image_path", type=str, default=None)
     args = parser.parse_args()
 
     config = read_yaml(args.config_path)
@@ -141,6 +139,7 @@ if __name__ == "__main__":
     dt_boxes, elapse = text_detector(img)
 
     from utils import draw_text_det_res
+
     src_im = draw_text_det_res(dt_boxes, args.image_path)
-    cv2.imwrite('det_results.jpg', src_im)
-    print('The det_results.jpg has been saved in the current directory.')
+    cv2.imwrite("det_results.jpg", src_im)
+    print("The det_results.jpg has been saved in the current directory.")
