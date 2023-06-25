@@ -190,15 +190,15 @@ flowchart LR
 ## Demo
 #### Demonstration with C++/JVM
 <div align="center">
-    <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/demo_cpp.png" width="100%" height="100%">
+    <img src="https://github.com/RapidAI/RapidOCR/blob/ae529c2ba79e6cbf04c54caf2d24feb75e947ca4/assets/demo_cpp.png" width="100%" height="100%">
 </div>
 
 #### Demonstration with .Net
 <div align="center">
-    <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/demo_cs.png" width="100%" height="100%">
+    <img src="https://github.com/RapidAI/RapidOCR/blob/ae529c2ba79e6cbf04c54caf2d24feb75e947ca4/assets/demo_cs.png" width="100%" height="100%">
 </div>
 
 #### Demonstratioin with multi_language
 <div align="center">
-    <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/demo_multi_language.jpg" width="80%" height="80%">
+    <img src="https://github.com/RapidAI/RapidOCR/blob/ae529c2ba79e6cbf04c54caf2d24feb75e947ca4/assets/demo_multi_language.jpg" width="80%" height="80%">
 </div>
