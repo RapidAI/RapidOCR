@@ -2,6 +2,7 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import argparse
+import traceback
 import warnings
 from io import BytesIO
 from pathlib import Path
@@ -71,7 +72,8 @@ class OrtInferSession:
         try:
             return self.session.run(self.get_output_names(), input_dict)
         except Exception as e:
-            raise ONNXRuntimeError("ONNXRuntime inference failed.") from e
+            error_info = traceback.format_exc()
+            raise ONNXRuntimeError(error_info) from e
 
     def get_input_names(
         self,
