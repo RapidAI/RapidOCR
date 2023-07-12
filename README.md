@@ -32,12 +32,9 @@
   - [商业支持](#商业支持)
   - [简介](#简介)
   - [文档导航](#文档导航)
-  - [近期更新(more)](#近期更新more)
-      - [🍜2023-05-22 api update:](#2023-05-22-api-update)
-      - [❤2023-05-20 ocrweb update:](#2023-05-20-ocrweb-update)
-      - [🌹2023-05-14 ocrweb v0.1.5 update:](#2023-05-14-ocrweb-v015-update)
   - [生态框架](#生态框架)
   - [在线demo](#在线demo)
+  - [更新日志(more)](#更新日志more)
   - [TODO以及任务认领](#todo以及任务认领)
   - [原始发起者及初创作者](#原始发起者及初创作者)
   - [致谢](#致谢)
@@ -103,18 +100,6 @@
 - [常见问题 FAQ](https://github.com/RapidAI/RapidOCR/wiki/FAQ)
 
 
-## 近期更新([more](https://github.com/RapidAI/RapidOCR/wiki/%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97))
-#### 🍜2023-05-22 api update:
-- 将API从ocrweb中解耦出来，作为单独模块维护，详情参见[API](https://github.com/RapidAI/RapidOCR/tree/main/api)
-- `rapidocr_web>0.1.6`之后，将不支持`pip install rapidocr_web[api]`方式安装，可直接`pip install rapidocr_api`安装使用。
-#### ❤2023-05-20 ocrweb update:
-- 增加桌面版RapidOCRWeb，详情可参见[RapidOCRWeb桌面版使用教程](https://github.com/RapidAI/RapidOCR/wiki/%5BRapidOCRWeb%5D-%E6%A1%8C%E9%9D%A2%E7%89%88%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B)
-- 对仓库文档做了整理，大部分文档放到了[Wiki](https://github.com/RapidAI/RapidOCR/wiki)
-#### 🌹2023-05-14 ocrweb v0.1.5 update:
-- 增加界面版返回坐标框的返回值([issue #85](https://github.com/RapidAI/RapidOCR/issues/85))
-- API模式增加base64格式传入
-- 详情参见：[link](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
-
 ## 生态框架
 ```mermaid
 flowchart LR
@@ -148,6 +133,11 @@ flowchart LR
     <div align="center">
         <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/hf_demo.png" width="100%" height="100%">
     </div>
+
+## 更新日志([more](https://github.com/RapidAI/RapidOCR/wiki/%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97_rapidocr))
+- [rapidocr](https://github.com/RapidAI/RapidOCR/wiki/%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97_rapidocr)
+- [rapidocr_web](https://github.com/RapidAI/RapidOCR/wiki/%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97_ocrweb)
+- [rapidocr_api](https://github.com/RapidAI/RapidOCR/wiki/%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97_rapid_api)
 
 ## TODO以及任务认领
 - 参见这里：[link](https://github.com/orgs/RapidAI/projects/7)
