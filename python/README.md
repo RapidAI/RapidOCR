@@ -54,7 +54,9 @@
 
 1. 推理使用
     - 脚本使用：
-      - ⚠️初始化RapidOCR可不提供`config.yaml`，默认使用安装目录下的`config.yaml`。如有自定义需求，可直接通过初始化参数传入。详细参数参考下面命令行部分，和`config.yaml`基本对应。
+      - ⚠️注意：初始化RapidOCR可不提供`config.yaml`，默认使用安装目录下的`config.yaml`。如有自定义需求：
+        - 一是可直接通过初始化参数传入。详细参数参考下面命令行部分，和`config.yaml`基本对应。
+        - 二是复制`config.yaml`，自行更改，然后初始化给出。e.g. `engine = RapidOCR(config_path="custom.yaml")`
       - 输入：`Union[str, np.ndarray, bytes, Path]`
       - 输出：
           - 有值：`([[文本框坐标], 文本内容, 置信度], 推理时间)`，
@@ -68,6 +70,7 @@
 
         # RapidOCR可传入参数参考下面的命令行部分
         rapid_ocr = RapidOCR()
+        # rapid_ocr = RapidOCR(config_path='custom.yaml')
 
         img_path = 'tests/test_files/ch_en_num.jpg'
 
@@ -96,6 +99,7 @@
                                     [--print_verbose PRINT_VERBOSE]
                                     [--min_height MIN_HEIGHT]
                                     [--width_height_ratio WIDTH_HEIGHT_RATIO]
+                                    [--det_use_cuda DET_USE_CUDA]
                                     [--det_model_path DET_MODEL_PATH]
                                     [--det_limit_side_len DET_LIMIT_SIDE_LEN]
                                     [--det_limit_type {max,min}]
@@ -104,11 +108,13 @@
                                     [--det_unclip_ratio DET_UNCLIP_RATIO]
                                     [--det_use_dilation DET_USE_DILATION]
                                     [--det_score_mode {slow,fast}]
+                                    [--cls_use_cuda CLS_USE_CUDA]
                                     [--cls_model_path CLS_MODEL_PATH]
                                     [--cls_image_shape CLS_IMAGE_SHAPE]
                                     [--cls_label_list CLS_LABEL_LIST]
                                     [--cls_batch_num CLS_BATCH_NUM]
                                     [--cls_thresh CLS_THRESH]
+                                    [--rec_use_cuda REC_USE_CUDA]
                                     [--rec_model_path REC_MODEL_PATH]
                                     [--rec_img_shape REC_IMAGE_SHAPE]
                                     [--rec_batch_num REC_BATCH_NUM]
@@ -127,6 +133,7 @@
         --width_height_ratio WIDTH_HEIGHT_RATIO
 
         Det:
+        --det_use_cuda DET_USE_CUDA
         --det_model_path DET_MODEL_PATH
         --det_limit_side_len DET_LIMIT_SIDE_LEN
         --det_limit_type {max,min}
@@ -137,6 +144,7 @@
         --det_score_mode {slow,fast}
 
         Cls:
+        --cls_use_cuda CLS_USE_CUDA
         --cls_model_path CLS_MODEL_PATH
         --cls_image_shape CLS_IMAGE_SHAPE
         --cls_label_list CLS_LABEL_LIST
@@ -144,6 +152,7 @@
         --cls_thresh CLS_THRESH
 
         Rec:
+        --rec_use_cuda REC_USE_CUDA
         --rec_model_path REC_MODEL_PATH
         --rec_img_shape REC_IMAGE_SHAPE
         --rec_batch_num REC_BATCH_NUM

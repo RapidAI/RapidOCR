@@ -6,7 +6,7 @@ import traceback
 import warnings
 from io import BytesIO
 from pathlib import Path
-from typing import Union
+from typing import Dict, List, Union
 
 import cv2
 import numpy as np
@@ -200,6 +200,7 @@ def init_args():
     global_group.add_argument("--width_height_ratio", type=int, default=8)
 
     det_group = parser.add_argument_group(title="Det")
+    det_group.add_argument("--det_use_cuda", action='store_true', default=False)
     det_group.add_argument("--det_model_path", type=str, default=None)
     det_group.add_argument("--det_limit_side_len", type=float, default=736)
     det_group.add_argument(
@@ -214,6 +215,7 @@ def init_args():
     )
 
     cls_group = parser.add_argument_group(title="Cls")
+    cls_group.add_argument("--cls_use_cuda", action='store_true', default=False)
     cls_group.add_argument("--cls_model_path", type=str, default=None)
     cls_group.add_argument("--cls_image_shape", type=list, default=[3, 48, 192])
     cls_group.add_argument("--cls_label_list", type=list, default=["0", "180"])
@@ -221,6 +223,7 @@ def init_args():
     cls_group.add_argument("--cls_thresh", type=float, default=0.9)
 
     rec_group = parser.add_argument_group(title="Rec")
+    rec_group.add_argument("--rec_use_cuda", action='store_true', default=False)
     rec_group.add_argument("--rec_model_path", type=str, default=None)
     rec_group.add_argument("--rec_img_shape", type=list, default=[3, 48, 320])
     rec_group.add_argument("--rec_batch_num", type=int, default=6)
@@ -262,37 +265,52 @@ class UpdateParameters:
         return config
 
     def update_det_params(self, config, det_dict):
-        if det_dict:
-            det_dict = {k.split("det_")[1]: v for k, v in det_dict.items()}
-            if not det_dict["model_path"]:
-                det_dict["model_path"] = str(root_dir / config["model_path"])
-            config.update(det_dict)
+        if not det_dict:
+            return config
+
+        det_dict = {k.split("det_")[1]: v for k, v in det_dict.items()}
+        model_path = det_dict.get('model_path', None)
+        if not model_path:
+            det_dict["model_path"] = str(root_dir / config["model_path"])
+
+        config.update(det_dict)
         return config
 
     def update_cls_params(self, config, cls_dict):
-        if cls_dict:
-            need_remove_prefix = ["cls_label_list", "cls_model_path"]
-            new_cls_dict = {}
-            for k, v in cls_dict.items():
-                if k in need_remove_prefix:
-                    k = k.split("cls_")[1]
-                new_cls_dict[k] = v
+        if not cls_dict:
+            return config
 
-            if not new_cls_dict["model_path"]:
-                new_cls_dict["model_path"] = str(root_dir / config["model_path"])
-            config.update(new_cls_dict)
+        need_remove_prefix = ["cls_label_list", "cls_model_path", "cls_use_cuda"]
+        new_cls_dict = self.remove_prefix(cls_dict, 'cls_', need_remove_prefix)
+
+        model_path = new_cls_dict.get('model_path', None)
+        if model_path:
+            new_cls_dict["model_path"] = str(root_dir / config["model_path"])
+
+        config.update(new_cls_dict)
         return config
 
     def update_rec_params(self, config, rec_dict):
-        if rec_dict:
-            need_remove_prefix = ["rec_model_path"]
-            new_rec_dict = {}
-            for k, v in rec_dict.items():
-                if k in need_remove_prefix:
-                    k = k.split("rec_")[1]
-                new_rec_dict[k] = v
+        if not rec_dict:
+            return config
 
-            if not new_rec_dict["model_path"]:
-                new_rec_dict["model_path"] = str(root_dir / config["model_path"])
-            config.update(new_rec_dict)
+        need_remove_prefix = ["rec_model_path", "rec_use_cuda"]
+        new_rec_dict = self.remove_prefix(rec_dict, 'rec_', need_remove_prefix)
+
+        model_path = new_rec_dict.get('model_path', None)
+        if not model_path:
+            new_rec_dict["model_path"] = str(root_dir / config["model_path"])
+
+        config.update(new_rec_dict)
         return config
+
+    @staticmethod
+    def remove_prefix(
+        config: Dict[str, str], prefix: str, remove_params: List[str]
+    ) -> Dict[str, str]:
+        new_rec_dict = {}
+        for k, v in config.items():
+            if k in remove_params:
+                k = k.split(prefix)[1]
+            new_rec_dict[k] = v
+        return new_rec_dict
