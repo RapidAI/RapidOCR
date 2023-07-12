@@ -4,7 +4,7 @@
 import copy
 import importlib
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import cv2
 import numpy as np
@@ -18,10 +18,13 @@ root_dir = Path(__file__).resolve().parent
 
 
 class RapidOCR:
-    def __init__(self, **kwargs):
-        config_path = str(root_dir / "config.yaml")
+    def __init__(self, config_path: Optional[str] = None, **kwargs):
+        if config_path is None:
+            config_path = str(root_dir / "config.yaml")
+
         if not Path(config_path).exists():
             raise FileExistsError(f"{config_path} does not exist!")
+
         config = read_yaml(config_path)
         config = concat_model_path(config)
 

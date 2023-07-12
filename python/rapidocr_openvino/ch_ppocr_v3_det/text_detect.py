@@ -25,8 +25,31 @@ from .utils import DBPostProcess, create_operators, transform
 
 class TextDetector:
     def __init__(self, config):
-        self.preprocess_op = create_operators(config["pre_process"])
-        self.postprocess_op = DBPostProcess(**config["post_process"])
+        pre_process_list = {
+            "DetResizeForTest": {
+                "limit_side_len": config.get("limit_side_len", 736),
+                "limit_type": config.get("limit_type", "min"),
+            },
+            "NormalizeImage": {
+                "std": [0.229, 0.224, 0.225],
+                "mean": [0.485, 0.456, 0.406],
+                "scale": "1./255.",
+                "order": "hwc",
+            },
+            "ToCHWImage": None,
+            "KeepKeys": {"keep_keys": ["image", "shape"]},
+        }
+        self.preprocess_op = create_operators(pre_process_list)
+
+        post_process = {
+            "thresh": config.get("thresh", 0.3),
+            "box_thresh": config.get("box_thresh", 0.5),
+            "max_candidates": config.get("max_candidates", 1000),
+            "unclip_ratio": config.get("unclip_ratio", 1.6),
+            "use_dilation": config.get("use_dilation", True),
+            "score_mode": config.get("score_mode", "fast"),
+        }
+        self.postprocess_op = DBPostProcess(**post_process)
 
         self.infer = OpenVINOInferSession(config)
 
