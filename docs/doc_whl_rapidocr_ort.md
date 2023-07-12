@@ -46,14 +46,15 @@ $ pip install rapidocr-onnxruntime
     ```
 
 - Run by command line.
-  ```bash
-  $ rapidocr_onnxruntime -h
+    ```bash
+    $ rapidocr_onnxruntime -h
     usage: rapidocr_onnxruntime [-h] -img IMG_PATH [-p] [--text_score TEXT_SCORE]
                                 [--use_angle_cls USE_ANGLE_CLS]
                                 [--use_text_det USE_TEXT_DET]
                                 [--print_verbose PRINT_VERBOSE]
                                 [--min_height MIN_HEIGHT]
                                 [--width_height_ratio WIDTH_HEIGHT_RATIO]
+                                [--det_use_cuda DET_USE_CUDA]
                                 [--det_model_path DET_MODEL_PATH]
                                 [--det_limit_side_len DET_LIMIT_SIDE_LEN]
                                 [--det_limit_type {max,min}]
@@ -62,11 +63,13 @@ $ pip install rapidocr-onnxruntime
                                 [--det_unclip_ratio DET_UNCLIP_RATIO]
                                 [--det_use_dilation DET_USE_DILATION]
                                 [--det_score_mode {slow,fast}]
+                                [--cls_use_cuda CLS_USE_CUDA]
                                 [--cls_model_path CLS_MODEL_PATH]
                                 [--cls_image_shape CLS_IMAGE_SHAPE]
                                 [--cls_label_list CLS_LABEL_LIST]
                                 [--cls_batch_num CLS_BATCH_NUM]
                                 [--cls_thresh CLS_THRESH]
+                                [--rec_use_cuda REC_USE_CUDA]
                                 [--rec_model_path REC_MODEL_PATH]
                                 [--rec_img_shape REC_IMAGE_SHAPE]
                                 [--rec_batch_num REC_BATCH_NUM]
@@ -85,6 +88,7 @@ $ pip install rapidocr-onnxruntime
     --width_height_ratio WIDTH_HEIGHT_RATIO
 
     Det:
+    --det_use_cuda DET_USE_CUDA
     --det_model_path DET_MODEL_PATH
     --det_limit_side_len DET_LIMIT_SIDE_LEN
     --det_limit_type {max,min}
@@ -95,6 +99,7 @@ $ pip install rapidocr-onnxruntime
     --det_score_mode {slow,fast}
 
     Cls:
+    --cls_use_cuda CLS_USE_CUDA
     --cls_model_path CLS_MODEL_PATH
     --cls_image_shape CLS_IMAGE_SHAPE
     --cls_label_list CLS_LABEL_LIST
@@ -102,9 +107,10 @@ $ pip install rapidocr-onnxruntime
     --cls_thresh CLS_THRESH
 
     Rec:
+    --rec_use_cuda REC_USE_CUDA
     --rec_model_path REC_MODEL_PATH
     --rec_img_shape REC_IMAGE_SHAPE
     --rec_batch_num REC_BATCH_NUM
 
-  $ rapidocr_onnxruntime -img tests/test_files/ch_en_num.jpg
-  ```
+    $ rapidocr_onnxruntime -img tests/test_files/ch_en_num.jpg
+    ```
