@@ -32,9 +32,6 @@ class RapidOCR:
             updater = UpdateParameters()
             config = updater(config, **kwargs)
 
-        print(config)
-        exit()
-
         global_config = config["Global"]
         self.print_verbose = global_config["print_verbose"]
         self.text_score = global_config["text_score"]
