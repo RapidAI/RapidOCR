@@ -1,5 +1,5 @@
 
-简体中文 | [English](https://github.com/RapidAI/RapidOCR/blob/main/docs/README_en.md)
+简体中文 | [English](https://github.com/RapidAI/RapidOCR/blob/main/README.md)
 <div align="center">
   <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/RapidOCR_LOGO.png" width="65%" height="65%"/>
 </div>
