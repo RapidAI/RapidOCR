@@ -174,7 +174,7 @@ flowchart LR
 
 ## Authorization
 - The copyright of the OCR model belongs to Baidu, and the copyright of other engineering codes belongs to the owner of this warehouse.
-- This software is licensed under LGPL. You are welcome to contribute code, submit an issue or even PR.
+- This software is licensed under Apache 2.0. You are welcome to contribute code, submit an issue or even PR.
 - If you find this project useful in your research, please consider citing:
   ```latex
   @misc{RapidOCR 2021,
