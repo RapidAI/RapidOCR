@@ -191,6 +191,9 @@ flowchart LR
     </div>
 
 - 欢迎加入我们的QQ群下载模型及测试程序。1群：~887298230~ 已满，2群：~755960114~ 已满，3群：450338158
+    <div align="center">
+        <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/QQ3.jpg" width="25%" height="25%" align="center">
+    </div>
 
 ## 示例图
 #### C++/JVM示例图像
