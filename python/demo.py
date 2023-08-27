@@ -8,10 +8,9 @@ from pathlib import Path
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+from rapidocr_openvino import RapidOCR
 
-from rapidocr_onnxruntime import RapidOCR
-
-# from rapidocr_openvino import RapidOCR
+# from rapidocr_onnxruntime import RapidOCR
 
 
 def draw_ocr_box_txt(image, boxes, txts, font_path, scores=None, text_score=0.5):

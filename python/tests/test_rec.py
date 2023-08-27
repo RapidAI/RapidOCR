@@ -22,5 +22,5 @@ def test_det(package_name):
 
     img_path = base.tests_dir / "test_files" / "text_rec.jpg"
     img = cv2.imread(str(img_path))
-    rec_res, elapse = text_rec([img])
+    rec_res, elapse = text_rec(img)
     assert rec_res[0][0] == "韩国小馆"
