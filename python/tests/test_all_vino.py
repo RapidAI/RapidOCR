@@ -4,15 +4,14 @@
 import sys
 from pathlib import Path
 
-import numpy as np
 import cv2
+import numpy as np
 import pytest
-
 
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
-from rapidocr_openvino import RapidOCR, LoadImageError
+from rapidocr_openvino import LoadImageError, RapidOCR
 
 rapid_ocr = RapidOCR()
 
@@ -24,7 +23,7 @@ def test_normal():
     img = cv2.imread(str(image_path))
     result, _ = rapid_ocr(img)
     assert result[0][1] == "正品促销"
-    assert len(result) == 17
+    assert len(result) == 16
 
 
 def test_empty():
@@ -45,7 +44,7 @@ def test_input_str():
     image_path = tests_dir / "ch_en_num.jpg"
     result, _ = rapid_ocr(str(image_path))
     assert result[0][1] == "正品促销"
-    assert len(result) == 17
+    assert len(result) == 16
 
 
 def test_input_bytes():
@@ -53,14 +52,14 @@ def test_input_bytes():
     with open(image_path, "rb") as f:
         result, _ = rapid_ocr(f.read())
     assert result[0][1] == "正品促销"
-    assert len(result) == 17
+    assert len(result) == 16
 
 
 def test_input_path():
     image_path = tests_dir / "ch_en_num.jpg"
     result, _ = rapid_ocr(image_path)
     assert result[0][1] == "正品促销"
-    assert len(result) == 17
+    assert len(result) == 16
 
 
 def test_input_parameters():

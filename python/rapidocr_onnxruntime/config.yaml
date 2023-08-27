@@ -9,7 +9,7 @@ Global:
 Det:
     use_cuda: false
 
-    model_path: models/ch_PP-OCRv3_det_infer.onnx
+    model_path: models/ch_PP-OCRv4_det_infer.onnx
 
     limit_side_len: 736
     limit_type: min
@@ -34,7 +34,7 @@ Cls:
 Rec:
     use_cuda: false
 
-    model_path: models/ch_PP-OCRv3_rec_infer.onnx
+    model_path: models/ch_PP-OCRv4_rec_infer.onnx
 
     rec_img_shape: [3, 48, 320]
     rec_batch_num: 6
