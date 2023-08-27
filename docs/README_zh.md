@@ -32,6 +32,7 @@
 - [捷智OCR](#捷智ocr)
   - [商业支持](#商业支持)
   - [简介](#简介)
+  - [最近动态](#最近动态)
   - [文档导航](#文档导航)
   - [生态框架](#生态框架)
   - [在线demo](#在线demo)
@@ -64,9 +65,15 @@
   - 不满足要求 → 基于[PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)在自己数据上微调 → RapidOCR部署。
 - 如果该仓库有帮助到你，还请点个小星星⭐呗！
 
+## 最近动态
+- 2023-08-27：
+  - \[Python\] 整合PaddleOCR v4版本模型，并对v4模型做[评测](https://github.com/RapidAI/RapidOCR/wiki/%E4%B8%8D%E5%90%8C%E7%89%88%E6%9C%AC%E6%A8%A1%E5%9E%8B%E4%B9%8B%E9%97%B4%E6%AF%94%E8%BE%83)。基于v4的`rapidocr`包已经更新到`v1.3.0`中，使用文档参见：[link](https://github.com/RapidAI/RapidOCR/tree/main/python)
+  - 梳理`rapidocr`版本系列差异，优化python部分文档。
+
 ## 文档导航
 - [Wiki](https://github.com/RapidAI/RapidOCR/wiki)
-  - [自定义识别模型](https://github.com/RapidAI/RapidOCR/wiki/support_language)
+  - [自定义识别模型及模型转换为ONNX](https://github.com/RapidAI/RapidOCR/wiki/support_language)
+  - [不同版本模型之间效果比较](https://github.com/RapidAI/RapidOCR/wiki/%E4%B8%8D%E5%90%8C%E7%89%88%E6%9C%AC%E6%A8%A1%E5%9E%8B%E4%B9%8B%E9%97%B4%E6%AF%94%E8%BE%83)
   - [ONNXRuntime推理调优指南](https://github.com/RapidAI/RapidOCR/wiki/ONNXRuntime%E6%8E%A8%E7%90%86%E8%B0%83%E4%BC%98%E6%8C%87%E5%8D%97)
   - [RapidOCR调优尝试教程](https://github.com/RapidAI/RapidOCR/wiki/RapidOCR%E8%B0%83%E4%BC%98%E5%B0%9D%E8%AF%95%E6%95%99%E7%A8%8B)
   - [OpenVINO推理](https://github.com/RapidAI/RapidOCR/wiki/openvino%E6%8E%A8%E7%90%86)
@@ -89,17 +96,17 @@
   - [含文本的图像方向分类](https://github.com/RapidAI/RapidStructure/blob/main/docs/README_Orientation.md)
   - [版面分析](https://github.com/RapidAI/RapidStructure/blob/main/docs/README_Layout.md)
   - [表格还原](https://github.com/RapidAI/RapidStructure/blob/main/docs/README_Table.md)
+- [常见问题 FAQ](https://github.com/RapidAI/RapidOCR/wiki/FAQ)
 - 衍生项目
-  - [RapidOCR HTTP服务/win32程序/易语言编写](https://github.com/Physton/RapidOCRServer)
+  - [RapidOCRServer](https://github.com/Physton/RapidOCRServer)：RapidOCR HTTP服务/win32程序/易语言编写
+  - [PaddleModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter)： 模型自助转换
+  - [TextDetMetric](https://github.com/SWHL/TextDetMetric)：文本检测模型评估
 - [垂直项目](https://github.com/RapidAI/RapidOCR/blob/main/docs/related_projects.md)
   - [RapidOCRPDF](https://github.com/RapidAI/RapidOCRPDF)：解析PDF文件
   - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR)：基于RapidOCR，提取视频中的硬字幕
   - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): 表格结构还原 | [博客解读论文和源码](http://t.csdn.cn/QNN3S)
   - [PaperEdge](https://github.com/cvlab-stonybrook/PaperEdge)：文档图像矫正 | [Demo](https://huggingface.co/spaces/SWHL/PaperEdgeDemo)
   - [CTRNet](https://github.com/lcy0604/CTRNet)：图像文字擦除 | [Demo](https://huggingface.co/spaces/SWHL/CTRNetDemo)
-- [模型相关](https://github.com/RapidAI/RapidOCR/wiki/%E6%A8%A1%E5%9E%8B%E7%9B%B8%E5%85%B3)
-- [常见问题 FAQ](https://github.com/RapidAI/RapidOCR/wiki/FAQ)
-
 
 ## 生态框架
 ```mermaid
@@ -128,7 +135,7 @@ flowchart LR
         <div align="center">
             <img src="https://github.com/RapidAI/RapidOCR/blob/ae529c2ba79e6cbf04c54caf2d24feb75e947ca4/assets/demo.gif" width="100%" height="100%">
         </div>
-- [Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
+- [Hugging Face Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo) | [魔搭demo](https://www.modelscope.cn/studios/liekkas/RapidOCRDemo/summary)
   - 该demo依托于Hugging Face的Spaces构建，采用Gradio库搭建。
   - 示例图：
     <div align="center">

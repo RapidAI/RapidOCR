@@ -28,11 +28,8 @@
     <summary>Contents</summary>
 
 - [Introduction](#introduction)
+- [Recent News](#recent-news)
 - [Navigation](#navigation)
-- [Recently updates(more)](#recently-updatesmore)
-    - [🍜2023-05-22 api update:](#2023-05-22-api-update)
-    - [❤2023-05-20 ocrweb update:](#2023-05-20-ocrweb-update)
-    - [🌹 2023-05-14 ocrweb v0.1.5 update:](#-2023-05-14-ocrweb-v015-update)
 - [Overall Framework](#overall-framework)
 - [Demo](#demo)
 - [TODO and Task Claim](#todo-and-task-claim)
@@ -57,6 +54,11 @@
   - If the existing model in the repo meets the requirements → RapidOCR deployment can be used.
   - Not meeting requirements → Based on [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR). Fine-tune your own data → RapidOCR deployment.
 -If this repo is helpful to you, please click on a small star ⭐ Bah!
+
+## Recent News
+- 2023-08-27:
+  - \[Python\] Integrate PaddleOCR v4 model and do [review](https://github.com/RapidAI/RapidOCR/wiki/%E4%B8%8D%E5%90%8C%E7%89%88%E6%9C%AC%E6%A8%A1%E5%9E%8B%E4%B9%8B%E9%97%B4%E6%AF%94%E8%BE%83) of v4 model. The v4-based `rapidocr` package has been updated to `v1.3.0`, for documentation see: [link](https://github.com/RapidAI/RapidOCR/tree/main/python)
+  - Sorting out differences in the `rapidocr` version series and optimizing some of the python documentation.
 
 ## Navigation
 - [Wiki](https://github.com/RapidAI/RapidOCR/wiki)
@@ -98,17 +100,6 @@
   - [Model Convert](https://github.com/RapidAI/RapidOCR/blob/main/docs/models.md#模型转换)
   - [Model Download](https://github.com/RapidAI/RapidOCR/blob/main/docs/models.md#模型下载)
 - [FAQ](https://github.com/RapidAI/RapidOCR/blob/main/docs/FAQ.md)
-
-## Recently updates([more](https://github.com/RapidAI/RapidOCR/wiki/Changelog))
-#### 🍜2023-05-22 api update:
-- Decouple the API from ocrweb and maintain it as a separate module. For details, see [API](https://github.com/RapidAI/RapidOCR/tree/main/api)
-- After `rapidocr_web>0.1.6`, `pip install rapidocr_web[api]` will not be supported for installation, you can directly install and use `pip install rapidocr_api`.
-#### ❤2023-05-20 ocrweb update:
-- Add desktop version of RapidOCRWeb, for details, please refer to [RapidOCRWeb desktop version tutorial](https://github.com/RapidAI/RapidOCR/wiki/%5BRapidOCRWeb%5D-%E6%A1%8C%E9%9D%A2%E7%89%88%E4%BD%BF%E7%94%A8%E6%95%99%E7%A8%8B)
-####  🌹 2023-05-14 ocrweb v0.1.5 update:
-- Add the return value of the interface version's return coordinate box ([issue #85](https://github.com/RapidAI/RapidOCR/issues/85))
-- API mode adds base64 format input
-- For details, please refer to: [link](https://github.com/RapidAI/RapidOCR/blob/main/ocrweb/README.md)
 
 ## Overall Framework
 ```mermaid
