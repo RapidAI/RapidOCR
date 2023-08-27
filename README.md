@@ -32,6 +32,7 @@
 - [Navigation](#navigation)
 - [Overall Framework](#overall-framework)
 - [Demo](#demo)
+- [Changelog(more)](#changelogmore)
 - [TODO and Task Claim](#todo-and-task-claim)
 - [Original initiator and start-up author](#original-initiator-and-start-up-author)
 - [Acknowledgements](#acknowledgements)
@@ -84,22 +85,17 @@
   - [orientation](https://github.com/RapidAI/RapidStructure/blob/main/docs/README_Orientation.md)
   - [layout](https://github.com/RapidAI/RapidStructure/blob/main/docs/README_Layout.md)
   - [table recovery](https://github.com/RapidAI/RapidStructure/blob/main/docs/README_Table.md)
+- [FAQ](https://github.com/RapidAI/RapidOCR/blob/main/docs/FAQ.md)
 - Derivatives
   - [RapidOCR HTTP service/win32 program/easy language writing](https://github.com/Physton/RapidOCRServer)
+  - [PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter)
+  - [TextDetMetric](https://github.com/SWHL/TextDetMetric)
 - [Related projects](https://github.com/RapidAI/RapidOCR/blob/main/docs/related_projects.md)
   - [RapidOCRPDF](https://github.com/RapidAI/RapidOCRPDF)：extract PDF content.
   - [RapidVideOCR](https://github.com/SWHL/RapidVideOCR): Extract hard subtitles in videos based on RapidOCR
   - [LGPMA_Infer](https://github.com/SWHL/LGPMA_Infer): table structure restoration | [blog interpretation papers and source code](http://t.csdn.cn/QNN3S)
   - [Document Unwarping-PaperEdge](https://github.com/cvlab-stonybrook/PaperEdge) | [Demo](https://huggingface.co/spaces/SWHL/PaperEdgeDemo)
   - [Text Removal-CTRNet](https://github.com/lcy0604/CTRNet) | [Demo](https://huggingface.co/spaces/SWHL/CTRNetDemo)
-- Model Convert
-   - [PaddleOCRModelConverter](https://github.com/RapidAI/PaddleOCRModelConverter)
-   - [Paddle2OnnxConvertor](https://github.com/RapidAI/Paddle2OnnxConvertor)
-   - [Teach you to use ONNXRunTime to deploy PP-OCR](https://aistudio.baidu.com/aistudio/projectdetail/1479970?channelType=0&channel=0)
-- [About model](https://github.com/RapidAI/RapidOCR/blob/main/docs/models.md)
-  - [Model Convert](https://github.com/RapidAI/RapidOCR/blob/main/docs/models.md#模型转换)
-  - [Model Download](https://github.com/RapidAI/RapidOCR/blob/main/docs/models.md#模型下载)
-- [FAQ](https://github.com/RapidAI/RapidOCR/blob/main/docs/FAQ.md)
 
 ## Overall Framework
 ```mermaid
@@ -135,6 +131,10 @@ flowchart LR
         <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/hf_demo.png" width="100%" height="100%">
     </div>
 
+## Changelog([more](https://github.com/RapidAI/RapidOCR/wiki/%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97_rapidocr))
+- [rapidocr](https://github.com/RapidAI/RapidOCR/wiki/%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97_rapidocr)
+- [rapidocr_web](https://github.com/RapidAI/RapidOCR/wiki/%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97_ocrweb)
+- [rapidocr_api](https://github.com/RapidAI/RapidOCR/wiki/%E6%9B%B4%E6%96%B0%E6%97%A5%E5%BF%97_rapid_api)
 
 ## TODO and Task Claim
 - See here: [link](https://github.com/orgs/RapidAI/projects/7)
