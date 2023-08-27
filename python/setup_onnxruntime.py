@@ -23,7 +23,6 @@ obtainer = GetPyPiLatestVersion()
 latest_version = obtainer(MODULE_NAME)
 VERSION_NUM = obtainer.version_add_one(latest_version)
 
-# 优先提取commit message中的语义化版本号，如无，则自动加1
 if len(sys.argv) > 2:
     match_str = " ".join(sys.argv[2:])
     matched_versions = obtainer.extract_version(match_str)
