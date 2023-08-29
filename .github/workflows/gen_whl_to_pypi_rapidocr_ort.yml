@@ -11,6 +11,7 @@ on:
 
 env:
   RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.3.0.zip
+  TWO_DIM_IMAGE: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/two_dim_image.npy
 
 jobs:
   UnitTesting:
@@ -39,6 +40,8 @@ jobs:
           cd python
           pip install -r requirements.txt
           cd tests
+          wget $TWO_DIM_IMAGE -O two_dim_image.npy
+          mv two_dim_image.npy test_files/
           pytest test_det.py test_cls.py test_rec.py test_all_ort.py
 
   GenerateWHL_PushPyPi:

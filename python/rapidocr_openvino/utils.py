@@ -56,8 +56,12 @@ class LoadImage:
         if img.ndim == 2:
             return cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
-        if img.ndim == 3 and img.shape[2] == 4:
-            return self.cvt_four_to_three(img)
+        if img.ndim == 3:
+            if img.shape[2] == 4:
+                return self.cvt_four_to_three(img)
+
+            if img.shape[2] == 2:
+                return self.cvt_two_to_three(img)
 
         return img
 
@@ -83,7 +87,7 @@ class LoadImage:
 
     @staticmethod
     def cvt_four_to_three(img: np.ndarray) -> np.ndarray:
-        """RGBA → RGB"""
+        """RGBA → BGR"""
         r, g, b, a = cv2.split(img)
         new_img = cv2.merge((b, g, r))
 
@@ -91,6 +95,20 @@ class LoadImage:
         not_a = cv2.cvtColor(not_a, cv2.COLOR_GRAY2BGR)
 
         new_img = cv2.bitwise_and(new_img, new_img, mask=a)
+        new_img = cv2.add(new_img, not_a)
+        return new_img
+
+    @staticmethod
+    def cvt_two_to_three(img: np.ndarray) -> np.ndarray:
+        """gray + alpha → BGR"""
+        img_gray = img[..., 0]
+        img_bgr = cv2.cvtColor(img_gray, cv2.COLOR_GRAY2BGR)
+
+        img_alpha = img[..., 1]
+        not_a = cv2.bitwise_not(img_alpha)
+        not_a = cv2.cvtColor(not_a, cv2.COLOR_GRAY2BGR)
+
+        new_img = cv2.bitwise_and(img_bgr, img_bgr, mask=img_alpha)
         new_img = cv2.add(new_img, not_a)
         return new_img
 
@@ -198,7 +216,7 @@ class UpdateParameters:
             return config
 
         det_dict = {k.split("det_")[1]: v for k, v in det_dict.items()}
-        model_path = det_dict.get('model_path', None)
+        model_path = det_dict.get("model_path", None)
         if not model_path:
             det_dict["model_path"] = str(root_dir / config["model_path"])
 
@@ -210,9 +228,9 @@ class UpdateParameters:
             return config
 
         need_remove_prefix = ["cls_label_list", "cls_model_path", "cls_use_cuda"]
-        new_cls_dict = self.remove_prefix(cls_dict, 'cls_', need_remove_prefix)
+        new_cls_dict = self.remove_prefix(cls_dict, "cls_", need_remove_prefix)
 
-        model_path = new_cls_dict.get('model_path', None)
+        model_path = new_cls_dict.get("model_path", None)
         if model_path:
             new_cls_dict["model_path"] = str(root_dir / config["model_path"])
 
@@ -224,9 +242,9 @@ class UpdateParameters:
             return config
 
         need_remove_prefix = ["rec_model_path", "rec_use_cuda"]
-        new_rec_dict = self.remove_prefix(rec_dict, 'rec_', need_remove_prefix)
+        new_rec_dict = self.remove_prefix(rec_dict, "rec_", need_remove_prefix)
 
-        model_path = new_rec_dict.get('model_path', None)
+        model_path = new_rec_dict.get("model_path", None)
         if not model_path:
             new_rec_dict["model_path"] = str(root_dir / config["model_path"])
 

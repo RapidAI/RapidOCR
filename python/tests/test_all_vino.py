@@ -95,3 +95,11 @@ def test_input_rec_parameters():
         result, _ = rapid_ocr(image_path)
         raise FileNotFoundError()
     assert exc_info.type is FileNotFoundError
+
+
+def test_input_two_ndim():
+    img_npy = tests_dir / "two_dim_image.npy"
+    image_array = np.load(str(img_npy))
+    result, _ = rapid_ocr(image_array)
+
+    assert len(result) == 87

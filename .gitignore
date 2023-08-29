@@ -156,3 +156,4 @@ long1.jpg
 *.pdmodel
 
 .DS_Store
+*.npy
