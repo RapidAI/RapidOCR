@@ -149,6 +149,7 @@ class LoadImage:
             return img
 
         if isinstance(img, np.ndarray):
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
             return img
 
         raise LoadImageError(f"{type(img)} is not supported!")
