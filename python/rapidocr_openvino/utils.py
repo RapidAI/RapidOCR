@@ -52,17 +52,7 @@ class LoadImage:
             )
 
         img = self.load_img(img)
-
-        if img.ndim == 2:
-            return cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-
-        if img.ndim == 3:
-            if img.shape[2] == 4:
-                return self.cvt_four_to_three(img)
-
-            if img.shape[2] == 2:
-                return self.cvt_two_to_three(img)
-
+        img = self.convert_img(img)
         return img
 
     def load_img(self, img: InputType) -> np.ndarray:
@@ -70,20 +60,42 @@ class LoadImage:
             self.verify_exist(img)
             try:
                 img = np.array(Image.open(img))
-                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
             except UnidentifiedImageError as e:
                 raise LoadImageError(f"cannot identify image file {img}") from e
             return img
 
         if isinstance(img, bytes):
             img = np.array(Image.open(BytesIO(img)))
-            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
             return img
 
         if isinstance(img, np.ndarray):
             return img
 
         raise LoadImageError(f"{type(img)} is not supported!")
+
+    def convert_img(self, img: np.ndarray):
+        if img.ndim == 2:
+            return cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+
+        if img.ndim == 3:
+            channel = img.shape[2]
+            if channel == 1:
+                return cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+
+            if channel == 2:
+                return self.cvt_two_to_three(img)
+
+            if channel == 4:
+                return self.cvt_four_to_three(img)
+
+            if channel == 3:
+                return cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
+            raise LoadImageError(
+                f"The channel({channel}) of the img is not in [1, 2, 3, 4]"
+            )
+
+        raise LoadImageError(f"The ndim({img.ndim}) of the img is not in [2, 3]")
 
     @staticmethod
     def cvt_four_to_three(img: np.ndarray) -> np.ndarray:
