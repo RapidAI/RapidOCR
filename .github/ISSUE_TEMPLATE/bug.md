@@ -1,5 +1,5 @@
 ---
-name: Bug
+name: 🐞 Bug
 about: Bug
 title: 'Bug'
 labels: 'Bug'
