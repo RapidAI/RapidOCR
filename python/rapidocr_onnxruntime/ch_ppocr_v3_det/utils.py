@@ -21,43 +21,7 @@ import sys
 import cv2
 import numpy as np
 import pyclipper
-import six
 from shapely.geometry import Polygon
-
-
-class DecodeImage:
-    """decode image"""
-
-    def __init__(self, img_mode="RGB", channel_first=False):
-        self.img_mode = img_mode
-        self.channel_first = channel_first
-
-    def __call__(self, data):
-        img = data["image"]
-        if six.PY2:
-            assert (
-                type(img) is str and len(img) > 0
-            ), "invalid input 'img' in DecodeImage"
-        else:
-            assert (
-                type(img) is bytes and len(img) > 0
-            ), "invalid input 'img' in DecodeImage"
-
-        img = np.frombuffer(img, dtype="uint8")
-        img = cv2.imdecode(img, 1)
-        if img is None:
-            return None
-
-        if self.img_mode == "GRAY":
-            img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-        elif self.img_mode == "RGB":
-            assert img.shape[2] == 3, f"invalid shape of image[{img.shape}]"
-            img = img[:, :, ::-1]
-
-        if self.channel_first:
-            img = img.transpose((2, 0, 1))
-        data["image"] = img
-        return data
 
 
 class NormalizeImage:
@@ -66,6 +30,7 @@ class NormalizeImage:
     def __init__(self, scale=None, mean=None, std=None, order="chw"):
         if isinstance(scale, str):
             scale = eval(scale)
+
         self.scale = np.float32(scale if scale is not None else 1.0 / 255.0)
         mean = mean if mean is not None else [0.485, 0.456, 0.406]
         std = std if std is not None else [0.229, 0.224, 0.225]
@@ -105,7 +70,6 @@ class KeepKeys:
 
 class DetResizeForTest:
     def __init__(self, **kwargs):
-        super(DetResizeForTest, self).__init__()
         self.resize_type = 0
         if "image_shape" in kwargs:
             self.image_shape = kwargs["image_shape"]
@@ -126,13 +90,12 @@ class DetResizeForTest:
         src_h, src_w = img.shape[:2]
 
         if self.resize_type == 0:
-            # img, shape = self.resize_image_type0(img)
             img, [ratio_h, ratio_w] = self.resize_image_type0(img)
         elif self.resize_type == 2:
             img, [ratio_h, ratio_w] = self.resize_image_type2(img)
         else:
-            # img, shape = self.resize_image_type1(img)
             img, [ratio_h, ratio_w] = self.resize_image_type1(img)
+
         data["image"] = img
         data["shape"] = np.array([src_h, src_w, ratio_h, ratio_w])
         return data
@@ -143,7 +106,6 @@ class DetResizeForTest:
         ratio_h = float(resize_h) / ori_h
         ratio_w = float(resize_w) / ori_w
         img = cv2.resize(img, (int(resize_w), int(resize_h)))
-        # return img, np.array([ori_h, ori_w])
         return img, [ratio_h, ratio_w]
 
     def resize_image_type0(self, img):
@@ -174,6 +136,7 @@ class DetResizeForTest:
                     ratio = float(limit_side_len) / w
             else:
                 ratio = 1.0
+
         resize_h = int(h * ratio)
         resize_w = int(w * ratio)
 
@@ -187,6 +150,7 @@ class DetResizeForTest:
         except:
             print(img.shape, resize_w, resize_h)
             sys.exit(0)
+
         ratio_h = resize_h / float(h)
         ratio_w = resize_w / float(w)
         return img, [ratio_h, ratio_w]

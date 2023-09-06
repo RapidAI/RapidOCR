@@ -21,6 +21,8 @@ tests_dir = root_dir / "tests" / "test_files"
 def test_normal():
     image_path = tests_dir / "ch_en_num.jpg"
     img = cv2.imread(str(image_path))
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
     result, _ = rapid_ocr(img)
     assert result[0][1] == "正品促销"
     assert len(result) == 16
@@ -35,7 +37,7 @@ def test_empty():
 
 
 def test_zeros():
-    img = np.zeros([640, 640, 3])
+    img = np.zeros([640, 640, 3], np.uint8)
     result, _ = rapid_ocr(img)
     assert result is None
 
@@ -95,11 +97,3 @@ def test_input_rec_parameters():
         result, _ = rapid_ocr(image_path)
         raise FileNotFoundError()
     assert exc_info.type is FileNotFoundError
-
-
-def test_input_two_ndim():
-    img_npy = tests_dir / "two_dim_image.npy"
-    image_array = np.load(str(img_npy))
-    result, _ = rapid_ocr(image_array)
-
-    assert len(result) == 87

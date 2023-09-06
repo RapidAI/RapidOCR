@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: ❓ Questions
+    url: https://github.com/RapidAI/RapidOCR/discussions/categories/q-a
+    about: Please use the community forum for help and questions regarding RapidOCR.
+  - name: 💡 Feature requests and ideas
+    url: https://github.com/RapidAI/RapidOCR/discussions/categories/ideas
+    about: Please vote for and post new feature ideas in the community forum.
+  - name: 📖 Documentation
+    url: https://github.com/RapidAI/RapidOCR/wiki
+    about: A great place to find instructions and answers about RapidOCR.

@@ -8,9 +8,10 @@ from pathlib import Path
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from rapidocr_openvino import RapidOCR
 
-# from rapidocr_onnxruntime import RapidOCR
+from rapidocr_onnxruntime import RapidOCR
+
+# from rapidocr_openvino import RapidOCR
 
 
 def draw_ocr_box_txt(image, boxes, txts, font_path, scores=None, text_score=0.5):
@@ -21,6 +22,9 @@ def draw_ocr_box_txt(image, boxes, txts, font_path, scores=None, text_score=0.5)
         )
 
     h, w = image.height, image.width
+    if image.mode == "L":
+        image = image.convert("RGB")
+
     img_left = image.copy()
     img_right = Image.new("RGB", (w, h), (255, 255, 255))
 
@@ -95,9 +99,11 @@ def visualize(image_path, result, font_path="resources/fonts/FZYTK.TTF"):
 if __name__ == "__main__":
     rapid_ocr = RapidOCR()
 
-    image_path = "tests/test_files/ch_en_num.jpg"
-    with open(image_path, "rb") as f:
-        img = f.read()
+    image_path = "res.png"
+    # with open(image_path, "rb") as f:
+    #     img = f.read()
+    img = cv2.imread(image_path)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     result, elapse_list = rapid_ocr(img)
     print(result)
     print(elapse_list)
