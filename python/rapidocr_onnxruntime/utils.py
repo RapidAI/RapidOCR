@@ -6,7 +6,7 @@ import traceback
 import warnings
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 import cv2
 import numpy as np
@@ -283,9 +283,16 @@ class UpdateParameters:
         global_dict, det_dict, cls_dict, rec_dict = self.parse_kwargs(**kwargs)
         new_config = {
             "Global": self.update_global_params(config["Global"], global_dict),
-            "Det": self.update_det_params(config["Det"], det_dict),
-            "Cls": self.update_cls_params(config["Cls"], cls_dict),
-            "Rec": self.update_rec_params(config["Rec"], rec_dict),
+            "Det": self.update_params(config["Det"], det_dict, "det_"),
+            "Cls": self.update_params(
+                config["Cls"],
+                cls_dict,
+                "cls_",
+                ["cls_label_list", "cls_model_path", "cls_use_cuda"],
+            ),
+            "Rec": self.update_params(
+                config["Rec"], rec_dict, "rec_", ["rec_model_path", "rec_use_cuda"]
+            ),
         }
         return new_config
 
@@ -294,50 +301,34 @@ class UpdateParameters:
             config.update(global_dict)
         return config
 
-    def update_det_params(self, config, det_dict):
-        if not det_dict:
+    def update_params(
+        self,
+        config,
+        param_dict: Dict[str, str],
+        prefix: str,
+        need_remove_prefix: Optional[List[str]] = None,
+    ):
+        if not param_dict:
             return config
 
-        det_dict = {k.split("det_")[1]: v for k, v in det_dict.items()}
-        model_path = det_dict.get("model_path", None)
+        filter_dict = self.remove_prefix(param_dict, prefix, need_remove_prefix)
+        filter_dict = {k.split(prefix)[1]: v for k, v in param_dict.items()}
+        model_path = filter_dict.get("model_path", None)
         if not model_path:
-            det_dict["model_path"] = str(root_dir / config["model_path"])
+            filter_dict["model_path"] = str(root_dir / config["model_path"])
 
-        config.update(det_dict)
-        return config
-
-    def update_cls_params(self, config, cls_dict):
-        if not cls_dict:
-            return config
-
-        need_remove_prefix = ["cls_label_list", "cls_model_path", "cls_use_cuda"]
-        new_cls_dict = self.remove_prefix(cls_dict, "cls_", need_remove_prefix)
-
-        model_path = new_cls_dict.get("model_path", None)
-        if model_path:
-            new_cls_dict["model_path"] = str(root_dir / config["model_path"])
-
-        config.update(new_cls_dict)
-        return config
-
-    def update_rec_params(self, config, rec_dict):
-        if not rec_dict:
-            return config
-
-        need_remove_prefix = ["rec_model_path", "rec_use_cuda"]
-        new_rec_dict = self.remove_prefix(rec_dict, "rec_", need_remove_prefix)
-
-        model_path = new_rec_dict.get("model_path", None)
-        if not model_path:
-            new_rec_dict["model_path"] = str(root_dir / config["model_path"])
-
-        config.update(new_rec_dict)
+        config.update(filter_dict)
         return config
 
     @staticmethod
     def remove_prefix(
-        config: Dict[str, str], prefix: str, remove_params: List[str]
+        config: Dict[str, str],
+        prefix: str,
+        remove_params: Optional[List[str]] = None,
     ) -> Dict[str, str]:
+        if not remove_params:
+            return config
+
         new_rec_dict = {}
         for k, v in config.items():
             if k in remove_params:
