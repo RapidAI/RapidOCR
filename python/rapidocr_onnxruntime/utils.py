@@ -270,6 +270,7 @@ class UpdateParameters:
         global_dict, det_dict, cls_dict, rec_dict = {}, {}, {}, {}
         for k, v in kwargs.items():
             if k.startswith("det"):
+                k = k.split("det_")[1]
                 det_dict[k] = v
             elif k.startswith("cls"):
                 cls_dict[k] = v
@@ -283,7 +284,7 @@ class UpdateParameters:
         global_dict, det_dict, cls_dict, rec_dict = self.parse_kwargs(**kwargs)
         new_config = {
             "Global": self.update_global_params(config["Global"], global_dict),
-            "Det": self.update_params(config["Det"], det_dict, "det_"),
+            "Det": self.update_params(config["Det"], det_dict, "det_", None),
             "Cls": self.update_params(
                 config["Cls"],
                 cls_dict,
@@ -312,7 +313,6 @@ class UpdateParameters:
             return config
 
         filter_dict = self.remove_prefix(param_dict, prefix, need_remove_prefix)
-        filter_dict = {k.split(prefix)[1]: v for k, v in param_dict.items()}
         model_path = filter_dict.get("model_path", None)
         if not model_path:
             filter_dict["model_path"] = str(root_dir / config["model_path"])
@@ -324,14 +324,14 @@ class UpdateParameters:
     def remove_prefix(
         config: Dict[str, str],
         prefix: str,
-        remove_params: Optional[List[str]] = None,
+        need_remove_prefix: Optional[List[str]] = None,
     ) -> Dict[str, str]:
-        if not remove_params:
+        if not need_remove_prefix:
             return config
 
         new_rec_dict = {}
         for k, v in config.items():
-            if k in remove_params:
+            if k in need_remove_prefix:
                 k = k.split(prefix)[1]
             new_rec_dict[k] = v
         return new_rec_dict
