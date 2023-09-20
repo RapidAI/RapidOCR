@@ -2,15 +2,17 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import argparse
+import math
+import random
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import cv2
 import numpy as np
 import yaml
 from openvino.runtime import Core
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 
 root_dir = Path(__file__).resolve().parent
 InputType = Union[str, np.ndarray, bytes, Path]
@@ -273,3 +275,110 @@ class UpdateParameters:
                 k = k.split(prefix)[1]
             new_rec_dict[k] = v
         return new_rec_dict
+
+
+class VisRes:
+    def __init__(
+        self, font_path: Optional[Union[str, Path]] = None, text_score: float = 0.5
+    ):
+        if font_path is None:
+            raise FileNotFoundError(
+                f"The {font_path} does not exists! \n"
+                f"You could download the file in the https://drive.google.com/file/d/1evWVX38EFNwTq_n5gTFgnlv8tdaNcyIA/view?usp=sharing"
+            )
+
+        self.font_path = str(font_path)
+        self.text_score = text_score
+        self.load_img = LoadImage()
+
+    def __call__(
+        self,
+        img_content: InputType,
+        dt_boxes: np.ndarray,
+        txts: Optional[Union[List[str], Tuple[str]]] = None,
+        scores: Optional[Tuple[float]] = None,
+    ) -> np.ndarray:
+        img = self.load_img(img_content)
+        img = Image.fromarray(img)
+
+        if txts is None and scores is None:
+            return self.draw_dt_boxes(img, dt_boxes)
+
+        return self.draw_ocr_box_txt(img, dt_boxes, txts, scores)
+
+    def draw_dt_boxes(self, img: Image, dt_boxes: np.ndarray) -> np.ndarray:
+        img_temp = img.copy()
+        draw_img = ImageDraw.Draw(img_temp)
+        for idx, box in enumerate(dt_boxes):
+            draw_img.polygon(np.array(box), fill=self.get_random_color())
+
+            box_height = self.get_box_height(box)
+            font_size = max(int(box_height * 0.8), 10)
+            font = ImageFont.truetype(self.font_path, font_size, encoding="utf-8")
+            draw_img.polygon(
+                np.array(box).reshape(8).tolist(),
+                outline=(0, 0, 0),
+            )
+            draw_img.text([box[0][0], box[0][1]], str(idx), fill=(0, 0, 0), font=font)
+        return np.array(img_temp)
+
+    def draw_ocr_box_txt(self, image: Image, boxes, txts, scores=None):
+        h, w = image.height, image.width
+        if image.mode == "L":
+            image = image.convert("RGB")
+
+        img_left = image.copy()
+        img_right = Image.new("RGB", (w, h), (255, 255, 255))
+
+        random.seed(0)
+        draw_left = ImageDraw.Draw(img_left)
+        draw_right = ImageDraw.Draw(img_right)
+        for idx, (box, txt) in enumerate(zip(boxes, txts)):
+            if scores is not None and float(scores[idx]) < self.text_score:
+                continue
+
+            color = self.get_random_color()
+            draw_left.polygon(np.array(box), fill=color)
+            draw_right.polygon(
+                np.array(box).reshape(8).tolist(),
+                outline=color,
+            )
+
+            box_height = self.get_box_height(box)
+            box_width = self.get_box_width(box)
+            if box_height > 2 * box_width:
+                font_size = max(int(box_width * 0.9), 10)
+                font = ImageFont.truetype(self.font_path, font_size, encoding="utf-8")
+                cur_y = box[0][1]
+                for c in txt:
+                    char_size = font.getsize(c)
+                    draw_right.text(
+                        (box[0][0] + 3, cur_y), c, fill=(0, 0, 0), font=font
+                    )
+                    cur_y += char_size[1]
+            else:
+                font_size = max(int(box_height * 0.8), 10)
+                font = ImageFont.truetype(self.font_path, font_size, encoding="utf-8")
+                draw_right.text([box[0][0], box[0][1]], txt, fill=(0, 0, 0), font=font)
+
+        img_left = Image.blend(image, img_left, 0.5)
+        img_show = Image.new("RGB", (w * 2, h), (255, 255, 255))
+        img_show.paste(img_left, (0, 0, w, h))
+        img_show.paste(img_right, (w, 0, w * 2, h))
+        return np.array(img_show)
+
+    @staticmethod
+    def get_random_color():
+        return (
+            random.randint(0, 255),
+            random.randint(0, 255),
+            random.randint(0, 255),
+        )
+
+    @staticmethod
+    def get_box_height(box: List[List[float]]) -> float:
+        return math.sqrt((box[0][0] - box[3][0]) ** 2 + (box[0][1] - box[3][1]) ** 2)
+
+    @staticmethod
+    def get_box_width(box: List[List[float]]) -> float:
+        return math.sqrt((box[0][0] - box[1][0]) ** 2 + (box[0][1] - box[1][1]) ** 2)
