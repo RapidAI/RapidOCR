@@ -2,12 +2,14 @@ name: Push rapidocr_openvino to pypi
 
 on:
   push:
-    branches: [ main ]
-    paths:
-      - 'python/rapidocr_openvino/**'
-      - 'docs/doc_whl_rapidocr_vino.md'
-      - 'python/setup_openvino.py'
-      - '.github/workflows/gen_whl_to_pypi_rapidocr_vino.yml'
+    # branches: [ main ]
+    # paths:
+    #   - 'python/rapidocr_openvino/**'
+    #   - 'docs/doc_whl_rapidocr_vino.md'
+    #   - 'python/setup_openvino.py'
+    #   - '.github/workflows/gen_whl_to_pypi_rapidocr_vino.yml'
+    tags:
+      - v*
 
 env:
   RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.3.0.zip

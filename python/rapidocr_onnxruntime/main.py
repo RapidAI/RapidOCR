@@ -146,7 +146,7 @@ class RapidOCR:
         else:
             use_limit_ratio = w / h > self.width_height_ratio
 
-        if not self.use_det or h <= self.min_height or use_limit_ratio:
+        if h <= self.min_height or use_limit_ratio:
             dt_boxes, img_crop_list = self.get_boxes_img_without_det(img, h, w)
             return dt_boxes, 0.0, img_crop_list
 
