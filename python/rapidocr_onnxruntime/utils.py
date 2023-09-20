@@ -223,10 +223,12 @@ def init_args():
 
     global_group = parser.add_argument_group(title="Global")
     global_group.add_argument("--text_score", type=float, default=0.5)
-    global_group.add_argument("--use_det", type=bool, default=True)
-    global_group.add_argument("--use_cls", type=bool, default=True)
-    global_group.add_argument("--use_rec", type=bool, default=True)
-    global_group.add_argument("--print_verbose", type=bool, default=False)
+
+    global_group.add_argument("--no_det", action="store_true", default=False)
+    global_group.add_argument("--no_cls", action="store_true", default=False)
+    global_group.add_argument("--no_rec", action="store_true", default=False)
+
+    global_group.add_argument("--print_verbose", action="store_true", default=False)
     global_group.add_argument("--min_height", type=int, default=30)
     global_group.add_argument("--width_height_ratio", type=int, default=8)
 
@@ -240,7 +242,9 @@ def init_args():
     det_group.add_argument("--det_thresh", type=float, default=0.3)
     det_group.add_argument("--det_box_thresh", type=float, default=0.5)
     det_group.add_argument("--det_unclip_ratio", type=float, default=1.6)
-    det_group.add_argument("--det_use_dilation", type=bool, default=True)
+    det_group.add_argument(
+        "--det_donot_use_dilation", action="store_true", default=False
+    )
     det_group.add_argument(
         "--det_score_mode", type=str, default="fast", choices=["slow", "fast"]
     )
@@ -272,6 +276,10 @@ class UpdateParameters:
         for k, v in kwargs.items():
             if k.startswith("det"):
                 k = k.split("det_")[1]
+                if k == "donot_use_dilation":
+                    k = "use_dilation"
+                    v = not v
+
                 det_dict[k] = v
             elif k.startswith("cls"):
                 cls_dict[k] = v

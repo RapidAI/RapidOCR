@@ -250,8 +250,11 @@ def main():
     args = init_args()
     ocr_engine = RapidOCR(**vars(args))
 
+    use_det = not args.no_det
+    use_cls = not args.no_cls
+    use_rec = not args.no_rec
     result, elapse_list = ocr_engine(
-        args.img_path, use_det=args.use_det, use_cls=args.use_cls, use_rec=args.use_rec
+        args.img_path, use_det=use_det, use_cls=use_cls, use_rec=use_rec
     )
     print(result)
     if args.print_cost:
