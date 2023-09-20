@@ -39,7 +39,7 @@ jobs:
           cp $DIR_NAME/resources/models/*.onnx python/rapidocr_openvino/models/
           cd python
           pip install -r requirements_vino.txt
-          pip install pytest wheel get_pypi_latest_version
+          pip install pytest wheel get_pypi_latest_version onnxruntime
           cd tests
           wget $TWO_DIM_IMAGE -O two_dim_image.npy
           mv two_dim_image.npy test_files/
