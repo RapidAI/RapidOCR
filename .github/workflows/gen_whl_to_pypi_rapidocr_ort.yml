@@ -38,7 +38,8 @@ jobs:
           cp $DIR_NAME/resources/models/*.onnx python/rapidocr_onnxruntime/models/
           cp $DIR_NAME/resources/models/*.onnx python/rapidocr_openvino/models/
           cd python
-          pip install -r requirements.txt
+          pip install -r requirements_ort.txt
+          pip install pytest wheel get_pypi_latest_version
           cd tests
           wget $TWO_DIM_IMAGE -O two_dim_image.npy
           mv two_dim_image.npy test_files/
@@ -78,24 +79,17 @@ jobs:
       - name: Run setup_onnxruntime.py
         run: |
           cd python
-          pip install -r requirements.txt
+          pip install setuptools get_pypi_latest_version wheel
           mkdir rapidocr_onnxruntime_t
           mv rapidocr_onnxruntime rapidocr_onnxruntime_t
           mv rapidocr_onnxruntime_t rapidocr_onnxruntime
           cd rapidocr_onnxruntime
-          echo "from .rapidocr_onnxruntime.rapid_ocr_api import RapidOCR" > __init__.py
+          echo "from .rapidocr_onnxruntime.main import RapidOCR" > __init__.py
 
           cd ..
           python -m pip install --upgrade pip
           python setup_onnxruntime.py bdist_wheel ${{ github.event.head_commit.message }}
           mv dist ../
-
-      # - name: Publish distribution 📦 to Test PyPI
-      #   uses: pypa/gh-action-pypi-publish@v1.5.0
-      #   with:
-      #     password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-      #     repository_url: https://test.pypi.org/legacy/
-      #     packages_dir:  dist/
 
       - name: Publish distribution 📦 to PyPI
         uses: pypa/gh-action-pypi-publish@v1.5.0

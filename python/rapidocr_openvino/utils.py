@@ -155,8 +155,9 @@ def init_args():
 
     global_group = parser.add_argument_group(title="Global")
     global_group.add_argument("--text_score", type=float, default=0.5)
-    global_group.add_argument("--use_angle_cls", type=bool, default=True)
-    global_group.add_argument("--use_text_det", type=bool, default=True)
+    global_group.add_argument("--use_det", type=bool, default=True)
+    global_group.add_argument("--use_cls", type=bool, default=True)
+    global_group.add_argument("--use_rec", type=bool, default=True)
     global_group.add_argument("--print_verbose", type=bool, default=False)
     global_group.add_argument("--min_height", type=int, default=30)
     global_group.add_argument("--width_height_ratio", type=int, default=8)

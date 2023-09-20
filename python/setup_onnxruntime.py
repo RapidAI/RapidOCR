@@ -3,9 +3,16 @@
 # @Contact: liekkaskono@163.com
 import sys
 from pathlib import Path
+from typing import List, Union
 
 import setuptools
 from get_pypi_latest_version import GetPyPiLatestVersion
+
+
+def read_txt(txt_path: Union[Path, str]) -> List[str]:
+    with open(txt_path, "r", encoding="utf-8") as f:
+        data = [v.rstrip("\n") for v in f]
+    return data
 
 
 def get_readme():
@@ -30,6 +37,10 @@ if len(sys.argv) > 2:
         VERSION_NUM = matched_versions
 sys.argv = sys.argv[:2]
 
+project_urls = {
+    "Documentation": "https://rapidai.github.io/RapidOCRDocs/docs/install_usage/rapidocr/rapidocr_onnxruntime/",
+}
+
 setuptools.setup(
     name=MODULE_NAME,
     version=VERSION_NUM,
@@ -40,18 +51,10 @@ setuptools.setup(
     author="SWHL",
     author_email="liekkaskono@163.com",
     url="https://github.com/RapidAI/RapidOCR",
+    project_urls=project_urls,
     license="Apache-2.0",
     include_package_data=True,
-    install_requires=[
-        "pyclipper>=1.2.1",
-        "onnxruntime>=1.7.0",
-        "opencv_python>=4.5.1.48",
-        "numpy>=1.19.3",
-        "six>=1.15.0",
-        "Shapely>=1.7.1",
-        "PyYAML",
-        "Pillow",
-    ],
+    install_requires=read_txt("requirements_ort.txt"),
     package_dir={"": MODULE_NAME},
     packages=setuptools.find_namespace_packages(where=MODULE_NAME),
     package_data={"": ["*.onnx", "*.yaml"]},
@@ -68,6 +71,6 @@ setuptools.setup(
     ],
     python_requires=">=3.6,<3.12",
     entry_points={
-        "console_scripts": [f"{MODULE_NAME}={MODULE_NAME}.rapid_ocr_api:main"],
+        "console_scripts": [f"{MODULE_NAME}={MODULE_NAME}.main:main"],
     },
 )

@@ -99,11 +99,9 @@ def visualize(image_path, result, font_path="resources/fonts/FZYTK.TTF"):
 if __name__ == "__main__":
     rapid_ocr = RapidOCR()
 
-    image_path = "res.png"
-    # with open(image_path, "rb") as f:
-    #     img = f.read()
-    img = cv2.imread(image_path)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    image_path = "tests/test_files/ch_en_num.jpg"
+    with open(image_path, "rb") as f:
+        img = f.read()
     result, elapse_list = rapid_ocr(img)
     print(result)
     print(elapse_list)
