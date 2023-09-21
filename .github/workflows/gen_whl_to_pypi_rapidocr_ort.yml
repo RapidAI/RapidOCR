@@ -86,7 +86,7 @@ jobs:
           mv rapidocr_onnxruntime rapidocr_onnxruntime_t
           mv rapidocr_onnxruntime_t rapidocr_onnxruntime
           cd rapidocr_onnxruntime
-          echo "from .rapidocr_onnxruntime.main import RapidOCR" > __init__.py
+          echo "from .rapidocr_onnxruntime.main import RapidOCR, VisRes" > __init__.py
 
           cd ..
           python -m pip install --upgrade pip

@@ -194,6 +194,21 @@ def init_args():
     rec_group.add_argument("--rec_img_shape", type=list, default=[3, 48, 320])
     rec_group.add_argument("--rec_batch_num", type=int, default=6)
 
+    vis_group = parser.add_argument_group(title="Visual Result")
+    vis_group.add_argument("-vis", "--vis_res", action="store_true", default=False)
+    vis_group.add_argument(
+        "--vis_font_path",
+        type=str,
+        default=None,
+        help="When -vis is True, the font_path must have value.",
+    )
+    vis_group.add_argument(
+        "--vis_save_path",
+        type=str,
+        default=".",
+        help="The directory of saving the vis image.",
+    )
+
     args = parser.parse_args()
     return args
 
@@ -281,7 +296,7 @@ class VisRes:
     def __init__(
         self, font_path: Optional[Union[str, Path]] = None, text_score: float = 0.5
     ):
-        if font_path is None:
+        if font_path is None or not Path(font_path).exists():
             raise FileNotFoundError(
                 f"The {font_path} does not exists! \n"
                 f"You could download the file in the https://drive.google.com/file/d/1evWVX38EFNwTq_n5gTFgnlv8tdaNcyIA/view?usp=sharing"

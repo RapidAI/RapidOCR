@@ -8,17 +8,17 @@ from rapidocr_onnxruntime import RapidOCR, VisRes
 # from rapidocr_openvino import RapidOCR, VisRes
 
 
-rapid_ocr = RapidOCR()
+engine = RapidOCR()
 vis = VisRes(font_path="resources/fonts/FZYTK.TTF")
 
 image_path = "tests/test_files/ch_en_num.jpg"
 with open(image_path, "rb") as f:
     img = f.read()
 
-result, elapse_list = rapid_ocr(img)
+result, elapse_list = engine(img)
 print(result)
 print(elapse_list)
 
 boxes, txts, scores = list(zip(*result))
-res = vis(img, boxes, txts, scores)
-cv2.imwrite("vis.png", res)
+vis_img = vis(img, boxes, txts, scores)
+cv2.imwrite("vis.png", vis_img)

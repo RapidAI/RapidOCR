@@ -38,7 +38,7 @@ if len(sys.argv) > 2:
 sys.argv = sys.argv[:2]
 
 project_urls = {
-    "Documentation": "https://rapidai.github.io/RapidOCRDocs/docs/install_usage/rapidocr/rapidocr_onnxruntime/",
+    "Documentation": "https://rapidai.github.io/RapidOCRDocs/docs/install_usage/rapidocr/usage/",
     "Changelog": "https://rapidai.github.io/RapidOCRDocs/docs/changelog/rapidocr/",
 }
 
