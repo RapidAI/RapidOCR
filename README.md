@@ -1,9 +1,13 @@
 
-[简体中文](https://github.com/RapidAI/RapidOCR/blob/main/docs/README_zh.md) | English
+
 <div align="center">
   <img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/RapidOCR_LOGO.png" width="55%" height="55%"/>
 
-<br/>
+<div>&nbsp;</div>
+<div align="center">
+    <b><font size="4"><i>Open source OCR for the security of the digital world</i></font></b>
+</div>
+<div>&nbsp;</div>
 
 <a href="https://huggingface.co/spaces/SWHL/RapidOCRDemo" target="_blank"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Hugging Face Demo-blue"></a>
 <a href="https://www.modelscope.cn/studios/liekkas/RapidOCRDemo/summary" target="_blank"><img src="https://img.shields.io/badge/ModelScope-Demo-blue"></a>
@@ -18,6 +22,7 @@
 <a href="https://semver.org/"><img alt="SemVer2.0" src="https://img.shields.io/badge/SemVer-2.0-brightgreen"></a>
 <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
+[简体中文](https://github.com/RapidAI/RapidOCR/blob/main/docs/README_zh.md) | English
 </div>
 
 <details>
@@ -112,4 +117,4 @@ If you find this project useful in your research, please consider cite:
 ### License
 The copyright of the OCR model belongs to Baidu, and the copyright of other engineering codes belongs to the owner of this repo.
 
-This project is released under the [Apache 2.0 license](LICENSE).
+This project is released under the [Apache 2.0 license](./LICENSE).
