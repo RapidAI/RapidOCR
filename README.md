@@ -43,8 +43,8 @@
 </details>
 
 ### Introduction
-- Completely open source, free and support offline deployment of multi-platform and multi-language OCR.
-- **Chinese Advertising**: Welcome to join our QQ group to download the model and test program, QQ group number: 887298230
+- The fastest running, most widely supported, completely open source and free multi-platform, multi-language OCR known to support rapid offline deployment.
+- **Supported Languages**: The default is Chinese and English, other language recognition requires self-service conversion. For specific reference [here](https://rapidai.github.io/RapidOCRDocs/docs/about_model/support_language/).
 - **Cause**: Baidu paddlepaddle engineering is not very good, in order to facilitate everyone to perform OCR reasoning on various terminals, we convert it to onnx format, use `Python/C++/Java/Swift/C#` to change It is ported to various platforms.
 - **Name Source**: Light, fast, economical and smart. OCR technology based on deep learning technology focuses on artificial intelligence advantages and small models, with speed as the mission and effect as the leading role.
 - **Usage**:
