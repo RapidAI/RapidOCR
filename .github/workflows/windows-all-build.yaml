@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - 'develop'
-    tags:
-      - "*"
-
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
