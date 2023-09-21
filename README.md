@@ -90,6 +90,7 @@ Full documentation can be found on [docs](https://rapidai.github.io/RapidOCRDocs
 ### Sponsor
 
 > [!IMPORTANT]
+>
 > If you want to sponsor the project, you can directly click the Sponsor button at the top of the current page, please write a note (e.g. your github account name) to facilitate adding to the sponsorship list below.
 
 |Sponsor|Applied Products|

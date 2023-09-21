@@ -88,12 +88,15 @@ rapidocr_onnxruntime -img 1.jpg
 </p>
 
 ### 赞助
+> [!IMPORTANT]
+>
+> 如果您想要赞助该项目，可直接点击当前页最上面的Sponsor按钮，请写好备注(**您的Github账号名称**)，方便添加到上面赞助列表中。
+
 |赞助者|应用的产品|
 |:---:|:---:|
 |<a href="https://github.com/cuiliang" title="cuiliang"><img src="https://avatars.githubusercontent.com/u/1972649?v=4" width=65 height=65></a>|<a href="https://getquicker.net/" title="Quicker指尖工具箱"><img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Quicker.jpg" width=65 height=65></a>|
 |<a href="https://github.com/Eunsolfs" title="Eunsolfs"><img src="https://avatars.githubusercontent.com/u/53815751?v=4" width=65 height=65></a>| - |
 
-- 如果您想要赞助该项目，可直接点击当前页最上面的Sponsor按钮，请写好备注(**您的Github账号名称**)，方便添加到上面赞助列表中。
 
 ### 贡献
 - 欢迎请求请求。 对于重大更改，请先打开issue讨论您想要改变的内容。
@@ -120,7 +123,7 @@ rapidocr_onnxruntime -img 1.jpg
         <img src="https://raw.githubusercontent.com/RapidAI/.github/main/assets/RapidAI_WeChatAccount.jpg" width="25%" height="25%" align="center">
     </div>
 
-- 欢迎加入我们的QQ群下载模型及测试程序。1群：~887298230~ 已满，2群：~755960114~ 已满，3群：450338158
+- 欢迎加入我们的QQ群下载模型及测试程序。1群：~~887298230~~ 已满，2群：~~755960114~~ 已满，3群：450338158
     <div align="center">
         <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/QQ3.jpg" width="25%" height="25%" align="center">
     </div>
