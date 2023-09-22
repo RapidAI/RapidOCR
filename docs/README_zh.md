@@ -34,11 +34,11 @@
 - [文档](#文档)
 - [致谢](#致谢)
 - [贡献者](#贡献者)
-- [赞助](#赞助)
-- [贡献](#贡献)
-- [引用](#引用)
-- [开源协议](#开源协议)
+- [贡献指南](#贡献指南)
 - [加入我们](#加入我们)
+- [赞助](#赞助)
+- [引用](#引用)
+- [开源许可证](#开源许可证)
 </details>
 
 ### 简介
@@ -75,8 +75,9 @@ rapidocr_onnxruntime -img 1.jpg
 - 非常感谢[zhsunlight](https://github.com/zhsunlight)关于参数化调用GPU推理的建议以及细致周到的测试。
 - 非常感谢[lzh111222334](https://github.com/lzh111222334)修复python版本下rec前处理部分bug。
 - 非常感谢[AutumnSun1996](https://github.com/AutumnSun1996)在[#42](https://github.com/RapidAI/RapidOCR/issues/42)中的建议。
-- 非常感谢[DeadWood8](https://github.com/DeadWood8)提供了[Nuitka打包rapidocr_web的操作文档和可执行exe](https://github.com/RapidAI/RapidOCR/wiki/Nuitka%E6%89%93%E5%8C%85rapidocr_web%E6%93%8D%E4%BD%9C%E6%96%87%E6%A1%A3)。
+- 非常感谢[DeadWood8](https://github.com/DeadWood8)提供了[Nuitka打包rapidocr_web的操作文档和可执行exe](https://rapidai.github.io/RapidOCRDocs/docs/install_usage/rapidocr_web/nuitka_package/)。
 - 非常感谢[Loovelj](https://github.com/Loovelj)指出对文本检测框排序时顺序问题，详情参见[issue 75](https://github.com/RapidAI/RapidOCR/issues/75)。
+
 
 ### 贡献者
 <p align="left">
@@ -85,7 +86,24 @@ rapidocr_onnxruntime -img 1.jpg
   </a>
 </p>
 
-### 赞助
+### 贡献指南
+我们感谢所有的贡献者为改进和提升 RapidOCR 所作出的努力。
+- 欢迎提交请求。对于重大更改，请先打开issue讨论您想要改变的内容。
+- 请确保适当更新测试。
+
+### 加入我们
+- 微信扫描以下二维码，关注**RapidAI公众号**，回复OCR即可加入RapidOCR微信交流群：
+    <div align="center">
+        <img src="https://raw.githubusercontent.com/RapidAI/.github/main/assets/RapidAI_WeChatAccount.jpg" width="25%" height="25%" align="center">
+    </div>
+
+- 欢迎加入我们的QQ群下载模型及测试程序。1群：~~887298230~~ 已满，2群：~~755960114~~ 已满，3群：450338158
+    <div align="center">
+        <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/QQ3.jpg" width="25%" height="25%" align="center">
+    </div>
+
+### [赞助](https://rapidai.github.io/RapidOCRDocs/docs/sponsor/)
+
 > [!IMPORTANT]
 >
 > 如果您想要赞助该项目，可直接点击当前页最上面的Sponsor按钮，请写好备注(**您的Github账号名称**)，方便添加到下面赞助列表中。
@@ -94,11 +112,6 @@ rapidocr_onnxruntime -img 1.jpg
 |:---:|:---:|
 |<a href="https://github.com/cuiliang" title="cuiliang"><img src="https://avatars.githubusercontent.com/u/1972649?v=4" width=65 height=65></a>|<a href="https://getquicker.net/" title="Quicker指尖工具箱"><img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Quicker.jpg" width=65 height=65></a>|
 |<a href="https://github.com/Eunsolfs" title="Eunsolfs"><img src="https://avatars.githubusercontent.com/u/53815751?v=4" width=65 height=65></a>| - |
-
-
-### 贡献
-- 欢迎请求请求。 对于重大更改，请先打开issue讨论您想要改变的内容。
-- 请确保适当更新测试。
 
 ### 引用
 如果您发现该项目对您的研究有用，请考虑引用：
@@ -111,17 +124,7 @@ rapidocr_onnxruntime -img 1.jpg
 }
 ```
 
-### 开源协议
-- OCR模型版权归百度所有，其他工程代码版权归本仓库所有者所有。
-- 该项目采用 [Apache 2.0 license](../LICENSE) 开源许可证。
+### 开源许可证
+OCR模型版权归百度所有，其他工程代码版权归本仓库所有者所有。
 
-### 加入我们
-- 微信扫描以下二维码，关注**RapidAI公众号**，回复OCR即可加入RapidOCR微信交流群：
-    <div align="center">
-        <img src="https://raw.githubusercontent.com/RapidAI/.github/main/assets/RapidAI_WeChatAccount.jpg" width="25%" height="25%" align="center">
-    </div>
-
-- 欢迎加入我们的QQ群下载模型及测试程序。1群：~~887298230~~ 已满，2群：~~755960114~~ 已满，3群：450338158
-    <div align="center">
-        <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/QQ3.jpg" width="25%" height="25%" align="center">
-    </div>
+该项目采用 [Apache 2.0 license](../LICENSE) 开源许可证。

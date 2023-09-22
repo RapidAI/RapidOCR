@@ -33,8 +33,8 @@
 - [Documentation](#documentation)
 - [Acknowledgements](#acknowledgements)
 - [Code Contributors](#code-contributors)
-- [Sponsor](#sponsor)
 - [Contributing](#contributing)
+- [Sponsor](#sponsor)
 - [Citation](#citation)
 - [License](#license)
 
@@ -85,22 +85,26 @@ Full documentation can be found on [docs](https://rapidai.github.io/RapidOCRDocs
   </a>
 </p>
 
-### Sponsor
+### Contributing
+- Pull requests are welcome. For major changes, please open an issue first
+to discuss what you would like to change.
+- Please make sure to update tests as appropriate.
+
+### [Sponsor](https://rapidai.github.io/RapidOCRDocs/docs/sponsor/)
 
 > [!IMPORTANT]
 >
-> If you want to sponsor the project, you can directly click the Sponsor button at the top of the current page, please write a note (e.g. your github account name) to facilitate adding to the sponsorship list below.
+> If you want to sponsor the project, you can directly click the **Buy me a coffee** image, please write a note (e.g. your github account name) to facilitate adding to the sponsorship list below.
+>
+> <div align="left">
+>   <a href="https://www.buymeacoffee.com/SWHL"><img src="https://raw.githubusercontent.com/RapidAI/.github/main/assets/buymeacoffe.png" width="30%" height="30%"></a>
+> </div>
 
 |Sponsor|Applied Products|
 |:---:|:---:|
 |<a href="https://github.com/cuiliang" title="cuiliang"><img src="https://avatars.githubusercontent.com/u/1972649?v=4" width=65 height=65></a>|<a href="https://getquicker.net/" title="Quicker"><img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Quicker.jpg" width=65 height=65></a>|
 |<a href="https://github.com/Eunsolfs" title="Eunsolfs"><img src="https://avatars.githubusercontent.com/u/53815751?v=4" width=65 height=65></a>| - |
 
-
-### Contributing
-- Pull requests are welcome. For major changes, please open an issue first
-to discuss what you would like to change.
-- Please make sure to update tests as appropriate.
 
 ### Citation
 If you find this project useful in your research, please consider cite:
