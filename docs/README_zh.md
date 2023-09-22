@@ -51,7 +51,7 @@
   - 不满足要求 → 基于[PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)在自己数据上微调 → RapidOCR部署。
 - 如果该仓库有帮助到你，还请点个小星星⭐呗！
 
-### [Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
+### [Demo](https://www.modelscope.cn/studios/liekkas/RapidOCRDemo/summary)
 <div align="center">
     <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/hf_demo_part.png" alt="Demo" width="100%" height="100%">
 </div>
