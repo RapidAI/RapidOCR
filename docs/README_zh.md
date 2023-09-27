@@ -44,11 +44,11 @@
 ### 简介
 - 💖目前已知**运行速度最快、支持最广**，完全开源免费并支持离线快速部署的多平台多语言OCR。
 - **支持的语言**: 默认是中英文，其他语言识别需要自助转换。具体参考[这里](https://rapidai.github.io/RapidOCRDocs/docs/about_model/support_language/)
-- **缘起**：PaddleOCR工程化不是太好，为了方便大家在各种端上进行OCR推理，我们将PaddleOCR中的模型转换为ONNX格式，使用`Python/C++/Java/Swift/C#` 将它移植到各个平台。
+- **缘起**：[PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)工程化不是太好，为了方便大家在各种端上进行OCR推理，我们将PaddleOCR中的模型转换为ONNX格式，使用`Python/C++/Java/Swift/C#` 将它移植到各个平台。
 - **名称来源**： 轻快好省并智能。基于深度学习的OCR技术，主打人工智能优势及小模型，以速度为使命，效果为主导。
 - **使用**：
   - 如果仓库下已有模型满足要求 → RapidOCR部署使用即可。
-  - 不满足要求 → 基于[PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)在自己数据上微调 → RapidOCR部署。
+  - 不满足要求 → 基于PaddleOCR在自己数据上微调 → RapidOCR部署。
 - 如果该仓库有帮助到你，还请点个小星星⭐呗！
 
 ### [Demo](https://www.modelscope.cn/studios/liekkas/RapidOCRDemo/summary)

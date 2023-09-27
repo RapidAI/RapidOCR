@@ -47,7 +47,7 @@
 - **Name Source**: Light, fast, economical and smart. OCR technology based on deep learning technology focuses on artificial intelligence advantages and small models, with speed as the mission and effect as the leading role.
 - **Usage**:
   - If the existing model in the repo meets the requirements → RapidOCR deployment can be used.
-  - Not meeting requirements → Based on [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR). Fine-tune your own data → RapidOCR deployment.
+  - Not meeting requirements → Based on PaddleOCR. Fine-tune your own data → RapidOCR deployment.
 -If this repo is helpful to you, please click on a small star ⭐ Bah!
 
 
