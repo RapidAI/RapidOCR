@@ -7,5 +7,5 @@ contact_links:
     url: https://github.com/RapidAI/RapidOCR/discussions/categories/ideas
     about: Please vote for and post new feature ideas in the community forum.
   - name: 📖 Documentation
-    url: https://github.com/RapidAI/RapidOCR/wiki
+    url: https://rapidai.github.io/RapidOCRDocs/docs/
     about: A great place to find instructions and answers about RapidOCR.
