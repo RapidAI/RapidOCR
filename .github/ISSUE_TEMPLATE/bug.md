@@ -13,7 +13,7 @@ assignees: ''
 - **使用的是哪门语言的程序/Which programing language**:
 - **所使用语言相关版本信息/Version**:
 - **OnnxRuntime版本/OnnxRuntime Version**:
-- **使用`rapidocr_onnxruntime`版本**/Use `rapidocr_onnxruntime` version:
+- **使用当前库的版本/Use version**:
 - **可复现问题的demo和文件/Demo of reproducible problems**:
 - **完整报错/Complete Error Message**:
 - **可能的解决方案/Possible solutions**:
