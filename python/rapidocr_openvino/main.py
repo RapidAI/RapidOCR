@@ -2,6 +2,7 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import copy
+import logging
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
@@ -154,6 +155,9 @@ class RapidOCR:
             use_limit_ratio = w / h > self.width_height_ratio
 
         if h <= self.min_height or use_limit_ratio:
+            logging.warning(
+                f"Because the aspect ratio of the current image exceeds the limit (min_height or width_height_ratio), the program will skip the detection step."
+            )
             dt_boxes, img_crop_list = self.get_boxes_img_without_det(img, h, w)
             return dt_boxes, 0.0, img_crop_list
 
