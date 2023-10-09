@@ -101,6 +101,10 @@ rapidocr_onnxruntime -img 1.jpg
     <div align="center">
         <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/QQ3.jpg" width="25%" height="25%" align="center">
     </div>
+- 扫码加入钉钉群(Python版沟通交流)：
+    <div align="center">
+        <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/RapidOCRDingDingGroup.png" width="25%" height="25%" align="center">
+    </div>
 
 ### [赞助](https://rapidai.github.io/RapidOCRDocs/docs/sponsor/)
 
