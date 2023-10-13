@@ -111,7 +111,7 @@ If you find this project useful in your research, please consider cite:
 ```bibtex
 @misc{RapidOCR 2021,
     title={{Rapid OCR}: OCR Toolbox},
-    author={MindSpore Team},
+    author={RapidAI Team},
     howpublished = {\url{https://github.com/RapidAI/RapidOCR}},
     year={2021}
 }
