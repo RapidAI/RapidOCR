@@ -122,7 +122,7 @@ rapidocr_onnxruntime -img 1.jpg
 ```bibtex
 @misc{RapidOCR 2021,
     title={{Rapid OCR}: OCR Toolbox},
-    author={MindSpore Team},
+    author={RapidAI Team},
     howpublished = {\url{https://github.com/RapidAI/RapidOCR}},
     year={2021}
 }
