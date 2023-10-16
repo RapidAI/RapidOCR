@@ -43,7 +43,7 @@
 ### Introduction
 - The fastest running, most widely supported, completely open source and free multi-platform, multi-language OCR known to support rapid offline deployment.
 - **Supported Languages**: The default is Chinese and English, other language recognition requires self-service conversion. For specific reference [here](https://rapidai.github.io/RapidOCRDocs/docs/about_model/support_language/).
-- **Cause**: [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) si not too well engineered, and to make it easier for people to do OCR inference on various ends, we converted the model in PaddleOCR to ONNX format and ported it to various platforms using `Python/C++/Java/Swift/C#`.
+- **Cause**: [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) is not well engineered, and to make it easier for people to do OCR inference on various ends, we converted the model in PaddleOCR to ONNX format and ported it to various platforms using `Python/C++/Java/Swift/C#`.
 - **Name Source**: Light, fast, economical and smart. OCR technology based on deep learning technology focuses on artificial intelligence advantages and small models, with speed as the mission and effect as the leading role.
 - **Usage**:
   - If the existing model in the repo meets the requirements → RapidOCR deployment can be used.
