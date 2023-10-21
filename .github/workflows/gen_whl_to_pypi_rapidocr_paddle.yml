@@ -81,6 +81,7 @@ jobs:
         run: |
           cd python
           pip install setuptools get_pypi_latest_version wheel
+
           mkdir rapidocr_paddle_t
           mv rapidocr_paddle rapidocr_paddle_t
           mv rapidocr_paddle_t rapidocr_paddle
