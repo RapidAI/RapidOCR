@@ -37,7 +37,7 @@ jobs:
           ZIP_NAME=${RESOURCES_URL##*/}
           DIR_NAME=${ZIP_NAME%.*}
           unzip $DIR_NAME
-          cp $DIR_NAME/models/* python/rapidocr_paddle/models/
+          cp models/* python/rapidocr_paddle/models/
           cd python
           pip install -r requirements_paddle.txt
           pip install pytest wheel get_pypi_latest_version paddlepaddle
@@ -75,7 +75,7 @@ jobs:
           ZIP_NAME=${RESOURCES_URL##*/}
           DIR_NAME=${ZIP_NAME%.*}
           unzip $ZIP_NAME
-          cp $DIR_NAME/models/* rapidocr_paddle/models
+          cp models/* rapidocr_paddle/models
 
       - name: Run setup_paddle.py
         run: |
