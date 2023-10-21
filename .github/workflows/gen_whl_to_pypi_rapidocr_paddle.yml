@@ -5,9 +5,9 @@ on:
     branches: [ main ]
     paths:
       - 'python/rapidocr_paddle/**'
-      - 'docs/doc_whl_rapidocr_vino.md'
-      - 'python/setup_openvino.py'
-      - '.github/workflows/gen_whl_to_pypi_rapidocr_vino.yml'
+      - 'docs/doc_whl_rapidocr_paddle.md'
+      - 'python/setup_paddle.py'
+      - '.github/workflows/gen_whl_to_pypi_rapidocr_paddle.yml'
     # tags:
     #   - v*
 
