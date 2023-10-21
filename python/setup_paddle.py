@@ -61,7 +61,9 @@ setuptools.setup(
     install_requires=read_txt("requirements_paddle.txt"),
     package_dir={"": MODULE_NAME},
     packages=setuptools.find_namespace_packages(where=MODULE_NAME),
-    package_data={"": ["*.txt", "*.yaml"]},
+    package_data={
+        "": ["*.txt", "*.yaml", "*.pdiparams", "*.pdiparams.info", "*.pdmodel"]
+    },
     keywords=[
         "ocr,text_detection,text_recognition,db,paddlepaddle,paddleocr,openvino,rapidocr"
     ],
