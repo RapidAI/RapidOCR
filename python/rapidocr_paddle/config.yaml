@@ -29,7 +29,7 @@ Cls:
     gpu_id: 0
     gpu_mem: 500
 
-    model_path: models/ch_ppocr_mobile_v2.0_cls_infer
+    model_path: models/ch_ppocr_mobile_v2_cls_infer
 
     cls_image_shape: [3, 48, 192]
     cls_batch_num: 6

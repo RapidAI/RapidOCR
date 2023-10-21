@@ -1,4 +1,4 @@
-model_path: models/ch_ppocr_mobile_v2.0_cls_infer
+model_path: models/ch_ppocr_mobile_v2_cls_infer
 
 use_cuda: false
 gpu_id: 0
