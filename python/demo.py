@@ -3,7 +3,10 @@
 # @Contact: liekkaskono@163.com
 import cv2
 
-from rapidocr_onnxruntime import RapidOCR, VisRes
+from rapidocr_paddle import RapidOCR, VisRes
+
+# from rapidocr_onnxruntime import RapidOCR, VisRes
+
 
 # from rapidocr_openvino import RapidOCR, VisRes
 

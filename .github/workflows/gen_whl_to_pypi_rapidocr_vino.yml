@@ -37,7 +37,6 @@ jobs:
           ZIP_NAME=${RESOURCES_URL##*/}
           DIR_NAME=${ZIP_NAME%.*}
           unzip $DIR_NAME
-          cp $DIR_NAME/resources/models/*.onnx python/rapidocr_onnxruntime/models/
           cp $DIR_NAME/resources/models/*.onnx python/rapidocr_openvino/models/
           cd python
           pip install -r requirements_vino.txt
@@ -45,7 +44,7 @@ jobs:
           cd tests
           wget $TWO_DIM_IMAGE -O two_dim_image.npy
           mv two_dim_image.npy test_files/
-          pytest test_det.py test_cls.py test_rec.py test_all_vino.py
+          pytest test_vino.py
 
   GenerateWHL_PushPyPi:
     needs: UnitTesting
