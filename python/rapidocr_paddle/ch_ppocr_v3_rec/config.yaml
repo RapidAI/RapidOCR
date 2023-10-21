@@ -1,0 +1,8 @@
+model_path: models/ch_PP-OCRv4_rec_infer
+
+use_cuda: false
+gpu_id: 0
+gpu_mem: 500
+
+rec_img_shape: [3, 48, 320]
+rec_batch_num: 6

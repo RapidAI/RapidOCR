@@ -1,0 +1,10 @@
+model_path: models/ch_ppocr_mobile_v2.0_cls_infer
+
+use_cuda: false
+gpu_id: 0
+gpu_mem: 500
+
+cls_image_shape: [3, 48, 192]
+cls_batch_num: 6
+cls_thresh: 0.9
+label_list: ['0', '180']

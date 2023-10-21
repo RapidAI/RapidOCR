@@ -1,0 +1,47 @@
+Global:
+    text_score: 0.5
+    use_det: true
+    use_cls: true
+    use_rec: true
+    print_verbose: false
+    min_height: 30
+    width_height_ratio: 8
+
+Det:
+    use_cuda: false
+    gpu_id: 0
+    gpu_mem: 500
+
+    model_path: models/ch_PP-OCRv4_det_infer
+
+    limit_side_len: 736
+    limit_type: min
+
+    thresh: 0.3
+    box_thresh: 0.5
+    max_candidates: 1000
+    unclip_ratio: 1.6
+    use_dilation: true
+    score_mode: fast
+
+Cls:
+    use_cuda: false
+    gpu_id: 0
+    gpu_mem: 500
+
+    model_path: models/ch_ppocr_mobile_v2.0_cls_infer
+
+    cls_image_shape: [3, 48, 192]
+    cls_batch_num: 6
+    cls_thresh: 0.9
+    label_list: ['0', '180']
+
+Rec:
+    use_cuda: false
+    gpu_id: 0
+    gpu_mem: 500
+
+    model_path: models/ch_PP-OCRv4_rec_infer
+
+    rec_img_shape: [3, 48, 320]
+    rec_batch_num: 6
