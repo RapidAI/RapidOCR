@@ -44,7 +44,7 @@ jobs:
           cd tests
           wget $TWO_DIM_IMAGE -O two_dim_image.npy
           mv two_dim_image.npy test_files/
-          pytest test_det.py test_cls.py test_rec.py test_all_paddle.py
+          pytest test_paddle.py
 
   GenerateWHL_PushPyPi:
     needs: UnitTesting
