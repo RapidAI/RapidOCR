@@ -64,9 +64,7 @@ setuptools.setup(
     package_data={
         "": ["*.txt", "*.yaml", "*.pdiparams", "*.pdiparams.info", "*.pdmodel"]
     },
-    keywords=[
-        "ocr,text_detection,text_recognition,db,paddlepaddle,paddleocr,openvino,rapidocr"
-    ],
+    keywords=["ocr,text_detection,text_recognition,db,paddlepaddle,paddleocr,rapidocr"],
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
