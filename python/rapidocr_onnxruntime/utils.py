@@ -364,16 +364,7 @@ class UpdateParameters:
 
 
 class VisRes:
-    def __init__(
-        self, font_path: Optional[Union[str, Path]] = None, text_score: float = 0.5
-    ):
-        if font_path is None or not Path(font_path).exists():
-            raise FileNotFoundError(
-                f"The {font_path} does not exists! \n"
-                f"You could download the file in the https://drive.google.com/file/d/1evWVX38EFNwTq_n5gTFgnlv8tdaNcyIA/view?usp=sharing"
-            )
-
-        self.font_path = str(font_path)
+    def __init__(self, text_score: float = 0.5):
         self.text_score = text_score
         self.load_img = LoadImage()
 
@@ -383,32 +374,38 @@ class VisRes:
         dt_boxes: np.ndarray,
         txts: Optional[Union[List[str], Tuple[str]]] = None,
         scores: Optional[Tuple[float]] = None,
+        font_path: Optional[str] = None,
     ) -> np.ndarray:
-        img = self.load_img(img_content)
-        img = Image.fromarray(img)
-
         if txts is None and scores is None:
-            return self.draw_dt_boxes(img, dt_boxes)
+            return self.draw_dt_boxes(img_content, dt_boxes)
+        return self.draw_ocr_box_txt(img_content, dt_boxes, txts, scores, font_path)
 
-        return self.draw_ocr_box_txt(img, dt_boxes, txts, scores)
+    def draw_dt_boxes(self, img_content: InputType, dt_boxes: np.ndarray) -> np.ndarray:
+        img = self.load_img(img_content)
 
-    def draw_dt_boxes(self, img: Image, dt_boxes: np.ndarray) -> np.ndarray:
-        img_temp = img.copy()
-        draw_img = ImageDraw.Draw(img_temp)
         for idx, box in enumerate(dt_boxes):
-            draw_img.polygon(np.array(box), fill=self.get_random_color())
+            color = self.get_random_color()
 
-            box_height = self.get_box_height(box)
-            font_size = max(int(box_height * 0.8), 10)
-            font = ImageFont.truetype(self.font_path, font_size, encoding="utf-8")
-            draw_img.polygon(
-                np.array(box).reshape(8).tolist(),
-                outline=(0, 0, 0),
+            points = np.array(box)
+            cv2.polylines(img, np.int32([points]), 1, color=color, thickness=1)
+
+            start_point = round(points[0][0]), round(points[0][1])
+            cv2.putText(
+                img, f"{idx}", start_point, cv2.FONT_HERSHEY_SIMPLEX, 1, color, 3
             )
-            draw_img.text([box[0][0], box[0][1]], str(idx), fill=(0, 0, 0), font=font)
-        return np.array(img_temp)
+        return img
 
-    def draw_ocr_box_txt(self, image: Image, boxes, txts, scores=None):
+    def draw_ocr_box_txt(
+        self,
+        img_content: InputType,
+        dt_boxes: np.ndarray,
+        txts: Optional[Union[List[str], Tuple[str]]] = None,
+        scores: Optional[Tuple[float]] = None,
+        font_path: Optional[str] = None,
+    ) -> np.ndarray:
+        font_path = self.get_font_path(font_path)
+
+        image = Image.fromarray(self.load_img(img_content))
         h, w = image.height, image.width
         if image.mode == "L":
             image = image.convert("RGB")
@@ -419,22 +416,21 @@ class VisRes:
         random.seed(0)
         draw_left = ImageDraw.Draw(img_left)
         draw_right = ImageDraw.Draw(img_right)
-        for idx, (box, txt) in enumerate(zip(boxes, txts)):
+        for idx, (box, txt) in enumerate(zip(dt_boxes, txts)):
             if scores is not None and float(scores[idx]) < self.text_score:
                 continue
 
             color = self.get_random_color()
-            draw_left.polygon(np.array(box), fill=color)
-            draw_right.polygon(
-                np.array(box).reshape(8).tolist(),
-                outline=color,
-            )
+
+            box_list = np.array(box).reshape(8).tolist()
+            draw_left.polygon(box_list, fill=color)
+            draw_right.polygon(box_list, outline=color)
 
             box_height = self.get_box_height(box)
             box_width = self.get_box_width(box)
             if box_height > 2 * box_width:
                 font_size = max(int(box_width * 0.9), 10)
-                font = ImageFont.truetype(self.font_path, font_size, encoding="utf-8")
+                font = ImageFont.truetype(font_path, font_size, encoding="utf-8")
                 cur_y = box[0][1]
                 for c in txt:
                     char_size = font.getsize(c)
@@ -444,7 +440,7 @@ class VisRes:
                     cur_y += char_size[1]
             else:
                 font_size = max(int(box_height * 0.8), 10)
-                font = ImageFont.truetype(self.font_path, font_size, encoding="utf-8")
+                font = ImageFont.truetype(font_path, font_size, encoding="utf-8")
                 draw_right.text([box[0][0], box[0][1]], txt, fill=(0, 0, 0), font=font)
 
         img_left = Image.blend(image, img_left, 0.5)
@@ -454,7 +450,16 @@ class VisRes:
         return np.array(img_show)
 
     @staticmethod
-    def get_random_color():
+    def get_font_path(font_path: Optional[Union[str, Path]] = None) -> str:
+        if font_path is None or not Path(font_path).exists():
+            raise FileNotFoundError(
+                f"The {font_path} does not exists! \n"
+                f"You could download the file in the https://drive.google.com/file/d/1evWVX38EFNwTq_n5gTFgnlv8tdaNcyIA/view?usp=sharing"
+            )
+        return str(font_path)
+
+    @staticmethod
+    def get_random_color() -> Tuple[int, int, int]:
         return (
             random.randint(0, 255),
             random.randint(0, 255),
