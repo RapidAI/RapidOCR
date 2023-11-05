@@ -1,0 +1,14 @@
+model_path: models/ch_ppocr_mobile_v2.0_cls_infer.onnx
+
+use_cuda: false
+# Details of the params: https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html
+CUDAExecutionProvider:
+    device_id: 0
+    arena_extend_strategy: kNextPowerOfTwo
+    cudnn_conv_algo_search: EXHAUSTIVE
+    do_copy_in_default_stream: true
+
+cls_image_shape: [3, 48, 192]
+cls_batch_num: 6
+cls_thresh: 0.9
+label_list: ['0', '180']

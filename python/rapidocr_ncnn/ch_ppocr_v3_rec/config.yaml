@@ -1,0 +1,4 @@
+model_path: models/ch_PP-OCRv4_rec_infer.onnx
+
+rec_img_shape: [3, 48, 320]
+rec_batch_num: 6

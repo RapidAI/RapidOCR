@@ -157,3 +157,4 @@ long1.jpg
 
 .DS_Store
 *.npy
+*.param
