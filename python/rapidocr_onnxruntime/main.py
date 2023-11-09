@@ -45,13 +45,13 @@ class RapidOCR:
         self.min_height = global_config["min_height"]
         self.width_height_ratio = global_config["width_height_ratio"]
 
-        self.use_det = config["Global"]["use_det"]
+        self.use_det = global_config["use_det"]
         self.text_det = TextDetector(config["Det"])
 
-        self.use_cls = config["Global"]["use_cls"]
+        self.use_cls = global_config["use_cls"]
         self.text_cls = TextClassifier(config["Cls"])
 
-        self.use_rec = config["Global"]["use_rec"]
+        self.use_rec = global_config["use_rec"]
         self.text_rec = TextRecognizer(config["Rec"])
 
         self.load_img = LoadImage()
@@ -64,15 +64,6 @@ class RapidOCR:
         use_rec: Optional[bool] = None,
         **kwargs,
     ):
-        if use_det is None:
-            use_det = self.use_det
-
-        if use_cls is None:
-            use_cls = self.use_cls
-
-        if use_rec is None:
-            use_rec = self.use_rec
-
         if kwargs:
             box_thresh = kwargs.get("box_thresh", 0.5)
             unclip_ratio = kwargs.get("unclip_ratio", 1.6)
@@ -81,6 +72,15 @@ class RapidOCR:
             self.text_det.postprocess_op.box_thresh = box_thresh
             self.text_det.postprocess_op.unclip_ratio = unclip_ratio
             self.text_score = text_score
+
+        if use_det is None:
+            use_det = self.use_det
+
+        if use_cls is None:
+            use_cls = self.use_cls
+
+        if use_rec is None:
+            use_rec = self.use_rec
 
         img = self.load_img(img_content)
 
@@ -100,74 +100,10 @@ class RapidOCR:
         if use_rec:
             rec_res, rec_elapse = self.text_rec(img)
 
-        import pdb
-
-        pdb.set_trace()
-        dt_boxes, rec_res = self.filter_result(dt_boxes, rec_res)
         ocr_res = self.get_final_res(
             dt_boxes, cls_res, rec_res, det_elapse, cls_elapse, rec_elapse
         )
         return ocr_res
-
-        # if use_det and not use_cls and not use_rec:
-        #     # only det
-        #     dt_boxes, det_elapse, img_crop_list = self.auto_text_det(img)
-        #     if dt_boxes is None or img_crop_list is None:
-        #         return None, None
-
-        #     det_res = [box.tolist() for box in dt_boxes]
-        #     return det_res, [det_elapse]
-
-        # if not use_det and use_cls and not use_rec:
-        #     # only cls
-        #     img, cls_res, cls_elapse = self.text_cls(img)
-        #     return cls_res, [cls_elapse]
-
-        # if not use_det and not use_cls and use_rec:
-        #     # only rec
-        #     rec_res, rec_elapse = self.text_rec(img)
-        #     rec_res = [[res[0], res[1]] for res in rec_res]
-        #     return rec_res, [rec_elapse]
-
-        # if use_det and use_cls and use_rec:
-        #     # det + cls + rec
-        #     dt_boxes, det_elapse, img_crop_list = self.auto_text_det(img)
-        #     if dt_boxes is None or img_crop_list is None:
-        #         return None, None
-
-        #     img_crop_list, _, cls_elapse = self.text_cls(img_crop_list)
-        #     rec_res, rec_elapse = self.text_rec(img_crop_list)
-        #     dt_boxes, rec_res = self.filter_result(dt_boxes, rec_res)
-        #     if dt_boxes is None and rec_res is None:
-        #         return None, None
-
-        #     ocr_res = [
-        #         [box.tolist(), res[0], res[1]] for box, res in zip(dt_boxes, rec_res)
-        #     ]
-        #     return ocr_res, [det_elapse, cls_elapse, rec_elapse]
-
-        # if use_det and not use_cls and use_rec:
-        #     # det + rec
-        #     dt_boxes, det_elapse, img_crop_list = self.auto_text_det(img)
-        #     if dt_boxes is None or img_crop_list is None:
-        #         return None, None
-
-        #     rec_res, rec_elapse = self.text_rec(img_crop_list)
-        #     dt_boxes, rec_res = self.filter_result(dt_boxes, rec_res)
-        #     if dt_boxes is None and rec_res is None:
-        #         return None, None
-
-        #     ocr_res = [
-        #         [box.tolist(), res[0], res[1]] for box, res in zip(dt_boxes, rec_res)
-        #     ]
-        #     return ocr_res, [det_elapse, rec_elapse]
-
-        # if not use_det and use_cls and use_rec:
-        #     # cls + rec
-        #     img, cls_res, cls_elapse = self.text_cls(img)
-        #     rec_res, rec_elapse = self.text_rec(img)
-        #     ocr_res = [[res[0], res[1]] for res in rec_res]
-        #     return ocr_res, [cls_elapse, rec_elapse]
 
     def auto_text_det(
         self,
@@ -268,10 +204,31 @@ class RapidOCR:
                     break
         return _boxes
 
-    def filter_result(self, dt_boxes, rec_res):
-        if dt_boxes is None or rec_res is None:
-            return dt_boxes, rec_res
+    def get_final_res(
+        self, dt_boxes, cls_res, rec_res, det_elapse, cls_elapse, rec_elapse
+    ):
+        if dt_boxes is None and rec_res is None and cls_res is not None:
+            return cls_res, [cls_elapse]
 
+        if dt_boxes is None and rec_res is None:
+            return None, None
+
+        if dt_boxes is None and rec_res is not None:
+            return [[res[0], res[1]] for res in rec_res], [rec_elapse]
+
+        if dt_boxes is not None and rec_res is None:
+            return [box.tolist() for box in dt_boxes], [det_elapse]
+
+        dt_boxes, rec_res = self.filter_result(dt_boxes, rec_res)
+        if len(dt_boxes) <= 0:
+            return None, None
+
+        ocr_res = [
+            [box.tolist(), res[0], res[1]] for box, res in zip(dt_boxes, rec_res)
+        ], [det_elapse, cls_elapse, rec_elapse]
+        return ocr_res
+
+    def filter_result(self, dt_boxes, rec_res):
         filter_boxes, filter_rec_res = [], []
         for box, rec_reuslt in zip(dt_boxes, rec_res):
             text, score = rec_reuslt
@@ -279,29 +236,7 @@ class RapidOCR:
                 filter_boxes.append(box)
                 filter_rec_res.append(rec_reuslt)
 
-        if len(filter_boxes) <= 0:
-            return None, None, None
         return filter_boxes, filter_rec_res
-
-    @staticmethod
-    def get_final_res(dt_boxes, cls_res, rec_res, det_elapse, cls_elapse, rec_elapse):
-        if dt_boxes is None and rec_res is None and cls_res is not None:
-            # 只有分类结果
-            return cls_res, [cls_elapse]
-
-        if dt_boxes is None and rec_res is None:
-            return None, None
-
-        if dt_boxes is None:
-            return [[res[0], res[1]] for res in rec_res], [rec_elapse]
-
-        if rec_res is None:
-            return [box.tolist() for box in dt_boxes], [det_elapse]
-
-        ocr_res = [
-            [box.tolist(), res[0], res[1]] for box, res in zip(dt_boxes, rec_res)
-        ], [det_elapse, cls_elapse, rec_elapse]
-        return ocr_res
 
 
 def main():
