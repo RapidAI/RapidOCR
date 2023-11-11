@@ -8,8 +8,6 @@ class CTCLabelDecode:
     """Convert between text-label and text-index"""
 
     def __init__(self, character_dict_path):
-        super(CTCLabelDecode, self).__init__()
-
         self.character_str = []
         assert character_dict_path is not None, "character_dict_path should not be None"
 
