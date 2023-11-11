@@ -64,6 +64,10 @@ class RapidOCR:
         use_rec: Optional[bool] = None,
         **kwargs,
     ):
+        use_det = self.use_det if use_det is None else use_det
+        use_cls = self.use_cls if use_cls is None else use_cls
+        use_rec = self.use_rec if use_rec is None else use_rec
+
         if kwargs:
             box_thresh = kwargs.get("box_thresh", 0.5)
             unclip_ratio = kwargs.get("unclip_ratio", 1.6)
@@ -72,15 +76,6 @@ class RapidOCR:
             self.text_det.postprocess_op.box_thresh = box_thresh
             self.text_det.postprocess_op.unclip_ratio = unclip_ratio
             self.text_score = text_score
-
-        if use_det is None:
-            use_det = self.use_det
-
-        if use_cls is None:
-            use_cls = self.use_cls
-
-        if use_rec is None:
-            use_rec = self.use_rec
 
         img = self.load_img(img_content)
 
@@ -119,7 +114,7 @@ class RapidOCR:
             logging.warning(
                 "Because the aspect ratio of the current image exceeds the limit (min_height or width_height_ratio), the program will skip the detection step."
             )
-            dt_boxes, img_crop_list = self.get_boxes_img_without_det(img, h, w)
+            dt_boxes = self.get_boxes_img_without_det(h, w)
             return dt_boxes, 0.0
 
         dt_boxes, det_elapse = self.text_det(img)
@@ -129,12 +124,11 @@ class RapidOCR:
         dt_boxes = self.sorted_boxes(dt_boxes)
         return dt_boxes, det_elapse
 
-    def get_boxes_img_without_det(self, img, h, w):
+    def get_boxes_img_without_det(self, h, w):
         x0, y0, x1, y1 = 0, 0, w, h
         dt_boxes = np.array([[x0, y0], [x1, y0], [x1, y1], [x0, y1]])
         dt_boxes = dt_boxes[np.newaxis, ...]
-        img_crop_list = [img]
-        return dt_boxes, img_crop_list
+        return dt_boxes
 
     def get_crop_img_list(self, img, dt_boxes):
         def get_rotate_crop_image(img, points):
