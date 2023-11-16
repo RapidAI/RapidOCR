@@ -248,20 +248,24 @@ def main():
     if args.print_cost:
         print(elapse_list)
 
-    if args.vis_res and args.vis_font_path:
-        vis = VisRes(font_path=args.vis_font_path)
+    if args.vis_res:
+        vis = VisRes()
         Path(args.vis_save_path).mkdir(parents=True, exist_ok=True)
-
         save_path = Path(args.vis_save_path) / f"{Path(args.img_path).stem}_vis.png"
 
         if use_det and not use_cls and not use_rec:
             boxes, *_ = list(zip(*result))
-            vis_img = vis(args.img_path, boxes, None, None)
+            vis_img = vis(args.img_path, boxes)
             cv2.imwrite(str(save_path), vis_img)
             print(f"The vis result has saved in {save_path}")
+
         elif use_det and use_rec:
+            font_path = Path(args.vis_font_path)
+            if not font_path.exists():
+                raise FileExistsError(f"{font_path} does not exist!")
+
             boxes, txts, scores = list(zip(*result))
-            vis_img = vis(args.img_path, boxes, txts, scores)
+            vis_img = vis(args.img_path, boxes, txts, scores, font_path=font_path)
             cv2.imwrite(str(save_path), vis_img)
             print(f"The vis result has saved in {save_path}")
 
