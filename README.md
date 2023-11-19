@@ -119,6 +119,13 @@ If you find this project useful in your research, please consider cite:
 }
 ```
 
+
+## Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/RapidAI/RapidOCR.svg)](https://starchart.cc/RapidAI/RapidOCR)
+
+
+
 ### License
 The copyright of the OCR model belongs to Baidu, and the copyright of other engineering codes belongs to the owner of this repo.
 
