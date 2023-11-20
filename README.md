@@ -38,6 +38,7 @@
 - [Contributing](#contributing)
 - [Sponsor](#sponsor)
 - [Citation](#citation)
+- [Stargazers over time](#stargazers-over-time)
 - [License](#license)
 
 </details>
@@ -119,11 +120,9 @@ If you find this project useful in your research, please consider cite:
 }
 ```
 
-
-## Stargazers over time
+### Stargazers over time
 
 [![Stargazers over time](https://starchart.cc/RapidAI/RapidOCR.svg)](https://starchart.cc/RapidAI/RapidOCR)
-
 
 
 ### License

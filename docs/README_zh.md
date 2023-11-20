@@ -40,6 +40,7 @@
 - [加入我们](#加入我们)
 - [赞助](#赞助)
 - [引用](#引用)
+- [Star history](#star-history)
 - [开源许可证](#开源许可证)
 </details>
 
@@ -99,9 +100,9 @@ rapidocr_onnxruntime -img 1.jpg
         <img src="https://raw.githubusercontent.com/RapidAI/.github/main/assets/RapidAI_WeChatAccount.jpg" width="25%" height="25%" align="center">
     </div>
 
-- 欢迎加入我们的QQ群下载模型及测试程序。1群：~~887298230~~ 已满，2群：~~755960114~~ 已满，3群：450338158
+- 欢迎加入我们的QQ群下载模型及测试程序。1群：~~887298230~~ 已满，2群：~~755960114~~ 已满，3群：~~450338158~~ 4群：419196348
     <div align="center">
-        <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/QQ3.jpg" width="25%" height="25%" align="center">
+        <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/QQ4.jpeg" width="25%" height="25%" align="center">
     </div>
 - 扫码加入钉钉群(Python版沟通交流)：
     <div align="center">
@@ -114,10 +115,10 @@ rapidocr_onnxruntime -img 1.jpg
 >
 > 如果您想要赞助该项目，可直接点击当前页最上面的Sponsor按钮，请写好备注(**您的Github账号名称**)，方便添加到下面赞助列表中。
 
-|赞助者|应用的产品|
-|:---:|:---:|
-|<a href="https://github.com/cuiliang" title="cuiliang"><img src="https://avatars.githubusercontent.com/u/1972649?v=4" width=65 height=65></a>|<a href="https://getquicker.net/" title="Quicker指尖工具箱"><img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Quicker.jpg" width=65 height=65></a>|
-|<a href="https://github.com/Eunsolfs" title="Eunsolfs"><img src="https://avatars.githubusercontent.com/u/53815751?v=4" width=65 height=65></a>| - |
+|                                                                     赞助者                                                                     |                                                                               应用的产品                                                                                |
+| :--------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| <a href="https://github.com/cuiliang" title="cuiliang"><img src="https://avatars.githubusercontent.com/u/1972649?v=4" width=65 height=65></a>  | <a href="https://getquicker.net/" title="Quicker指尖工具箱"><img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Quicker.jpg" width=65 height=65></a> |
+| <a href="https://github.com/Eunsolfs" title="Eunsolfs"><img src="https://avatars.githubusercontent.com/u/53815751?v=4" width=65 height=65></a> |                                                                                    -                                                                                    |
 
 ### 引用
 如果您发现该项目对您的研究有用，请考虑引用：
@@ -129,6 +130,11 @@ rapidocr_onnxruntime -img 1.jpg
     year={2021}
 }
 ```
+
+### Star history
+
+[![Stargazers over time](https://starchart.cc/RapidAI/RapidOCR.svg)](https://starchart.cc/RapidAI/RapidOCR)
+
 
 ### 开源许可证
 OCR模型版权归百度所有，其他工程代码版权归本仓库所有者所有。
