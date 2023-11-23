@@ -100,13 +100,14 @@ rapidocr_onnxruntime -img 1.jpg
         <img src="https://raw.githubusercontent.com/RapidAI/.github/main/assets/RapidAI_WeChatAccount.jpg" width="25%" height="25%" align="center">
     </div>
 
-- 欢迎加入我们的QQ群下载模型及测试程序。1群：~~887298230~~ 已满，2群：~~755960114~~ 已满，3群：~~450338158~~ 4群：419196348
+- 欢迎加入我们的QQ群下载模型及测试程序。1群：~~887298230~~ 已满，2群：755960114 已满，3群：450338158 4群：419196348
     <div align="center">
         <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/QQ4.jpeg" width="25%" height="25%" align="center">
     </div>
-- 扫码加入钉钉群(Python版沟通交流)：
+
+- (推荐) 加入QQ频道
     <div align="center">
-        <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/RapidOCRDingDingGroup.png" width="25%" height="25%" align="center">
+        <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/QQChannel.jpg" width="25%" height="25%">
     </div>
 
 ### [赞助](https://rapidai.github.io/RapidOCRDocs/docs/sponsor/)
