@@ -32,6 +32,7 @@
 - [Demo](#demo)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Related projects overview](#related-projects-overview)
 - [Documentation](#documentation)
 - [Acknowledgements](#acknowledgements)
 - [Code Contributors](#code-contributors)
@@ -69,6 +70,17 @@ pip install rapidocr_onnxruntime
 ```bash
 rapidocr_onnxruntime -img 1.jpg
 ```
+
+### Related projects overview
+> In the table below, except for the **Evaluation Collection** part which is hosted under the [ModelScope](https://www.modelscope.cn/home) Community, the rest are all under Github. The details are as follows:
+>
+> The first line is the function introduction.
+>
+> The second line is the corresponding warehouse name. You can directly search for the name on Github.
+
+<div>
+    <img src="https://github.com/RapidAI/RapidOCRDocs/releases/download/assets/RapidOCR_RelatedProjects.png">
+</div>
 
 ### Documentation
 Full documentation can be found on [docs](https://rapidai.github.io/RapidOCRDocs/docs/), in Chinese.

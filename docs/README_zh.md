@@ -33,6 +33,7 @@
 - [Demo](#demo)
 - [安装](#安装)
 - [使用](#使用)
+- [相关产品概览图](#相关产品概览图)
 - [文档](#文档)
 - [致谢](#致谢)
 - [贡献者](#贡献者)
@@ -69,6 +70,18 @@ pip install rapidocr_onnxruntime
 ```bash
 rapidocr_onnxruntime -img 1.jpg
 ```
+
+
+### 相关产品概览图
+> 下图表格中，除**测评集**部分托管在[魔搭社区](https://www.modelscope.cn/home)下，其余均在Github下，详细介绍如下：
+>
+> 第一行是功能介绍
+>
+> 第二行是对应的仓库名称，可直接去Github搜索该名称即可。
+
+<div>
+    <img src="https://github.com/RapidAI/RapidOCRDocs/releases/download/assets/RapidOCR_RelatedProjects.png">
+</div>
 
 ### 文档
 完整文档请移步：[docs](https://rapidai.github.io/RapidOCRDocs/docs/)
