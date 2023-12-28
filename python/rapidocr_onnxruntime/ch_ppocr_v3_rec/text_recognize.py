@@ -29,10 +29,10 @@ class TextRecognizer:
         self.session = OrtInferSession(config)
 
         if self.session.have_key():
-            self.character_dict_path = self.session.get_character_list()
+            character_dict_path = self.session.get_character_list()
         else:
-            self.character_dict_path = config.get("rec_character_dict_path", None)
-        self.postprocess_op = CTCLabelDecode(self.character_dict_path)
+            character_dict_path = config.get("rec_keys_path", None)
+        self.postprocess_op = CTCLabelDecode(character_dict_path)
 
         self.rec_batch_num = config["rec_batch_num"]
         self.rec_image_shape = config["rec_img_shape"]

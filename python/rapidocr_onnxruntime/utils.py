@@ -88,11 +88,12 @@ class OrtInferSession:
         return [v.name for v in self.session.get_outputs()]
 
     def get_character_list(self, key: str = "character"):
-        return self.meta_dict[key].splitlines()
+        meta_dict = self.session.get_modelmeta().custom_metadata_map
+        return meta_dict[key].splitlines()
 
     def have_key(self, key: str = "character") -> bool:
-        self.meta_dict = self.session.get_modelmeta().custom_metadata_map
-        if key in self.meta_dict.keys():
+        meta_dict = self.session.get_modelmeta().custom_metadata_map
+        if key in meta_dict.keys():
             return True
         return False
 
@@ -262,6 +263,7 @@ def init_args():
     rec_group = parser.add_argument_group(title="Rec")
     rec_group.add_argument("--rec_use_cuda", action="store_true", default=False)
     rec_group.add_argument("--rec_model_path", type=str, default=None)
+    rec_group.add_argument("--rec_keys_path", type=str, default=None)
     rec_group.add_argument("--rec_img_shape", type=list, default=[3, 48, 320])
     rec_group.add_argument("--rec_batch_num", type=int, default=6)
 
