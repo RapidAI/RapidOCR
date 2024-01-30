@@ -20,6 +20,13 @@ img_path = tests_dir / "ch_en_num.jpg"
 package_name = "rapidocr_onnxruntime"
 
 
+def test_without_det():
+    img_path = tests_dir / "test_without_det.png"
+    result, _ = engine(img_path)
+    assert result[0][1] == "の持、持场所无。"
+    assert len(result) == 1
+
+
 def test_only_det():
     result, _ = engine(img_path, use_det=True, use_cls=False, use_rec=False)
 

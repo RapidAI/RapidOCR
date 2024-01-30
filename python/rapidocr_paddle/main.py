@@ -126,7 +126,7 @@ class RapidOCR:
 
     def get_boxes_img_without_det(self, h, w):
         x0, y0, x1, y1 = 0, 0, w, h
-        dt_boxes = np.array([[x0, y0], [x1, y0], [x1, y1], [x0, y1]])
+        dt_boxes = np.float32([[x0, y0], [x1, y0], [x1, y1], [x0, y1]])
         dt_boxes = dt_boxes[np.newaxis, ...]
         return dt_boxes
 
