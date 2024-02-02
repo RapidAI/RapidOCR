@@ -6,7 +6,8 @@ Global:
     print_verbose: false
     min_height: 30
     width_height_ratio: 8
-
+    use_letterbox_like: true
+    
 Det:
     use_cuda: false
 

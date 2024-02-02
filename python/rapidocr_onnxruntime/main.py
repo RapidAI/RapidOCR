@@ -44,6 +44,7 @@ class RapidOCR:
         self.text_score = global_config["text_score"]
         self.min_height = global_config["min_height"]
         self.width_height_ratio = global_config["width_height_ratio"]
+        self.use_letterbox_like = global_config["use_letterbox_like"]
 
         self.use_det = global_config["use_det"]
         self.text_det = TextDetector(config["Det"])
@@ -83,6 +84,8 @@ class RapidOCR:
         det_elapse, cls_elapse, rec_elapse = 0.0, 0.0, 0.0
 
         if use_det:
+            if self.use_letterbox_like:
+                img = self.letterbox_like(img)
             dt_boxes, det_elapse = self.auto_text_det(img)
             if dt_boxes is None:
                 return None, None
@@ -100,22 +103,40 @@ class RapidOCR:
         )
         return ocr_res
 
+    def letterbox_like(self, img) :
+        img_w, img_h= img.shape[1], img.shape[0]
+        
+        if self.width_height_ratio == -1:
+            use_limit_ratio = False
+        else:
+            use_limit_ratio = img_w / img_h > self.width_height_ratio
+            
+        if img_h <= self.min_height or use_limit_ratio:
+            # 居中放置
+            new_h = max(int(img_w / self.width_height_ratio), self.min_height) + 1
+            block_img = np.zeros((new_h, img_w, 3), dtype=np.uint8)
+            block_img[int((new_h - img_h) / 2): int((new_h - img_h) / 2) + img_h, 0:img_w, :] = img
+            return block_img
+        return img
+
     def auto_text_det(
         self,
         img: np.ndarray,
     ) -> Tuple[Optional[np.ndarray], float, Optional[List[np.ndarray]]]:
         h, w = img.shape[:2]
-        if self.width_height_ratio == -1:
-            use_limit_ratio = False
-        else:
-            use_limit_ratio = w / h > self.width_height_ratio
+        
+        if not self.use_letterbox_like:
+            if self.width_height_ratio == -1:
+                use_limit_ratio = False
+            else:
+                use_limit_ratio = w / h > self.width_height_ratio
 
-        if h <= self.min_height or use_limit_ratio:
-            logging.warning(
-                "Because the aspect ratio of the current image exceeds the limit (min_height or width_height_ratio), the program will skip the detection step."
-            )
-            dt_boxes = self.get_boxes_img_without_det(h, w)
-            return dt_boxes, 0.0
+            if h <= self.min_height or use_limit_ratio:
+                logging.warning(
+                    "Because the aspect ratio of the current image exceeds the limit (min_height or width_height_ratio), the program will skip the detection step."
+                )
+                dt_boxes = self.get_boxes_img_without_det(h, w)
+                return dt_boxes, 0.0
 
         dt_boxes, det_elapse = self.text_det(img)
         if dt_boxes is None or len(dt_boxes) < 1:
