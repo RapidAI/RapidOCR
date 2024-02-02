@@ -234,7 +234,8 @@ def init_args():
     global_group.add_argument("--print_verbose", action="store_true", default=False)
     global_group.add_argument("--min_height", type=int, default=30)
     global_group.add_argument("--width_height_ratio", type=int, default=8)
-
+    global_group.add_argument("--no_letterbox_like",  action="store_true", default=False)
+    
     det_group = parser.add_argument_group(title="Det")
     det_group.add_argument("--det_use_cuda", action="store_true", default=False)
     det_group.add_argument("--det_model_path", type=str, default=None)

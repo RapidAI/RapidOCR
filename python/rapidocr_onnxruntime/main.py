@@ -63,11 +63,13 @@ class RapidOCR:
         use_det: Optional[bool] = None,
         use_cls: Optional[bool] = None,
         use_rec: Optional[bool] = None,
+        use_letterbox_like: Optional[bool] = None,
         **kwargs,
     ):
         use_det = self.use_det if use_det is None else use_det
         use_cls = self.use_cls if use_cls is None else use_cls
         use_rec = self.use_rec if use_rec is None else use_rec
+        self.use_letterbox_like = self.use_letterbox_like if use_letterbox_like is None else use_letterbox_like
 
         if kwargs:
             box_thresh = kwargs.get("box_thresh", 0.5)
@@ -261,8 +263,9 @@ def main():
     use_det = not args.no_det
     use_cls = not args.no_cls
     use_rec = not args.no_rec
+    use_letterbox_like = not args.no_letterbox_like
     result, elapse_list = ocr_engine(
-        args.img_path, use_det=use_det, use_cls=use_cls, use_rec=use_rec
+        args.img_path, use_det=use_det, use_cls=use_cls, use_rec=use_rec, use_letterbox_like = use_letterbox_like
     )
     print(result)
 
