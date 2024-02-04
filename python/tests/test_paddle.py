@@ -141,7 +141,8 @@ def test_input_three_ndim_two_channel():
     image_array = np.load(str(img_npy))
     result, _ = engine(image_array)
 
-    assert len(result) == 87
+    assert len(result) == 1
+    assert result[0][1] == " TREND PLOT REPORT"
 
 
 def test_input_three_ndim_one_channel():
