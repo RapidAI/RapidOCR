@@ -86,12 +86,14 @@ class RapidOCR:
         det_elapse, cls_elapse, rec_elapse = 0.0, 0.0, 0.0
 
         if use_det:
+            zero_h = 0
             if self.use_letterbox_like:
-                img = self.letterbox_like(img)
+                img, zero_h = self.letterbox_like(img)
+
             dt_boxes, det_elapse = self.auto_text_det(img)
             if dt_boxes is None:
                 return None, None
-
+            
             img = self.get_crop_img_list(img, dt_boxes)
 
         if use_cls:
@@ -100,6 +102,10 @@ class RapidOCR:
         if use_rec:
             rec_res, rec_elapse = self.text_rec(img)
 
+        if zero_h > 0 and dt_boxes is not None:
+            for box in dt_boxes:
+                box[:, 1] -= zero_h
+                
         ocr_res = self.get_final_res(
             dt_boxes, cls_res, rec_res, det_elapse, cls_elapse, rec_elapse
         )
@@ -116,10 +122,11 @@ class RapidOCR:
         if img_h <= self.min_height or use_limit_ratio:
             # 居中放置
             new_h = max(int(img_w / self.width_height_ratio), self.min_height) + 1
+            zero_h = int((new_h - img_h) / 2)
             block_img = np.zeros((new_h, img_w, 3), dtype=np.uint8)
-            block_img[int((new_h - img_h) / 2): int((new_h - img_h) / 2) + img_h, 0:img_w, :] = img
-            return block_img
-        return img
+            block_img[zero_h: zero_h + img_h, : , :] = img
+            return block_img, zero_h
+        return img, 0
 
     def auto_text_det(
         self,
