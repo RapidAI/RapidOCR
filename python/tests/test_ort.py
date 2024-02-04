@@ -20,11 +20,23 @@ img_path = tests_dir / "ch_en_num.jpg"
 package_name = "rapidocr_onnxruntime"
 
 
-def test_without_det():
-    img_path = tests_dir / "test_without_det.png"
+@pytest.mark.parametrize(
+    "img_name,gt_len,gt_first_len",
+    [
+        (
+            "test_letterbox_like.jpg",
+            2,
+            "A:：取决于所使用的执行提供者，它可能没有完全支持模型中的所有操作。回落到CPU操作可能会导致性能速度的下降。此外，即使一个操作是由CUDAexecution",
+        ),
+        ("test_without_det.jpg", 1, "在中国作家协会第三届儿童文学"),
+    ],
+)
+def test_letterbox_like(img_name, gt_len, gt_first_len):
+    img_path = tests_dir / img_name
     result, _ = engine(img_path)
-    assert result[0][1] == "の持、持场所无。"
-    assert len(result) == 1
+
+    assert len(result) == gt_len
+    assert result[0][1] == gt_first_len
 
 
 def test_only_det():
@@ -142,7 +154,7 @@ def test_input_three_ndim_two_channel():
     result, _ = engine(image_array)
 
     assert len(result) == 1
-    assert result[0][1] == " TREND PLOT REPORT"
+    assert result[0][1] == "TREND PLOT REPORT"
 
 
 def test_input_three_ndim_one_channel():

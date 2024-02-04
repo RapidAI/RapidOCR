@@ -44,7 +44,6 @@ class RapidOCR:
         self.text_score = global_config["text_score"]
         self.min_height = global_config["min_height"]
         self.width_height_ratio = global_config["width_height_ratio"]
-        self.use_letterbox_like = global_config["use_letterbox_like"]
 
         self.use_det = global_config["use_det"]
         self.text_det = TextDetector(config["Det"])
@@ -63,13 +62,11 @@ class RapidOCR:
         use_det: Optional[bool] = None,
         use_cls: Optional[bool] = None,
         use_rec: Optional[bool] = None,
-        use_letterbox_like: Optional[bool] = None,
         **kwargs,
     ):
         use_det = self.use_det if use_det is None else use_det
         use_cls = self.use_cls if use_cls is None else use_cls
         use_rec = self.use_rec if use_rec is None else use_rec
-        self.use_letterbox_like = self.use_letterbox_like if use_letterbox_like is None else use_letterbox_like
 
         if kwargs:
             box_thresh = kwargs.get("box_thresh", 0.5)
@@ -86,14 +83,11 @@ class RapidOCR:
         det_elapse, cls_elapse, rec_elapse = 0.0, 0.0, 0.0
 
         if use_det:
-            zero_h = 0
-            if self.use_letterbox_like:
-                img, zero_h = self.letterbox_like(img)
-
+            img, padding_h = self.maybe_add_letterbox(img)
             dt_boxes, det_elapse = self.auto_text_det(img)
             if dt_boxes is None:
                 return None, None
-            
+
             img = self.get_crop_img_list(img, dt_boxes)
 
         if use_cls:
@@ -102,63 +96,42 @@ class RapidOCR:
         if use_rec:
             rec_res, rec_elapse = self.text_rec(img)
 
-        if zero_h > 0 and dt_boxes is not None:
+        if dt_boxes is not None and padding_h > 0:
             for box in dt_boxes:
-                box[:, 1] -= zero_h
-                
+                box[:, 1] -= padding_h
+
         ocr_res = self.get_final_res(
             dt_boxes, cls_res, rec_res, det_elapse, cls_elapse, rec_elapse
         )
         return ocr_res
 
-    def letterbox_like(self, img) :
-        img_w, img_h= img.shape[1], img.shape[0]
-        
+    def maybe_add_letterbox(self, img: np.ndarray) -> Tuple[np.ndarray, int]:
+        h, w = img.shape[:2]
+
         if self.width_height_ratio == -1:
             use_limit_ratio = False
         else:
-            use_limit_ratio = img_w / img_h > self.width_height_ratio
-            
-        if img_h <= self.min_height or use_limit_ratio:
-            # 居中放置
-            new_h = max(int(img_w / self.width_height_ratio), self.min_height) + 1
-            zero_h = int((new_h - img_h) / 2)
-            block_img = np.zeros((new_h, img_w, 3), dtype=np.uint8)
-            block_img[zero_h: zero_h + img_h, : , :] = img
-            return block_img, zero_h
+            use_limit_ratio = w / h > self.width_height_ratio
+
+        if h <= self.min_height or use_limit_ratio:
+            new_h = w
+            padding_h = int((new_h - h) / 2)
+            block_img = cv2.copyMakeBorder(
+                img, padding_h, padding_h, 0, 0, cv2.BORDER_CONSTANT, value=(0, 0, 0)
+            )
+            return block_img, padding_h
         return img, 0
 
     def auto_text_det(
         self,
         img: np.ndarray,
     ) -> Tuple[Optional[np.ndarray], float, Optional[List[np.ndarray]]]:
-        h, w = img.shape[:2]
-        
-        if not self.use_letterbox_like:
-            if self.width_height_ratio == -1:
-                use_limit_ratio = False
-            else:
-                use_limit_ratio = w / h > self.width_height_ratio
-
-            if h <= self.min_height or use_limit_ratio:
-                logging.warning(
-                    "Because the aspect ratio of the current image exceeds the limit (min_height or width_height_ratio), the program will skip the detection step."
-                )
-                dt_boxes = self.get_boxes_img_without_det(h, w)
-                return dt_boxes, 0.0
-
         dt_boxes, det_elapse = self.text_det(img)
         if dt_boxes is None or len(dt_boxes) < 1:
             return None, 0.0
 
         dt_boxes = self.sorted_boxes(dt_boxes)
         return dt_boxes, det_elapse
-
-    def get_boxes_img_without_det(self, h, w):
-        x0, y0, x1, y1 = 0, 0, w, h
-        dt_boxes = np.float32([[x0, y0], [x1, y0], [x1, y1], [x0, y1]])
-        dt_boxes = dt_boxes[np.newaxis, ...]
-        return dt_boxes
 
     def get_crop_img_list(self, img, dt_boxes):
         def get_rotate_crop_image(img, points):
@@ -270,9 +243,11 @@ def main():
     use_det = not args.no_det
     use_cls = not args.no_cls
     use_rec = not args.no_rec
-    use_letterbox_like = not args.no_letterbox_like
     result, elapse_list = ocr_engine(
-        args.img_path, use_det=use_det, use_cls=use_cls, use_rec=use_rec, use_letterbox_like = use_letterbox_like
+        args.img_path,
+        use_det=use_det,
+        use_cls=use_cls,
+        use_rec=use_rec,
     )
     print(result)
 
