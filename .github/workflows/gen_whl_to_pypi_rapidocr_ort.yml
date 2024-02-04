@@ -13,7 +13,6 @@ on:
 
 env:
   RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.3.0.zip
-  TWO_DIM_IMAGE: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/two_dim_image.npy
 
 jobs:
   UnitTesting:
@@ -38,12 +37,12 @@ jobs:
           DIR_NAME=${ZIP_NAME%.*}
           unzip $DIR_NAME
           cp $DIR_NAME/resources/models/*.onnx python/rapidocr_onnxruntime/models/
+
           cd python
           pip install -r requirements_ort.txt
           pip install pytest wheel get_pypi_latest_version openvino
+
           cd tests
-          wget $TWO_DIM_IMAGE -O two_dim_image.npy
-          mv two_dim_image.npy test_files/
           pytest test_ort.py
 
   GenerateWHL_PushPyPi:
