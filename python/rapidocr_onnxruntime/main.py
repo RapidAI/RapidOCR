@@ -2,7 +2,6 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import copy
-import logging
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
@@ -114,8 +113,8 @@ class RapidOCR:
             use_limit_ratio = w / h > self.width_height_ratio
 
         if h <= self.min_height or use_limit_ratio:
-            new_h = w
-            padding_h = int((new_h - h) / 2)
+            new_h = max(int(w / self.width_height_ratio), self.min_height) * 2
+            padding_h = int(abs(new_h - h) / 2)
             block_img = cv2.copyMakeBorder(
                 img, padding_h, padding_h, 0, 0, cv2.BORDER_CONSTANT, value=(0, 0, 0)
             )

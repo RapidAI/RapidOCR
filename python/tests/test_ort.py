@@ -26,7 +26,7 @@ package_name = "rapidocr_onnxruntime"
         (
             "test_letterbox_like.jpg",
             2,
-            "A:：取决于所使用的执行提供者，它可能没有完全支持模型中的所有操作。回落到CPU操作可能会导致性能速度的下降。此外，即使一个操作是由CUDAexecution",
+            "A：：取决于所使用的执行提供者，它可能没有完全支持模型中的所有操作。回落到CPU操作可能会导致性能速度的下降。此外，即使一个操作是由CUDAeXecution",
         ),
         ("test_without_det.jpg", 1, "在中国作家协会第三届儿童文学"),
     ],
