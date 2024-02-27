@@ -360,12 +360,12 @@ class VisRes:
                 font_size = max(int(box_width * 0.9), 10)
                 font = ImageFont.truetype(font_path, font_size, encoding="utf-8")
                 cur_y = box[0][1]
+
                 for c in txt:
-                    char_size = font.getsize(c)
                     draw_right.text(
                         (box[0][0] + 3, cur_y), c, fill=(0, 0, 0), font=font
                     )
-                    cur_y += char_size[1]
+                    cur_y += self.get_char_size(font, c)
             else:
                 font_size = max(int(box_height * 0.8), 10)
                 font = ImageFont.truetype(font_path, font_size, encoding="utf-8")
@@ -401,3 +401,18 @@ class VisRes:
     @staticmethod
     def get_box_width(box: List[List[float]]) -> float:
         return math.sqrt((box[0][0] - box[1][0]) ** 2 + (box[0][1] - box[1][1]) ** 2)
+
+    @staticmethod
+    def get_char_size(font, char_str: str) -> float:
+        # compatible with Pillow v9 and v10.
+        if hasattr(font, "getsize"):
+            get_size_func = getattr(font, "getsize")
+            return get_size_func(char_str)[1]
+
+        if hasattr(font, "getlength"):
+            get_size_func = getattr(font, "getlength")
+            return get_size_func(char_str)
+
+        raise ValueError(
+            "The Pillow ImageFont instance has not getsize or getlength func."
+        )

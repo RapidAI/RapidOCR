@@ -4,4 +4,4 @@ numpy>=1.19.5
 six>=1.15.0
 Shapely>=1.7.1
 PyYAML
-Pillow<=10.0.1
+Pillow
