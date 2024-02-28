@@ -19,7 +19,7 @@ from paddle import inference
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 
 root_dir = Path(__file__).resolve().parent
-InputType = Union[str, np.ndarray, bytes, Path]
+InputType = Union[str, np.ndarray, bytes, Path, Image.Image]
 
 
 class PaddleInferSession:
@@ -136,8 +136,9 @@ class LoadImage:
                 f"The img type {type(img)} does not in {InputType.__args__}"
             )
 
+        origin_img_type = type(img)
         img = self.load_img(img)
-        img = self.convert_img(img)
+        img = self.convert_img(img, origin_img_type)
         return img
 
     def load_img(self, img: InputType) -> np.ndarray:
@@ -156,9 +157,12 @@ class LoadImage:
         if isinstance(img, np.ndarray):
             return img
 
+        if isinstance(img, Image.Image):
+            return np.array(img)
+
         raise LoadImageError(f"{type(img)} is not supported!")
 
-    def convert_img(self, img: np.ndarray):
+    def convert_img(self, img: np.ndarray, origin_img_type):
         if img.ndim == 2:
             return cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
@@ -170,30 +174,19 @@ class LoadImage:
             if channel == 2:
                 return self.cvt_two_to_three(img)
 
+            if channel == 3:
+                if issubclass(origin_img_type, (str, Path, bytes, Image.Image)):
+                    return cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+                return img
+
             if channel == 4:
                 return self.cvt_four_to_three(img)
-
-            if channel == 3:
-                return cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
             raise LoadImageError(
                 f"The channel({channel}) of the img is not in [1, 2, 3, 4]"
             )
 
         raise LoadImageError(f"The ndim({img.ndim}) of the img is not in [2, 3]")
-
-    @staticmethod
-    def cvt_four_to_three(img: np.ndarray) -> np.ndarray:
-        """RGBA → BGR"""
-        r, g, b, a = cv2.split(img)
-        new_img = cv2.merge((b, g, r))
-
-        not_a = cv2.bitwise_not(a)
-        not_a = cv2.cvtColor(not_a, cv2.COLOR_GRAY2BGR)
-
-        new_img = cv2.bitwise_and(new_img, new_img, mask=a)
-        new_img = cv2.add(new_img, not_a)
-        return new_img
 
     @staticmethod
     def cvt_two_to_three(img: np.ndarray) -> np.ndarray:
@@ -206,6 +199,19 @@ class LoadImage:
         not_a = cv2.cvtColor(not_a, cv2.COLOR_GRAY2BGR)
 
         new_img = cv2.bitwise_and(img_bgr, img_bgr, mask=img_alpha)
+        new_img = cv2.add(new_img, not_a)
+        return new_img
+
+    @staticmethod
+    def cvt_four_to_three(img: np.ndarray) -> np.ndarray:
+        """RGBA → BGR"""
+        r, g, b, a = cv2.split(img)
+        new_img = cv2.merge((b, g, r))
+
+        not_a = cv2.bitwise_not(a)
+        not_a = cv2.cvtColor(not_a, cv2.COLOR_GRAY2BGR)
+
+        new_img = cv2.bitwise_and(new_img, new_img, mask=a)
         new_img = cv2.add(new_img, not_a)
         return new_img
 

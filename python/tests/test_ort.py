@@ -76,7 +76,6 @@ def test_cls_rec():
 
 def test_det_cls_rec():
     img = cv2.imread(str(img_path))
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     result, _ = engine(img)
     assert result[0][1] == "正品促销"
