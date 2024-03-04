@@ -4,17 +4,15 @@
 import argparse
 import base64
 import io
-import json
-from pathlib import Path
 import sys
+from pathlib import Path
+from typing import Dict
 
-import cv2
 import numpy as np
 import uvicorn
 from fastapi import FastAPI, Form, UploadFile
 from PIL import Image
 from rapidocr_onnxruntime import RapidOCR
-
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
@@ -23,13 +21,12 @@ class OCRAPIUtils:
     def __init__(self) -> None:
         self.ocr = RapidOCR()
 
-    def __call__(self, img):
+    def __call__(self, img: Image.Image) -> Dict:
         img = np.array(img)
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
         ocr_res, _ = self.ocr(img)
         if not ocr_res:
-            return json.dumps({})
+            return {}
 
         out_dict = {
             str(i): {"rec_txt": rec, "dt_boxes": dt_box, "score": score}

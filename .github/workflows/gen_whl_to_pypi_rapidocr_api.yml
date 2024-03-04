@@ -35,6 +35,7 @@ jobs:
         run: |
           cd api
           pip install -r requirements.txt
+          pip install get_pypi_latest_version wheel
 
           python -m pip install --upgrade pip
           python setup.py bdist_wheel ${{ github.event.head_commit.message }}
