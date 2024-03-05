@@ -3,6 +3,7 @@
 # @Contact: liekkaskono@163.com
 import argparse
 import math
+import os
 import random
 from io import BytesIO
 from pathlib import Path
@@ -20,11 +21,17 @@ InputType = Union[str, np.ndarray, bytes, Path, Image.Image]
 
 class OpenVINOInferSession:
     def __init__(self, config):
-        ie = Core()
+        core = Core()
 
         self._verify_model(config["model_path"])
-        model_onnx = ie.read_model(config["model_path"])
-        compile_model = ie.compile_model(model=model_onnx, device_name="CPU")
+        model_onnx = core.read_model(config["model_path"])
+
+        cpu_nums = os.cpu_count()
+        infer_num_threads = config.get("inference_num_threads", -1)
+        if infer_num_threads != -1 and 1 <= infer_num_threads <= cpu_nums:
+            core.set_property("CPU", {"INFERENCE_NUM_THREADS": str(infer_num_threads)})
+
+        compile_model = core.compile_model(model=model_onnx, device_name="CPU")
         self.session = compile_model.create_infer_request()
 
     def __call__(self, input_content: np.ndarray) -> np.ndarray:

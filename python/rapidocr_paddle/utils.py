@@ -45,6 +45,11 @@ class PaddleInferSession:
         else:
             infer_opts.disable_gpu()
 
+        cpu_nums = os.cpu_count()
+        infer_num_threads = config.get("cpu_math_library_num_threads", -1)
+        if infer_num_threads != -1 and 1 <= infer_num_threads <= cpu_nums:
+            infer_opts.set_cpu_math_library_num_threads(infer_num_threads)
+
         # enable memory optim
         infer_opts.enable_memory_optim()
         infer_opts.disable_glog_info()
