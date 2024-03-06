@@ -208,7 +208,12 @@ class LoadImage:
         not_a = cv2.cvtColor(not_a, cv2.COLOR_GRAY2BGR)
 
         new_img = cv2.bitwise_and(new_img, new_img, mask=a)
-        new_img = cv2.add(new_img, not_a)
+
+        mean_color = np.mean(new_img)
+        if mean_color <= 0.0:
+            new_img = cv2.add(new_img, not_a)
+        else:
+            new_img = cv2.bitwise_not(new_img)
         return new_img
 
     @staticmethod

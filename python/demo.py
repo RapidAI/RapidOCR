@@ -12,7 +12,7 @@ from rapidocr_onnxruntime import RapidOCR, VisRes
 engine = RapidOCR()
 vis = VisRes()
 
-image_path = "tests/test_files/test_without_det.jpg"
+image_path = "tests/test_files/black_font_color_transparent.png"
 with open(image_path, "rb") as f:
     img = f.read()
 
