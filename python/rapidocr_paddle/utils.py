@@ -265,6 +265,8 @@ def init_args():
     global_group.add_argument("--min_height", type=int, default=30)
     global_group.add_argument("--width_height_ratio", type=int, default=8)
 
+    global_group.add_argument("--cpu_math_library_num_threads", type=int, default=-1)
+
     det_group = parser.add_argument_group(title="Det")
     det_group.add_argument("--det_use_cuda", action="store_true", default=False)
     det_group.add_argument("--det_gpu_id", type=int, default=0)
@@ -299,6 +301,7 @@ def init_args():
     rec_group.add_argument("--rec_gpu_id", type=int, default=0)
     rec_group.add_argument("--rec_gpu_mem", type=int, default=500)
     rec_group.add_argument("--rec_model_path", type=str, default=None)
+    rec_group.add_argument("--rec_keys_path", type=str, default=None)
     rec_group.add_argument("--rec_img_shape", type=list, default=[3, 48, 320])
     rec_group.add_argument("--rec_batch_num", type=int, default=6)
 
@@ -358,7 +361,20 @@ class UpdateParameters:
                 config["Rec"], rec_dict, "rec_", ["rec_model_path", "rec_use_cuda"]
             ),
         }
+
+        update_params = ["cpu_math_library_num_threads"]
+        new_config = self.update_global_to_module(
+            config, update_params, src="Global", dsts=["Det", "Cls", "Rec"]
+        )
         return new_config
+
+    def update_global_to_module(
+        self, config, params: List[str], src: str, dsts: List[str]
+    ):
+        for dst in dsts:
+            for param in params:
+                config[dst].update({param: config[src][param]})
+        return config
 
     def update_global_params(self, config, global_dict):
         if global_dict:

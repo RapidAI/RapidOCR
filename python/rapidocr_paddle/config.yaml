@@ -7,16 +7,12 @@ Global:
     min_height: 30
     width_height_ratio: 8
 
-    use_cuda: &use_cuda false
-    gpu_id: &gpu_id 0
-    gpu_mem: &gpu_mem 500
-
     cpu_math_library_num_threads: &infer_num_threads -1
 
 Det:
-    use_cuda: *use_cuda
-    gpu_id: *gpu_id
-    gpu_mem: *gpu_mem
+    use_cuda: false
+    gpu_id: 0
+    gpu_mem: 500
 
     cpu_math_library_num_threads: *infer_num_threads
 
@@ -33,9 +29,9 @@ Det:
     score_mode: fast
 
 Cls:
-    use_cuda: *use_cuda
-    gpu_id: *gpu_id
-    gpu_mem: *gpu_mem
+    use_cuda: false
+    gpu_id: 0
+    gpu_mem: 500
 
     cpu_math_library_num_threads: *infer_num_threads
 
@@ -47,9 +43,9 @@ Cls:
     label_list: ['0', '180']
 
 Rec:
-    use_cuda: *use_cuda
-    gpu_id: *gpu_id
-    gpu_mem: *gpu_mem
+    use_cuda: false
+    gpu_id: 0
+    gpu_mem: 500
 
     cpu_math_library_num_threads: *infer_num_threads
 

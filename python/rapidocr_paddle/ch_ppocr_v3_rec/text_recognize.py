@@ -30,7 +30,7 @@ class TextRecognizer:
         self.session = PaddleInferSession(config, mode="rec")
 
         dict_path = str(Path(__file__).parent / "ppocr_keys_v1.txt")
-        self.character_dict_path = config.get("keys_path", dict_path)
+        self.character_dict_path = config.get("rec_keys_path", dict_path)
         self.postprocess_op = CTCLabelDecode(self.character_dict_path)
 
         self.rec_batch_num = config["rec_batch_num"]
