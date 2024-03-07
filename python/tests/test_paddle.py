@@ -21,6 +21,25 @@ package_name = "rapidocr_paddle"
 
 
 @pytest.mark.parametrize(
+    "img_name,gt",
+    [
+        (
+            "black_font_color_transparent.png",
+            "我是中国人",
+        ),
+        (
+            "white_font_color_transparent.png",
+            "我是中国人",
+        ),
+    ],
+)
+def test_transparent_img(img_name: str, gt: str):
+    img_path = tests_dir / img_name
+    result, _ = engine(img_path)
+    assert result[0][1] == gt
+
+
+@pytest.mark.parametrize(
     "img_name,gt_len,gt_first_len",
     [
         (
