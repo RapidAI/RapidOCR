@@ -7,14 +7,12 @@ Global:
     min_height: 30
     width_height_ratio: 8
 
-    use_cuda: &use_cuda false
-
     inference_num_threads: &infer_num_threads -1
 
 Det:
     inference_num_threads: *infer_num_threads
 
-    use_cuda: *use_cuda
+    use_cuda: false
 
     model_path: models/ch_PP-OCRv4_det_infer.onnx
 
@@ -31,7 +29,7 @@ Det:
 Cls:
     inference_num_threads: *infer_num_threads
 
-    use_cuda: *use_cuda
+    use_cuda: false
 
     model_path: models/ch_ppocr_mobile_v2.0_cls_infer.onnx
 
@@ -43,7 +41,7 @@ Cls:
 Rec:
     inference_num_threads: *infer_num_threads
 
-    use_cuda: *use_cuda
+    use_cuda: false
 
     model_path: models/ch_PP-OCRv4_rec_infer.onnx
 
