@@ -142,6 +142,6 @@ If you find this project useful in your research, please consider cite:
 
 
 ### License
-The copyright of the OCR model belongs to Baidu, and the copyright of other engineering codes belongs to the owner of this repo.
+The copyright of the OCR model is held by Baidu, while the copyrights of all other engineering scripts are retained by the repository's owner.
 
 This project is released under the [Apache 2.0 license](./LICENSE).
