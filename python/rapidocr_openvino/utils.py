@@ -159,7 +159,7 @@ def read_yaml(yaml_path):
     return data
 
 
-def concat_model_path(config):
+def update_model_path(config):
     key = "model_path"
     config["Det"][key] = str(root_dir / config["Det"][key])
     config["Rec"][key] = str(root_dir / config["Rec"][key])
