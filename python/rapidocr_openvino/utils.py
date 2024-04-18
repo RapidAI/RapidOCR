@@ -68,22 +68,29 @@ class LoadImage:
         if isinstance(img, (str, Path)):
             self.verify_exist(img)
             try:
-                img = np.array(Image.open(img))
+                img = self.img_to_ndarray(Image.open(img))
             except UnidentifiedImageError as e:
                 raise LoadImageError(f"cannot identify image file {img}") from e
             return img
 
         if isinstance(img, bytes):
-            img = np.array(Image.open(BytesIO(img)))
+            img = self.img_to_ndarray(Image.open(BytesIO(img)))
             return img
 
         if isinstance(img, np.ndarray):
             return img
 
         if isinstance(img, Image.Image):
-            return np.array(img)
+            return self.img_to_ndarray(img)
 
         raise LoadImageError(f"{type(img)} is not supported!")
+
+    def img_to_ndarray(self, img: Image.Image) -> np.ndarray:
+        if img.mode == "1":
+            img = img.convert("L")
+            return np.array(img)
+        else:
+            return np.array(img)
 
     def convert_img(self, img: np.ndarray, origin_img_type):
         if img.ndim == 2:
