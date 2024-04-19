@@ -30,24 +30,6 @@
 [简体中文](./docs/README_zh.md) | English
 </div>
 
-<details>
-    <summary>Contents</summary>
-
-- [Introduction](#introduction)
-- [Demo](#demo)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Related projects overview](#related-projects-overview)
-- [Documentation](#documentation)
-- [Acknowledgements](#acknowledgements)
-- [Code Contributors](#code-contributors)
-- [Contributing](#contributing)
-- [Sponsor](#sponsor)
-- [Citation](#citation)
-- [Stargazers over time](#stargazers-over-time)
-- [License](#license)
-
-</details>
 
 ### Introduction
 - The fastest running, most widely supported, completely open source and free multi-platform, multi-language OCR known to support rapid offline deployment.
@@ -77,7 +59,7 @@ rapidocr_onnxruntime -img 1.jpg
 ```
 
 ### Related projects overview
-> In the table below, except for the **Evaluation Collection** part which is hosted under the [ModelScope](https://www.modelscope.cn/home) Community, the rest are all under Github. The details are as follows:
+> In the table below, except for the **Evaluation Collection** part which is hosted under the [Hugging Face](https://huggingface.co/SWHL) Community, the rest are all under Github. The details are as follows:
 >
 > The first line is the function introduction.
 >

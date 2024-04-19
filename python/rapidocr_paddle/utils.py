@@ -171,8 +171,7 @@ class LoadImage:
         if img.mode == "1":
             img = img.convert("L")
             return np.array(img)
-        else:
-            return np.array(img)
+        return np.array(img)
 
     def convert_img(self, img: np.ndarray, origin_img_type):
         if img.ndim == 2:

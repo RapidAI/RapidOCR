@@ -20,6 +20,12 @@ img_path = tests_dir / "ch_en_num.jpg"
 package_name = "rapidocr_openvino"
 
 
+def test_mode_one_img():
+    img_path = tests_dir / "issue_170.png"
+    result, _ = engine(img_path)
+    assert result[0][1] == "TEST"
+
+
 @pytest.mark.parametrize(
     "img_name,gt",
     [
