@@ -88,7 +88,7 @@ jobs:
 
           cd ..
           python -m pip install --upgrade pip
-          python setup_onnxruntime.py bdist_wheel ${{ github.event.head_commit.message }}
+          python setup_onnxruntime.py bdist_wheel ${{ github.ref_name }}
           mv dist ../
 
       - name: Publish distribution 📦 to PyPI
