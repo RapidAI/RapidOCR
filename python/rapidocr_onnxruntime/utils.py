@@ -57,18 +57,35 @@ class OrtInferSession:
         }
 
         EP_list = []
-        if (
-            config["use_cuda"]
-            and get_device() == "GPU"
-            and cuda_ep in get_available_providers()
-        ):
+        is_use_cude =  config["use_cuda"] and get_device() == "GPU" and cuda_ep in get_available_providers()
+        if (is_use_cude):
             EP_list = [(cuda_ep, cuda_provider_options)]
         EP_list.append((cpu_ep, cpu_provider_options))
+
+        # if platform is windows, use directml as primary provider
+        if os.name == "nt":
+            directml_ep = "DmlExecutionProvider"
+            # print (get_available_providers())
+            if directml_ep in get_available_providers():
+                print ("Windows platform detected, try to use DirectML as primary provider")
+                EP_list.insert(0, (directml_ep, 
+                    cuda_provider_options if is_use_cude else cpu_provider_options
+                ))
+        
 
         self._verify_model(config["model_path"])
         self.session = InferenceSession(
             config["model_path"], sess_options=sess_opt, providers=EP_list
         )
+        
+
+        # verify if the DirectML provider is used
+        if os.name == "nt":
+            if current_provider != directml_ep:
+                warnings.warn(
+                    f"DirectML is not available for the current environment, the inference part is automatically shifted to be executed under other EP.\n"
+                )
+
 
         if config["use_cuda"] and cuda_ep not in self.session.get_providers():
             warnings.warn(
