@@ -78,6 +78,8 @@ class OrtInferSession:
             config["model_path"], sess_options=sess_opt, providers=EP_list
         )
         
+        # TODO: verify this is correct for detecting current_provider
+        current_provider = self.session.get_providers()[0]
 
         # verify if the DirectML provider is used
         if os.name == "nt":
