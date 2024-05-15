@@ -15,6 +15,7 @@ Det:
     inter_op_num_threads: *inter_nums
 
     use_cuda: false
+    use_dml: false
 
     model_path: models/ch_PP-OCRv4_det_infer.onnx
 
@@ -33,6 +34,7 @@ Cls:
     inter_op_num_threads: *inter_nums
 
     use_cuda: false
+    use_dml: false
 
     model_path: models/ch_ppocr_mobile_v2.0_cls_infer.onnx
 
@@ -46,6 +48,7 @@ Rec:
     inter_op_num_threads: *inter_nums
 
     use_cuda: false
+    use_dml: false
 
     model_path: models/ch_PP-OCRv4_rec_infer.onnx
 

@@ -10,6 +10,7 @@ import warnings
 from io import BytesIO
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
+import platform
 
 import cv2
 import numpy as np
@@ -51,6 +52,7 @@ class OrtInferSession:
         self._verify_model(model_path)
 
         self.cfg_use_cuda = config.get("use_cuda", None)
+        self.cfg_use_dml = config.get("use_dml", None)
         EP_list = self._get_ep_list()
 
         self.session = InferenceSession(
@@ -77,23 +79,20 @@ class OrtInferSession:
             "cudnn_conv_algo_search": "EXHAUSTIVE",
             "do_copy_in_default_stream": True,
         }
+        # check windows 10 or above
+        # use_directml = platform  and DIRECTML_EP in had_providers and self.cfg_use_cuda("use_dml")
+        use_directml = platform.system() == "Windows" and platform.release().split(".")[0] >= "10" and DIRECTML_EP in had_providers and self.cfg_use_dml
         if use_cuda:
             EP_list.insert(0, (CUDA_EP, cuda_provider_opts))
-
-        use_directml = os.name == "nt" and DIRECTML_EP in had_providers
-        if use_directml:
-            print("Windows platform detected, try to use DirectML as primary provider")
+        elif use_directml:
+            print("Windows 10 or above detected, try to use DirectML as primary provider")
             directml_options = cuda_provider_opts if use_cuda else cpu_provider_opts
             EP_list.insert(0, (DIRECTML_EP, directml_options))
         return EP_list
 
     def _verify_providers(self) -> None:
         session_providers = self.session.get_providers()
-        if os.name == "nt" and session_providers[0] != DIRECTML_EP:
-            warnings.warn(
-                "DirectML is not available for the current environment, the inference part is automatically shifted to be executed under other EP.\n"
-            )
-
+       
         if self.cfg_use_cuda and CUDA_EP not in session_providers:
             warnings.warn(
                 f"{CUDA_EP} is not avaiable for current env, the inference part is automatically shifted to be executed under {CPU_EP}.\n"
@@ -102,6 +101,13 @@ class OrtInferSession:
                 "https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html",
                 RuntimeWarning,
             )
+            
+        use_directml = platform.system() == "Windows" and platform.release().split(".")[0] >= "10"  and self.cfg_use_dml
+        if  use_directml and session_providers[0] != DIRECTML_EP:
+            warnings.warn(
+                "DirectML is not available for the current environment, the inference part is automatically shifted to be executed under other EP.\n"
+            )
+
 
     def __call__(self, input_content: np.ndarray) -> np.ndarray:
         input_dict = dict(zip(self.get_input_names(), [input_content]))
@@ -296,6 +302,7 @@ def init_args():
 
     det_group = parser.add_argument_group(title="Det")
     det_group.add_argument("--det_use_cuda", action="store_true", default=False)
+    det_group.add_argument("--det_use_dml", action="store_true", default=False)
     det_group.add_argument("--det_model_path", type=str, default=None)
     det_group.add_argument("--det_limit_side_len", type=float, default=736)
     det_group.add_argument(
@@ -313,6 +320,7 @@ def init_args():
 
     cls_group = parser.add_argument_group(title="Cls")
     cls_group.add_argument("--cls_use_cuda", action="store_true", default=False)
+    cls_group.add_argument("--cls_use_dml", action="store_true", default=False)
     cls_group.add_argument("--cls_model_path", type=str, default=None)
     cls_group.add_argument("--cls_image_shape", type=list, default=[3, 48, 192])
     cls_group.add_argument("--cls_label_list", type=list, default=["0", "180"])
@@ -321,6 +329,7 @@ def init_args():
 
     rec_group = parser.add_argument_group(title="Rec")
     rec_group.add_argument("--rec_use_cuda", action="store_true", default=False)
+    rec_group.add_argument("--rec_use_dml", action="store_true", default=False)
     rec_group.add_argument("--rec_model_path", type=str, default=None)
     rec_group.add_argument("--rec_keys_path", type=str, default=None)
     rec_group.add_argument("--rec_img_shape", type=list, default=[3, 48, 320])
