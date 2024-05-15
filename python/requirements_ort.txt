@@ -5,6 +5,4 @@ six>=1.15.0
 Shapely>=1.7.1
 PyYAML
 Pillow
-#  install the onnxruntime-directml if on windows platform, notice that the onnxruntime-directml is conflict with onnxruntime, we can only install one of them
-onnxruntime-directml;platform_system=="Windows"
-onnxruntime>=1.7.0;platform_system!="Windows"
+onnxruntime>=1.7.0
