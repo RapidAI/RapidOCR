@@ -307,7 +307,12 @@ def init_args():
     global_group.add_argument("--inter_op_num_threads", type=int, default=-1)
 
     det_group = parser.add_argument_group(title="Det")
-    det_group.add_argument("--det_use_cuda", action="store_true", default=False)
+    det_group.add_argument(
+        "--det_use_cuda",
+        action="store_true",
+        default=False,
+        help="Whether to use cuda. The prerequisite is: first uninstall all onnxruntime packages and install only the onnxruntime-gpu library.",
+    )
     det_group.add_argument(
         "--det_use_dml",
         action="store_true",
@@ -330,7 +335,12 @@ def init_args():
     )
 
     cls_group = parser.add_argument_group(title="Cls")
-    cls_group.add_argument("--cls_use_cuda", action="store_true", default=False)
+    cls_group.add_argument(
+        "--cls_use_cuda",
+        action="store_true",
+        default=False,
+        help="Whether to use cuda. The prerequisite is: first uninstall all onnxruntime packages and install only the onnxruntime-gpu library.",
+    )
     cls_group.add_argument(
         "--cls_use_dml",
         action="store_true",
@@ -344,7 +354,12 @@ def init_args():
     cls_group.add_argument("--cls_thresh", type=float, default=0.9)
 
     rec_group = parser.add_argument_group(title="Rec")
-    rec_group.add_argument("--rec_use_cuda", action="store_true", default=False)
+    rec_group.add_argument(
+        "--rec_use_cuda",
+        action="store_true",
+        default=False,
+        help="Whether to use cuda. The prerequisite is: first uninstall all onnxruntime packages and install only the onnxruntime-gpu library.",
+    )
     rec_group.add_argument(
         "--rec_use_dml",
         action="store_true",
