@@ -2,7 +2,6 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import argparse
-import importlib
 import math
 import os
 import platform
@@ -79,18 +78,17 @@ class OrtInferSession:
             "cudnn_conv_algo_search": "EXHAUSTIVE",
             "do_copy_in_default_stream": True,
         }
+        if self.use_cuda:
+            EP_list.insert(0, (CUDA_EP, cuda_provider_opts))
 
         # check windows 10 or above
         self.use_directml = (
-            platform.system() == "Windows"
-            and platform.release().split(".")[0] >= "10"
+            self.cfg_use_dml
+            and platform.system() == "Windows"
+            and int(platform.release().split(".")[0]) >= 10
             and DIRECTML_EP in had_providers
-            and self.cfg_use_dml
         )
-        if self.use_cuda:
-            EP_list.insert(0, (CUDA_EP, cuda_provider_opts))
-        elif self.use_directml:
-            self._verfiy_dml()
+        if self.use_directml:
             print(
                 "Windows 10 or above detected, try to use DirectML as primary provider"
             )
@@ -99,14 +97,6 @@ class OrtInferSession:
             )
             EP_list.insert(0, (DIRECTML_EP, directml_options))
         return EP_list
-
-    def _verfiy_dml(self):
-        try:
-            importlib.import_module("onnxruntime-directml")
-        except ModuleNotFoundError as exc:
-            raise ModuleNotFoundError(
-                "If there are other onnxruntime packages installed, please use pip uninstall onnxruntime to uninstall them first. \nThen install the package using DirectML through pip install onnxruntime-directml."
-            ) from exc
 
     def _verify_providers(self) -> None:
         session_providers = self.session.get_providers()
@@ -318,7 +308,12 @@ def init_args():
 
     det_group = parser.add_argument_group(title="Det")
     det_group.add_argument("--det_use_cuda", action="store_true", default=False)
-    det_group.add_argument("--det_use_dml", action="store_true", default=False)
+    det_group.add_argument(
+        "--det_use_dml",
+        action="store_true",
+        default=False,
+        help="Whether to use DirectML. The prerequisite is: the operating system is Windows 10+. First uninstall all onnxruntime packages and install only the onnxruntime-directml library.",
+    )
     det_group.add_argument("--det_model_path", type=str, default=None)
     det_group.add_argument("--det_limit_side_len", type=float, default=736)
     det_group.add_argument(
@@ -336,7 +331,12 @@ def init_args():
 
     cls_group = parser.add_argument_group(title="Cls")
     cls_group.add_argument("--cls_use_cuda", action="store_true", default=False)
-    cls_group.add_argument("--cls_use_dml", action="store_true", default=False)
+    cls_group.add_argument(
+        "--cls_use_dml",
+        action="store_true",
+        default=False,
+        help="Whether to use DirectML. The prerequisite is: the operating system is Windows 10+. First uninstall all onnxruntime packages and install only the onnxruntime-directml library.",
+    )
     cls_group.add_argument("--cls_model_path", type=str, default=None)
     cls_group.add_argument("--cls_image_shape", type=list, default=[3, 48, 192])
     cls_group.add_argument("--cls_label_list", type=list, default=["0", "180"])
@@ -345,7 +345,12 @@ def init_args():
 
     rec_group = parser.add_argument_group(title="Rec")
     rec_group.add_argument("--rec_use_cuda", action="store_true", default=False)
-    rec_group.add_argument("--rec_use_dml", action="store_true", default=False)
+    rec_group.add_argument(
+        "--rec_use_dml",
+        action="store_true",
+        default=False,
+        help="Whether to use DirectML. The prerequisite is: the operating system is Windows 10+. First uninstall all onnxruntime packages and install only the onnxruntime-directml library.",
+    )
     rec_group.add_argument("--rec_model_path", type=str, default=None)
     rec_group.add_argument("--rec_keys_path", type=str, default=None)
     rec_group.add_argument("--rec_img_shape", type=list, default=[3, 48, 320])
