@@ -2,6 +2,7 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import argparse
+import logging
 import math
 import os
 import platform
@@ -34,6 +35,8 @@ DIRECTML_EP = "DmlExecutionProvider"
 
 class OrtInferSession:
     def __init__(self, config):
+        self.logger = get_logger("OrtInferSession")
+
         sess_opt = SessionOptions()
         sess_opt.log_severity_level = 4
         sess_opt.enable_cpu_mem_arena = False
@@ -69,25 +72,17 @@ class OrtInferSession:
         }
         EP_list = [(CPU_EP, cpu_provider_opts)]
 
-        self.use_cuda = (
-            self.cfg_use_cuda and get_device() == "GPU" and CUDA_EP in had_providers
-        )
         cuda_provider_opts = {
             "device_id": 0,
             "arena_extend_strategy": "kNextPowerOfTwo",
             "cudnn_conv_algo_search": "EXHAUSTIVE",
             "do_copy_in_default_stream": True,
         }
+        self.use_cuda = self._check_cuda_condition(had_providers)
         if self.use_cuda:
             EP_list.insert(0, (CUDA_EP, cuda_provider_opts))
 
-        # check windows 10 or above
-        self.use_directml = (
-            self.cfg_use_dml
-            and platform.system() == "Windows"
-            and int(platform.release().split(".")[0]) >= 10
-            and DIRECTML_EP in had_providers
-        )
+        self.use_directml = self._check_dml_condition(had_providers)
         if self.use_directml:
             print(
                 "Windows 10 or above detected, try to use DirectML as primary provider"
@@ -98,21 +93,90 @@ class OrtInferSession:
             EP_list.insert(0, (DIRECTML_EP, directml_options))
         return EP_list
 
+    def _check_cuda_condition(self, had_providers: List[str]) -> bool:
+        if not self.cfg_use_cuda:
+            return False
+
+        cur_device = get_device()
+        if cur_device != "GPU" or CUDA_EP not in had_providers:
+            self.logger.warning(
+                "%s is not in available providers (%s)", CUDA_EP, had_providers
+            )
+            self.logger.info("If you want to use GPU acceleration, you must do:")
+            self.logger.info(
+                "First, uninstall all onnxruntime pakcages in current environment."
+            )
+            self.logger.info(
+                "Second, install onnxruntime-gpu by `pip install onnxruntime-gpu`."
+            )
+            self.logger.info(
+                "\tNote the onnxruntime-gpu version must match your cuda and cudnn version."
+            )
+            self.logger.info(
+                "\tYou can refer this link: https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html"
+            )
+            self.logger.info(
+                "Third, ensure %s is in available providers list. e.g. ['CUDAExecutionProvider', 'CPUExecutionProvider']",
+                CUDA_EP,
+            )
+            return False
+
+        return True
+
+    def _check_dml_condition(self, had_providers: List[str]) -> bool:
+        if not self.cfg_use_dml:
+            return False
+
+        cur_os = platform.system()
+        if cur_os != "Windows":
+            self.logger.warning(
+                "DirectML is only supported in Windows OS. The current OS is %s", cur_os
+            )
+            return False
+
+        cur_window_version = int(platform.release().split(".")[0])
+        if cur_window_version < 10:
+            self.logger.warning(
+                "DirectML is only supported in Windows 10 and above OS. The current Windows version is %s",
+                cur_window_version,
+            )
+            return False
+
+        if DIRECTML_EP not in had_providers:
+            self.logger.warning(
+                "%s is not in available providers (%s). ", DIRECTML_EP, had_providers
+            )
+            self.logger.info("If you want to use DirectML acceleration, you must do:")
+            self.logger.info(
+                "First, uninstall all onnxruntime pakcages in current environment."
+            )
+            self.logger.info(
+                "Second, install onnxruntime-directml by `pip install onnxruntime-directml`"
+            )
+            self.logger.info(
+                "Third, ensure %s is in available providers list. e.g. ['DmlExecutionProvider', 'CPUExecutionProvider']",
+                DIRECTML_EP,
+            )
+            return False
+
+        return True
+
     def _verify_providers(self) -> None:
         session_providers = self.session.get_providers()
+        first_provider = session_providers[0]
 
-        if self.use_cuda and session_providers[0] != CUDA_EP:
-            warnings.warn(
-                f"{CUDA_EP} is not avaiable for current env, the inference part is automatically shifted to be executed under {CPU_EP}.\n"
-                "Please ensure the installed onnxruntime-gpu version matches your cuda and cudnn version, "
-                "you can check their relations from the offical web site: "
-                "https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html",
-                RuntimeWarning,
+        if self.use_cuda and first_provider != CUDA_EP:
+            self.logger.warning(
+                "%s is not avaiable for current env, the inference part is automatically shifted to be executed under %s.",
+                CUDA_EP,
+                first_provider,
             )
 
-        if self.use_directml and session_providers[0] != DIRECTML_EP:
-            warnings.warn(
-                "DirectML is not available for the current environment, the inference part is automatically shifted to be executed under other EP.\n"
+        if self.use_directml and first_provider != DIRECTML_EP:
+            self.logger.warning(
+                "%s is not available for the current environment, the inference part is automatically shifted to be executed under %s.",
+                DIRECTML_EP,
+                first_provider,
             )
 
     def __call__(self, input_content: np.ndarray) -> np.ndarray:
@@ -607,3 +671,18 @@ class VisRes:
         raise ValueError(
             "The Pillow ImageFont instance has not getsize or getlength func."
         )
+
+
+def get_logger(name: str):
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+
+    fmt = "%(asctime)s - %(name)s - %(levelname)s: %(message)s"
+    format_str = logging.Formatter(fmt)
+
+    sh = logging.StreamHandler()
+    sh.setLevel(logging.DEBUG)
+
+    logger.addHandler(sh)
+    sh.setFormatter(format_str)
+    return logger
