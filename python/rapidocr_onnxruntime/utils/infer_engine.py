@@ -96,7 +96,7 @@ class OrtInferSession:
             return True
 
         self.logger.warning(
-            "%s is not in available providers (%s), default use of %s inference.",
+            "%s is not in available providers (%s). Use %s inference by default.",
             CUDA_EP,
             self.had_providers,
             self.had_providers[0],
@@ -127,15 +127,18 @@ class OrtInferSession:
         cur_os = platform.system()
         if cur_os != "Windows":
             self.logger.warning(
-                "DirectML is only supported in Windows OS. The current OS is %s", cur_os
+                "DirectML is only supported in Windows OS. The current OS is %s. Use %s inference by default.",
+                cur_os,
+                self.had_providers[0],
             )
             return False
 
         cur_window_version = int(platform.release().split(".")[0])
         if cur_window_version < 10:
             self.logger.warning(
-                "DirectML is only supported in Windows 10 and above OS. The current Windows version is %s",
+                "DirectML is only supported in Windows 10 and above OS. The current Windows version is %s. Use %s inference by default.",
                 cur_window_version,
+                self.had_providers[0],
             )
             return False
 
@@ -143,7 +146,7 @@ class OrtInferSession:
             return True
 
         self.logger.warning(
-            "%s is not in available providers (%s), default use of %s inference.",
+            "%s is not in available providers (%s). Use %s inference by default.",
             DIRECTML_EP,
             self.had_providers,
             self.had_providers[0],
