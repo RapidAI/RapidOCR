@@ -71,5 +71,5 @@ class CTCLabelDecode:
                 else:
                     conf_list.append(1)
             text = "".join(char_list)
-            result_list.append((text, np.mean(conf_list + [1e-50])))
+            result_list.append((text, np.mean(conf_list if any(conf_list) else [0])))
         return result_list
