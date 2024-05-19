@@ -285,7 +285,7 @@ class DBPostProcess:
         area = cv2.contourArea(box)
         perimeter = cv2.arcLength(box, True)
         distance = area * self.unclip_ratio / perimeter
-        signs = np.array([[1, -1], [-1, -1], [-1, 1], [1, 1]])
+        signs = np.array([[-1, -1], [1, -1], [1, 1], [-1, 1]])
         expanded = box + distance * signs
         return expanded
 
