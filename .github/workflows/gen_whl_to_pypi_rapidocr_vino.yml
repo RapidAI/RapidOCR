@@ -2,14 +2,14 @@ name: Push rapidocr_openvino to pypi
 
 on:
   push:
-    # branches: [ main ]
-    # paths:
-    #   - 'python/rapidocr_openvino/**'
-    #   - 'docs/doc_whl_rapidocr_vino.md'
-    #   - 'python/setup_openvino.py'
-    #   - '.github/workflows/gen_whl_to_pypi_rapidocr_vino.yml'
-    tags:
-      - v*
+    branches: [ main ]
+    paths:
+      - 'python/rapidocr_openvino/**'
+      - 'docs/doc_whl_rapidocr_vino.md'
+      - 'python/setup_openvino.py'
+      - '.github/workflows/gen_whl_to_pypi_rapidocr_vino.yml'
+    # tags:
+    #   - v*
 
 env:
   RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.3.0.zip
@@ -86,7 +86,7 @@ jobs:
 
           cd ..
           python -m pip install --upgrade pip
-          python setup_openvino.py bdist_wheel ${{ github.ref_name }}
+          python setup_openvino.py bdist_wheel "{{ github.event.head_commit.message }}"
           mv dist ../
 
       - name: Publish distribution 📦 to PyPI

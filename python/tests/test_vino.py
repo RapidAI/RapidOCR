@@ -88,7 +88,7 @@ def test_only_rec():
 def test_det_rec():
     result, _ = engine(img_path, use_det=True, use_cls=False, use_rec=True)
     assert result[0][1] == "正品促销"
-    assert len(result) == 16
+    assert len(result) == 18
 
 
 def test_cls_rec():
@@ -104,7 +104,7 @@ def test_det_cls_rec():
 
     result, _ = engine(img)
     assert result[0][1] == "正品促销"
-    assert len(result) == 16
+    assert len(result) == 18
 
 
 def test_empty():
@@ -124,20 +124,20 @@ def test_zeros():
 def test_input_str():
     result, _ = engine(str(img_path))
     assert result[0][1] == "正品促销"
-    assert len(result) == 16
+    assert len(result) == 18
 
 
 def test_input_bytes():
     with open(img_path, "rb") as f:
         result, _ = engine(f.read())
     assert result[0][1] == "正品促销"
-    assert len(result) == 16
+    assert len(result) == 18
 
 
 def test_input_path():
     result, _ = engine(img_path)
     assert result[0][1] == "正品促销"
-    assert len(result) == 16
+    assert len(result) == 18
 
 
 def test_input_parameters():
@@ -190,7 +190,7 @@ def test_input_three_ndim_one_channel():
     result, _ = engine(img)
 
     assert result[0][1] == "正品促销"
-    assert len(result) == 16
+    assert len(result) == 17
 
 
 def test_det():

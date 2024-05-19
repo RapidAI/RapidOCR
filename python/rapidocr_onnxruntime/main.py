@@ -15,6 +15,7 @@ from .utils import (
     LoadImage,
     UpdateParameters,
     VisRes,
+    get_logger,
     init_args,
     read_yaml,
     update_model_path,
@@ -22,6 +23,7 @@ from .utils import (
 
 root_dir = Path(__file__).resolve().parent
 DEFAULT_CFG_PATH = root_dir / "config.yaml"
+logger = get_logger("RapidOCR")
 
 
 class RapidOCR:
@@ -246,10 +248,10 @@ def main():
         use_cls=use_cls,
         use_rec=use_rec,
     )
-    print(result)
+    logger.info(result)
 
     if args.print_cost:
-        print(elapse_list)
+        logger.info(elapse_list)
 
     if args.vis_res:
         vis = VisRes()
@@ -260,7 +262,7 @@ def main():
             boxes, *_ = list(zip(*result))
             vis_img = vis(args.img_path, boxes)
             cv2.imwrite(str(save_path), vis_img)
-            print(f"The vis result has saved in {save_path}")
+            logger.info("The vis result has saved in %s", save_path)
 
         elif use_det and use_rec:
             font_path = Path(args.vis_font_path)
@@ -270,7 +272,7 @@ def main():
             boxes, txts, scores = list(zip(*result))
             vis_img = vis(args.img_path, boxes, txts, scores, font_path=font_path)
             cv2.imwrite(str(save_path), vis_img)
-            print(f"The vis result has saved in {save_path}")
+            logger.info("The vis result has saved in %s", save_path)
 
 
 if __name__ == "__main__":
