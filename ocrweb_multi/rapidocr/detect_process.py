@@ -300,9 +300,6 @@ class DBPostProcess:
                 continue
 
             box = self.unclip(points).reshape(-1, 1, 2)
-            box, sside = self.get_mini_boxes(box)
-            if sside < self.min_size + 2:
-                continue
             box = np.array(box)
 
             box[:, 0] = np.clip(np.round(box[:, 0] / width * dest_width), 0, dest_width)
@@ -314,12 +311,11 @@ class DBPostProcess:
         return np.array(boxes, dtype=np.int16), scores
 
     def unclip(self, box):
-        unclip_ratio = self.unclip_ratio
-        poly = Polygon(box)
-        distance = poly.area * unclip_ratio / poly.length
-        offset = pyclipper.PyclipperOffset()
-        offset.AddPath(box, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)
-        expanded = np.array(offset.Execute(distance))
+        area = cv2.contourArea(box)
+        perimeter = cv2.arcLength(box, True)
+        distance = area * self.unclip_ratio / perimeter
+        signs = np.array([[1, -1], [-1, -1], [-1, 1], [1, 1]])
+        expanded = box + distance * signs
         return expanded
 
     def get_mini_boxes(self, contour):
