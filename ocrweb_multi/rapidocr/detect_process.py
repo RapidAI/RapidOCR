@@ -299,7 +299,7 @@ class DBPostProcess:
             if self.box_thresh > score:
                 continue
 
-            box = self.unclip(points).reshape(-1, 1, 2)
+            box = self.unclip(points)
             box = np.array(box)
 
             box[:, 0] = np.clip(np.round(box[:, 0] / width * dest_width), 0, dest_width)
