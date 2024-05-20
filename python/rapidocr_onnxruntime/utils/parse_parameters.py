@@ -149,15 +149,15 @@ class UpdateParameters:
         global_dict, det_dict, cls_dict, rec_dict = self.parse_kwargs(**kwargs)
         new_config = {
             "Global": self.update_global_params(config["Global"], global_dict),
-            "Det": self.update_params(config["Det"], det_dict, "det_", None),
+            "Det": self.update_params(config["Det"], det_dict, "det_", ["det_model_path", "det_use_cuda", "det_use_dml"]),
             "Cls": self.update_params(
                 config["Cls"],
                 cls_dict,
                 "cls_",
-                ["cls_label_list", "cls_model_path", "cls_use_cuda"],
+                ["cls_label_list", "cls_model_path", "cls_use_cuda", "cls_use_dml"],
             ),
             "Rec": self.update_params(
-                config["Rec"], rec_dict, "rec_", ["rec_model_path", "rec_use_cuda"]
+                config["Rec"], rec_dict, "rec_", ["rec_model_path", "rec_use_cuda", "rec_use_dml"]
             ),
         }
 
