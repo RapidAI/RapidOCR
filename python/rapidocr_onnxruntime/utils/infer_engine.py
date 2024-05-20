@@ -4,6 +4,7 @@
 import os
 import platform
 import traceback
+from enum import Enum
 from pathlib import Path
 from typing import List, Tuple, Union
 
@@ -18,9 +19,11 @@ from onnxruntime import (
 
 from .logger import get_logger
 
-CPU_EP = "CPUExecutionProvider"
-CUDA_EP = "CUDAExecutionProvider"
-DIRECTML_EP = "DmlExecutionProvider"
+
+class EP(Enum):
+    CPU_EP = "CPUExecutionProvider"
+    CUDA_EP = "CUDAExecutionProvider"
+    DIRECTML_EP = "DmlExecutionProvider"
 
 
 class OrtInferSession:
@@ -64,7 +67,7 @@ class OrtInferSession:
         cpu_provider_opts = {
             "arena_extend_strategy": "kSameAsRequested",
         }
-        EP_list = [(CPU_EP, cpu_provider_opts)]
+        EP_list = [(EP.CPU_EP, cpu_provider_opts)]
 
         cuda_provider_opts = {
             "device_id": 0,
@@ -74,7 +77,7 @@ class OrtInferSession:
         }
         self.use_cuda = self._check_cuda()
         if self.use_cuda:
-            EP_list.insert(0, (CUDA_EP, cuda_provider_opts))
+            EP_list.insert(0, (EP.CUDA_EP, cuda_provider_opts))
 
         self.use_directml = self._check_dml()
         if self.use_directml:
@@ -84,7 +87,7 @@ class OrtInferSession:
             directml_options = (
                 cuda_provider_opts if self.use_cuda else cpu_provider_opts
             )
-            EP_list.insert(0, (DIRECTML_EP, directml_options))
+            EP_list.insert(0, (EP.DIRECTML_EP, directml_options))
         return EP_list
 
     def _check_cuda(self) -> bool:
@@ -92,16 +95,19 @@ class OrtInferSession:
             return False
 
         cur_device = get_device()
-        if cur_device == "GPU" and CUDA_EP in self.had_providers:
+        if cur_device == "GPU" and EP.CUDA_EP in self.had_providers:
             return True
 
         self.logger.warning(
             "%s is not in available providers (%s). Use %s inference by default.",
-            CUDA_EP,
+            EP.CUDA_EP,
             self.had_providers,
             self.had_providers[0],
         )
-        self.logger.info("If you want to use GPU acceleration, you must do:")
+        self.logger.info("!!!Recommend to use rapidocr_paddle for inference on GPU.")
+        self.logger.info(
+            "(For reference only) If you want to use GPU acceleration, you must do:"
+        )
         self.logger.info(
             "First, uninstall all onnxruntime pakcages in current environment."
         )
@@ -112,11 +118,11 @@ class OrtInferSession:
             "\tNote the onnxruntime-gpu version must match your cuda and cudnn version."
         )
         self.logger.info(
-            "\tYou can refer this link: https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html"
+            "\tYou can refer this link: https://onnxruntime.ai/docs/execution-providers/CUDA-EP.html"
         )
         self.logger.info(
             "Third, ensure %s is in available providers list. e.g. ['CUDAExecutionProvider', 'CPUExecutionProvider']",
-            CUDA_EP,
+            EP.CUDA_EP,
         )
         return False
 
@@ -142,12 +148,12 @@ class OrtInferSession:
             )
             return False
 
-        if DIRECTML_EP in self.had_providers:
+        if EP.DIRECTML_EP in self.had_providers:
             return True
 
         self.logger.warning(
             "%s is not in available providers (%s). Use %s inference by default.",
-            DIRECTML_EP,
+            EP.DIRECTML_EP,
             self.had_providers,
             self.had_providers[0],
         )
@@ -160,7 +166,7 @@ class OrtInferSession:
         )
         self.logger.info(
             "Third, ensure %s is in available providers list. e.g. ['DmlExecutionProvider', 'CPUExecutionProvider']",
-            DIRECTML_EP,
+            EP.DIRECTML_EP,
         )
         return False
 
@@ -168,17 +174,17 @@ class OrtInferSession:
         session_providers = self.session.get_providers()
         first_provider = session_providers[0]
 
-        if self.use_cuda and first_provider != CUDA_EP:
+        if self.use_cuda and first_provider != EP.CUDA_EP:
             self.logger.warning(
                 "%s is not avaiable for current env, the inference part is automatically shifted to be executed under %s.",
-                CUDA_EP,
+                EP.CUDA_EP,
                 first_provider,
             )
 
-        if self.use_directml and first_provider != DIRECTML_EP:
+        if self.use_directml and first_provider != EP.DIRECTML_EP:
             self.logger.warning(
                 "%s is not available for current env, the inference part is automatically shifted to be executed under %s.",
-                DIRECTML_EP,
+                EP.DIRECTML_EP,
                 first_provider,
             )
 
