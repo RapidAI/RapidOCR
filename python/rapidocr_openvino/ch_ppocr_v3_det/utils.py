@@ -285,9 +285,19 @@ class DBPostProcess:
         area = cv2.contourArea(box)
         perimeter = cv2.arcLength(box, True)
         distance = area * self.unclip_ratio / perimeter
-        signs = np.array([[-1, -1], [1, -1], [1, 1], [-1, 1]])
-        expanded = box + distance * signs
-        return expanded
+
+        unit_vectors = []
+        for i in range(4):
+            vector = box[(i + 1) % 4] - box[i]
+            unit_vector = vector / np.linalg.norm(vector)
+            unit_vectors.append(unit_vector)
+        new_box = np.zeros_like(box)
+        for i in range(4):
+            new_box[i] = box[i] + unit_vectors[i - 1] * distance
+            new_box[i] = new_box[i] - unit_vectors[i] * distance
+
+        expanded = new_box
+        return expanded.astype(np.float32)
 
     def get_mini_boxes(self, contour):
         bounding_box = cv2.minAreaRect(contour)
