@@ -41,7 +41,7 @@ class OrtInferSession:
 
         sess_opt = self._init_sess_opts(config)
         self.session = InferenceSession(
-            model_path, sess_options=sess_opt, providers=EP_list
+            model_path, sess_options=sess_opt, providers=[item[0].value for item in EP_list]
         )
         self._verify_providers()
 
@@ -95,12 +95,12 @@ class OrtInferSession:
             return False
 
         cur_device = get_device()
-        if cur_device == "GPU" and EP.CUDA_EP in self.had_providers:
+        if cur_device == "GPU" and EP.CUDA_EP.value in self.had_providers:
             return True
 
         self.logger.warning(
             "%s is not in available providers (%s). Use %s inference by default.",
-            EP.CUDA_EP,
+            EP.CUDA_EP.value,
             self.had_providers,
             self.had_providers[0],
         )
@@ -122,7 +122,7 @@ class OrtInferSession:
         )
         self.logger.info(
             "Third, ensure %s is in available providers list. e.g. ['CUDAExecutionProvider', 'CPUExecutionProvider']",
-            EP.CUDA_EP,
+            EP.CUDA_EP.value,
         )
         return False
 
@@ -148,12 +148,12 @@ class OrtInferSession:
             )
             return False
 
-        if EP.DIRECTML_EP in self.had_providers:
+        if EP.DIRECTML_EP.value in self.had_providers:
             return True
 
         self.logger.warning(
             "%s is not in available providers (%s). Use %s inference by default.",
-            EP.DIRECTML_EP,
+            EP.DIRECTML_EP.value,
             self.had_providers,
             self.had_providers[0],
         )
@@ -166,7 +166,7 @@ class OrtInferSession:
         )
         self.logger.info(
             "Third, ensure %s is in available providers list. e.g. ['DmlExecutionProvider', 'CPUExecutionProvider']",
-            EP.DIRECTML_EP,
+            EP.DIRECTML_EP.value,
         )
         return False
 
@@ -174,17 +174,17 @@ class OrtInferSession:
         session_providers = self.session.get_providers()
         first_provider = session_providers[0]
 
-        if self.use_cuda and first_provider != EP.CUDA_EP:
+        if self.use_cuda and first_provider != EP.CUDA_EP.value:
             self.logger.warning(
                 "%s is not avaiable for current env, the inference part is automatically shifted to be executed under %s.",
-                EP.CUDA_EP,
+                EP.CUDA_EP.value,
                 first_provider,
             )
 
-        if self.use_directml and first_provider != EP.DIRECTML_EP:
+        if self.use_directml and first_provider != EP.DIRECTML_EP.value:
             self.logger.warning(
                 "%s is not available for current env, the inference part is automatically shifted to be executed under %s.",
-                EP.DIRECTML_EP,
+                EP.DIRECTML_EP.value,
                 first_provider,
             )
 
