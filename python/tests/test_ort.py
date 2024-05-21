@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+import logging
 import sys
 from pathlib import Path
 
@@ -18,6 +19,22 @@ engine = RapidOCR()
 tests_dir = root_dir / "tests" / "test_files"
 img_path = tests_dir / "ch_en_num.jpg"
 package_name = "rapidocr_onnxruntime"
+
+
+def test_ort_cuda_warning(caplog):
+    engine = RapidOCR(det_use_cuda=True)
+    caplog.set_level(logging.WARNING)
+
+    assert caplog.records[0].levelname == "WARNING"
+    assert "CUDAExecutionProvider" in caplog.records[0].message
+
+
+def test_ort_dml_warning(caplog):
+    engine = RapidOCR(det_use_dml=True)
+    caplog.set_level(logging.WARNING)
+
+    assert caplog.records[0].levelname == "WARNING"
+    assert "DirectML" in caplog.records[0].message
 
 
 def test_mode_one_img():
