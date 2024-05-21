@@ -2,8 +2,10 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import logging
+from functools import lru_cache
 
 
+@lru_cache(maxsize=32)
 def get_logger(name: str):
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
