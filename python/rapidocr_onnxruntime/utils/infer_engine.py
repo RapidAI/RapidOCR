@@ -41,7 +41,9 @@ class OrtInferSession:
 
         sess_opt = self._init_sess_opts(config)
         self.session = InferenceSession(
-            model_path, sess_options=sess_opt, providers=[item[0].value for item in EP_list]
+            model_path,
+            sess_options=sess_opt,
+            providers=EP_list,
         )
         self._verify_providers()
 
@@ -67,7 +69,7 @@ class OrtInferSession:
         cpu_provider_opts = {
             "arena_extend_strategy": "kSameAsRequested",
         }
-        EP_list = [(EP.CPU_EP, cpu_provider_opts)]
+        EP_list = [(EP.CPU_EP.value, cpu_provider_opts)]
 
         cuda_provider_opts = {
             "device_id": 0,
@@ -77,7 +79,7 @@ class OrtInferSession:
         }
         self.use_cuda = self._check_cuda()
         if self.use_cuda:
-            EP_list.insert(0, (EP.CUDA_EP, cuda_provider_opts))
+            EP_list.insert(0, (EP.CUDA_EP.value, cuda_provider_opts))
 
         self.use_directml = self._check_dml()
         if self.use_directml:
@@ -87,7 +89,7 @@ class OrtInferSession:
             directml_options = (
                 cuda_provider_opts if self.use_cuda else cpu_provider_opts
             )
-            EP_list.insert(0, (EP.DIRECTML_EP, directml_options))
+            EP_list.insert(0, (EP.DIRECTML_EP.value, directml_options))
         return EP_list
 
     def _check_cuda(self) -> bool:
