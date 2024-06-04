@@ -32,7 +32,7 @@
 
 ### Introduction
 - The fastest running, most widely supported, completely open source and free multi-platform, multi-language OCR known to support rapid offline deployment.
-- **Supported Languages**: The default is Chinese and English, other language recognition requires self-service conversion. For specific reference [here](https://rapidai.github.io/RapidOCRDocs/docs/about_model/support_language/).
+- **Supported Languages**: The default is Chinese and English, other language recognition requires self-service conversion. For specific reference [here](https://rapidai.github.io/RapidOCRDocs/blog/2022/09/28/%E6%94%AF%E6%8C%81%E8%AF%86%E5%88%AB%E8%AF%AD%E8%A8%80/).
 - **Cause**: [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) is not well engineered, and to make it easier for people to do OCR inference on various ends, we converted the model in PaddleOCR to ONNX format and ported it to various platforms using `Python/C++/Java/C#`.
 - **Name Source**: Light, fast, economical and smart. OCR technology based on deep learning technology focuses on artificial intelligence advantages and small models, with speed as the mission and effect as the leading role.
 - **Usage**:
@@ -69,14 +69,14 @@ rapidocr_onnxruntime -img 1.jpg
 </div>
 
 ### Documentation
-Full documentation can be found on [docs](https://rapidai.github.io/RapidOCRDocs/docs/), in Chinese.
+Full documentation can be found on [docs](https://rapidai.github.io/RapidOCRDocs/), in Chinese.
 
 ### Acknowledgements
 - Many thanks to [DeliciaLaniD](https://github.com/DeliciaLaniD) for fixing the misplaced start position of scan animation in ocrweb.
 - Many thanks to [zhsunlight](https://github.com/zhsunlight) for the suggestion about parameterized call GPU reasoning and the careful and thoughtful testing.
 - Many thanks to [lzh111222334](https://github.com/lzh111222334) for fixing some bugs of rec preprocessing under python version.
 - Many thanks to [AutumnSun1996](https://github.com/AutumnSun1996) for the suggestion in the [#42](https://github.com/RapidAI/RapidOCR/issues/42).
-- Many thanks to [DeadWood8](https://github.com/DeadWood8) for providing the [document]((https://github.com/RapidAI/RapidOCR/wiki/Nuitka%E6%89%93%E5%8C%85rapidocr_web%E6%93%8D%E4%BD%9C%E6%96%87%E6%A1%A3)) which packages rapidocr_web to exe by Nuitka.
+- Many thanks to [DeadWood8](https://github.com/DeadWood8) for providing the [document](https://rapidai.github.io/RapidOCRDocs/install_usage/rapidocr_web/nuitka_package) which packages rapidocr_web to exe by Nuitka.
 - Many thanks to [Loovelj](https://github.com/Loovelj) for fixing the bug of sorting the text boxes. For details see [issue 75](https://github.com/RapidAI/RapidOCR/issues/75).
 
 ### Code Contributors
@@ -91,7 +91,7 @@ Full documentation can be found on [docs](https://rapidai.github.io/RapidOCRDocs
 to discuss what you would like to change.
 - Please make sure to update tests as appropriate.
 
-### [Sponsor](https://rapidai.github.io/RapidOCRDocs/docs/sponsor/)
+### [Sponsor](https://rapidai.github.io/RapidOCRDocs/sponsor/)
 
 > [!IMPORTANT]
 >

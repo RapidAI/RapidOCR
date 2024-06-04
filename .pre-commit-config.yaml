@@ -22,13 +22,13 @@ repos:
   hooks:
     - id: black
       files: \.py$
-- repo: https://github.com/pycqa/pylint
-  rev: pylint-2.4.4
-  hooks:
-    - id: pylint
-      args:
-      [
-        "--disable=invalid-name,missing-module-docstring",
-        "--disable=W0612,W0631,W0703,W0621,W0613,W0611,W1308,C0411,C0111,C0116,C0103,C0301,C0304,C0305,E1101,E0401,R0913,R0914,R0915,R0903",
-      ]
-      files: \.py$
+# - repo: https://github.com/pycqa/pylint
+#   rev: pylint-2.4.4
+#   hooks:
+#     - id: pylint
+#       args:
+#         [
+#           "--disable=invalid-name,missing-module-docstring",
+#           "--disable=W0612,W0631,W0703,W0621,W0613,W0611,W1308,C0411,C0111,C0116,C0103,C0301,C0304,C0305,E1101,E0401,R0913,R0914,R0915,R0903",
+#         ]
+#       files: \.py$
