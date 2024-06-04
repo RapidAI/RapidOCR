@@ -299,10 +299,7 @@ class DBPostProcess:
             if self.box_thresh > score:
                 continue
 
-            box = self.unclip(points).reshape(-1, 1, 2)
-            box, sside = self.get_mini_boxes(box)
-            if sside < self.min_size + 2:
-                continue
+            box = self.unclip(points)
             box = np.array(box)
 
             box[:, 0] = np.clip(np.round(box[:, 0] / width * dest_width), 0, dest_width)
@@ -314,13 +311,22 @@ class DBPostProcess:
         return np.array(boxes, dtype=np.int16), scores
 
     def unclip(self, box):
-        unclip_ratio = self.unclip_ratio
-        poly = Polygon(box)
-        distance = poly.area * unclip_ratio / poly.length
-        offset = pyclipper.PyclipperOffset()
-        offset.AddPath(box, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)
-        expanded = np.array(offset.Execute(distance))
-        return expanded
+        area = cv2.contourArea(box)
+        perimeter = cv2.arcLength(box, True)
+        distance = area * self.unclip_ratio / perimeter
+
+        unit_vectors = []
+        for i in range(4):
+            vector = box[(i + 1) % 4] - box[i]
+            unit_vector = vector / np.linalg.norm(vector)
+            unit_vectors.append(unit_vector)
+        new_box = np.zeros_like(box)
+        for i in range(4):
+            new_box[i] = box[i] + unit_vectors[i - 1] * distance
+            new_box[i] = new_box[i] - unit_vectors[i] * distance
+
+        expanded = new_box
+        return expanded.astype(np.float32)
 
     def get_mini_boxes(self, contour):
         bounding_box = cv2.minAreaRect(contour)
