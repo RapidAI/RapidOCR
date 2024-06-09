@@ -62,7 +62,7 @@ class RapidOCR:
         use_cls: Optional[bool] = None,
         use_rec: Optional[bool] = None,
         **kwargs,
-    ):
+    ) -> Tuple[Optional[List[List[Union[Any, str]]]], Optional[List[float]]]:
         use_det = self.use_det if use_det is None else use_det
         use_cls = self.use_cls if use_cls is None else use_cls
         use_rec = self.use_rec if use_rec is None else use_rec
