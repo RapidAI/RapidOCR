@@ -1,5 +1,5 @@
 repos:
-- repo: https://github.com/PyCQA/autoflake
+- repo: https://gitee.com/SWHL/autoflake
   rev: v2.1.1
   hooks:
     - id: autoflake
@@ -12,23 +12,8 @@ repos:
           "--ignore-init-module-imports",
         ]
       files: \.py$
-- repo: https://github.com/PyCQA/isort
-  rev: 5.13.2
-  hooks:
-    - id: isort
-      exclude: doc/data/messages/
-- repo: https://github.com/psf/black
+- repo: https://gitee.com/SWHL/black
   rev: 23.1.0
   hooks:
     - id: black
       files: \.py$
-# - repo: https://github.com/pycqa/pylint
-#   rev: pylint-2.4.4
-#   hooks:
-#     - id: pylint
-#       args:
-#         [
-#           "--disable=invalid-name,missing-module-docstring",
-#           "--disable=W0612,W0631,W0703,W0621,W0613,W0611,W1308,C0411,C0111,C0116,C0103,C0301,C0304,C0305,E1101,E0401,R0913,R0914,R0915,R0903",
-#         ]
-#       files: \.py$

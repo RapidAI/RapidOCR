@@ -3,7 +3,7 @@
 # @Contact: liekkaskono@163.com
 import argparse
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 from PIL import Image
@@ -12,7 +12,7 @@ root_dir = Path(__file__).resolve().parent.parent
 InputType = Union[str, np.ndarray, bytes, Path, Image.Image]
 
 
-def update_model_path(config):
+def update_model_path(config: Dict[str, Any]) -> Dict[str, Any]:
     key = "model_path"
     config["Det"][key] = str(root_dir / config["Det"][key])
     config["Rec"][key] = str(root_dir / config["Rec"][key])

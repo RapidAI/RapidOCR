@@ -14,30 +14,34 @@
 import argparse
 import math
 import time
-from typing import List
+from typing import Any, Dict, List, Tuple, Union
 
 import cv2
 import numpy as np
-
 from rapidocr_onnxruntime.utils import OrtInferSession, read_yaml
 
 from .utils import CTCLabelDecode
 
 
 class TextRecognizer:
-    def __init__(self, config):
+    def __init__(self, config: Dict[str, Any]):
         self.session = OrtInferSession(config)
 
+        character = None
         if self.session.have_key():
-            character_dict_path = self.session.get_character_list()
-        else:
-            character_dict_path = config.get("rec_keys_path", None)
-        self.postprocess_op = CTCLabelDecode(character_dict_path)
+            character = self.session.get_character_list()
+
+        character_path = config.get("rec_keys_path", None)
+        self.postprocess_op = CTCLabelDecode(
+            character=character, character_path=character_path
+        )
 
         self.rec_batch_num = config["rec_batch_num"]
         self.rec_image_shape = config["rec_img_shape"]
 
-    def __call__(self, img_list: List[np.ndarray]):
+    def __call__(
+        self, img_list: Union[np.ndarray, List[np.ndarray]]
+    ) -> Tuple[List[Tuple[str, float]], float]:
         if isinstance(img_list, np.ndarray):
             img_list = [img_list]
 
@@ -48,7 +52,7 @@ class TextRecognizer:
         indices = np.argsort(np.array(width_list))
 
         img_num = len(img_list)
-        rec_res = [["", 0.0]] * img_num
+        rec_res = [("", 0.0)] * img_num
 
         batch_num = self.rec_batch_num
         elapse = 0
@@ -75,7 +79,7 @@ class TextRecognizer:
             elapse += time.time() - starttime
         return rec_res, elapse
 
-    def resize_norm_img(self, img, max_wh_ratio):
+    def resize_norm_img(self, img: np.ndarray, max_wh_ratio: float) -> np.ndarray:
         img_channel, img_height, img_width = self.rec_image_shape
         assert img_channel == img.shape[2]
 

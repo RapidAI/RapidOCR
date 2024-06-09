@@ -15,18 +15,17 @@ import argparse
 import copy
 import math
 import time
-from typing import List
+from typing import Any, Dict, List, Tuple, Union
 
 import cv2
 import numpy as np
-
 from rapidocr_onnxruntime.utils import OrtInferSession, read_yaml
 
 from .utils import ClsPostProcess
 
 
 class TextClassifier:
-    def __init__(self, config):
+    def __init__(self, config: Dict[str, Any]):
         self.cls_image_shape = config["cls_image_shape"]
         self.cls_batch_num = config["cls_batch_num"]
         self.cls_thresh = config["cls_thresh"]
@@ -34,7 +33,9 @@ class TextClassifier:
 
         self.infer = OrtInferSession(config)
 
-    def __call__(self, img_list: List[np.ndarray]):
+    def __call__(
+        self, img_list: Union[np.ndarray, List[np.ndarray]]
+    ) -> Tuple[List[np.ndarray], List[List[Union[str, float]]], float]:
         if isinstance(img_list, np.ndarray):
             img_list = [img_list]
 
@@ -65,8 +66,7 @@ class TextClassifier:
             cls_result = self.postprocess_op(prob_out)
             elapse += time.time() - starttime
 
-            for rno in range(len(cls_result)):
-                label, score = cls_result[rno]
+            for rno, (label, score) in enumerate(cls_result):
                 cls_res[indices[beg_img_no + rno]] = [label, score]
                 if "180" in label and score > self.cls_thresh:
                     img_list[indices[beg_img_no + rno]] = cv2.rotate(
@@ -74,7 +74,7 @@ class TextClassifier:
                     )
         return img_list, cls_res, elapse
 
-    def resize_norm_img(self, img):
+    def resize_norm_img(self, img: np.ndarray) -> np.ndarray:
         img_c, img_h, img_w = self.cls_image_shape
         h, w = img.shape[:2]
         ratio = w / float(h)

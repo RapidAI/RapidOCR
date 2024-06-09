@@ -6,7 +6,7 @@ import platform
 import traceback
 from enum import Enum
 from pathlib import Path
-from typing import List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 from onnxruntime import (
@@ -27,7 +27,7 @@ class EP(Enum):
 
 
 class OrtInferSession:
-    def __init__(self, config):
+    def __init__(self, config: Dict[str, Any]):
         self.logger = get_logger("OrtInferSession")
 
         model_path = config.get("model_path", None)
@@ -48,7 +48,7 @@ class OrtInferSession:
         self._verify_providers()
 
     @staticmethod
-    def _init_sess_opts(config):
+    def _init_sess_opts(config: Dict[str, Any]) -> SessionOptions:
         sess_opt = SessionOptions()
         sess_opt.log_severity_level = 4
         sess_opt.enable_cpu_mem_arena = False
@@ -65,7 +65,7 @@ class OrtInferSession:
 
         return sess_opt
 
-    def _get_ep_list(self) -> List[Tuple[str, str]]:
+    def _get_ep_list(self) -> List[Tuple[str, Dict[str, Any]]]:
         cpu_provider_opts = {
             "arena_extend_strategy": "kSameAsRequested",
         }
@@ -172,7 +172,7 @@ class OrtInferSession:
         )
         return False
 
-    def _verify_providers(self) -> None:
+    def _verify_providers(self):
         session_providers = self.session.get_providers()
         first_provider = session_providers[0]
 
@@ -198,13 +198,13 @@ class OrtInferSession:
             error_info = traceback.format_exc()
             raise ONNXRuntimeError(error_info) from e
 
-    def get_input_names(self):
+    def get_input_names(self) -> List[str]:
         return [v.name for v in self.session.get_inputs()]
 
-    def get_output_names(self):
+    def get_output_names(self) -> List[str]:
         return [v.name for v in self.session.get_outputs()]
 
-    def get_character_list(self, key: str = "character"):
+    def get_character_list(self, key: str = "character") -> List[str]:
         meta_dict = self.session.get_modelmeta().custom_metadata_map
         return meta_dict[key].splitlines()
 

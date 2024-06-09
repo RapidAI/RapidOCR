@@ -14,19 +14,17 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-import argparse
 import time
+from typing import Any, Dict, Optional, Tuple
 
-import cv2
 import numpy as np
-
-from rapidocr_onnxruntime.utils import OrtInferSession, read_yaml
+from rapidocr_onnxruntime.utils import OrtInferSession
 
 from .utils import DBPostProcess, create_operators, transform
 
 
 class TextDetector:
-    def __init__(self, config):
+    def __init__(self, config: Dict[str, Any]):
         pre_process_list = {
             "DetResizeForTest": {
                 "limit_side_len": config.get("limit_side_len", 736),
@@ -55,31 +53,50 @@ class TextDetector:
 
         self.infer = OrtInferSession(config)
 
-    def __call__(self, img):
+    def __call__(self, img: np.ndarray) -> Tuple[Optional[np.ndarray], float]:
         if img is None:
             raise ValueError("img is None")
 
-        ori_im_shape = img.shape[:2]
+        ori_im_shape = img.shape[0], img.shape[1]
 
-        data = {"image": img}
-        data = transform(data, self.preprocess_op)
-        img, shape_list = data
+        data = transform({"image": img}, self.preprocess_op)
+        if data is None:
+            return None, 0
+
+        img, shape = data
         if img is None:
             return None, 0
 
         img = np.expand_dims(img, axis=0).astype(np.float32)
-        shape_list = np.expand_dims(shape_list, axis=0)
+        shape = np.expand_dims(shape, axis=0)
 
         starttime = time.time()
         preds = self.infer(img)[0]
-        post_result = self.postprocess_op(preds, shape_list)
+        post_result = self.postprocess_op(preds, shape)
 
         dt_boxes = post_result[0]["points"]
         dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im_shape)
         elapse = time.time() - starttime
         return dt_boxes, elapse
 
-    def order_points_clockwise(self, pts):
+    def filter_tag_det_res(
+        self, dt_boxes: np.ndarray, image_shape: Tuple[int, int]
+    ) -> np.ndarray:
+        img_height, img_width = image_shape
+        dt_boxes_new = []
+        for box in dt_boxes:
+            box = self.order_points_clockwise(box)
+            box = self.clip_det_res(box, img_height, img_width)
+
+            rect_width = int(np.linalg.norm(box[0] - box[1]))
+            rect_height = int(np.linalg.norm(box[0] - box[3]))
+            if rect_width <= 3 or rect_height <= 3:
+                continue
+
+            dt_boxes_new.append(box)
+        return np.array(dt_boxes_new)
+
+    def order_points_clockwise(self, pts: np.ndarray) -> np.ndarray:
         """
         reference from:
         https://github.com/jrosebr1/imutils/blob/master/imutils/perspective.py
@@ -104,42 +121,10 @@ class TextDetector:
         rect = np.array([tl, tr, br, bl], dtype="float32")
         return rect
 
-    def clip_det_res(self, points, img_height, img_width):
+    def clip_det_res(
+        self, points: np.ndarray, img_height: int, img_width: int
+    ) -> np.ndarray:
         for pno in range(points.shape[0]):
             points[pno, 0] = int(min(max(points[pno, 0], 0), img_width - 1))
             points[pno, 1] = int(min(max(points[pno, 1], 0), img_height - 1))
         return points
-
-    def filter_tag_det_res(self, dt_boxes, image_shape):
-        img_height, img_width = image_shape[:2]
-        dt_boxes_new = []
-        for box in dt_boxes:
-            box = self.order_points_clockwise(box)
-            box = self.clip_det_res(box, img_height, img_width)
-            rect_width = int(np.linalg.norm(box[0] - box[1]))
-            rect_height = int(np.linalg.norm(box[0] - box[3]))
-            if rect_width <= 3 or rect_height <= 3:
-                continue
-            dt_boxes_new.append(box)
-        dt_boxes = np.array(dt_boxes_new)
-        return dt_boxes
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config_path", type=str, default="config.yaml")
-    parser.add_argument("--image_path", type=str, default=None)
-    args = parser.parse_args()
-
-    config = read_yaml(args.config_path)
-
-    text_detector = TextDetector(config)
-
-    img = cv2.imread(args.image_path)
-    dt_boxes, elapse = text_detector(img)
-
-    from utils import draw_text_det_res
-
-    src_im = draw_text_det_res(dt_boxes, args.image_path)
-    cv2.imwrite("det_results.jpg", src_im)
-    print("The det_results.jpg has been saved in the current directory.")
