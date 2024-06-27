@@ -1,21 +1,7 @@
-# Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-import importlib
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -23,90 +9,49 @@ import pyclipper
 from shapely.geometry import Polygon
 
 
-def create_operators(op_param_dict: Dict[str, Optional[Dict[str, Any]]]) -> List[Any]:
-    ops = []
-    cur_module = importlib.import_module("rapidocr_onnxruntime.ch_ppocr_v3_det.utils")
-    for op_name, param in op_param_dict.items():
-        if param is None:
-            param = {}
+class DetPreProcess:
+    def __init__(self, limit_side_len: int = 736, limit_type: str = "min"):
+        self.mean = np.array([0.485, 0.456, 0.406])
+        self.std = np.array([0.229, 0.224, 0.225])
+        self.scale = 1 / 255.0
 
-        process_class = getattr(cur_module, op_name)
-        op = process_class(**param)
-        ops.append(op)
-    return ops
+        self.limit_side_len = limit_side_len
+        self.limit_type = limit_type
 
-
-def transform(
-    data: Dict[str, np.ndarray], ops: Optional[List[Any]] = None
-) -> Optional[Tuple[np.ndarray, np.ndarray]]:
-    if ops is None:
-        ops = []
-
-    for op in ops:
-        data = op(data)
-        if data is None:
+    def __call__(self, img: np.ndarray) -> Optional[np.ndarray]:
+        resized_img = self.resize(img)
+        if resized_img is None:
             return None
-    return data
 
-
-class DetResizeForTest:
-    def __init__(self, **kwargs):
-        self.resize_type = 0
-        if "image_shape" in kwargs:
-            self.image_shape = kwargs["image_shape"]
-            self.resize_type = 1
-        elif "limit_side_len" in kwargs:
-            self.limit_side_len = kwargs.get("limit_side_len", 736)
-            self.limit_type = kwargs.get("limit_type", "min")
-
-        if "resize_long" in kwargs:
-            self.resize_type = 2
-            self.resize_long = kwargs.get("resize_long", 960)
-        else:
-            self.limit_side_len = kwargs.get("limit_side_len", 736)
-            self.limit_type = kwargs.get("limit_type", "min")
-
-    def __call__(self, data: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
-        img = data["image"]
-        src_h, src_w = img.shape[:2]
-
-        if self.resize_type == 0:
-            img = self.resize_image_type0(img)
-        elif self.resize_type == 2:
-            img = self.resize_image_type2(img)
-        else:
-            img = self.resize_image_type1(img)
-
-        new_data = {"image": img, "shape": np.array([src_h, src_w])}
-        return new_data
-
-    def resize_image_type1(self, img: np.ndarray) -> np.ndarray:
-        resize_h, resize_w = self.image_shape
-        img = cv2.resize(img, (int(resize_w), int(resize_h)))
+        img = self.normalize(resized_img)
+        img = self.permute(img)
+        img = np.expand_dims(img, axis=0).astype(np.float32)
         return img
 
-    def resize_image_type0(self, img: np.ndarray) -> Optional[np.ndarray]:
-        """
-        resize image to a size multiple of 32 which is required by the network
-        """
-        limit_side_len = self.limit_side_len
+    def normalize(self, img: np.ndarray) -> np.ndarray:
+        return (img.astype("float32") * self.scale - self.mean) / self.std
+
+    def permute(self, img: np.ndarray) -> np.ndarray:
+        return img.transpose((2, 0, 1))
+
+    def resize(self, img: np.ndarray) -> Optional[np.ndarray]:
+        """resize image to a size multiple of 32 which is required by the network"""
         h, w = img.shape[:2]
 
-        # limit the max side
         if self.limit_type == "max":
-            if max(h, w) > limit_side_len:
+            if max(h, w) > self.limit_side_len:
                 if h > w:
-                    ratio = float(limit_side_len) / h
+                    ratio = float(self.limit_side_len) / h
                 else:
-                    ratio = float(limit_side_len) / w
+                    ratio = float(self.limit_side_len) / w
             else:
                 ratio = 1.0
         else:
-            if min(h, w) < limit_side_len:
+            if min(h, w) < self.limit_side_len:
                 if h < w:
-                    ratio = float(limit_side_len) / h
+                    ratio = float(self.limit_side_len) / h
                 else:
-                    ratio = float(limit_side_len) / w
+                    ratio = float(self.limit_side_len) / w
             else:
                 ratio = 1.0
 
@@ -124,75 +69,6 @@ class DetResizeForTest:
             raise ResizeImgError from exc
 
         return img
-
-    def resize_image_type2(self, img: np.ndarray) -> np.ndarray:
-        h, w = img.shape[:2]
-        resize_h, resize_w = h, w
-
-        # Fix the longer side
-        if resize_h > resize_w:
-            ratio = float(self.resize_long) / resize_h
-        else:
-            ratio = float(self.resize_long) / resize_w
-
-        resize_h = int(resize_h * ratio)
-        resize_w = int(resize_w * ratio)
-
-        max_stride = 128
-        resize_h = (resize_h + max_stride - 1) // max_stride * max_stride
-        resize_w = (resize_w + max_stride - 1) // max_stride * max_stride
-        img = cv2.resize(img, (int(resize_w), int(resize_h)))
-        return img
-
-
-class NormalizeImage:
-    """normalize image such as substract mean, divide std"""
-
-    def __init__(
-        self,
-        scale: Optional[str] = None,
-        mean: Optional[List[float]] = None,
-        std: Optional[List[float]] = None,
-        order: str = "chw",
-    ):
-        if isinstance(scale, str):
-            scale = eval(scale)
-
-        self.scale = np.float32(scale if scale is not None else 1.0 / 255.0)
-        mean = mean if mean is not None else [0.485, 0.456, 0.406]
-        std = std if std is not None else [0.229, 0.224, 0.225]
-
-        shape = (3, 1, 1) if order == "chw" else (1, 1, 3)
-        self.mean = np.array(mean).reshape(shape).astype("float32")
-        self.std = np.array(std).reshape(shape).astype("float32")
-
-    def __call__(self, data: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
-        img = np.array(data["image"]).astype(np.float32)
-        data["image"] = (img * self.scale - self.mean) / self.std
-        return data
-
-
-class ToCHWImage:
-    """convert hwc image to chw image"""
-
-    def __init__(self):
-        pass
-
-    def __call__(self, data: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
-        img = np.array(data["image"])
-        data["image"] = img.transpose((2, 0, 1))
-        return data
-
-
-class KeepKeys:
-    def __init__(self, keep_keys: List[str]):
-        self.keep_keys = keep_keys
-
-    def __call__(self, data: Dict[str, np.ndarray]) -> List[np.ndarray]:
-        data_list = []
-        for key in self.keep_keys:
-            data_list.append(data[key])
-        return data_list
 
 
 class ResizeImgError(Exception):
@@ -223,28 +99,19 @@ class DBPostProcess:
             self.dilation_kernel = np.array([[1, 1], [1, 1]])
 
     def __call__(
-        self, pred: np.ndarray, shape: np.ndarray
-    ) -> List[Dict[str, np.ndarray]]:
+        self, pred: np.ndarray, ori_shape: Tuple[int, int]
+    ) -> Tuple[np.ndarray, List[float]]:
+        src_h, src_w = ori_shape
         pred = pred[:, 0, :, :]
         segmentation = pred > self.thresh
 
-        boxes_batch = []
-        for batch_index in range(pred.shape[0]):
-            src_h, src_w = shape[batch_index]
-            if self.dilation_kernel is None:
-                mask = segmentation[batch_index]
-            else:
-                mask = cv2.dilate(
-                    np.array(segmentation[batch_index]).astype(np.uint8),
-                    self.dilation_kernel,
-                )
-
-            boxes, scores = self.boxes_from_bitmap(
-                pred[batch_index], mask, src_w, src_h
+        mask = segmentation[0]
+        if self.dilation_kernel is not None:
+            mask = cv2.dilate(
+                np.array(segmentation[0]).astype(np.uint8), self.dilation_kernel
             )
-
-            boxes_batch.append({"points": boxes})
-        return boxes_batch
+        boxes, scores = self.boxes_from_bitmap(pred[0], mask, src_w, src_h)
+        return boxes, scores
 
     def boxes_from_bitmap(
         self, pred: np.ndarray, bitmap: np.ndarray, dest_width: int, dest_height: int

@@ -122,8 +122,7 @@ class RapidOCR:
         return img, 0
 
     def auto_text_det(
-        self,
-        img: np.ndarray,
+        self, img: np.ndarray
     ) -> Tuple[Optional[List[np.ndarray]], float]:
         dt_boxes, det_elapse = self.text_det(img)
         if dt_boxes is None or len(dt_boxes) < 1:

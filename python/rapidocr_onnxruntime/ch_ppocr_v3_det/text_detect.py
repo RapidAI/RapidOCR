@@ -18,28 +18,17 @@ import time
 from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
+
 from rapidocr_onnxruntime.utils import OrtInferSession
 
-from .utils import DBPostProcess, create_operators, transform
+from .utils import DBPostProcess, DetPreProcess
 
 
 class TextDetector:
     def __init__(self, config: Dict[str, Any]):
-        pre_process_list = {
-            "DetResizeForTest": {
-                "limit_side_len": config.get("limit_side_len", 736),
-                "limit_type": config.get("limit_type", "min"),
-            },
-            "NormalizeImage": {
-                "std": [0.229, 0.224, 0.225],
-                "mean": [0.485, 0.456, 0.406],
-                "scale": "1./255.",
-                "order": "hwc",
-            },
-            "ToCHWImage": None,
-            "KeepKeys": {"keep_keys": ["image", "shape"]},
-        }
-        self.preprocess_op = create_operators(pre_process_list)
+        limit_side_len = config.get("limit_side_len", 736)
+        limit_type = config.get("limit_type", "min")
+        self.preprocess_op = DetPreProcess(limit_side_len, limit_type)
 
         post_process = {
             "thresh": config.get("thresh", 0.3),
@@ -54,29 +43,20 @@ class TextDetector:
         self.infer = OrtInferSession(config)
 
     def __call__(self, img: np.ndarray) -> Tuple[Optional[np.ndarray], float]:
+        start_time = time.perf_counter()
+
         if img is None:
             raise ValueError("img is None")
 
-        ori_im_shape = img.shape[0], img.shape[1]
-
-        data = transform({"image": img}, self.preprocess_op)
-        if data is None:
+        ori_img_shape = img.shape[0], img.shape[1]
+        prepro_img = self.preprocess_op(img)
+        if prepro_img is None:
             return None, 0
 
-        img, shape = data
-        if img is None:
-            return None, 0
-
-        img = np.expand_dims(img, axis=0).astype(np.float32)
-        shape = np.expand_dims(shape, axis=0)
-
-        starttime = time.time()
-        preds = self.infer(img)[0]
-        post_result = self.postprocess_op(preds, shape)
-
-        dt_boxes = post_result[0]["points"]
-        dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im_shape)
-        elapse = time.time() - starttime
+        preds = self.infer(prepro_img)[0]
+        dt_boxes, dt_boxes_scores = self.postprocess_op(preds, ori_img_shape)
+        dt_boxes = self.filter_tag_det_res(dt_boxes, ori_img_shape)
+        elapse = time.perf_counter() - start_time
         return dt_boxes, elapse
 
     def filter_tag_det_res(
