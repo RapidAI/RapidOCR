@@ -8,6 +8,7 @@ on:
       - 'docs/doc_whl_rapidocr_paddle.md'
       - 'python/setup_paddle.py'
       - '.github/workflows/gen_whl_to_pypi_rapidocr_paddle.yml'
+      - 'python/requirements_paddle.txt'
     # tags:
     #   - v*
 
