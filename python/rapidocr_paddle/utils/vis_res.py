@@ -29,7 +29,7 @@ class VisRes:
         scores: Optional[Tuple[float]] = None,
         font_path: Optional[str] = None,
     ) -> np.ndarray:
-        if txts is None and scores is None:
+        if txts is None:
             return self.draw_dt_boxes(img_content, dt_boxes)
         return self.draw_ocr_box_txt(img_content, dt_boxes, txts, scores, font_path)
 
@@ -52,7 +52,7 @@ class VisRes:
         self,
         img_content: InputType,
         dt_boxes: np.ndarray,
-        txts: Optional[Union[List[str], Tuple[str]]] = None,
+        txts: Union[List[str], Tuple[str]],
         scores: Optional[Tuple[float]] = None,
         font_path: Optional[str] = None,
     ) -> np.ndarray:

@@ -3,7 +3,7 @@
 # @Contact: liekkaskono@163.com
 from io import BytesIO
 from pathlib import Path
-from typing import Union
+from typing import Any, Union
 
 import cv2
 import numpy as np
@@ -55,7 +55,7 @@ class LoadImage:
             return np.array(img)
         return np.array(img)
 
-    def convert_img(self, img: np.ndarray, origin_img_type):
+    def convert_img(self, img: np.ndarray, origin_img_type: Any) -> np.ndarray:
         if img.ndim == 2:
             return cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
