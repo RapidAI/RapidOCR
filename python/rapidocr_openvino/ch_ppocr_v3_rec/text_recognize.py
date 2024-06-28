@@ -11,14 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# -*- encoding: utf-8 -*-
-# @Author: SWHL
-# @Contact: liekkaskono@163.com
 import argparse
 import math
 import time
 from pathlib import Path
-from typing import List
+from typing import List, Tuple, Union
 
 import cv2
 import numpy as np
@@ -35,11 +32,13 @@ class TextRecognizer:
 
         dict_path = str(Path(__file__).parent / "ppocr_keys_v1.txt")
         self.character_dict_path = config.get("rec_keys_path", dict_path)
-        self.postprocess_op = CTCLabelDecode(self.character_dict_path)
+        self.postprocess_op = CTCLabelDecode(character_path=self.character_dict_path)
 
         self.infer = OpenVINOInferSession(config)
 
-    def __call__(self, img_list: List[np.ndarray]):
+    def __call__(
+        self, img_list: Union[np.ndarray, List[np.ndarray]]
+    ) -> Tuple[List[Tuple[str, float]], float]:
         if isinstance(img_list, np.ndarray):
             img_list = [img_list]
 
@@ -50,7 +49,7 @@ class TextRecognizer:
         indices = np.argsort(np.array(width_list))
 
         img_num = len(img_list)
-        rec_res = [["", 0.0]] * img_num
+        rec_res = [("", 0.0)] * img_num
 
         batch_num = self.rec_batch_num
         elapse = 0
@@ -71,12 +70,13 @@ class TextRecognizer:
             starttime = time.time()
             preds = self.infer(norm_img_batch)
             rec_result = self.postprocess_op(preds)
+
             for rno, one_res in enumerate(rec_result):
                 rec_res[indices[beg_img_no + rno]] = one_res
             elapse += time.time() - starttime
         return rec_res, elapse
 
-    def resize_norm_img(self, img, max_wh_ratio):
+    def resize_norm_img(self, img: np.ndarray, max_wh_ratio: float) -> np.ndarray:
         img_channel, img_height, img_width = self.rec_image_shape
         assert img_channel == img.shape[2]
 

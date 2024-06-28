@@ -3,7 +3,7 @@
 # @Contact: liekkaskono@163.com
 import copy
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import cv2
 import numpy as np
@@ -15,6 +15,7 @@ from .utils import (
     LoadImage,
     UpdateParameters,
     VisRes,
+    get_logger,
     init_args,
     read_yaml,
     update_model_path,
@@ -22,6 +23,7 @@ from .utils import (
 
 root_dir = Path(__file__).resolve().parent
 DEFAULT_CFG_PATH = root_dir / "config.yaml"
+logger = get_logger("RapidOCR")
 
 
 class RapidOCR:
@@ -60,7 +62,7 @@ class RapidOCR:
         use_cls: Optional[bool] = None,
         use_rec: Optional[bool] = None,
         **kwargs,
-    ):
+    ) -> Tuple[Optional[List[List[Union[Any, str]]]], Optional[List[float]]]:
         use_det = self.use_det if use_det is None else use_det
         use_cls = self.use_cls if use_cls is None else use_cls
         use_rec = self.use_rec if use_rec is None else use_rec
@@ -120,9 +122,8 @@ class RapidOCR:
         return img, 0
 
     def auto_text_det(
-        self,
-        img: np.ndarray,
-    ) -> Tuple[Optional[np.ndarray], float, Optional[List[np.ndarray]]]:
+        self, img: np.ndarray
+    ) -> Tuple[Optional[List[np.ndarray]], float]:
         dt_boxes, det_elapse = self.text_det(img)
         if dt_boxes is None or len(dt_boxes) < 1:
             return None, 0.0
@@ -130,8 +131,10 @@ class RapidOCR:
         dt_boxes = self.sorted_boxes(dt_boxes)
         return dt_boxes, det_elapse
 
-    def get_crop_img_list(self, img, dt_boxes):
-        def get_rotate_crop_image(img, points):
+    def get_crop_img_list(
+        self, img: np.ndarray, dt_boxes: List[np.ndarray]
+    ) -> List[np.ndarray]:
+        def get_rotate_crop_image(img: np.ndarray, points: np.ndarray) -> np.ndarray:
             img_crop_width = int(
                 max(
                     np.linalg.norm(points[0] - points[1]),
@@ -144,14 +147,14 @@ class RapidOCR:
                     np.linalg.norm(points[1] - points[2]),
                 )
             )
-            pts_std = np.float32(
+            pts_std = np.array(
                 [
                     [0, 0],
                     [img_crop_width, 0],
                     [img_crop_width, img_crop_height],
                     [0, img_crop_height],
                 ]
-            )
+            ).astype(np.float32)
             M = cv2.getPerspectiveTransform(points, pts_std)
             dst_img = cv2.warpPerspective(
                 img,
@@ -173,7 +176,7 @@ class RapidOCR:
         return img_crop_list
 
     @staticmethod
-    def sorted_boxes(dt_boxes):
+    def sorted_boxes(dt_boxes: np.ndarray) -> List[np.ndarray]:
         """
         Sort text boxes in order from top to bottom, left to right
         args:
@@ -199,8 +202,14 @@ class RapidOCR:
         return _boxes
 
     def get_final_res(
-        self, dt_boxes, cls_res, rec_res, det_elapse, cls_elapse, rec_elapse
-    ):
+        self,
+        dt_boxes: Optional[List[np.ndarray]],
+        cls_res: Optional[List[List[Union[str, float]]]],
+        rec_res: Optional[List[Tuple[str, float]]],
+        det_elapse: float,
+        cls_elapse: float,
+        rec_elapse: float,
+    ) -> Tuple[Optional[List[List[Union[Any, str]]]], Optional[List[float]]]:
         if dt_boxes is None and rec_res is None and cls_res is not None:
             return cls_res, [cls_elapse]
 
@@ -214,7 +223,7 @@ class RapidOCR:
             return [box.tolist() for box in dt_boxes], [det_elapse]
 
         dt_boxes, rec_res = self.filter_result(dt_boxes, rec_res)
-        if len(dt_boxes) <= 0:
+        if not dt_boxes or not rec_res or len(dt_boxes) <= 0:
             return None, None
 
         ocr_res = [
@@ -222,7 +231,14 @@ class RapidOCR:
         ], [det_elapse, cls_elapse, rec_elapse]
         return ocr_res
 
-    def filter_result(self, dt_boxes, rec_res):
+    def filter_result(
+        self,
+        dt_boxes: Optional[List[np.ndarray]],
+        rec_res: Optional[List[Tuple[str, float]]],
+    ) -> Tuple[Optional[List[np.ndarray]], Optional[List[Tuple[str, float]]]]:
+        if dt_boxes is None or rec_res is None:
+            return None, None
+
         filter_boxes, filter_rec_res = [], []
         for box, rec_reuslt in zip(dt_boxes, rec_res):
             text, score = rec_reuslt
@@ -246,10 +262,10 @@ def main():
         use_cls=use_cls,
         use_rec=use_rec,
     )
-    print(result)
+    logger.info(result)
 
     if args.print_cost:
-        print(elapse_list)
+        logger.info(elapse_list)
 
     if args.vis_res:
         vis = VisRes()
@@ -260,7 +276,7 @@ def main():
             boxes, *_ = list(zip(*result))
             vis_img = vis(args.img_path, boxes)
             cv2.imwrite(str(save_path), vis_img)
-            print(f"The vis result has saved in {save_path}")
+            logger.info("The vis result has saved in %s", save_path)
 
         elif use_det and use_rec:
             font_path = Path(args.vis_font_path)
@@ -270,7 +286,7 @@ def main():
             boxes, txts, scores = list(zip(*result))
             vis_img = vis(args.img_path, boxes, txts, scores, font_path=font_path)
             cv2.imwrite(str(save_path), vis_img)
-            print(f"The vis result has saved in {save_path}")
+            logger.info("The vis result has saved in %s", save_path)
 
 
 if __name__ == "__main__":

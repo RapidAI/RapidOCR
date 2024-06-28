@@ -3,7 +3,7 @@
 # @Contact: liekkaskono@163.com
 import argparse
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 from PIL import Image
@@ -12,7 +12,7 @@ root_dir = Path(__file__).resolve().parent.parent
 InputType = Union[str, np.ndarray, bytes, Path, Image.Image]
 
 
-def update_model_path(config):
+def update_model_path(config: Dict[str, Any]) -> Dict[str, Any]:
     key = "model_path"
     config["Det"][key] = str(root_dir / config["Det"][key])
     config["Rec"][key] = str(root_dir / config["Rec"][key])
@@ -112,15 +112,23 @@ class UpdateParameters:
         global_dict, det_dict, cls_dict, rec_dict = self.parse_kwargs(**kwargs)
         new_config = {
             "Global": self.update_global_params(config["Global"], global_dict),
-            "Det": self.update_params(config["Det"], det_dict, "det_", None),
+            "Det": self.update_params(
+                config["Det"],
+                det_dict,
+                "det_",
+                ["det_model_path"],
+            ),
             "Cls": self.update_params(
                 config["Cls"],
                 cls_dict,
                 "cls_",
-                ["cls_label_list", "cls_model_path", "cls_use_cuda"],
+                ["cls_label_list", "cls_model_path"],
             ),
             "Rec": self.update_params(
-                config["Rec"], rec_dict, "rec_", ["rec_model_path", "rec_use_cuda"]
+                config["Rec"],
+                rec_dict,
+                "rec_",
+                ["rec_model_path"],
             ),
         }
 
