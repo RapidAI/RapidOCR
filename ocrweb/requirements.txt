@@ -1,6 +1,6 @@
-Pillow
+Pillow<=10.0.0
 requests
-Flask>=2.1.0
-rapidocr_onnxruntime
+Flask>=2.1.0, <=3.0.0
+rapidocr_onnxruntime>=1.3.0,<=2.0.0
 get_pypi_latest_version
 wheel

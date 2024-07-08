@@ -38,7 +38,7 @@ def main():
     parser.add_argument("-p", "--port", type=int, default=9003, help="IP port")
     args = parser.parse_args()
 
-    print(f"Successfully launched and visit https://{args.ip}:{args.port} to view.")
+    print(f"Successfully launched and visit http://{args.ip}:{args.port} to view.")
     server = make_server(args.ip, args.port, app)
     server.serve_forever()
 
