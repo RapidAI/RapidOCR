@@ -40,11 +40,6 @@ if len(sys.argv) > 2:
         VERSION_NUM = matched_versions
 sys.argv = sys.argv[:2]
 
-project_urls = {
-    "Documentation": "https://rapidai.github.io/RapidOCRDocs/docs/install_usage/rapidocr_paddle/",
-    "Changelog": "https://rapidai.github.io/RapidOCRDocs/docs/changelog/rapidocr/",
-}
-
 setuptools.setup(
     name=MODULE_NAME,
     version=VERSION_NUM,
@@ -55,7 +50,6 @@ setuptools.setup(
     author="SWHL",
     author_email="liekkaskono@163.com",
     url="https://github.com/RapidAI/RapidOCR",
-    project_urls=project_urls,
     license="Apache-2.0",
     include_package_data=True,
     install_requires=read_txt("requirements_paddle.txt"),

@@ -38,8 +38,8 @@ if len(sys.argv) > 2:
 sys.argv = sys.argv[:2]
 
 project_urls = {
-    "Documentation": "https://rapidai.github.io/RapidOCRDocs/docs/install_usage/rapidocr/usage/",
-    "Changelog": "https://rapidai.github.io/RapidOCRDocs/docs/changelog/rapidocr/",
+    "Documentation": "https://rapidai.github.io/RapidOCRDocs",
+    "Changelog": "https://github.com/RapidAI/RapidOCR/releases",
 }
 
 setuptools.setup(
