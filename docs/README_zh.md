@@ -30,8 +30,8 @@
 
 </div>
 
-
 ### 简介
+
 - 💖目前已知**运行速度最快、支持最广**，完全开源免费并支持离线快速部署的多平台多语言OCR。
 - **支持语言**：默认是中英文，其他语言识别需要自助转换。具体参考[这里](https://rapidai.github.io/RapidOCRDocs/blog/2022/09/28/%E6%94%AF%E6%8C%81%E8%AF%86%E5%88%AB%E8%AF%AD%E8%A8%80/)
 - **缘起**：因为[PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)工程化尚有提升空间，为了方便在各种端上进行OCR推理，我们将PaddleOCR中的模型转换为ONNX格式，使用`Python/C++/Java/C#` 将它移植到各个平台，方便大家使用。
@@ -42,23 +42,25 @@
 - 如果该仓库有帮助到你，还请点个小星星⭐呗！
 
 ### [Demo](https://www.modelscope.cn/studios/liekkas/RapidOCRDemo/summary)
+
 <div align="center">
     <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/hf_demo_part.png" alt="Demo" width="100%" height="100%">
 </div>
 
-
 ### 安装
+
 ```bash
 pip install rapidocr_onnxruntime
 ```
 
 ### 使用
+
 ```bash
 rapidocr_onnxruntime -img 1.jpg
 ```
 
-
 ### 相关产品概览图
+>
 > 下图表格中，除**测评集**部分托管在[Hugging Face](https://huggingface.co/SWHL)下，其余均在Github下，详细介绍如下：
 >
 > 第一行是功能介绍
@@ -70,9 +72,11 @@ rapidocr_onnxruntime -img 1.jpg
 </div>
 
 ### 文档
+
 完整文档请移步：[docs](https://rapidai.github.io/RapidOCRDocs)
 
 ### 致谢
+
 - 非常感谢[DeliciaLaniD](https://github.com/DeliciaLaniD)修复ocrweb中扫描动画起始位置错位问题。
 - 非常感谢[zhsunlight](https://github.com/zhsunlight)关于参数化调用GPU推理的建议以及细致周到的测试。
 - 非常感谢[lzh111222334](https://github.com/lzh111222334)修复python版本下rec前处理部分bug。
@@ -80,8 +84,8 @@ rapidocr_onnxruntime -img 1.jpg
 - 非常感谢[DeadWood8](https://github.com/DeadWood8)提供了[Nuitka打包rapidocr_web的操作文档和可执行exe](https://rapidai.github.io/RapidOCRDocs/install_usage/rapidocr_web/nuitka_package/)。
 - 非常感谢[Loovelj](https://github.com/Loovelj)指出对文本检测框排序时顺序问题，详情参见[issue 75](https://github.com/RapidAI/RapidOCR/issues/75)。
 
-
 ### 贡献者
+
 <p align="left">
   <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors">
     <img src="https://contrib.rocks/image?repo=RapidAI/RapidOCR" width="50%"/>
@@ -89,11 +93,14 @@ rapidocr_onnxruntime -img 1.jpg
 </p>
 
 ### 贡献指南
+
 我们感谢所有的贡献者为改进和提升 RapidOCR 所作出的努力。
+
 - 欢迎提交请求。对于重大更改，请先打开issue讨论您想要改变的内容。
 - 请确保适当更新测试。
 
 ### 加入我们
+
 - 微信扫描以下二维码，关注**RapidAI公众号**，回复**OCR**即可加入RapidOCR微信交流群：
     <div align="center">
         <img src="https://raw.githubusercontent.com/RapidAI/.github/main/assets/RapidAI_WeChatAccount.jpg" width="25%" height="25%" align="center">
@@ -103,7 +110,6 @@ rapidocr_onnxruntime -img 1.jpg
     <div align="center">
         <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/qq_group2.png" width="25%" height="25%" align="center">
     </div>
-
 
 ### [赞助](https://rapidai.github.io/RapidOCRDocs/sponsor)
 
@@ -117,7 +123,9 @@ rapidocr_onnxruntime -img 1.jpg
 | <a href="https://github.com/Eunsolfs" title="Eunsolfs"><img src="https://avatars.githubusercontent.com/u/53815751?v=4" width=65 height=65></a> |                                                                                    -                                                                                    |
 
 ### 引用
+
 如果您发现该项目对您的研究有用，请考虑引用：
+
 ```bibtex
 @misc{RapidOCR 2021,
     title={{Rapid OCR}: OCR Toolbox},
@@ -131,8 +139,8 @@ rapidocr_onnxruntime -img 1.jpg
 
 [![Stargazers over time](https://starchart.cc/RapidAI/RapidOCR.svg)](https://starchart.cc/RapidAI/RapidOCR)
 
-
 ### 开源许可证
+
 OCR模型版权归百度所有，其他工程代码版权归本仓库所有者所有。
 
 该项目采用 [Apache 2.0 license](../LICENSE) 开源许可证。
