@@ -5,7 +5,7 @@
 import requests
 
 url = 'http://localhost:9003/ocr'
-img_path = '../python/tests/test_files/ch_en_num.jpg'
+img_path = '/tmp/page1_image1.jpg'
 
 with open(img_path, 'rb') as f:
     file_dict = {'image_file': (img_path, f, 'image/png')}
