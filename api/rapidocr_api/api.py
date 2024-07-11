@@ -29,26 +29,15 @@ class OCRAPIUtils:
             return {}
 
         out_dict = {
-            str(i): {"rec_txt": rec, "dt_boxes": dt_box, "score": score}
+            str(i): {
+                "rec_txt": rec,
+                "dt_boxes": dt_box,
+                "score": f"{score:.4f}",
+            }
             for i, (dt_box, rec, score) in enumerate(ocr_res)
         }
+        return out_dict
 
-        return self.convert_to_json(out_dict)
-
-    def convert_to_json(self, data):
-        """Recursively convert NumPy types to Python types."""
-        if isinstance(data, np.ndarray):
-            return data.tolist()
-        elif isinstance(data, np.generic):
-            return data.item()
-        elif isinstance(data, (list, tuple)):
-            return [self.convert_to_json(item) for item in data]
-        elif isinstance(data, dict):
-            return {k: self.convert_to_json(v) for k, v in data.items()}
-        elif isinstance(data, np.bool_):
-            return bool(data)
-        else:
-            return data
 
 app = FastAPI()
 processor = OCRAPIUtils()
