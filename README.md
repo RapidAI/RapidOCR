@@ -88,7 +88,7 @@ Full documentation can be found on [docs](https://rapidai.github.io/RapidOCRDocs
 
 <p align="left">
   <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=RapidAI/RapidOCR&max=400&columns=20" width="50%"/>
+    <img src="https://contrib.rocks/image?repo=RapidAI/RapidOCR&max=400&columns=20" width="70%"/>
   </a>
 </p>
 
