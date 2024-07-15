@@ -29,49 +29,47 @@
 [简体中文](./docs/README_zh.md) | English
 </div>
 
-
 ### Introduction
-- The fastest running, most widely supported, completely open source and free multi-platform, multi-language OCR known to support rapid offline deployment.
-- **Supported Languages**: The default is Chinese and English, other language recognition requires self-service conversion. For specific reference [here](https://rapidai.github.io/RapidOCRDocs/blog/2022/09/28/%E6%94%AF%E6%8C%81%E8%AF%86%E5%88%AB%E8%AF%AD%E8%A8%80/).
-- **Cause**: [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) is not well engineered, and to make it easier for people to do OCR inference on various ends, we converted the model in PaddleOCR to ONNX format and ported it to various platforms using `Python/C++/Java/C#`.
-- **Name Source**: Light, fast, economical and smart. OCR technology based on deep learning technology focuses on artificial intelligence advantages and small models, with speed as the mission and effect as the leading role.
-- **Usage**:
-  - If the existing model in the repo meets the requirements → RapidOCR deployment can be used.
-  - Not meeting requirements → Based on PaddleOCR. Fine-tune your own data → RapidOCR deployment.
--If this repo is helpful to you, please click on a small star ⭐ Bah!
 
+💖 The fastest running, most widely supported, completely open source and free multi-platform, multi-language OCR known to support rapid offline deployment. It features ONNXRuntime inference engine inference, which is 4~5 times faster than PaddlePaddle inference engine and has no memory leak problem.
 
-### [Demo](https://huggingface.co/spaces/SWHL/RapidOCRDemo)
+**Supported Languages**: The default is Chinese and English, other language recognition requires self-service conversion. For specific reference [here](https://rapidai.github.io/RapidOCRDocs/blog/2022/09/28/%E6%94%AF%E6%8C%81%E8%AF%86%E5%88%AB%E8%AF%AD%E8%A8%80/).
+
+**Cause**: [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) is not well engineered, and to make it easier for people to do OCR inference on various ends, we converted the model in PaddleOCR to ONNX format and ported it to various platforms using `Python/C++/Java/C#`.
+
+**Name Source**: Light, fast, economical and smart. OCR technology based on deep learning technology focuses on artificial intelligence advantages and small models, with speed as the mission and effect as the leading role.
+
+**Usage**:
+
+- If the existing model in the repo meets the requirements → RapidOCR deployment can be used.
+- Not meeting requirements → Based on PaddleOCR. Fine-tune your own data → RapidOCR deployment.
+
+If this repo is helpful to you, please click on a small star ⭐ Bah!
+
+### Visualization
 
 <div align="center">
-    <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/hf_demo_part.png" alt="Demo" width="100%" height="100%">
+    <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/demo.gif" alt="Demo" width="100%" height="100%">
 </div>
 
 ### Installation
+
 ```bash
 pip install rapidocr_onnxruntime
 ```
 
 ### Usage
+
 ```bash
 rapidocr_onnxruntime -img 1.jpg
 ```
 
-### Related projects overview
-> In the table below, except for the **Evaluation Collection** part which is hosted under the [Hugging Face](https://huggingface.co/SWHL) Community, the rest are all under Github. The details are as follows:
->
-> The first line is the function introduction.
->
-> The second line is the corresponding warehouse name. You can directly search for the name on Github.
-
-<div>
-    <img src="https://github.com/RapidAI/RapidOCRDocs/releases/download/assets/RapidOCR_RelatedProjectsEn.png">
-</div>
-
 ### Documentation
+
 Full documentation can be found on [docs](https://rapidai.github.io/RapidOCRDocs/), in Chinese.
 
 ### Acknowledgements
+
 - Many thanks to [DeliciaLaniD](https://github.com/DeliciaLaniD) for fixing the misplaced start position of scan animation in ocrweb.
 - Many thanks to [zhsunlight](https://github.com/zhsunlight) for the suggestion about parameterized call GPU reasoning and the careful and thoughtful testing.
 - Many thanks to [lzh111222334](https://github.com/lzh111222334) for fixing some bugs of rec preprocessing under python version.
@@ -80,16 +78,14 @@ Full documentation can be found on [docs](https://rapidai.github.io/RapidOCRDocs
 - Many thanks to [Loovelj](https://github.com/Loovelj) for fixing the bug of sorting the text boxes. For details see [issue 75](https://github.com/RapidAI/RapidOCR/issues/75).
 
 ### Code Contributors
+
 <p align="left">
   <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors">
     <img src="https://contrib.rocks/image?repo=RapidAI/RapidOCR" width="50%"/>
   </a>
 </p>
 
-### Contributing
-- Pull requests are welcome. For major changes, please open an issue first
-to discuss what you would like to change.
-- Please make sure to update tests as appropriate.
+s
 
 ### [Sponsor](https://rapidai.github.io/RapidOCRDocs/sponsor/)
 
@@ -98,7 +94,7 @@ to discuss what you would like to change.
 > If you want to sponsor the project, you can directly click the **Buy me a coffee** image, please write a note (e.g. your github account name) to facilitate adding to the sponsorship list below.
 >
 > <div align="left">
->   <a href="https://www.buymeacoffee.com/SWHL"><img src="https://raw.githubusercontent.com/RapidAI/.github/main/assets/buymeacoffe.png" width="30%" height="30%"></a>
+> <a href="https://www.buymeacoffee.com/SWHL"><img src="https://raw.githubusercontent.com/RapidAI/.github/main/assets/buymeacoffe.png" width="30%" height="30%"></a>
 > </div>
 
 |                                                                    Sponsor                                                                     |                                                                       Applied Products                                                                        |
@@ -106,9 +102,10 @@ to discuss what you would like to change.
 | <a href="https://github.com/cuiliang" title="cuiliang"><img src="https://avatars.githubusercontent.com/u/1972649?v=4" width=65 height=65></a>  | <a href="https://getquicker.net/" title="Quicker"><img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Quicker.jpg" width=65 height=65></a> |
 | <a href="https://github.com/Eunsolfs" title="Eunsolfs"><img src="https://avatars.githubusercontent.com/u/53815751?v=4" width=65 height=65></a> |                                                                               -                                                                               |
 
-
 ### Citation
+
 If you find this project useful in your research, please consider cite:
+
 ```bibtex
 @misc{RapidOCR 2021,
     title={{Rapid OCR}: OCR Toolbox},
@@ -122,8 +119,8 @@ If you find this project useful in your research, please consider cite:
 
 [![Stargazers over time](https://starchart.cc/RapidAI/RapidOCR.svg)](https://starchart.cc/RapidAI/RapidOCR)
 
-
 ### License
+
 The copyright of the OCR model is held by Baidu, while the copyrights of all other engineering scripts are retained by the repository's owner.
 
 This project is released under the [Apache 2.0 license](./LICENSE).
