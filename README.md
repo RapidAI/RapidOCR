@@ -85,8 +85,6 @@ Full documentation can be found on [docs](https://rapidai.github.io/RapidOCRDocs
   </a>
 </p>
 
-s
-
 ### [Sponsor](https://rapidai.github.io/RapidOCRDocs/sponsor/)
 
 > [!IMPORTANT]
