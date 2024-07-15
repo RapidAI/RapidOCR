@@ -46,7 +46,7 @@
 
 If this repo is helpful to you, please click on a small star ⭐ Bah!
 
-### Visualization
+### Visualization ([more](https://rapidai.github.io/RapidOCRDocs/visualization/))
 
 <div align="center">
     <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/demo.gif" alt="Demo" width="100%" height="100%">

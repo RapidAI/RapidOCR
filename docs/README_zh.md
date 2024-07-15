@@ -47,7 +47,7 @@
 
 如果该仓库有帮助到你，还请点个小星星⭐呗！
 
-### 效果展示
+### 效果展示 ([more](https://rapidai.github.io/RapidOCRDocs/visualization/))
 
 <div align="center">
     <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/demo.gif" alt="Demo" width="100%" height="100%">
