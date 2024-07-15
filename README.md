@@ -60,8 +60,15 @@ pip install rapidocr_onnxruntime
 
 ### Usage
 
-```bash
-rapidocr_onnxruntime -img 1.jpg
+```python
+from rapidocr_onnxruntime import RapidOCR
+
+engine = RapidOCR()
+
+img_path = 'tests/test_files/ch_en_num.jpg'
+result, elapse = engine(img_path)
+print(result)
+print(elapse)
 ```
 
 ### Documentation
@@ -81,7 +88,7 @@ Full documentation can be found on [docs](https://rapidai.github.io/RapidOCRDocs
 
 <p align="left">
   <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=RapidAI/RapidOCR" width="50%"/>
+    <img src="https://contrib.rocks/image?repo=RapidAI/RapidOCR&max=400&columns=20" width="50%"/>
   </a>
 </p>
 
