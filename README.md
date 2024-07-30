@@ -25,6 +25,7 @@
 <a href="https://github.com/RapidAI/RapidOCR/stargazers"><img src="https://img.shields.io/github/stars/RapidAI/RapidOCR?color=ccf"></a>
 <a href="https://semver.org/"><img alt="SemVer2.0" src="https://img.shields.io/badge/SemVer-2.0-brightgreen"></a>
 <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
+<a href="https://scorecard.dev/viewer/?uri=github.com/RapidAI/RapidOCR"><img src="https://api.scorecard.dev/projects/github.com/RapidAI/RapidOCR/badge"></a>
 
 [简体中文](./docs/README_zh.md) | English
 </div>
