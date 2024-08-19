@@ -71,10 +71,7 @@ def main():
     parser.add_argument("-p", "--port", type=int, default=9003, help="IP port")
     args = parser.parse_args()
 
-    cur_file_path = Path(__file__).resolve()
-    app_path = f"{cur_file_path.parent.name}.{cur_file_path.stem}:app"
-    print(app_path)
-    uvicorn.run(app_path, host=args.ip, port=args.port, reload=True)
+    uvicorn.run("api:app", host=args.ip, port=args.port, reload=True)
 
 
 if __name__ == "__main__":
