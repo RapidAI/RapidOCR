@@ -54,6 +54,10 @@
     <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/demo.gif" alt="Demo" width="100%" height="100%">
 </div>
 
+### 最近动态
+
+🎉 2024-09-06: [RapidOCR获得2024中国互联网发展创新与投资大赛（开源）二等奖](https://rapidai.github.io/RapidOCRDocs/blog/2024/09/03/2024-bjos/)
+
 ### 安装
 
 ```bash
