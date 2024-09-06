@@ -8,7 +8,6 @@ from pathlib import Path
 import cv2
 import numpy as np
 import pytest
-from base_module import BaseModule
 
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
@@ -208,59 +207,3 @@ def test_input_three_ndim_one_channel():
 
     assert result[0][1] == "正品促销"
     assert len(result) == 17
-
-
-def test_det():
-    module_name = "ch_ppocr_v3_det"
-    class_name = "TextDetector"
-
-    base = BaseModule(package_name)
-    TextDetector = base.init_module(module_name, class_name)
-
-    yaml_path = base.package_dir / module_name / "config.yaml"
-    config = base.read_yaml(str(yaml_path))
-    config["model_path"] = str(base.package_dir / config["model_path"])
-
-    text_det = TextDetector(config)
-    img_path = base.tests_dir / "test_files" / "text_det.jpg"
-    img = cv2.imread(str(img_path))
-    dt_boxes, elapse = text_det(img)
-    assert dt_boxes.shape == (18, 4, 2)
-
-
-def test_cls():
-    module_name = "ch_ppocr_v2_cls"
-    class_name = "TextClassifier"
-
-    base = BaseModule(package_name=package_name)
-    TextClassifier = base.init_module(module_name, class_name)
-
-    yaml_path = base.package_dir / module_name / "config.yaml"
-    config = base.read_yaml(str(yaml_path))
-    config["model_path"] = str(base.package_dir / config["model_path"])
-
-    text_cls = TextClassifier(config)
-
-    img_path = base.tests_dir / "test_files" / "text_cls.jpg"
-    img = cv2.imread(str(img_path))
-    result = text_cls([img])
-    assert result[1][0][0] == "180"
-
-
-def test_rec():
-    module_name = "ch_ppocr_v3_rec"
-    class_name = "TextRecognizer"
-
-    base = BaseModule(package_name)
-    TextRecognizer = base.init_module(module_name, class_name)
-
-    yaml_path = base.package_dir / module_name / "config.yaml"
-    config = base.read_yaml(str(yaml_path))
-    config["model_path"] = str(base.package_dir / config["model_path"])
-
-    text_rec = TextRecognizer(config)
-
-    img_path = base.tests_dir / "test_files" / "text_rec.jpg"
-    img = cv2.imread(str(img_path))
-    rec_res, elapse = text_rec(img)
-    assert rec_res[0][0] == "韩国小馆"

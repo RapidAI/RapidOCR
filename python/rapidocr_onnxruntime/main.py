@@ -8,9 +8,9 @@ from typing import Any, List, Optional, Tuple, Union
 import cv2
 import numpy as np
 
-from .ch_ppocr_v2_cls import TextClassifier
-from .ch_ppocr_v3_det import TextDetector
-from .ch_ppocr_v3_rec import TextRecognizer
+from .ch_ppocr_cls import TextClassifier
+from .ch_ppocr_det import TextDetector
+from .ch_ppocr_rec import TextRecognizer
 from .utils import (
     LoadImage,
     UpdateParameters,
