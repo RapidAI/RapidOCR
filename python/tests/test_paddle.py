@@ -194,7 +194,7 @@ def test_input_three_ndim_one_channel():
 
 
 def test_det():
-    module_name = "ch_ppocr_v3_det"
+    module_name = "ch_ppocr_det"
     class_name = "TextDetector"
 
     base = BaseModule(package_name)
@@ -212,7 +212,7 @@ def test_det():
 
 
 def test_cls():
-    module_name = "ch_ppocr_v2_cls"
+    module_name = "ch_ppocr_cls"
     class_name = "TextClassifier"
 
     base = BaseModule(package_name=package_name)
@@ -231,7 +231,7 @@ def test_cls():
 
 
 def test_rec():
-    module_name = "ch_ppocr_v3_rec"
+    module_name = "ch_ppocr_rec"
     class_name = "TextRecognizer"
 
     base = BaseModule(package_name)
