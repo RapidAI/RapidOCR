@@ -24,14 +24,16 @@ from rapidocr_openvino.utils import OpenVINOInferSession, read_yaml
 
 from .utils import CTCLabelDecode
 
+DEFAULT_DICT_PATH = str(Path(__file__).parent / "ppocr_keys_v1.txt")
+
 
 class TextRecognizer:
     def __init__(self, config):
         self.rec_image_shape = config["rec_img_shape"]
         self.rec_batch_num = config["rec_batch_num"]
 
-        dict_path = str(Path(__file__).parent / "ppocr_keys_v1.txt")
-        self.character_dict_path = config.get("rec_keys_path", dict_path)
+        dict_path = config.get("rec_keys_path", None)
+        self.character_dict_path = dict_path if dict_path else DEFAULT_DICT_PATH
         self.postprocess_op = CTCLabelDecode(character_path=self.character_dict_path)
 
         self.infer = OpenVINOInferSession(config)
