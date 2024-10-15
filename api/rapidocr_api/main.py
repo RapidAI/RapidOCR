@@ -45,7 +45,7 @@ processor = OCRAPIUtils()
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to RapidOCR Server!"}
+    return {"message": "Welcome to RapidOCR API Server!"}
 
 
 @app.post("/ocr")
@@ -71,7 +71,7 @@ def main():
     parser.add_argument("-p", "--port", type=int, default=9003, help="IP port")
     args = parser.parse_args()
 
-    uvicorn.run("api:app", host=args.ip, port=args.port, reload=True)
+    uvicorn.run("rapidocr_api.main:app", host=args.ip, port=args.port, reload=True)
 
 
 if __name__ == "__main__":

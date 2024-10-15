@@ -3,9 +3,19 @@
 # @Contact: liekkaskono@163.com
 import sys
 from pathlib import Path
+from typing import List
 
 import setuptools
 from get_pypi_latest_version import GetPyPiLatestVersion
+
+
+def read_txt(txt_path: str) -> List:
+    if not isinstance(txt_path, str):
+        txt_path = str(txt_path)
+
+    with open(txt_path, "r", encoding="utf-8") as f:
+        data = list(map(lambda x: x.rstrip("\n"), f))
+    return data
 
 
 def get_readme():
@@ -22,7 +32,7 @@ obtainer = GetPyPiLatestVersion()
 try:
     latest_version = obtainer(MODULE_NAME)
 except ValueError:
-    latest_version = "0.0.0"
+    latest_version = "0.0.1"
 VERSION_NUM = obtainer.version_add_one(latest_version)
 
 if len(sys.argv) > 2:
@@ -45,12 +55,7 @@ setuptools.setup(
     download_url="https://github.com/RapidAI/RapidOCR.git",
     license="Apache-2.0",
     include_package_data=True,
-    install_requires=[
-        "requests",
-        "rapidocr_onnxruntime",
-        "fastapi",
-        "uvicorn[standard]",
-    ],
+    install_requires=read_txt("requirements.txt"),
     packages=[MODULE_NAME],
     package_data={"": ["*.ico", "*.css", "*.js", "*.html"]},
     keywords=[
@@ -68,7 +73,7 @@ setuptools.setup(
     python_requires=">=3.6,<3.13",
     entry_points={
         "console_scripts": [
-            f"{MODULE_NAME}={MODULE_NAME}.api:main",
+            f"{MODULE_NAME}={MODULE_NAME}.main:main",
         ],
     },
 )
