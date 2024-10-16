@@ -81,6 +81,7 @@ class RapidOCR:
         dt_boxes, cls_res, rec_res = None, None, None
         det_elapse, cls_elapse, rec_elapse = 0.0, 0.0, 0.0
 
+        padding_h = 0
         if use_det:
             img, padding_h = self.maybe_add_letterbox(img)
             dt_boxes, det_elapse = self.auto_text_det(img)
