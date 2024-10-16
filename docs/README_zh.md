@@ -104,9 +104,9 @@ print(elapse)
         <img src="https://raw.githubusercontent.com/RapidAI/.github/main/assets/RapidAI_WeChatAccount.jpg" width="25%" height="25%" align="center">
     </div>
 
-- 欢迎加入我们的QQ群下载模型及测试程序。1群：~~887298230~~ 已满，2群：755960114
+- 欢迎加入我们的QQ群下载模型及测试程序。1群：~~887298230~~ 已满，2群：~~755960114~~ 已满，3群：~~450338158~~ 已满, 4群：419196348
     <div align="center">
-        <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/qq_group2.png" width="25%" height="25%" align="center">
+        <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/qq_group4.png" width="25%" height="25%" align="center">
     </div>
 
 ### [赞助](https://rapidai.github.io/RapidOCRDocs/sponsor)
