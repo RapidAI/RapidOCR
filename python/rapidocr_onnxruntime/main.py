@@ -16,8 +16,10 @@ from .utils import (
     UpdateParameters,
     VisRes,
     get_logger,
+    increase_min_side,
     init_args,
     read_yaml,
+    reduce_max_side,
     update_model_path,
 )
 
@@ -78,6 +80,11 @@ class RapidOCR:
 
         img = self.load_img(img_content)
 
+        raw_h, raw_w = img.shape[:2]
+        op_record = {}
+        img, ratio_h, ratio_w = self.preprocess(img)
+        op_record["preprocess"] = {"ratio_h": ratio_h, "ratio_w": ratio_w}
+
         dt_boxes, cls_res, rec_res = None, None, None
         det_elapse, cls_elapse, rec_elapse = 0.0, 0.0, 0.0
 
@@ -104,6 +111,21 @@ class RapidOCR:
             dt_boxes, cls_res, rec_res, det_elapse, cls_elapse, rec_elapse
         )
         return ocr_res
+
+    def preprocess(self, img: np.ndarray) -> Tuple[np.ndarray, float, float]:
+        h, w = img.shape[:2]
+
+        ratio_h = ratio_w = 1.0
+
+        max_value = max(h, w)
+        if max_value > self.max_side_len:
+            img, ratio_h, ratio_w = reduce_max_side(img, self.max_side_len)
+
+        h, w = img.shape[:2]
+        min_value = min(h, w)
+        if min_value < self.min_height:
+            img, ratio_h, ratio_w = increase_min_side(img, self.min_height)
+        return img, ratio_h, ratio_w
 
     def maybe_add_letterbox(self, img: np.ndarray) -> Tuple[np.ndarray, int]:
         h, w = img.shape[:2]
