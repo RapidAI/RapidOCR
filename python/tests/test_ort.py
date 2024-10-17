@@ -13,11 +13,22 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
 from rapidocr_onnxruntime import LoadImageError, RapidOCR
+from tests.base_module import download_file
 
 engine = RapidOCR()
 tests_dir = root_dir / "tests" / "test_files"
 img_path = tests_dir / "ch_en_num.jpg"
 package_name = "rapidocr_onnxruntime"
+
+
+def test_long_img():
+    img_url = "https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/long.jpeg"
+    img_path = tests_dir / "long.jpeg"
+    download_file(img_url, save_path=img_path)
+    result, _ = engine(img_path)
+    assert result is not None
+    assert len(result) == 55
+    img_path.unlink()
 
 
 def test_ort_cuda_warning(caplog):
@@ -111,6 +122,7 @@ def test_cls_rec():
     img_path = tests_dir / "text_cls.jpg"
     result, _ = engine(img_path, use_det=False, use_cls=True, use_rec=True)
 
+    assert result is not None
     assert len(result) == 1
     assert result[0][0] == "韩国小馆"
 
@@ -119,6 +131,7 @@ def test_det_cls_rec():
     img = cv2.imread(str(img_path))
 
     result, _ = engine(img)
+    assert result is not None
     assert result[0][1] == "正品促销"
     assert len(result) == 18
 
@@ -193,6 +206,7 @@ def test_input_three_ndim_two_channel():
     image_array = np.load(str(img_npy))
     result, _ = engine(image_array)
 
+    assert result is not None
     assert len(result) == 1
     assert result[0][1] == "TREND PLOT REPORT"
 
@@ -205,5 +219,6 @@ def test_input_three_ndim_one_channel():
 
     result, _ = engine(img)
 
+    assert result is not None
     assert result[0][1] == "正品促销"
     assert len(result) == 17

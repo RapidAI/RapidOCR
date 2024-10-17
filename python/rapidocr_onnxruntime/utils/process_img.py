@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-from typing import Optional, Tuple
+from typing import Tuple
 
 import cv2
 import numpy as np
@@ -9,7 +9,7 @@ import numpy as np
 
 def reduce_max_side(
     img: np.ndarray, max_side_len: int = 2000
-) -> Optional[Tuple[np.ndarray, float, float]]:
+) -> Tuple[np.ndarray, float, float]:
     h, w = img.shape[:2]
 
     ratio = 1.0
@@ -27,10 +27,10 @@ def reduce_max_side(
 
     try:
         if int(resize_w) <= 0 or int(resize_h) <= 0:
-            return None
+            raise ResizeImgError("resize_w or resize_h is less than or equal to 0")
         img = cv2.resize(img, (resize_w, resize_h))
-    except Exception:
-        return None
+    except Exception as exc:
+        raise ResizeImgError() from exc
 
     ratio_h = h / resize_h
     ratio_w = w / resize_w
@@ -39,7 +39,7 @@ def reduce_max_side(
 
 def increase_min_side(
     img: np.ndarray, min_side_len: int = 30
-) -> Optional[Tuple[np.ndarray, float, float]]:
+) -> Tuple[np.ndarray, float, float]:
     h, w = img.shape[:2]
 
     ratio = 1.0
@@ -57,14 +57,30 @@ def increase_min_side(
 
     try:
         if int(resize_w) <= 0 or int(resize_h) <= 0:
-            return None
+            raise ResizeImgError("resize_w or resize_h is less than or equal to 0")
         img = cv2.resize(img, (resize_w, resize_h))
-    except Exception:
-        return None
+    except Exception as exc:
+        raise ResizeImgError() from exc
 
     ratio_h = h / resize_h
     ratio_w = w / resize_w
     return img, ratio_h, ratio_w
+
+
+def add_round_letterbox(
+    img: np.ndarray,
+    padding_tuple: Tuple[int, int, int, int],
+) -> np.ndarray:
+    padded_img = cv2.copyMakeBorder(
+        img,
+        padding_tuple[0],
+        padding_tuple[1],
+        padding_tuple[2],
+        padding_tuple[3],
+        cv2.BORDER_CONSTANT,
+        value=(0, 0, 0),
+    )
+    return padded_img
 
 
 class ResizeImgError(Exception):
