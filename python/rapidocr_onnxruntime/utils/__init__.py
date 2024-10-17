@@ -10,6 +10,7 @@ from .infer_engine import OrtInferSession
 from .load_image import LoadImage, LoadImageError
 from .logger import get_logger
 from .parse_parameters import UpdateParameters, init_args, update_model_path
+from .process_img import add_round_letterbox, increase_min_side, reduce_max_side
 from .vis_res import VisRes
 
 
