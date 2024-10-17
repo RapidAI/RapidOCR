@@ -238,7 +238,7 @@ class RapidOCR:
         raw_w: int,
     ) -> np.ndarray:
         dt_boxes_array = np.array(dt_boxes)
-        for op in list(reversed(op_record.keys())):
+        for op in reversed(list(op_record.keys())):
             v = op_record[op]
             if "padding" in op:
                 top, left = v.get("top"), v.get("left")
