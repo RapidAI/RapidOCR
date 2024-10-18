@@ -4,7 +4,7 @@
 import importlib
 import sys
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import requests
 import yaml
@@ -21,7 +21,7 @@ class BaseModule:
         sys.path.append(str(self.root_dir))
         sys.path.append(str(self.package_dir))
 
-    def init_module(self, module_name: str, class_name: str = None):
+    def init_module(self, module_name: str, class_name: Optional[str] = None):
         if class_name is None:
             module_part = importlib.import_module(f"{self.package_name}")
             return module_part
