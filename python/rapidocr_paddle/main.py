@@ -3,7 +3,7 @@
 # @Contact: liekkaskono@163.com
 import copy
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import cv2
 import numpy as np
@@ -15,9 +15,12 @@ from .utils import (
     LoadImage,
     UpdateParameters,
     VisRes,
+    add_round_letterbox,
     get_logger,
+    increase_min_side,
     init_args,
     read_yaml,
+    reduce_max_side,
     update_model_path,
 )
 
@@ -54,6 +57,8 @@ class RapidOCR:
         self.text_rec = TextRecognizer(config["Rec"])
 
         self.load_img = LoadImage()
+        self.max_side_len = global_config["max_side_len"]
+        self.min_side_len = global_config["min_side_len"]
 
     def __call__(
         self,
@@ -78,11 +83,16 @@ class RapidOCR:
 
         img = self.load_img(img_content)
 
+        raw_h, raw_w = img.shape[:2]
+        op_record = {}
+        img, ratio_h, ratio_w = self.preprocess(img)
+        op_record["preprocess"] = {"ratio_h": ratio_h, "ratio_w": ratio_w}
+
         dt_boxes, cls_res, rec_res = None, None, None
         det_elapse, cls_elapse, rec_elapse = 0.0, 0.0, 0.0
 
         if use_det:
-            img, padding_h = self.maybe_add_letterbox(img)
+            img, op_record = self.maybe_add_letterbox(img, op_record)
             dt_boxes, det_elapse = self.auto_text_det(img)
             if dt_boxes is None:
                 return None, None
@@ -95,16 +105,30 @@ class RapidOCR:
         if use_rec:
             rec_res, rec_elapse = self.text_rec(img)
 
-        if dt_boxes is not None and padding_h > 0:
-            for box in dt_boxes:
-                box[:, 1] -= padding_h
+        if dt_boxes is not None and rec_res is not None:
+            dt_boxes = self._get_origin_points(dt_boxes, op_record, raw_h, raw_w)
 
         ocr_res = self.get_final_res(
             dt_boxes, cls_res, rec_res, det_elapse, cls_elapse, rec_elapse
         )
         return ocr_res
 
-    def maybe_add_letterbox(self, img: np.ndarray) -> Tuple[np.ndarray, int]:
+    def preprocess(self, img: np.ndarray) -> Tuple[np.ndarray, float, float]:
+        h, w = img.shape[:2]
+        max_value = max(h, w)
+        ratio_h = ratio_w = 1.0
+        if max_value > self.max_side_len:
+            img, ratio_h, ratio_w = reduce_max_side(img, self.max_side_len)
+
+        h, w = img.shape[:2]
+        min_value = min(h, w)
+        if min_value < self.min_side_len:
+            img, ratio_h, ratio_w = increase_min_side(img, self.min_side_len)
+        return img, ratio_h, ratio_w
+
+    def maybe_add_letterbox(
+        self, img: np.ndarray, op_record: Dict[str, Any]
+    ) -> Tuple[np.ndarray, Dict[str, Any]]:
         h, w = img.shape[:2]
 
         if self.width_height_ratio == -1:
@@ -113,13 +137,18 @@ class RapidOCR:
             use_limit_ratio = w / h > self.width_height_ratio
 
         if h <= self.min_height or use_limit_ratio:
-            new_h = max(int(w / self.width_height_ratio), self.min_height) * 2
-            padding_h = int(abs(new_h - h) / 2)
-            block_img = cv2.copyMakeBorder(
-                img, padding_h, padding_h, 0, 0, cv2.BORDER_CONSTANT, value=(0, 0, 0)
-            )
-            return block_img, padding_h
-        return img, 0
+            padding_h = self._get_padding_h(h, w)
+            block_img = add_round_letterbox(img, (padding_h, padding_h, 0, 0))
+            op_record["padding_1"] = {"top": padding_h, "left": 0}
+            return block_img, op_record
+
+        op_record["padding_1"] = {"top": 0, "left": 0}
+        return img, op_record
+
+    def _get_padding_h(self, h: int, w: int) -> int:
+        new_h = max(int(w / self.width_height_ratio), self.min_height) * 2
+        padding_h = int(abs(new_h - h) / 2)
+        return padding_h
 
     def auto_text_det(
         self, img: np.ndarray
@@ -200,6 +229,35 @@ class RapidOCR:
                 else:
                     break
         return _boxes
+
+    def _get_origin_points(
+        self,
+        dt_boxes: List[np.ndarray],
+        op_record: Dict[str, Any],
+        raw_h: int,
+        raw_w: int,
+    ) -> np.ndarray:
+        dt_boxes_array = np.array(dt_boxes)
+        for op in reversed(list(op_record.keys())):
+            v = op_record[op]
+            if "padding" in op:
+                top, left = v.get("top"), v.get("left")
+                dt_boxes_array[:, :, 0] -= left
+                dt_boxes_array[:, :, 1] -= top
+            elif "preprocess" in op:
+                ratio_h = v.get("ratio_h")
+                ratio_w = v.get("ratio_w")
+                dt_boxes_array[:, :, 0] *= ratio_w
+                dt_boxes_array[:, :, 1] *= ratio_h
+
+        dt_boxes_array = np.where(dt_boxes_array < 0, 0, dt_boxes_array)
+        dt_boxes_array[..., 0] = np.where(
+            dt_boxes_array[..., 0] > raw_w, raw_w, dt_boxes_array[..., 0]
+        )
+        dt_boxes_array[..., 1] = np.where(
+            dt_boxes_array[..., 1] > raw_h, raw_h, dt_boxes_array[..., 1]
+        )
+        return dt_boxes_array
 
     def get_final_res(
         self,

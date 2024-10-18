@@ -35,6 +35,8 @@ def init_args():
     global_group.add_argument("--print_verbose", action="store_true", default=False)
     global_group.add_argument("--min_height", type=int, default=30)
     global_group.add_argument("--width_height_ratio", type=int, default=8)
+    global_group.add_argument("--max_side_len", type=int, default=2000)
+    global_group.add_argument("--min_side_len", type=int, default=30)
 
     global_group.add_argument("--cpu_math_library_num_threads", type=int, default=-1)
 

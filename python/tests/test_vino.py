@@ -8,13 +8,11 @@ import cv2
 import numpy as np
 import pytest
 
-from tests.base_module import BaseModule
-
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
 from rapidocr_openvino import LoadImageError, RapidOCR
-from tests.base_module import download_file
+from tests.base_module import BaseModule, download_file
 
 engine = RapidOCR()
 tests_dir = root_dir / "tests" / "test_files"

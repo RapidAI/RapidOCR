@@ -5,3 +5,4 @@ six>=1.15.0
 Shapely>=1.7.1,!=2.0.4  # python3.12 2.0.4 bug
 PyYAML
 Pillow
+tqdm

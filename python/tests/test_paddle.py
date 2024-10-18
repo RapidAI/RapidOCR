@@ -7,17 +7,27 @@ from pathlib import Path
 import cv2
 import numpy as np
 import pytest
-from base_module import BaseModule
 
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
 from rapidocr_paddle import LoadImageError, RapidOCR
+from tests.base_module import BaseModule, download_file
 
 engine = RapidOCR()
 tests_dir = root_dir / "tests" / "test_files"
 img_path = tests_dir / "ch_en_num.jpg"
 package_name = "rapidocr_paddle"
+
+
+def test_long_img():
+    img_url = "https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/long.jpeg"
+    img_path = tests_dir / "long.jpeg"
+    download_file(img_url, save_path=img_path)
+    result, _ = engine(img_path)
+    assert result is not None
+    assert len(result) == 55
+    img_path.unlink()
 
 
 def test_mode_one_img():
