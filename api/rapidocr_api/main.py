@@ -66,12 +66,12 @@ processor = OCRAPIUtils()
 
 
 @app.get("/")
-async def root():
+def root():
     return {"message": "Welcome to RapidOCR API Server!"}
 
 
 @app.post("/ocr")
-async def ocr(
+def ocr(
     image_file: UploadFile = None,
     image_data: str = Form(None),
     use_det: bool = Form(None),
