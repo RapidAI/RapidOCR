@@ -11,8 +11,8 @@ from shapely.geometry import Polygon
 
 class DetPreProcess:
     def __init__(self, limit_side_len: int = 736, limit_type: str = "min"):
-        self.mean = np.array([0.485, 0.456, 0.406])
-        self.std = np.array([0.229, 0.224, 0.225])
+        self.mean = np.array([0.5, 0.5, 0.5])
+        self.std = np.array([0.5, 0.5, 0.5])
         self.scale = 1 / 255.0
 
         self.limit_side_len = limit_side_len
