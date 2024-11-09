@@ -4,6 +4,7 @@
 import logging
 import sys
 from pathlib import Path
+from typing import List
 
 import cv2
 import numpy as np
@@ -12,8 +13,8 @@ import pytest
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
-from rapidocr_onnxruntime import LoadImageError, RapidOCR
-from tests.base_module import download_file
+from python.rapidocr_onnxruntime import LoadImageError, RapidOCR
+from python.tests.base_module import download_file
 
 engine = RapidOCR()
 tests_dir = root_dir / "tests" / "test_files"
@@ -222,3 +223,22 @@ def test_input_three_ndim_one_channel():
     assert result is not None
     assert result[0][1] == "正品促销"
     assert len(result) == 17
+
+#
+@pytest.mark.parametrize(
+    "img_name,words",
+    [
+        (
+            "black_font_color_transparent.png",
+            ['我', '是', '中', '国', '人'],
+        ),
+        (
+            "text_vertical_words.png",
+            ['是', '是', '非', '非'],
+        ),
+    ],
+)
+def test_transparent_img(img_name: str, words: List[str]):
+    img_path = tests_dir / img_name
+    result, _ = engine(img_path, rec_word_box=True)
+    assert result[0][3] == words

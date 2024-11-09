@@ -56,3 +56,4 @@ Rec:
 
     rec_img_shape: [3, 48, 320]
     rec_batch_num: 6
+    rec_word_box: false
