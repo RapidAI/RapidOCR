@@ -51,7 +51,7 @@ class OCRAPIUtils:
                 if isinstance(dat, str):
                     values["rec_txt"] = dat
 
-                if isinstance(dat, np.float64):
+                if isinstance(dat, np.float32):
                     values["score"] = f"{dat:.4f}"
 
                 if isinstance(dat, list):
