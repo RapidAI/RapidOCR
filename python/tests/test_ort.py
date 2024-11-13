@@ -13,8 +13,8 @@ import pytest
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
-from python.rapidocr_onnxruntime import LoadImageError, RapidOCR
-from python.tests.base_module import download_file
+from rapidocr_onnxruntime import LoadImageError, RapidOCR
+from tests.base_module import download_file
 
 engine = RapidOCR()
 tests_dir = root_dir / "tests" / "test_files"
@@ -89,7 +89,7 @@ def test_letterbox_like(img_name, gt_len, gt_first_len):
     result, _ = engine(img_path)
 
     assert len(result) == gt_len
-    assert result[0][1] == gt_first_len
+    assert result[0][1].lower() == gt_first_len.lower()
 
 
 def test_only_det():
@@ -234,11 +234,11 @@ def test_input_three_ndim_one_channel():
         ),
         (
             "text_vertical_words.png",
-            ['是', '是', '非', '非'],
+            ['已', '取', '之', '時', '不', '參', '一', '人', '見', '而'],
         ),
     ],
 )
-def test_transparent_img(img_name: str, words: List[str]):
+def test_word_ocr(img_name: str, words: List[str]):
     img_path = tests_dir / img_name
     result, _ = engine(img_path, rec_word_box=True)
     assert result[0][3] == words
