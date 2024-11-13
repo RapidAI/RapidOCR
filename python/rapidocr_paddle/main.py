@@ -31,11 +31,11 @@ logger = get_logger("RapidOCR")
 
 class RapidOCR:
     def __init__(self, config_path: Optional[str] = None, **kwargs):
-        config = read_yaml(DEFAULT_CFG_PATH)
-        config = update_model_path(config)
-
-        if config_path is not None and Path(config_path).exists:
+        if config_path is not None and Path(config_path).exists():
             config = read_yaml(config_path)
+        else:
+            config = read_yaml(DEFAULT_CFG_PATH)
+        config = update_model_path(config)
 
         if kwargs:
             updater = UpdateParameters()
