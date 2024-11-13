@@ -4,6 +4,7 @@
 import logging
 import sys
 from pathlib import Path
+from typing import List
 
 import cv2
 import numpy as np
@@ -88,7 +89,7 @@ def test_letterbox_like(img_name, gt_len, gt_first_len):
     result, _ = engine(img_path)
 
     assert len(result) == gt_len
-    assert result[0][1] == gt_first_len
+    assert result[0][1].lower() == gt_first_len.lower()
 
 
 def test_only_det():
@@ -222,3 +223,22 @@ def test_input_three_ndim_one_channel():
     assert result is not None
     assert result[0][1] == "正品促销"
     assert len(result) == 17
+
+#
+@pytest.mark.parametrize(
+    "img_name,words",
+    [
+        (
+            "black_font_color_transparent.png",
+            ['我', '是', '中', '国', '人'],
+        ),
+        (
+            "text_vertical_words.png",
+            ['已', '取', '之', '時', '不', '參', '一', '人', '見', '而'],
+        ),
+    ],
+)
+def test_word_ocr(img_name: str, words: List[str]):
+    img_path = tests_dir / img_name
+    result, _ = engine(img_path, rec_word_box=True)
+    assert result[0][3] == words

@@ -22,6 +22,7 @@ from .utils import (
     read_yaml,
     reduce_max_side,
     update_model_path,
+    word_box
 )
 
 root_dir = Path(__file__).resolve().parent
@@ -71,12 +72,12 @@ class RapidOCR:
         use_det = self.use_det if use_det is None else use_det
         use_cls = self.use_cls if use_cls is None else use_cls
         use_rec = self.use_rec if use_rec is None else use_rec
-
+        rec_word_box = False
         if kwargs:
             box_thresh = kwargs.get("box_thresh", 0.5)
             unclip_ratio = kwargs.get("unclip_ratio", 1.6)
             text_score = kwargs.get("text_score", 0.5)
-
+            rec_word_box = kwargs.get("rec_word_box", False)
             self.text_det.postprocess_op.box_thresh = box_thresh
             self.text_det.postprocess_op.unclip_ratio = unclip_ratio
             self.text_score = text_score
@@ -103,11 +104,15 @@ class RapidOCR:
             img, cls_res, cls_elapse = self.text_cls(img)
 
         if use_rec:
-            rec_res, rec_elapse = self.text_rec(img)
-
+            rec_res, rec_elapse = self.text_rec(img, rec_word_box)
+        # fix word box by fix rotate and perspective
+        if dt_boxes is not None and rec_res is not None and rec_word_box:
+            rec_res = word_box.cal_rec_boxes(dt_boxes, img, rec_res)
+            for i, rec_res_i in enumerate(rec_res):
+                if rec_res_i[3]:
+                    rec_res_i[3] = self._get_origin_points(rec_res_i[3], op_record, raw_h, raw_w).astype(np.int32).tolist()
         if dt_boxes is not None and rec_res is not None:
             dt_boxes = self._get_origin_points(dt_boxes, op_record, raw_h, raw_w)
-
         ocr_res = self.get_final_res(
             dt_boxes, cls_res, rec_res, det_elapse, cls_elapse, rec_elapse
         )
@@ -237,7 +242,7 @@ class RapidOCR:
         raw_h: int,
         raw_w: int,
     ) -> np.ndarray:
-        dt_boxes_array = np.array(dt_boxes)
+        dt_boxes_array = np.array(dt_boxes).astype(np.float32)
         for op in reversed(list(op_record.keys())):
             v = op_record[op]
             if "padding" in op:
@@ -263,7 +268,7 @@ class RapidOCR:
         self,
         dt_boxes: Optional[List[np.ndarray]],
         cls_res: Optional[List[List[Union[str, float]]]],
-        rec_res: Optional[List[Tuple[str, float]]],
+        rec_res: Optional[List[Tuple[str, float, List[Union[str, float]]]]],
         det_elapse: float,
         cls_elapse: float,
         rec_elapse: float,
@@ -285,7 +290,7 @@ class RapidOCR:
             return None, None
 
         ocr_res = [
-            [box.tolist(), res[0], res[1]] for box, res in zip(dt_boxes, rec_res)
+            [box.tolist(), *res] for box, res in zip(dt_boxes, rec_res)
         ], [det_elapse, cls_elapse, rec_elapse]
         return ocr_res
 
@@ -299,7 +304,7 @@ class RapidOCR:
 
         filter_boxes, filter_rec_res = [], []
         for box, rec_reuslt in zip(dt_boxes, rec_res):
-            text, score = rec_reuslt
+            text, score = rec_reuslt[0], rec_reuslt[1]
             if float(score) >= self.text_score:
                 filter_boxes.append(box)
                 filter_rec_res.append(rec_reuslt)
