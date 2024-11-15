@@ -12,11 +12,11 @@ from rapidocr_onnxruntime import RapidOCR, VisRes
 engine = RapidOCR()
 vis = VisRes()
 
-image_path = "tests/test_files/black_font_color_transparent.png"
+image_path = "tests/test_files/ch_en_num.jpg"
 with open(image_path, "rb") as f:
     img = f.read()
 
-result, elapse_list = engine(img)
+result, elapse_list = engine(img, rec_word_box=True)
 print(result)
 print(elapse_list)
 

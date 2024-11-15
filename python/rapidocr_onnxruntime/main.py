@@ -22,7 +22,7 @@ from .utils import (
     read_yaml,
     reduce_max_side,
     update_model_path,
-    word_box
+    word_box,
 )
 
 root_dir = Path(__file__).resolve().parent
@@ -105,12 +105,17 @@ class RapidOCR:
 
         if use_rec:
             rec_res, rec_elapse = self.text_rec(img, rec_word_box)
+
         # fix word box by fix rotate and perspective
         if dt_boxes is not None and rec_res is not None and rec_word_box:
             rec_res = word_box.cal_rec_boxes(dt_boxes, img, rec_res)
             for i, rec_res_i in enumerate(rec_res):
                 if rec_res_i[3]:
-                    rec_res_i[3] = self._get_origin_points(rec_res_i[3], op_record, raw_h, raw_w).astype(np.int32).tolist()
+                    rec_res_i[3] = (
+                        self._get_origin_points(rec_res_i[3], op_record, raw_h, raw_w)
+                        .astype(np.int32)
+                        .tolist()
+                    )
         if dt_boxes is not None and rec_res is not None:
             dt_boxes = self._get_origin_points(dt_boxes, op_record, raw_h, raw_w)
         ocr_res = self.get_final_res(
@@ -289,9 +294,11 @@ class RapidOCR:
         if not dt_boxes or not rec_res or len(dt_boxes) <= 0:
             return None, None
 
-        ocr_res = [
-            [box.tolist(), *res] for box, res in zip(dt_boxes, rec_res)
-        ], [det_elapse, cls_elapse, rec_elapse]
+        ocr_res = [[box.tolist(), *res] for box, res in zip(dt_boxes, rec_res)], [
+            det_elapse,
+            cls_elapse,
+            rec_elapse,
+        ]
         return ocr_res
 
     def filter_result(

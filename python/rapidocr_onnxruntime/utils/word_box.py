@@ -1,14 +1,16 @@
 import copy
 import math
-from typing import Optional, List, Tuple, Union, Any
-import numpy as np
+from typing import Any, List, Optional, Tuple
+
 import cv2
+import numpy as np
 
 
 def cal_rec_boxes(
-        dt_boxes: Optional[List[np.ndarray]],
-        crop_imgs: Optional[List[np.ndarray]],
-        rec_res: Optional[List[Any]]):
+    dt_boxes: Optional[List[np.ndarray]],
+    crop_imgs: Optional[List[np.ndarray]],
+    rec_res: Optional[List[Any]],
+):
     res = []
     for i, (box, rec_res) in enumerate(zip(dt_boxes, rec_res)):
         direction = "w"
@@ -36,7 +38,9 @@ def cal_rec_boxes(
         )
         # fix word box overlap
         adjust_box_overlap(word_box_list)
-        word_box_list = reverse_rotate_crop_image(copy.deepcopy(box), word_box_list, direction)
+        word_box_list = reverse_rotate_crop_image(
+            copy.deepcopy(box), word_box_list, direction
+        )
 
         res.append([rec_res[0], rec_res[1], word_box_content_list, word_box_list])
     return res
@@ -58,8 +62,16 @@ def adjust_box_overlap(word_box_list):
 def s_rotate(angle, valuex, valuey, pointx, pointy):
     valuex = np.array(valuex)
     valuey = np.array(valuey)
-    sRotatex = (valuex - pointx) * math.cos(angle) + (valuey - pointy) * math.sin(angle) + pointx
-    sRotatey = (valuey - pointy) * math.cos(angle) - (valuex - pointx) * math.sin(angle) + pointy
+    sRotatex = (
+        (valuex - pointx) * math.cos(angle)
+        + (valuey - pointy) * math.sin(angle)
+        + pointx
+    )
+    sRotatey = (
+        (valuey - pointy) * math.cos(angle)
+        - (valuex - pointx) * math.sin(angle)
+        + pointy
+    )
     return [sRotatex, sRotatey]
 
 
@@ -67,7 +79,8 @@ def s_rotate(angle, valuex, valuey, pointx, pointy):
 # 版权声明：本文为CSDN博主「星夜孤帆」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
 # 原文链接：https://blog.csdn.net/qq_38826019/article/details/84233397
 
-def reverse_rotate_crop_image(bbox_points, word_points_list, direction='w'):
+
+def reverse_rotate_crop_image(bbox_points, word_points_list, direction="w"):
     """
     get_rotate_crop_image的逆操作
     img为原图
@@ -100,8 +113,10 @@ def reverse_rotate_crop_image(bbox_points, word_points_list, direction='w'):
         new_word_points = []
         for point in word_points:
             new_point = point
-            if direction == 'h':
-                new_point = s_rotate(math.radians(-90), new_point[0], new_point[1], 0, 0)
+            if direction == "h":
+                new_point = s_rotate(
+                    math.radians(-90), new_point[0], new_point[1], 0, 0
+                )
                 new_point[0] = new_point[0] + img_crop_width
 
             p = np.float32(new_point + [1])
@@ -115,9 +130,9 @@ def reverse_rotate_crop_image(bbox_points, word_points_list, direction='w'):
     return new_word_points_list
 
 
-def cal_ocr_word_box(rec_str: str,
-                     box: np.ndarray,
-                     rec_word_info: List[Tuple[str, List[int]]]):
+def cal_ocr_word_box(
+    rec_str: str, box: np.ndarray, rec_word_info: List[Tuple[str, List[int]]]
+):
     """Calculate the detection frame for each word based on the results of recognition and detection of ocr"""
 
     col_num, word_list, word_col_list, state_list = rec_word_info
@@ -151,6 +166,7 @@ def cal_ocr_word_box(rec_str: str,
             ]
             word_box_list.append(cell)
             word_box_content_list.append("".join(word))
+
     if len(cn_col_list) != 0:
         if len(cn_width_list) != 0:
             avg_char_width = np.mean(cn_width_list)
@@ -160,8 +176,8 @@ def cal_ocr_word_box(rec_str: str,
             center_x = (center_idx + 0.5) * cell_width
             cell_x_start = max(int(center_x - avg_char_width / 2), 0) + bbox_x_start
             cell_x_end = (
-                    min(int(center_x + avg_char_width / 2), bbox_x_end - bbox_x_start)
-                    + bbox_x_start
+                min(int(center_x + avg_char_width / 2), bbox_x_end - bbox_x_start)
+                + bbox_x_start
             )
             cell = [
                 [cell_x_start, bbox_y_start],
@@ -175,13 +191,15 @@ def cal_ocr_word_box(rec_str: str,
 
 
 def order_points(box):
-    '''矩形框顺序排列
+    """矩形框顺序排列
     :param box: numpy.array, shape=(4, 2)
     :return:
-    '''
+    """
     box = np.array(box).reshape((-1, 2))
     center_x, center_y = np.mean(box[:, 0]), np.mean(box[:, 1])
-    if np.any(box[:, 0] == center_x) and np.any(box[:, 1] == center_y):  # 有两点横坐标相等，有两点纵坐标相等，菱形
+    if np.any(box[:, 0] == center_x) and np.any(
+        box[:, 1] == center_y
+    ):  # 有两点横坐标相等，有两点纵坐标相等，菱形
         p1 = box[np.where(box[:, 0] == np.min(box[:, 0]))]
         p2 = box[np.where(box[:, 1] == np.min(box[:, 1]))]
         p3 = box[np.where(box[:, 0] == np.max(box[:, 0]))]
@@ -192,13 +210,33 @@ def order_points(box):
         p2 = box[y_sort[1]]
         p3 = box[y_sort[2]]
         p4 = box[y_sort[3]]
-    elif np.any(box[:, 0] == center_x) and np.all(box[:, 1] != center_y):  # 只有两点横坐标相等，先上下再左右
-        p12, p34 = box[np.where(box[:, 1] < center_y)], box[np.where(box[:, 1] > center_y)]
-        p1, p2 = p12[np.where(p12[:, 0] == np.min(p12[:, 0]))], p12[np.where(p12[:, 0] == np.max(p12[:, 0]))]
-        p3, p4 = p34[np.where(p34[:, 0] == np.max(p34[:, 0]))], p34[np.where(p34[:, 0] == np.min(p34[:, 0]))]
+    elif np.any(box[:, 0] == center_x) and np.all(
+        box[:, 1] != center_y
+    ):  # 只有两点横坐标相等，先上下再左右
+        p12, p34 = (
+            box[np.where(box[:, 1] < center_y)],
+            box[np.where(box[:, 1] > center_y)],
+        )
+        p1, p2 = (
+            p12[np.where(p12[:, 0] == np.min(p12[:, 0]))],
+            p12[np.where(p12[:, 0] == np.max(p12[:, 0]))],
+        )
+        p3, p4 = (
+            p34[np.where(p34[:, 0] == np.max(p34[:, 0]))],
+            p34[np.where(p34[:, 0] == np.min(p34[:, 0]))],
+        )
     else:  # 只有两点纵坐标相等，或者是没有相等的，先左右再上下
-        p14, p23 = box[np.where(box[:, 0] < center_x)], box[np.where(box[:, 0] > center_x)]
-        p1, p4 = p14[np.where(p14[:, 1] == np.min(p14[:, 1]))], p14[np.where(p14[:, 1] == np.max(p14[:, 1]))]
-        p2, p3 = p23[np.where(p23[:, 1] == np.min(p23[:, 1]))], p23[np.where(p23[:, 1] == np.max(p23[:, 1]))]
+        p14, p23 = (
+            box[np.where(box[:, 0] < center_x)],
+            box[np.where(box[:, 0] > center_x)],
+        )
+        p1, p4 = (
+            p14[np.where(p14[:, 1] == np.min(p14[:, 1]))],
+            p14[np.where(p14[:, 1] == np.max(p14[:, 1]))],
+        )
+        p2, p3 = (
+            p23[np.where(p23[:, 1] == np.min(p23[:, 1]))],
+            p23[np.where(p23[:, 1] == np.max(p23[:, 1]))],
+        )
 
     return np.array([p1, p2, p3, p4]).reshape((-1, 2)).tolist()
