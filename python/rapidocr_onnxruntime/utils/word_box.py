@@ -58,8 +58,10 @@ def adjust_box_overlap(word_box_list):
             nxt[3][0] += distance / 2
 
 
-# 绕pointx,pointy顺时针旋转
 def s_rotate(angle, valuex, valuey, pointx, pointy):
+    """绕pointx,pointy顺时针旋转
+    https://blog.csdn.net/qq_38826019/article/details/84233397
+    """
     valuex = np.array(valuex)
     valuey = np.array(valuey)
     sRotatex = (
@@ -75,11 +77,6 @@ def s_rotate(angle, valuex, valuey, pointx, pointy):
     return [sRotatex, sRotatey]
 
 
-# ————————————————
-# 版权声明：本文为CSDN博主「星夜孤帆」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
-# 原文链接：https://blog.csdn.net/qq_38826019/article/details/84233397
-
-
 def reverse_rotate_crop_image(bbox_points, word_points_list, direction="w"):
     """
     get_rotate_crop_image的逆操作
@@ -88,7 +85,6 @@ def reverse_rotate_crop_image(bbox_points, word_points_list, direction="w"):
     bbox_points为part_img中对应在原图的bbox, 四个点，左上，右上，右下，左下
     part_points为在part_img中的点[(x, y), (x, y)]
     """
-    # np.rot
     bbox_points = np.float32(bbox_points)
     left = int(np.min(bbox_points[:, 0]))
     top = int(np.min(bbox_points[:, 1]))
