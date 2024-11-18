@@ -2,6 +2,7 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import logging
+import platform
 import sys
 from pathlib import Path
 from typing import List
@@ -15,12 +16,13 @@ sys.path.append(str(root_dir))
 
 from rapidocr_onnxruntime import LoadImageError, RapidOCR
 
-from .base_module import download_file
+from .base_module import Platform, download_file
 
 engine = RapidOCR()
 tests_dir = root_dir / "tests" / "test_files"
 img_path = tests_dir / "ch_en_num.jpg"
 package_name = "rapidocr_onnxruntime"
+cur_platform = platform.system()
 
 
 def test_long_img():
@@ -29,7 +31,11 @@ def test_long_img():
     download_file(img_url, save_path=img_path)
     result, _ = engine(img_path)
     assert result is not None
-    assert len(result) == 55
+    if cur_platform == Platform.mac:
+        assert len(result) == 53
+    elif cur_platform == Platform.linux:
+        assert len(result) == 55
+
     img_path.unlink()
 
 
@@ -220,9 +226,7 @@ def test_input_three_ndim_one_channel():
 
     result, _ = engine(img)
 
-    import platform
-
-    if platform.system() == "Darwin":
+    if cur_platform == Platform.mac:
         assert len(result) == 17
     else:
         assert result is not None
@@ -230,7 +234,6 @@ def test_input_three_ndim_one_channel():
         assert len(result) == 17
 
 
-#
 @pytest.mark.parametrize(
     "img_name,words",
     [

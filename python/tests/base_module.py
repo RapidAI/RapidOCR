@@ -3,6 +3,7 @@
 # @Contact: liekkaskono@163.com
 import importlib
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Union
 
@@ -53,3 +54,10 @@ def download_file(url: str, save_path: Union[str, Path]):
 
 class DownloadModelError(Exception):
     pass
+
+
+@dataclass
+class Platform:
+    mac: str = "Darwin"
+    windows: str = "Windows"
+    linux: str = "Linux"
