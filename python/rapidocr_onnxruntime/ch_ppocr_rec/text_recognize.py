@@ -41,7 +41,9 @@ class TextRecognizer:
         self.rec_image_shape = config["rec_img_shape"]
 
     def __call__(
-        self, img_list: Union[np.ndarray, List[np.ndarray]], rec_word_box: bool = False
+        self,
+        img_list: Union[np.ndarray, List[np.ndarray]],
+        return_word_box: bool = False,
     ) -> Tuple[List[Tuple[str, float]], float]:
         if isinstance(img_list, np.ndarray):
             img_list = [img_list]
@@ -80,7 +82,7 @@ class TextRecognizer:
             preds = self.session(norm_img_batch)[0]
             rec_result = self.postprocess_op(
                 preds,
-                rec_word_box,
+                return_word_box,
                 wh_ratio_list=wh_ratio_list,
                 max_wh_ratio=max_wh_ratio,
             )
