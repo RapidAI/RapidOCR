@@ -16,11 +16,15 @@ class CTCLabelDecode:
         self.character = self.get_character(character, character_path)
         self.dict = {char: i for i, char in enumerate(self.character)}
 
-    def __call__(self, preds: np.ndarray, rec_word_box: bool = False, **kwargs) -> List[Tuple[str, float]]:
+    def __call__(
+        self, preds: np.ndarray, return_word_box: bool = False, **kwargs
+    ) -> List[Tuple[str, float]]:
         preds_idx = preds.argmax(axis=2)
         preds_prob = preds.max(axis=2)
-        text = self.decode(preds_idx, preds_prob, rec_word_box, is_remove_duplicate=True)
-        if rec_word_box:
+        text = self.decode(
+            preds_idx, preds_prob, return_word_box, is_remove_duplicate=True
+        )
+        if return_word_box:
             for rec_idx, rec in enumerate(text):
                 wh_ratio = kwargs["wh_ratio_list"][rec_idx]
                 max_wh_ratio = kwargs["max_wh_ratio"]
@@ -69,11 +73,11 @@ class CTCLabelDecode:
         return character_list
 
     def decode(
-            self,
-            text_index: np.ndarray,
-            text_prob: Optional[np.ndarray] = None,
-            rec_word_box: bool = False,
-            is_remove_duplicate: bool = False,
+        self,
+        text_index: np.ndarray,
+        text_prob: Optional[np.ndarray] = None,
+        return_word_box: bool = False,
+        is_remove_duplicate: bool = False,
     ) -> List[Tuple[str, float]]:
         """convert text-index into text-label."""
         result_list = []
@@ -83,20 +87,23 @@ class CTCLabelDecode:
             selection = np.ones(len(text_index[batch_idx]), dtype=bool)
             if is_remove_duplicate:
                 selection[1:] = text_index[batch_idx][1:] != text_index[batch_idx][:-1]
+
             for ignored_token in ignored_tokens:
                 selection &= text_index[batch_idx] != ignored_token
-            char_list = [
-                self.character[text_id] for text_id in text_index[batch_idx][selection]
-            ]
+
             if text_prob is not None:
                 conf_list = text_prob[batch_idx][selection]
             else:
                 conf_list = [1] * len(selection)
+
             if len(conf_list) == 0:
                 conf_list = [0]
 
+            char_list = [
+                self.character[text_id] for text_id in text_index[batch_idx][selection]
+            ]
             text = "".join(char_list)
-            if rec_word_box:
+            if return_word_box:
                 word_list, word_col_list, state_list = self.get_word_info(
                     text, selection
                 )
@@ -117,10 +124,12 @@ class CTCLabelDecode:
         return result_list
 
     @staticmethod
-    def get_word_info(text: str,
-                      selection: np.ndarray) -> Tuple[List[List[str]], List[List[int]], List[str]]:
+    def get_word_info(
+        text: str, selection: np.ndarray
+    ) -> Tuple[List[List[str]], List[List[int]], List[str]]:
         """
         Group the decoded characters and record the corresponding decoded positions.
+        from https://github.com/PaddlePaddle/PaddleOCR/blob/fbba2178d7093f1dffca65a5b963ec277f1a6125/ppocr/postprocess/rec_postprocess.py#L70
 
         Args:
             text: the decoded text
@@ -145,6 +154,7 @@ class CTCLabelDecode:
                 c_state = "cn"
             else:
                 c_state = "en&num"
+
             if state == None:
                 state = c_state
 
@@ -156,8 +166,10 @@ class CTCLabelDecode:
                     word_content = []
                     word_col_content = []
                 state = c_state
+
             word_content.append(char)
             word_col_content.append(int(valid_col[c_i]))
+
         if len(word_content) != 0:
             word_list.append(word_content)
             word_col_list.append(word_col_content)

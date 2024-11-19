@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Tuple, Union
 
 import cv2
 import numpy as np
+
 from rapidocr_onnxruntime.utils import OrtInferSession, read_yaml
 
 from .utils import CTCLabelDecode
@@ -40,7 +41,9 @@ class TextRecognizer:
         self.rec_image_shape = config["rec_img_shape"]
 
     def __call__(
-        self, img_list: Union[np.ndarray, List[np.ndarray]], rec_word_box=False
+        self,
+        img_list: Union[np.ndarray, List[np.ndarray]],
+        return_word_box: bool = False,
     ) -> Tuple[List[Tuple[str, float]], float]:
         if isinstance(img_list, np.ndarray):
             img_list = [img_list]
@@ -58,6 +61,7 @@ class TextRecognizer:
         elapse = 0
         for beg_img_no in range(0, img_num, batch_num):
             end_img_no = min(img_num, beg_img_no + batch_num)
+
             # Parameter Alignment for PaddleOCR
             imgC, imgH, imgW = self.rec_image_shape[:3]
             max_wh_ratio = imgW / imgH
@@ -67,6 +71,7 @@ class TextRecognizer:
                 wh_ratio = w * 1.0 / h
                 max_wh_ratio = max(max_wh_ratio, wh_ratio)
                 wh_ratio_list.append(wh_ratio)
+
             norm_img_batch = []
             for ino in range(beg_img_no, end_img_no):
                 norm_img = self.resize_norm_img(img_list[indices[ino]], max_wh_ratio)
@@ -75,9 +80,12 @@ class TextRecognizer:
 
             starttime = time.time()
             preds = self.session(norm_img_batch)[0]
-            rec_result = self.postprocess_op(preds, rec_word_box,
-                                             wh_ratio_list=wh_ratio_list,
-                                             max_wh_ratio=max_wh_ratio,)
+            rec_result = self.postprocess_op(
+                preds,
+                return_word_box,
+                wh_ratio_list=wh_ratio_list,
+                max_wh_ratio=max_wh_ratio,
+            )
 
             for rno, one_res in enumerate(rec_result):
                 rec_res[indices[beg_img_no + rno]] = one_res
