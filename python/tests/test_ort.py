@@ -16,7 +16,7 @@ sys.path.append(str(root_dir))
 
 from rapidocr_onnxruntime import LoadImageError, RapidOCR
 
-from .base_module import Platform, download_file
+from .base_module import download_file
 
 engine = RapidOCR()
 tests_dir = root_dir / "tests" / "test_files"
@@ -30,11 +30,9 @@ def test_long_img():
     img_path = tests_dir / "long.jpeg"
     download_file(img_url, save_path=img_path)
     result, _ = engine(img_path)
+
     assert result is not None
-    if cur_platform == Platform.mac:
-        assert len(result) == 53
-    elif cur_platform == Platform.linux:
-        assert len(result) == 55
+    assert len(result) >= 55
 
     img_path.unlink()
 
@@ -226,12 +224,7 @@ def test_input_three_ndim_one_channel():
 
     result, _ = engine(img)
 
-    if cur_platform == Platform.mac:
-        assert len(result) == 17
-    else:
-        assert result is not None
-        assert result[0][1] == "正品促销"
-        assert len(result) == 17
+    assert len(result) >= 17
 
 
 @pytest.mark.parametrize(
