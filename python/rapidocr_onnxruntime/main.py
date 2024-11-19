@@ -108,13 +108,12 @@ class RapidOCR:
         if use_rec:
             rec_res, rec_elapse = self.text_rec(img, return_word_box)
 
-        # fix word box by fix rotate and perspective
         if dt_boxes is not None and rec_res is not None and return_word_box:
             rec_res = self.cal_rec_boxes(img, dt_boxes, rec_res)
             for rec_res_i in rec_res:
-                if rec_res_i[3]:
-                    rec_res_i[3] = (
-                        self._get_origin_points(rec_res_i[3], op_record, raw_h, raw_w)
+                if rec_res_i[2]:
+                    rec_res_i[2] = (
+                        self._get_origin_points(rec_res_i[2], op_record, raw_h, raw_w)
                         .astype(np.int32)
                         .tolist()
                     )

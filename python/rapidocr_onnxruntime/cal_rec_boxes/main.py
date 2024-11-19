@@ -22,7 +22,7 @@ class CalRecBoxes:
         rec_res: Optional[List[Any]],
     ):
         res = []
-        for i, (img, box, rec_res) in enumerate(zip(imgs, dt_boxes, rec_res)):
+        for img, box, rec_res in zip(imgs, dt_boxes, rec_res):
             direction = self.get_box_direction(box)
 
             rec_txt, rec_conf, rec_word_info = rec_res[0], rec_res[1], rec_res[2]
@@ -35,7 +35,7 @@ class CalRecBoxes:
             word_box_list = self.reverse_rotate_crop_image(
                 copy.deepcopy(box), word_box_list, direction
             )
-            res.append([rec_txt, rec_conf, word_box_content_list, word_box_list])
+            res.append([rec_txt, rec_conf, word_box_list, word_box_content_list])
         return res
 
     @staticmethod

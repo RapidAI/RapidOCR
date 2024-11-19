@@ -250,4 +250,4 @@ def test_input_three_ndim_one_channel():
 def test_word_ocr(img_name: str, words: List[str]):
     img_path = tests_dir / img_name
     result, _ = engine(img_path, return_word_box=True)
-    assert result[0][3] == words
+    assert result[0][4] == words
