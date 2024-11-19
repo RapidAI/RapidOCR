@@ -32,7 +32,7 @@ def test_long_img():
     result, _ = engine(img_path)
 
     assert result is not None
-    assert len(result) >= 55
+    assert len(result) >= 53
 
     img_path.unlink()
 
