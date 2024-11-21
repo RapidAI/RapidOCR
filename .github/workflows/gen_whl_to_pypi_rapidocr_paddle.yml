@@ -88,7 +88,9 @@ jobs:
 
           cd ..
           python -m pip install --upgrade pip
-          python setup_paddle.py bdist_wheel "{{ github.event.head_commit.message }}"
+
+          echo "${{ github.event.head_commit.message }}"
+          python setup_paddle.py bdist_wheel "${{ github.event.head_commit.message }}"
           mv dist ../
 
       - name: Publish distribution 📦 to PyPI
