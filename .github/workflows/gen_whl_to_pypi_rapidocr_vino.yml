@@ -87,7 +87,7 @@ jobs:
 
           cd ..
           python -m pip install --upgrade pip
-          python setup_openvino.py bdist_wheel "{{ github.event.head_commit.message }}"
+          python setup_openvino.py bdist_wheel "${{ github.event.head_commit.message }}"
           mv dist ../
 
       - name: Publish distribution 📦 to PyPI

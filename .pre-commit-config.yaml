@@ -8,7 +8,6 @@ repos:
           "--recursive",
           "--in-place",
           "--remove-all-unused-imports",
-          "--remove-unused-variable",
           "--ignore-init-module-imports",
         ]
       files: \.py$
