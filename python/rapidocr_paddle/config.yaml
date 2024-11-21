@@ -8,6 +8,7 @@ Global:
     width_height_ratio: 8
     max_side_len: 2000
     min_side_len: 30
+    return_word_box: false
 
     cpu_math_library_num_threads: &infer_num_threads -1
 

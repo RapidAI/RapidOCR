@@ -2,7 +2,6 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import logging
-import platform
 import sys
 from pathlib import Path
 from typing import List
@@ -22,7 +21,6 @@ engine = RapidOCR()
 tests_dir = root_dir / "tests" / "test_files"
 img_path = tests_dir / "ch_en_num.jpg"
 package_name = "rapidocr_onnxruntime"
-cur_platform = platform.system()
 
 
 def test_long_img():
