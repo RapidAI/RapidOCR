@@ -21,3 +21,15 @@ jobs:
           # only sync this repo
           static_list: "RapidOCR"
           debug: true
+
+      - name: Mirror the Github organization repos to Gitee.
+        uses: Yikun/hub-mirror-action@v1.4
+        with:
+          src: 'github/RapidAI'
+          dst: 'gitee/openKylin'
+          dst_key: ${{ secrets.GITEE_PRIVATE_KEY }}
+          dst_token:  ${{ secrets.GITEE_TOKEN }}
+          force_update: true
+          # only sync this repo
+          static_list: "RapidOCR"
+          debug: true
