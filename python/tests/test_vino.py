@@ -212,7 +212,7 @@ def test_input_three_ndim_one_channel():
         ),
         (
             "text_vertical_words.png",
-            ["已", "取", "之", "時", "不", "參", "一", "人", "見", "而"],
+            ["已", "取", "之", "時", "不", "參", "一", "人", "见", "而"],
         ),
         (
             "issue_170.png",
