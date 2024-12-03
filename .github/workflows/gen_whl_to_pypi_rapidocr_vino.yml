@@ -9,8 +9,7 @@ on:
       - 'python/setup_openvino.py'
       - '.github/workflows/gen_whl_to_pypi_rapidocr_vino.yml'
       - 'python/requirements_vino.txt'
-    # tags:
-    #   - v*
+
 
 env:
   RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.3.0.zip
