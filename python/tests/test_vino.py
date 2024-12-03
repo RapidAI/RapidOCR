@@ -3,6 +3,7 @@
 # @Contact: liekkaskono@163.com
 import sys
 from pathlib import Path
+from typing import List
 
 import cv2
 import numpy as np
@@ -202,20 +203,24 @@ def test_input_three_ndim_one_channel():
     assert len(result) >= 17
 
 
-# @pytest.mark.parametrize(
-#     "img_name,words",
-#     [
-#         (
-#             "black_font_color_transparent.png",
-#             ["我", "是", "中", "国", "人"],
-#         ),
-#         (
-#             "text_vertical_words.png",
-#             ["已", "取", "之", "時", "不", "參", "一", "人", "見", "而"],
-#         ),
-#     ],
-# )
-# def test_word_ocr(img_name: str, words: List[str]):
-#     img_path = tests_dir / img_name
-#     result, _ = engine(img_path, return_word_box=True)
-#     assert result[0][4] == words
+@pytest.mark.parametrize(
+    "img_name,words",
+    [
+        (
+            "black_font_color_transparent.png",
+            ["我", "是", "中", "国", "人"],
+        ),
+        (
+            "text_vertical_words.png",
+            ["已", "取", "之", "時", "不", "參", "一", "人", "見", "而"],
+        ),
+        (
+            "issue_170.png",
+            ["T", "E", "S", "T"],
+        ),
+    ],
+)
+def test_word_ocr(img_name: str, words: List[str]):
+    img_path = tests_dir / img_name
+    result, _ = engine(img_path, return_word_box=True)
+    assert result[0][4] == words

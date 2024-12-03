@@ -59,7 +59,7 @@ class CalRecBoxes:
 
     @staticmethod
     def cal_ocr_word_box(
-            rec_txt: str, box: np.ndarray, rec_word_info: List[Tuple[str, List[int]]]
+        rec_txt: str, box: np.ndarray, rec_word_info: List[Tuple[str, List[int]]]
     ) -> Tuple[List[str], List[List[int]]]:
         """Calculate the detection frame for each word based on the results of recognition and detection of ocr
         汉字坐标是单字的
@@ -82,7 +82,7 @@ class CalRecBoxes:
         en_col_list = []
 
         def cal_char_width(width_list, word_col_):
-            if len(word_col) == 1:
+            if len(word_col_) == 1:
                 return
             char_total_length = (word_col_[-1] - word_col_[0] + 1) * cell_width
             char_width = char_total_length / (len(word_col_) - 1)
@@ -100,8 +100,8 @@ class CalRecBoxes:
                 center_x = (center_idx + 0.5) * cell_width
                 cell_x_start = max(int(center_x - avg_char_width / 2), 0) + bbox_x_start
                 cell_x_end = (
-                        min(int(center_x + avg_char_width / 2), bbox_x_end - bbox_x_start)
-                        + bbox_x_start
+                    min(int(center_x + avg_char_width / 2), bbox_x_end - bbox_x_start)
+                    + bbox_x_start
                 )
                 cell = [
                     [cell_x_start, bbox_y_start],
