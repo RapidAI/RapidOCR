@@ -28,7 +28,7 @@ MODULE_NAME = "rapidocr_onnxruntime"
 
 obtainer = GetPyPiLatestVersion()
 latest_version = obtainer(MODULE_NAME)
-VERSION_NUM = obtainer.version_add_one(latest_version)
+VERSION_NUM = obtainer.version_add_one(latest_version, add_patch=True)
 
 if len(sys.argv) > 2:
     match_str = " ".join(sys.argv[2:])
