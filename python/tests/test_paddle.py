@@ -212,18 +212,11 @@ def test_input_three_ndim_one_channel():
         ),
         (
             "text_vertical_words.png",
-            [
-                "已",
-                "取",
-                "之",
-                "時",
-                "不",
-                "參",
-                "一",
-                "人",
-                "见",
-                "而",
-            ],  # rapidocr_onnxruntime: 見, rapidocr_paddle: 见
+            ["已", "取", "之", "時", "不", "參", "一", "人", "见", "而"],
+        ),
+        (
+            "issue_170.png",
+            ["T", "E", "S", "T"],
         ),
     ],
 )
