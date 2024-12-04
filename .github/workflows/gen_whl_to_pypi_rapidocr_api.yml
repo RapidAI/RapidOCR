@@ -8,6 +8,7 @@ on:
       - 'docs/doc_whl_rapidocr_api.md'
       - 'api/setup.py'
       - '.github/workflows/gen_whl_to_pypi_rapidocr_api.yml'
+      - 'api/requirements.txt'
 
 jobs:
   GenerateWHL_PushPyPi:
