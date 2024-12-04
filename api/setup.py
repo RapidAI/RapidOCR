@@ -56,6 +56,11 @@ setuptools.setup(
     license="Apache-2.0",
     include_package_data=True,
     install_requires=read_txt("requirements.txt"),
+    extras_require={
+        'onnx': ['rapidocr-onnxruntime'],
+        'paddle': ['rapidocr-paddle'],
+        'openvino': ['rapidocr-openvino'],
+    },
     packages=[MODULE_NAME],
     package_data={"": ["*.ico", "*.css", "*.js", "*.html"]},
     keywords=[
