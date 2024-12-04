@@ -9,12 +9,23 @@ import os
 import sys
 from pathlib import Path
 from typing import Dict
+import importlib.util
 
 import numpy as np
 import uvicorn
 from fastapi import FastAPI, Form, UploadFile
 from PIL import Image
-from rapidocr_onnxruntime import RapidOCR
+
+if importlib.util.find_spec("rapidocr_runtime"):
+    from rapidocr_onnxruntime import RapidOCR
+elif importlib.util.find_spec("rapidocr_paddle"):
+    from rapidocr_paddle import RapidOCR
+elif importlib.util.find_spec("rapidocr_openvino"):
+    from rapidocr_openvino import RapidOCR
+else:
+    raise ImportError(
+        "Pleas install one of [rapidocr-runtime,rapidocr-paddle,rapidocr-openvino]"
+    )
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
