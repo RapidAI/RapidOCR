@@ -1,5 +1,4 @@
 requests
-rapidocr_onnxruntime
 fastapi
 uvicorn[standard]
 python-multipart
