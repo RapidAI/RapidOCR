@@ -33,7 +33,7 @@ try:
     latest_version = obtainer(MODULE_NAME)
 except ValueError:
     latest_version = "0.0.1"
-VERSION_NUM = obtainer.version_add_one(latest_version)
+VERSION_NUM = obtainer.version_add_one(latest_version, add_patch=True)
 
 if len(sys.argv) > 2:
     match_str = " ".join(sys.argv[2:])
@@ -56,11 +56,6 @@ setuptools.setup(
     license="Apache-2.0",
     include_package_data=True,
     install_requires=read_txt("requirements.txt"),
-    extras_require={
-        'onnx': ['rapidocr-onnxruntime'],
-        'paddle': ['rapidocr-paddle'],
-        'openvino': ['rapidocr-openvino'],
-    },
     packages=[MODULE_NAME],
     package_data={"": ["*.ico", "*.css", "*.js", "*.html"]},
     keywords=[
@@ -80,5 +75,10 @@ setuptools.setup(
         "console_scripts": [
             f"{MODULE_NAME}={MODULE_NAME}.main:main",
         ],
+    },
+    extras_require={
+        "onnx": ["rapidocr-onnxruntime"],
+        "paddle": ["rapidocr-paddle"],
+        "openvino": ["rapidocr-openvino"],
     },
 )

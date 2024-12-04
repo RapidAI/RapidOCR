@@ -1,22 +1,21 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-
 import argparse
 import base64
+import importlib.util
 import io
 import os
 import sys
 from pathlib import Path
 from typing import Dict
-import importlib.util
 
 import numpy as np
 import uvicorn
 from fastapi import FastAPI, Form, UploadFile
 from PIL import Image
 
-if importlib.util.find_spec("rapidocr_runtime"):
+if importlib.util.find_spec("rapidocr_onnxruntime"):
     from rapidocr_onnxruntime import RapidOCR
 elif importlib.util.find_spec("rapidocr_paddle"):
     from rapidocr_paddle import RapidOCR
@@ -24,7 +23,7 @@ elif importlib.util.find_spec("rapidocr_openvino"):
     from rapidocr_openvino import RapidOCR
 else:
     raise ImportError(
-        "Pleas install one of [rapidocr-runtime,rapidocr-paddle,rapidocr-openvino]"
+        "Please install one of [rapidocr_onnxruntime,rapidocr-paddle,rapidocr-openvino]"
     )
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -32,16 +31,18 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 class OCRAPIUtils:
     def __init__(self) -> None:
-        # 从环境变量中读取参数
         det_model_path = os.getenv("det_model_path", None)
         cls_model_path = os.getenv("cls_model_path", None)
         rec_model_path = os.getenv("rec_model_path", None)
 
-        self.ocr = RapidOCR(
-            det_model_path=det_model_path,
-            cls_model_path=cls_model_path,
-            rec_model_path=rec_model_path,
-        )
+        if det_model_path is None or cls_model_path is None or rec_model_path is None:
+            self.ocr = RapidOCR()
+        else:
+            self.ocr = RapidOCR(
+                det_model_path=det_model_path,
+                cls_model_path=cls_model_path,
+                rec_model_path=rec_model_path,
+            )
 
     def __call__(
         self, img: Image.Image, use_det=None, use_cls=None, use_rec=None, **kwargs
@@ -54,7 +55,6 @@ class OCRAPIUtils:
         if not ocr_res:
             return {}
 
-        # 转换为字典格式: 兼容所有参数情况
         out_dict = {}
         for i, dats in enumerate(ocr_res):
             values = {}
