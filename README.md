@@ -75,6 +75,10 @@ print(elapse)
 
 Full documentation can be found on [docs](https://rapidai.github.io/RapidOCRDocs/), in Chinese.
 
+### Who use?
+
+Used by [link](https://github.com/RapidAI/RapidOCR/discussions/286)
+
 ### Acknowledgements
 
 - Many thanks to [DeliciaLaniD](https://github.com/DeliciaLaniD) for fixing the misplaced start position of scan animation in ocrweb.

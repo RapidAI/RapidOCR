@@ -80,6 +80,10 @@ print(elapse)
 
 完整文档请移步：[docs](https://rapidai.github.io/RapidOCRDocs)
 
+### 谁在使用？
+
+Used by [link](https://github.com/RapidAI/RapidOCR/discussions/286)
+
 ### 致谢
 
 - 非常感谢[DeliciaLaniD](https://github.com/DeliciaLaniD)修复ocrweb中扫描动画起始位置错位问题。
