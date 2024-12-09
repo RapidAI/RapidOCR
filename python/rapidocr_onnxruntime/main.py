@@ -118,7 +118,7 @@ class RapidOCR:
                         .tolist()
                     )
 
-        if dt_boxes is not None and rec_res is not None:
+        if dt_boxes is not None:
             dt_boxes = self._get_origin_points(dt_boxes, op_record, raw_h, raw_w)
 
         ocr_res = self.get_final_res(
