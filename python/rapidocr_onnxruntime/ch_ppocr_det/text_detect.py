@@ -26,9 +26,9 @@ from .utils import DBPostProcess, DetPreProcess
 
 class TextDetector:
     def __init__(self, config: Dict[str, Any]):
-        limit_side_len = config.get("limit_side_len", 736)
-        limit_type = config.get("limit_type", "min")
-        self.preprocess_op = DetPreProcess(limit_side_len, limit_type)
+        self.limit_type = config.get("limit_type", "min")
+        self.limit_side_len = config.get("limit_side_len", 736)
+        self.preprocess_op = None
 
         post_process = {
             "thresh": config.get("thresh", 0.3),
@@ -49,6 +49,7 @@ class TextDetector:
             raise ValueError("img is None")
 
         ori_img_shape = img.shape[0], img.shape[1]
+        self.preprocess_op = self.get_preprocess(max(img.shape[0], img.shape[1]))
         prepro_img = self.preprocess_op(img)
         if prepro_img is None:
             return None, 0
@@ -58,6 +59,17 @@ class TextDetector:
         dt_boxes = self.filter_tag_det_res(dt_boxes, ori_img_shape)
         elapse = time.perf_counter() - start_time
         return dt_boxes, elapse
+
+    def get_preprocess(self, max_wh):
+        if self.limit_type == 'min':
+            limit_side_len = self.limit_side_len
+        elif max_wh < 960:
+            limit_side_len = 960
+        elif max_wh < 1500:
+            limit_side_len = 1500
+        else:
+            limit_side_len = 2000
+        return DetPreProcess(limit_side_len, self.limit_type)
 
     def filter_tag_det_res(
         self, dt_boxes: np.ndarray, image_shape: Tuple[int, int]
