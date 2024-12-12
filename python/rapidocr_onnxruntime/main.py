@@ -334,6 +334,7 @@ def main():
         use_det=use_det,
         use_cls=use_cls,
         use_rec=use_rec,
+        **vars(args)
     )
     logger.info(result)
 
