@@ -28,14 +28,16 @@ class CalRecBoxes:
             rec_txt, rec_conf, rec_word_info = rec_res[0], rec_res[1], rec_res[2]
             h, w = img.shape[:2]
             img_box = np.array([[0, 0], [w, 0], [w, h], [0, h]])
-            word_box_content_list, word_box_list = self.cal_ocr_word_box(
+            word_box_content_list, word_box_list, conf_list = self.cal_ocr_word_box(
                 rec_txt, img_box, rec_word_info
             )
             word_box_list = self.adjust_box_overlap(copy.deepcopy(word_box_list))
             word_box_list = self.reverse_rotate_crop_image(
                 copy.deepcopy(box), word_box_list, direction
             )
-            res.append([rec_txt, rec_conf, word_box_list, word_box_content_list])
+            res.append(
+                [rec_txt, rec_conf, word_box_list, word_box_content_list, conf_list]
+            )
         return res
 
     @staticmethod
@@ -60,13 +62,13 @@ class CalRecBoxes:
     @staticmethod
     def cal_ocr_word_box(
         rec_txt: str, box: np.ndarray, rec_word_info: List[Tuple[str, List[int]]]
-    ) -> Tuple[List[str], List[List[int]]]:
+    ) -> Tuple[List[str], List[List[int]], List[float]]:
         """Calculate the detection frame for each word based on the results of recognition and detection of ocr
         汉字坐标是单字的
         英语坐标是单词级别的
         """
 
-        col_num, word_list, word_col_list, state_list = rec_word_info
+        col_num, word_list, word_col_list, state_list, conf_list = rec_word_info
         box = box.tolist()
         bbox_x_start = box[0][0]
         bbox_x_end = box[1][0]
@@ -84,7 +86,7 @@ class CalRecBoxes:
         def cal_char_width(width_list, word_col_):
             if len(word_col_) == 1:
                 return
-            char_total_length = (word_col_[-1] - word_col_[0] + 1) * cell_width
+            char_total_length = (word_col_[-1] - word_col_[0]) * cell_width
             char_width = char_total_length / (len(word_col_) - 1)
             width_list.append(char_width)
 
@@ -124,7 +126,7 @@ class CalRecBoxes:
         cal_box(cn_col_list, cn_width_list, word_box_list)
         cal_box(en_col_list, en_width_list, word_box_list)
         sorted_word_box_list = sorted(word_box_list, key=lambda box: box[0][0])
-        return word_box_content_list, sorted_word_box_list
+        return word_box_content_list, sorted_word_box_list, conf_list
 
     @staticmethod
     def adjust_box_overlap(
@@ -218,6 +220,7 @@ class CalRecBoxes:
     @staticmethod
     def order_points(box: List[List[int]]) -> List[List[int]]:
         """矩形框顺序排列"""
+
         def convert_to_1x2(p):
             if p.shape == (2,):
                 return p.reshape((1, 2))
@@ -225,6 +228,7 @@ class CalRecBoxes:
                 return p
             else:
                 return p[:1, :]
+
         box = np.array(box).reshape((-1, 2))
         center_x, center_y = np.mean(box[:, 0]), np.mean(box[:, 1])
         if np.any(box[:, 0] == center_x) and np.any(
@@ -268,6 +272,7 @@ class CalRecBoxes:
                 p23[np.where(p23[:, 1] == np.min(p23[:, 1]))],
                 p23[np.where(p23[:, 1] == np.max(p23[:, 1]))],
             )
+
         # 解决单字切割后横坐标完全相同的shape错误
         p1 = convert_to_1x2(p1)
         p2 = convert_to_1x2(p2)

@@ -330,10 +330,7 @@ def main():
     use_cls = not args.no_cls
     use_rec = not args.no_rec
     result, elapse_list = ocr_engine(
-        args.img_path,
-        use_det=use_det,
-        use_cls=use_cls,
-        use_rec=use_rec,
+        args.img_path, use_det=use_det, use_cls=use_cls, use_rec=use_rec, **vars(args)
     )
     logger.info(result)
 
