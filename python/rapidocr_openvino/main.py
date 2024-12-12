@@ -276,7 +276,7 @@ class RapidOCR:
         self,
         dt_boxes: Optional[List[np.ndarray]],
         cls_res: Optional[List[List[Union[str, float]]]],
-        rec_res: Optional[List[Tuple[str, float]]],
+        rec_res: Optional[List[Tuple[str, float, List[Union[str, float]]]]],
         det_elapse: float,
         cls_elapse: float,
         rec_elapse: float,
@@ -330,10 +330,7 @@ def main():
     use_cls = not args.no_cls
     use_rec = not args.no_rec
     result, elapse_list = ocr_engine(
-        args.img_path,
-        use_det=use_det,
-        use_cls=use_cls,
-        use_rec=use_rec,
+        args.img_path, use_det=use_det, use_cls=use_cls, use_rec=use_rec, **vars(args)
     )
     logger.info(result)
 

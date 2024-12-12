@@ -92,7 +92,7 @@ class CTCLabelDecode:
                 selection &= text_index[batch_idx] != ignored_token
 
             if text_prob is not None:
-                conf_list = text_prob[batch_idx][selection]
+                conf_list = np.array(text_prob[batch_idx][selection]).tolist()
             else:
                 conf_list = [1] * len(selection)
 
@@ -116,6 +116,7 @@ class CTCLabelDecode:
                             word_list,
                             word_col_list,
                             state_list,
+                            conf_list,
                         ],
                     )
                 )
@@ -147,7 +148,13 @@ class CTCLabelDecode:
         word_list = []
         word_col_list = []
         state_list = []
-        valid_col = np.where(selection == True)[0]
+        valid_col = np.where(selection)[0]
+        col_width = np.zeros(valid_col.shape)
+        if len(valid_col) > 0:
+            col_width[1:] = valid_col[1:] - valid_col[:-1]
+            col_width[0] = min(
+                3 if "\u4e00" <= text[0] <= "\u9fff" else 2, int(valid_col[0])
+            )
 
         for c_i, char in enumerate(text):
             if "\u4e00" <= char <= "\u9fff":
@@ -155,10 +162,10 @@ class CTCLabelDecode:
             else:
                 c_state = "en&num"
 
-            if state == None:
+            if state is None:
                 state = c_state
 
-            if state != c_state:
+            if state != c_state or col_width[c_i] > 4:
                 if len(word_content) != 0:
                     word_list.append(word_content)
                     word_col_list.append(word_col_content)
