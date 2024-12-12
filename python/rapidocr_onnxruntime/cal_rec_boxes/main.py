@@ -35,7 +35,9 @@ class CalRecBoxes:
             word_box_list = self.reverse_rotate_crop_image(
                 copy.deepcopy(box), word_box_list, direction
             )
-            res.append([rec_txt, rec_conf, word_box_list, word_box_content_list, conf_list])
+            res.append(
+                [rec_txt, rec_conf, word_box_list, word_box_content_list, conf_list]
+            )
         return res
 
     @staticmethod
@@ -137,8 +139,8 @@ class CalRecBoxes:
                 distance = abs(cur[1][0] - nxt[0][0])
                 cur[1][0] -= distance / 2
                 cur[2][0] -= distance / 2
-                nxt[0][0] += distance / 2
-                nxt[3][0] += distance / 2
+                nxt[0][0] += distance - distance / 2
+                nxt[3][0] += distance - distance / 2
         return word_box_list
 
     def reverse_rotate_crop_image(
@@ -218,6 +220,15 @@ class CalRecBoxes:
     @staticmethod
     def order_points(box: List[List[int]]) -> List[List[int]]:
         """矩形框顺序排列"""
+
+        def convert_to_1x2(p):
+            if p.shape == (2,):
+                return p.reshape((1, 2))
+            elif p.shape == (1, 2):
+                return p
+            else:
+                return p[:1, :]
+
         box = np.array(box).reshape((-1, 2))
         center_x, center_y = np.mean(box[:, 0]), np.mean(box[:, 1])
         if np.any(box[:, 0] == center_x) and np.any(
@@ -261,9 +272,10 @@ class CalRecBoxes:
                 p23[np.where(p23[:, 1] == np.min(p23[:, 1]))],
                 p23[np.where(p23[:, 1] == np.max(p23[:, 1]))],
             )
-        # 解决单字矩形框重叠导致多个相同框的情况
-        p1 = p1[:1, :]
-        p2 = p2[:1, :]
-        p3 = p3[:1, :]
-        p4 = p4[:1, :]
+
+        # 解决单字切割后横坐标完全相同的shape错误
+        p1 = convert_to_1x2(p1)
+        p2 = convert_to_1x2(p2)
+        p3 = convert_to_1x2(p3)
+        p4 = convert_to_1x2(p4)
         return np.array([p1, p2, p3, p4]).reshape((-1, 2)).tolist()

@@ -116,7 +116,7 @@ class CTCLabelDecode:
                             word_list,
                             word_col_list,
                             state_list,
-                            conf_list
+                            conf_list,
                         ],
                     )
                 )
@@ -152,7 +152,9 @@ class CTCLabelDecode:
         col_width = np.zeros(valid_col.shape)
         if len(valid_col) > 0:
             col_width[1:] = valid_col[1:] - valid_col[:-1]
-            col_width[0] = min(3 if "\u4e00" <= text[0] <= "\u9fff" else 2, int(valid_col[0]))
+            col_width[0] = min(
+                3 if "\u4e00" <= text[0] <= "\u9fff" else 2, int(valid_col[0])
+            )
 
         for c_i, char in enumerate(text):
             if "\u4e00" <= char <= "\u9fff":
