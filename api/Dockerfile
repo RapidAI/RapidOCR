@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /app
 
 RUN set -eux; \
-    pip install --no-cache-dir rapidocr_api -i https://mirrors.aliyun.com/pypi/simple; \
+    pip install --no-cache-dir rapidocr_api pillow rapidocr-onnxruntime==1.3.25 -i https://mirrors.aliyun.com/pypi/simple; \
     pip uninstall -y opencv-python; \
     pip install --no-cache-dir opencv-python-headless -i https://mirrors.aliyun.com/pypi/simple
 
