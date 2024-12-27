@@ -12,10 +12,15 @@ build时使用宿主的网络
 
 调试运行：
 ```
-docker run --rm -p 9003:9003 --name rapidocr_api rapidocr_api:0.1.4
+docker run --rm -p 9003:9003 --name rapidocr_api -e TZ=Asia/Shanghai rapidocr_api:0.1.4
 ```
 
 运行：
 ```
-docker run -d -p 9003:9003 --name rapidocr_api rapidocr_api:0.1.4
+docker run -d -p 9003:9003 --name rapidocr_api -e TZ=Asia/Shanghai rapidocr_api:0.1.4
+```
+
+接口web界面：
+```
+http://<ip>:9003/docs
 ```
