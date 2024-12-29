@@ -34,7 +34,9 @@ docker run -p 9003:9003 --name rapidocr_api -e TZ=Asia/Shanghai rapidocr_api:0.1
 ```
 docker exec -it rapidocr_api /bin/bash
 cd /usr/local/lib/python3.10/site-packages/rapidocr_api
-# 修改文件
+...
+# 修改参数文件
+vi /usr/local/lib/python3.10/site-packages/rapidocr_onnxruntime/config.yaml
 # 改好后exit退出
 ```
 重启container
