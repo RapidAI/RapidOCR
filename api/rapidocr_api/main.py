@@ -111,7 +111,7 @@ def main():
         "-workers", "--workers", type=int, default=1, help="number of worker process"
     )
     args = parser.parse_args()
-    
+
     # 修改 uvicorn 的默认日志配置
     log_config = uvicorn.config.LOGGING_CONFIG
     log_config["formatters"]["access"]["fmt"] = "%(asctime)s %(levelname)s %(message)s"
