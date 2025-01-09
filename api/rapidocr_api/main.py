@@ -112,12 +112,18 @@ def main():
     )
     args = parser.parse_args()
 
+    # 修改 uvicorn 的默认日志配置
+    log_config = uvicorn.config.LOGGING_CONFIG
+    log_config["formatters"]["access"]["fmt"] = "%(asctime)s %(levelname)s %(message)s"
+    log_config["formatters"]["default"]["fmt"] = "%(asctime)s %(levelname)s %(message)s"
+
     uvicorn.run(
         "rapidocr_api.main:app",
         host=args.ip,
         port=args.port,
         reload=0,
         workers=args.workers,
+        log_config=log_config,
     )
 
 
