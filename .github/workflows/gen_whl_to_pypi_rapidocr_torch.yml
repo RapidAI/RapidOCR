@@ -1,0 +1,104 @@
+name: Push rapidocr_torch to pypi
+
+on:
+  push:
+#    branches: [ main ]
+#    paths:
+#      - 'python/rapidocr_torch/**'
+#      - 'python/setup_torch.py'
+#      - '.github/workflows/gen_whl_to_pypi_rapidocr_torch.yml'
+#      - 'python/requirements_torch.txt'
+    tags:
+      - torch_v*
+
+env:
+  RESOURCES_URL: https://github.com/Joker1212/RapidOCR/releases/download/v0.0.0/torch_test.zip
+
+jobs:
+  UnitTesting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull latest code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+          architecture: 'x64'
+
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
+
+      - name: Unit testings
+        run: |
+          wget $RESOURCES_URL
+          ZIP_NAME=${RESOURCES_URL##*/}
+          DIR_NAME=${ZIP_NAME%.*}
+          unzip $DIR_NAME
+          cp $DIR_NAME/resources/models/*.pth python/rapidocr_torch/models/
+
+          cd python
+          pip install -r requirements_torch.txt
+          pip install pytest wheel get_pypi_latest_version
+
+          cd tests
+          pytest test_torch.py
+
+  GenerateWHL_PushPyPi:
+    needs: UnitTesting
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+          architecture: 'x64'
+
+#      - name: Set SSH Environment
+#        env:
+#          DEPLOY_KEYS: ${{ secrets.GEN_PYTHON_SDK }}
+#        run: |
+#          mkdir -p ~/.ssh/
+#          echo "$DEPLOY_KEYS" > ~/.ssh/id_rsa
+#          chmod 600 ~/.ssh/id_rsa
+#          chmod 700 ~/.ssh && chmod 600 ~/.ssh/*
+
+      - name: Download models
+        run: |
+          cd python
+          wget $RESOURCES_URL
+          ZIP_NAME=${RESOURCES_URL##*/}
+          DIR_NAME=${ZIP_NAME%.*}
+          unzip $ZIP_NAME
+          cp $DIR_NAME/resources/models/*.pth rapidocr_torch/models/
+
+      - name: Run setup_torch.py
+        run: |
+          cd python
+          pip install setuptools get_pypi_latest_version wheel
+          mkdir rapidocr_torch_t
+          mv rapidocr_torch rapidocr_torch_t
+          mv rapidocr_torch_t rapidocr_torch
+          cd rapidocr_torch
+          echo "from .rapidocr_torch.main import RapidOCR, VisRes" > __init__.py
+
+          cd ..
+          python -m pip install --upgrade pip
+          python setup_torch.py bdist_wheel ${{ github.ref_name }}
+          mv dist ../
+
+#      - name: Publish distribution 📦 to PyPI
+#        uses: pypa/gh-action-pypi-publish@v1.5.0
+#        with:
+#          password: ${{ secrets.PYPI_API_TOKEN }}
+#          packages_dir: dist/
+      - name: Publish distribution 📦 to Test PyPI
+        uses: pypa/gh-action-pypi-publish@v1.5.0
+        with:
+            password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+            repository_url: https://test.pypi.org/legacy/
+            packages_dir:  dist/
