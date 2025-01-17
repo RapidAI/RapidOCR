@@ -40,7 +40,8 @@ jobs:
           cp -r models/* python/rapidocr_paddle/models/
           cd python
           pip install -r requirements_paddle.txt
-          pip install pytest wheel get_pypi_latest_version paddlepaddle
+          pip install pytest wheel get_pypi_latest_version
+          pip install paddlepaddle==3.0.0rc0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
           cd tests
           pytest test_paddle.py
 
