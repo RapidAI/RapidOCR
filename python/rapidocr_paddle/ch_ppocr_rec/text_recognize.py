@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import argparse
 import math
 import time
 from pathlib import Path
@@ -20,7 +19,7 @@ from typing import List, Tuple, Union
 import cv2
 import numpy as np
 
-from rapidocr_paddle.utils import PaddleInferSession, read_yaml
+from rapidocr_paddle.utils import PaddleInferSession
 
 from .utils import CTCLabelDecode
 
@@ -112,17 +111,3 @@ class TextRecognizer:
         padding_im = np.zeros((img_channel, img_height, img_width), dtype=np.float32)
         padding_im[:, :, 0:resized_w] = resized_image
         return padding_im
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--image_path", type=str, help="image_dir|image_path")
-    parser.add_argument("--config_path", type=str, default="config.yaml")
-    args = parser.parse_args()
-
-    config = read_yaml(args.config_path)
-    text_recognizer = TextRecognizer(config)
-
-    img = cv2.imread(args.image_path)
-    rec_res, predict_time = text_recognizer(img)
-    print(f"rec result: {rec_res}\t cost: {predict_time}s")

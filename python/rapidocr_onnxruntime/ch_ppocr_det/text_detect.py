@@ -63,7 +63,7 @@ class TextDetector:
         return dt_boxes, elapse
 
     def get_preprocess(self, max_wh):
-        if self.limit_type == 'min':
+        if self.limit_type == "min":
             limit_side_len = self.limit_side_len
         elif max_wh < 960:
             limit_side_len = 960
@@ -71,7 +71,7 @@ class TextDetector:
             limit_side_len = 1500
         else:
             limit_side_len = 2000
-        return DetPreProcess(limit_side_len, self.limit_type,self.mean, self.std)
+        return DetPreProcess(limit_side_len, self.limit_type, self.mean, self.std)
 
     def filter_tag_det_res(
         self, dt_boxes: np.ndarray, image_shape: Tuple[int, int]

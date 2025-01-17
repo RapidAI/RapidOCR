@@ -26,10 +26,7 @@ Det:
     limit_type: min
     std: [ 0.5, 0.5, 0.5 ]
     mean: [ 0.5, 0.5, 0.5 ]
-#    limit_side_len: 960
-#    limit_type: max
-#    std: [ 0.229, 0.224, 0.225 ]
-#    mean: [ 0.485, 0.456, 0.406 ]
+
     thresh: 0.3
     box_thresh: 0.5
     max_candidates: 1000

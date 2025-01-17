@@ -21,6 +21,8 @@ Det:
 
     limit_side_len: 736
     limit_type: min
+    std: [ 0.5, 0.5, 0.5 ]
+    mean: [ 0.5, 0.5, 0.5 ]
 
     thresh: 0.3
     box_thresh: 0.5

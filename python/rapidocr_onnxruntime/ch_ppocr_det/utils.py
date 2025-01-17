@@ -10,12 +10,15 @@ from shapely.geometry import Polygon
 
 
 class DetPreProcess:
-    def __init__(self, limit_side_len: int = 736, limit_type: str = "min", mean=None,
-                 std=None):
+    def __init__(
+        self, limit_side_len: int = 736, limit_type: str = "min", mean=None, std=None
+    ):
         if mean is None:
             mean = [0.5, 0.5, 0.5]
+
         if std is None:
             std = [0.5, 0.5, 0.5]
+
         self.mean = np.array(mean)
         self.std = np.array(std)
         self.scale = 1 / 255.0

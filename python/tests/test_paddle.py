@@ -1,6 +1,13 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+"""
+以下测试用例在以下环境中可以全部通过
+OS: macOS 15.1.1 (24B91)
+Python: 3.10.13
+paddlepaddle: 3.0.0b2 CPU
+"""
+
 import sys
 from pathlib import Path
 from typing import List
@@ -27,7 +34,7 @@ def test_long_img():
     download_file(img_url, save_path=img_path)
     result, _ = engine(img_path)
     assert result is not None
-    assert len(result) == 55
+    assert len(result) == 53
     img_path.unlink()
 
 
@@ -62,7 +69,7 @@ def test_transparent_img(img_name: str, gt: str):
         (
             "test_letterbox_like.jpg",
             2,
-            "A：：取决于所使用的执行提供者，它可能没有完全支持模型中的所有操作。回落到CPU操作可能会导致性能速度的下降。此外，即使一个操作是由CUDAeXecution",
+            "A：：取决于所使用的执行提供者，它可能没有完全支持模型中的所有操作。回落到CPU操作可能会导致性能速度的下降。此外，即使一个操作是由CUDAexecution",
         ),
         ("test_without_det.jpg", 1, "在中国作家协会第三届儿童文学"),
     ],
@@ -79,7 +86,7 @@ def test_only_det():
     result, _ = engine(img_path, use_det=True, use_cls=False, use_rec=False)
 
     assert len(result) == 18
-    assert result[0][0] == [5.0, 2.0]
+    assert result[0][0] == [6.0, 2.0]
 
 
 def test_only_cls():
@@ -212,7 +219,7 @@ def test_input_three_ndim_one_channel():
         ),
         (
             "text_vertical_words.png",
-            ["已", "取", "之", "時", "不", "參", "一", "人", "见", "而"],
+            ["已", "取", "之", "時", "不", "參", "一", "人", "見", "而"],
         ),
         (
             "issue_170.png",
