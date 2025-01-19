@@ -3,10 +3,12 @@
 # @Contact: liekkaskono@163.com
 import copy
 import math
-from typing import Any, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
+
+from ..ch_ppocr_rec.utils import TextRecognizerOutput
 
 
 class CalRecBoxes:
@@ -19,13 +21,16 @@ class CalRecBoxes:
         self,
         imgs: Optional[List[np.ndarray]],
         dt_boxes: Optional[List[np.ndarray]],
-        rec_res: Optional[List[Any]],
-    ):
-        res = []
-        for img, box, rec_res in zip(imgs, dt_boxes, rec_res):
+        rec_res: TextRecognizerOutput,
+    ) -> TextRecognizerOutput:
+        # rec_res = list(zip(rec_res.line_results, rec_res.word_results))
+        word_results = []
+        for idx, (img, box) in enumerate(zip(imgs, dt_boxes)):
             direction = self.get_box_direction(box)
 
-            rec_txt, rec_conf, rec_word_info = rec_res[0], rec_res[1], rec_res[2]
+            rec_txt, rec_conf = rec_res.line_results[idx]
+            rec_word_info = rec_res.word_results[idx]
+
             h, w = img.shape[:2]
             img_box = np.array([[0, 0], [w, 0], [w, h], [0, h]])
             word_box_content_list, word_box_list, conf_list = self.cal_ocr_word_box(
@@ -35,10 +40,12 @@ class CalRecBoxes:
             word_box_list = self.reverse_rotate_crop_image(
                 copy.deepcopy(box), word_box_list, direction
             )
-            res.append(
-                [rec_txt, rec_conf, word_box_list, word_box_content_list, conf_list]
+            word_results.extend(
+                list(zip(word_box_content_list, conf_list, word_box_list))
             )
-        return res
+
+        rec_res.word_results = tuple(list(v) for v in word_results)
+        return rec_res
 
     @staticmethod
     def get_box_direction(box: np.ndarray) -> str:

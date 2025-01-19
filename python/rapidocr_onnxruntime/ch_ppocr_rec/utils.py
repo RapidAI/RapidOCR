@@ -1,10 +1,41 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
+
+
+@dataclass
+class TextRecognizerConfig:
+    intra_op_num_threads: int = -1
+    inter_op_num_threads: int = -1
+    use_cuda: bool = False
+    use_dml: bool = False
+    model_path: Union[str, Path, None] = None
+
+    rec_batch_num: int = 6
+    rec_img_shape: Tuple[int, int, int] = (3, 48, 320)
+    rec_keys_path: Union[str, Path, None] = None
+
+
+@dataclass
+class TextRecognizerInput:
+    img_list: Union[np.ndarray, List[np.ndarray]] = field(init=False)
+    return_word_box: bool = False
+
+    def __pose_init__(self):
+        if isinstance(self.img_list, np.ndarray):
+            self.img_list = [self.img_list]
+
+
+@dataclass
+class TextRecognizerOutput:
+    line_results: Optional[Tuple[List]] = None
+    word_results: Optional[List[List]] = None
+    elapse: Optional[float] = None
 
 
 class CTCLabelDecode:
@@ -18,18 +49,18 @@ class CTCLabelDecode:
 
     def __call__(
         self, preds: np.ndarray, return_word_box: bool = False, **kwargs
-    ) -> List[Tuple[str, float]]:
+    ) -> Tuple[List[Tuple[str, float]], List[List]]:
         preds_idx = preds.argmax(axis=2)
         preds_prob = preds.max(axis=2)
-        text = self.decode(
+        line_results, word_results = self.decode(
             preds_idx, preds_prob, return_word_box, is_remove_duplicate=True
         )
         if return_word_box:
-            for rec_idx, rec in enumerate(text):
+            for rec_idx, rec in enumerate(word_results):
                 wh_ratio = kwargs["wh_ratio_list"][rec_idx]
                 max_wh_ratio = kwargs["max_wh_ratio"]
-                rec[2][0] = rec[2][0] * (wh_ratio / max_wh_ratio)
-        return text
+                rec[0] *= wh_ratio / max_wh_ratio
+        return line_results, word_results
 
     def get_character(
         self,
@@ -80,7 +111,7 @@ class CTCLabelDecode:
         is_remove_duplicate: bool = False,
     ) -> List[Tuple[str, float]]:
         """convert text-index into text-label."""
-        result_list = []
+        result_list, result_words_list = [], []
         ignored_tokens = self.get_ignored_tokens()
         batch_size = len(text_index)
         for batch_idx in range(batch_size):
@@ -93,6 +124,7 @@ class CTCLabelDecode:
 
             if text_prob is not None:
                 conf_list = np.array(text_prob[batch_idx][selection]).tolist()
+                conf_list = [round(conf, 5) for conf in conf_list]
             else:
                 conf_list = [1] * len(selection)
 
@@ -103,26 +135,23 @@ class CTCLabelDecode:
                 self.character[text_id] for text_id in text_index[batch_idx][selection]
             ]
             text = "".join(char_list)
+
+            result_list.append([text, np.mean(conf_list).round(5).tolist()])
+
             if return_word_box:
                 word_list, word_col_list, state_list = self.get_word_info(
                     text, selection
                 )
-                result_list.append(
-                    (
-                        text,
-                        np.mean(conf_list).tolist(),
-                        [
-                            len(text_index[batch_idx]),
-                            word_list,
-                            word_col_list,
-                            state_list,
-                            conf_list,
-                        ],
-                    )
+                result_words_list.append(
+                    [
+                        len(text_index[batch_idx]),
+                        word_list,
+                        word_col_list,
+                        state_list,
+                        conf_list,
+                    ]
                 )
-            else:
-                result_list.append((text, np.mean(conf_list).tolist()))
-        return result_list
+        return result_list, result_words_list
 
     @staticmethod
     def get_word_info(
