@@ -1,0 +1,61 @@
+Global:
+    text_score: 0.5
+    use_det: true
+    use_cls: true
+    use_rec: true
+    print_verbose: false
+    min_height: 30
+    width_height_ratio: 8
+    max_side_len: 2000
+    min_side_len: 30
+    return_word_box: false
+
+    intra_op_num_threads: &intra_nums -1
+    inter_op_num_threads: &inter_nums -1
+
+Det:
+    intra_op_num_threads: *intra_nums
+    inter_op_num_threads: *inter_nums
+
+    use_cuda: false
+    use_dml: false
+
+    model_path: models/ch_PP-OCRv4_det_infer.onnx
+
+    limit_side_len: 736
+    limit_type: min
+    std: [ 0.5, 0.5, 0.5 ]
+    mean: [ 0.5, 0.5, 0.5 ]
+
+    thresh: 0.3
+    box_thresh: 0.5
+    max_candidates: 1000
+    unclip_ratio: 1.6
+    use_dilation: true
+    score_mode: fast
+
+Cls:
+    intra_op_num_threads: *intra_nums
+    inter_op_num_threads: *inter_nums
+
+    use_cuda: false
+    use_dml: false
+
+    model_path: models/ch_ppocr_mobile_v2.0_cls_infer.onnx
+
+    cls_image_shape: [3, 48, 192]
+    cls_batch_num: 6
+    cls_thresh: 0.9
+    label_list: ['0', '180']
+
+Rec:
+    intra_op_num_threads: *intra_nums
+    inter_op_num_threads: *inter_nums
+
+    use_cuda: false
+    use_dml: false
+
+    model_path: models/ch_PP-OCRv4_rec_infer.onnx
+
+    rec_img_shape: [3, 48, 320]
+    rec_batch_num: 6

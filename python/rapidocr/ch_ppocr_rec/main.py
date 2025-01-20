@@ -19,12 +19,9 @@ from typing import Any, Dict, List, Union
 import cv2
 import numpy as np
 
-from rapidocr_onnxruntime.utils import OrtInferSession, read_yaml
+from rapidocr.utils import OrtInferSession, read_yaml
 
-from .utils import (
-    CTCLabelDecode,
-    TextRecognizerOutput,
-)
+from .utils import CTCLabelDecode, TextRecognizerOutput
 
 
 class TextRecognizer:
@@ -91,7 +88,11 @@ class TextRecognizer:
             )
 
             for rno, one_res in enumerate(line_results):
-                rec_res[indices[beg_img_no + rno]] = (one_res, word_results[rno])
+                if return_word_box:
+                    rec_res[indices[beg_img_no + rno]] = (one_res, word_results[rno])
+                    continue
+
+                rec_res[indices[beg_img_no + rno]] = (one_res, None)
             elapse += time.time() - starttime
 
         all_line_results, all_word_results = list(zip(*rec_res))

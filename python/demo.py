@@ -3,7 +3,7 @@
 # @Contact: liekkaskono@163.com
 import cv2
 
-from rapidocr_onnxruntime import RapidOCR, VisRes
+from rapidocr import RapidOCR, VisRes
 
 # from rapidocr_paddle import RapidOCR, VisRes
 # from rapidocr_openvino import RapidOCR, VisRes
@@ -16,7 +16,7 @@ with open(image_path, "rb") as f:
     img = f.read()
 
 # result, elapse_list = engine(img, use_det=True, use_cls=False, use_rec=False)
-result, elapse_list = engine(img)
+result, elapse_list = engine(img, return_word_box=True)
 print(result)
 print(elapse_list)
 
