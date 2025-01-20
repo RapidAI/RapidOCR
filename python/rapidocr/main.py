@@ -11,7 +11,7 @@ import numpy as np
 from .cal_rec_boxes import CalRecBoxes
 from .ch_ppocr_cls import TextClassifier
 from .ch_ppocr_det import TextDetector
-from .ch_ppocr_rec import TextRecognizer, TextRecognizerOutput
+from .ch_ppocr_rec import TextRecArguments, TextRecognizer, TextRecOutput
 from .utils import (
     LoadImage,
     UpdateParameters,
@@ -108,7 +108,8 @@ class RapidOCR:
             img, cls_res, cls_elapse = self.text_cls(img)
 
         if use_rec:
-            rec_res = self.text_rec(img, return_word_box)
+            rec_input = TextRecArguments(img=img, return_word_box=return_word_box)
+            rec_res = self.text_rec(rec_input)
 
         if return_word_box and dt_boxes is not None and all(rec_res.word_results):
             rec_res = self.cal_rec_boxes(img, dt_boxes, rec_res)
@@ -123,14 +124,7 @@ class RapidOCR:
         if dt_boxes is not None:
             dt_boxes = self._get_origin_points(dt_boxes, op_record, raw_h, raw_w)
 
-        ocr_res = self.get_final_res(
-            # dt_boxes, cls_res, rec_res, det_elapse, cls_elapse, rec_elapse
-            dt_boxes,
-            cls_res,
-            rec_res,
-            det_elapse,
-            cls_elapse,
-        )
+        ocr_res = self.get_final_res(dt_boxes, cls_res, rec_res, det_elapse, cls_elapse)
         return ocr_res
 
     def preprocess(self, img: np.ndarray) -> Tuple[np.ndarray, float, float]:
@@ -283,7 +277,7 @@ class RapidOCR:
         self,
         dt_boxes: Optional[List[np.ndarray]],
         cls_res: Optional[List[List[Union[str, float]]]],
-        rec_res: TextRecognizerOutput,
+        rec_res: TextRecOutput,
         det_elapse: float,
         cls_elapse: float,
     ) -> Tuple[Optional[List[List[Union[Any, str]]]], Optional[List[float]]]:
@@ -316,7 +310,7 @@ class RapidOCR:
         self,
         dt_boxes: Optional[List[np.ndarray]],
         rec_res: Optional[List[Tuple[str, float]]],
-    ) -> Tuple[Optional[List[np.ndarray]], TextRecognizerOutput]:
+    ) -> Tuple[Optional[List[np.ndarray]], TextRecOutput]:
         if dt_boxes is None or rec_res is None:
             return None, None
 

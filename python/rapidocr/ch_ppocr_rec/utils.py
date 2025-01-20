@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
@@ -9,7 +9,7 @@ import numpy as np
 
 
 @dataclass
-class TextRecognizerConfig:
+class TextRecConfig:
     intra_op_num_threads: int = -1
     inter_op_num_threads: int = -1
     use_cuda: bool = False
@@ -21,18 +21,20 @@ class TextRecognizerConfig:
     rec_keys_path: Union[str, Path, None] = None
 
 
+def cvt(img):
+    if isinstance(img, np.ndarray):
+        return [img]
+    return img
+
+
 @dataclass
-class TextRecognizerInput:
-    img_list: Union[np.ndarray, List[np.ndarray]] = field(init=False)
+class TextRecArguments:
+    img: Union[np.ndarray, List[np.ndarray], None] = None
     return_word_box: bool = False
 
-    def __pose_init__(self):
-        if isinstance(self.img_list, np.ndarray):
-            self.img_list = [self.img_list]
-
 
 @dataclass
-class TextRecognizerOutput:
+class TextRecOutput:
     line_results: Optional[Tuple[List]] = None
     word_results: Optional[List[List]] = None
     elapse: Optional[float] = None

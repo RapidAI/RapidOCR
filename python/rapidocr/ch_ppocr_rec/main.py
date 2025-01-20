@@ -14,14 +14,14 @@
 import argparse
 import math
 import time
-from typing import Any, Dict, List, Union
+from typing import Any, Dict
 
 import cv2
 import numpy as np
 
 from rapidocr.utils import OrtInferSession, read_yaml
 
-from .utils import CTCLabelDecode, TextRecognizerOutput
+from .utils import CTCLabelDecode, TextRecArguments, TextRecOutput
 
 
 class TextRecognizer:
@@ -40,15 +40,10 @@ class TextRecognizer:
         self.rec_batch_num = config["rec_batch_num"]
         self.rec_image_shape = config["rec_img_shape"]
 
-    def __call__(
-        self,
-        img_list: Union[np.ndarray, List[np.ndarray]],
-        return_word_box: bool = False,
-    ) -> TextRecognizerOutput:
-        if isinstance(img_list, np.ndarray):
-            img_list = [img_list]
+    def __call__(self, args: TextRecArguments) -> TextRecOutput:
+        img_list = [args.img] if isinstance(args.img, np.ndarray) else args.img
+        return_word_box = args.return_word_box
 
-        # Calculate the aspect ratio of all text bars
         width_list = [img.shape[1] / float(img.shape[0]) for img in img_list]
 
         # Sorting can speed up the recognition process
@@ -96,7 +91,7 @@ class TextRecognizer:
             elapse += time.time() - starttime
 
         all_line_results, all_word_results = list(zip(*rec_res))
-        return TextRecognizerOutput(all_line_results, all_word_results, elapse)
+        return TextRecOutput(all_line_results, all_word_results, elapse)
 
     def resize_norm_img(self, img: np.ndarray, max_wh_ratio: float) -> np.ndarray:
         img_channel, img_height, img_width = self.rec_image_shape

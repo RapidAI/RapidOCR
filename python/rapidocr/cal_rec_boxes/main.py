@@ -8,7 +8,7 @@ from typing import List, Optional, Tuple
 import cv2
 import numpy as np
 
-from ..ch_ppocr_rec.utils import TextRecognizerOutput
+from ..ch_ppocr_rec.utils import TextRecOutput
 
 
 class CalRecBoxes:
@@ -21,8 +21,8 @@ class CalRecBoxes:
         self,
         imgs: Optional[List[np.ndarray]],
         dt_boxes: Optional[List[np.ndarray]],
-        rec_res: TextRecognizerOutput,
-    ) -> TextRecognizerOutput:
+        rec_res: TextRecOutput,
+    ) -> TextRecOutput:
         # rec_res = list(zip(rec_res.line_results, rec_res.word_results))
         word_results = []
         for idx, (img, box) in enumerate(zip(imgs, dt_boxes)):
