@@ -111,7 +111,11 @@ class RapidOCR:
             rec_input = TextRecArguments(img=img, return_word_box=return_word_box)
             rec_res = self.text_rec(rec_input)
 
-        if return_word_box and dt_boxes is not None and all(rec_res.word_results):
+        if (
+            return_word_box
+            and dt_boxes is not None
+            and all(v for v in rec_res.word_results)
+        ):
             rec_res = self.cal_rec_boxes(img, dt_boxes, rec_res)
             for rec_res_i in rec_res.word_results:
                 if rec_res_i[2]:

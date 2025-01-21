@@ -3,7 +3,7 @@
 # @Contact: liekkaskono@163.com
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -21,12 +21,6 @@ class TextRecConfig:
     rec_keys_path: Union[str, Path, None] = None
 
 
-def cvt(img):
-    if isinstance(img, np.ndarray):
-        return [img]
-    return img
-
-
 @dataclass
 class TextRecArguments:
     img: Union[np.ndarray, List[np.ndarray], None] = None
@@ -35,8 +29,8 @@ class TextRecArguments:
 
 @dataclass
 class TextRecOutput:
-    line_results: Optional[Tuple[List]] = None
-    word_results: Optional[List[List]] = None
+    line_results: Tuple[List[Any]] = ([""],)
+    word_results: Tuple[List[Any]] = ([""],)
     elapse: Optional[float] = None
 
 
@@ -51,17 +45,21 @@ class CTCLabelDecode:
 
     def __call__(
         self, preds: np.ndarray, return_word_box: bool = False, **kwargs
-    ) -> Tuple[List[Tuple[str, float]], List[List]]:
+    ) -> Tuple[List[Tuple[str, float]], List[Any]]:
         preds_idx = preds.argmax(axis=2)
         preds_prob = preds.max(axis=2)
+
+        wh_ratio_list = kwargs.get("wh_ratio_list", (1.0,))
+        max_wh_ratio = kwargs.get("max_wh_ratio", 1.0)
+
         line_results, word_results = self.decode(
-            preds_idx, preds_prob, return_word_box, is_remove_duplicate=True
+            preds_idx,
+            preds_prob,
+            return_word_box,
+            wh_ratio_list,
+            max_wh_ratio,
+            is_remove_duplicate=True,
         )
-        if return_word_box:
-            for rec_idx, rec in enumerate(word_results):
-                wh_ratio = kwargs["wh_ratio_list"][rec_idx]
-                max_wh_ratio = kwargs["max_wh_ratio"]
-                rec[0] *= wh_ratio / max_wh_ratio
         return line_results, word_results
 
     def get_character(
@@ -110,8 +108,10 @@ class CTCLabelDecode:
         text_index: np.ndarray,
         text_prob: Optional[np.ndarray] = None,
         return_word_box: bool = False,
+        wh_ratio_list: Tuple[float] = (1.0,),
+        max_wh_ratio: float = 1.0,
         is_remove_duplicate: bool = False,
-    ) -> List[Tuple[str, float]]:
+    ) -> Tuple[List[Tuple[str, float]], List[Tuple[Any]]]:
         result_list, result_words_list = [], []
         ignored_tokens = self.get_ignored_tokens()
         batch_size = len(text_index)
@@ -137,20 +137,18 @@ class CTCLabelDecode:
             ]
             text = "".join(char_list)
 
-            result_list.append([text, np.mean(conf_list).round(5).tolist()])
+            result_list.append((text, np.mean(conf_list).round(5).tolist()))
 
             if return_word_box:
                 word_list, word_col_list, state_list = self.get_word_info(
                     text, selection
                 )
+
+                word_len = len(text_index[batch_idx])
+                word_len *= wh_ratio_list[batch_idx] / max_wh_ratio
+
                 result_words_list.append(
-                    [
-                        len(text_index[batch_idx]),
-                        word_list,
-                        word_col_list,
-                        state_list,
-                        conf_list,
-                    ]
+                    (word_len, word_list, word_col_list, state_list, conf_list)
                 )
         return result_list, result_words_list
 
