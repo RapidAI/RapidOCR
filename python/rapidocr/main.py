@@ -14,6 +14,7 @@ from .ch_ppocr_det import TextDetector
 from .ch_ppocr_rec import TextRecArguments, TextRecognizer, TextRecOutput
 from .utils import (
     LoadImage,
+    RapidOCROutput,
     UpdateParameters,
     VisRes,
     add_round_letterbox,
@@ -93,14 +94,14 @@ class RapidOCR:
         img, ratio_h, ratio_w = self.preprocess(img)
         op_record["preprocess"] = {"ratio_h": ratio_h, "ratio_w": ratio_w}
 
-        dt_boxes, cls_res, rec_res = None, None, None
-        det_elapse, cls_elapse, rec_elapse = 0.0, 0.0, 0.0
+        dt_boxes, cls_res, rec_res = None, None, TextRecOutput()
+        det_elapse, cls_elapse = 0.0, 0.0
 
         if use_det:
             img, op_record = self.maybe_add_letterbox(img, op_record)
-            dt_boxes, det_elapse = self.auto_text_det(img)
-            if dt_boxes is None:
-                return None, None
+            det_res = self.text_det(img)
+            if det_res.boxes is None:
+                return RapidOCROutput()
 
             img = self.get_crop_img_list(img, dt_boxes)
 
@@ -117,13 +118,18 @@ class RapidOCR:
             and all(v for v in rec_res.word_results)
         ):
             rec_res = self.cal_rec_boxes(img, dt_boxes, rec_res)
-            for rec_res_i in rec_res.word_results:
-                if rec_res_i[2]:
-                    rec_res_i[2] = (
-                        self._get_origin_points([rec_res_i[2]], op_record, raw_h, raw_w)
-                        .astype(np.int32)
-                        .tolist()
-                    )
+            origin_words = []
+            for one_word in rec_res.word_results:
+                one_word_points = one_word[2]
+                if one_word_points is None:
+                    continue
+
+                origin_words_points = self._get_origin_points(
+                    [one_word_points], op_record, raw_h, raw_w
+                )
+                origin_words_points = origin_words_points.astype(np.int32).tolist()[0]
+                origin_words.append((one_word[0], one_word[1], origin_words_points))
+            rec_res.word_results = tuple(origin_words)
 
         if dt_boxes is not None:
             dt_boxes = self._get_origin_points(dt_boxes, op_record, raw_h, raw_w)

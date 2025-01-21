@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import argparse
 import math
 import time
 from typing import Any, Dict
@@ -19,7 +18,7 @@ from typing import Any, Dict
 import cv2
 import numpy as np
 
-from rapidocr.utils import OrtInferSession, read_yaml
+from rapidocr.utils import OrtInferSession
 
 from .utils import CTCLabelDecode, TextRecArguments, TextRecOutput
 
@@ -73,7 +72,7 @@ class TextRecognizer:
                 norm_img_batch.append(norm_img[np.newaxis, :])
             norm_img_batch = np.concatenate(norm_img_batch).astype(np.float32)
 
-            starttime = time.time()
+            start_time = time.perf_counter()
             preds = self.session(norm_img_batch)[0]
             line_results, word_results = self.postprocess_op(
                 preds,
@@ -88,7 +87,7 @@ class TextRecognizer:
                     continue
 
                 rec_res[indices[beg_img_no + rno]] = (one_res, None)
-            elapse += time.time() - starttime
+            elapse += time.perf_counter() - start_time
 
         all_line_results, all_word_results = list(zip(*rec_res))
         return TextRecOutput(all_line_results, all_word_results, elapse)
@@ -115,17 +114,3 @@ class TextRecognizer:
         padding_im = np.zeros((img_channel, img_height, img_width), dtype=np.float32)
         padding_im[:, :, 0:resized_w] = resized_image
         return padding_im
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--image_path", type=str, help="image_dir|image_path")
-    parser.add_argument("--config_path", type=str, default="config.yaml")
-    args = parser.parse_args()
-
-    config = read_yaml(args.config_path)
-    text_recognizer = TextRecognizer(config)
-
-    img = cv2.imread(args.image_path)
-    rec_res, predict_time = text_recognizer(img)
-    print(f"rec result: {rec_res}\t cost: {predict_time}s")

@@ -12,7 +12,8 @@ from ..ch_ppocr_rec.utils import TextRecOutput
 
 
 class CalRecBoxes:
-    """计算识别文字的汉字单字和英文单词的坐标框。代码借鉴自PaddlePaddle/PaddleOCR和fanqie03/char-detection"""
+    """计算识别文字的汉字单字和英文单词的坐标框。
+    代码借鉴自PaddlePaddle/PaddleOCR和fanqie03/char-detection"""
 
     def __init__(self):
         pass
@@ -43,7 +44,7 @@ class CalRecBoxes:
                 list(zip(word_box_content_list, conf_list, word_box_list))
             )
 
-        rec_res.word_results = tuple(list(v) for v in word_results)
+        rec_res.word_results = tuple(word_results)
         return rec_res
 
     @staticmethod

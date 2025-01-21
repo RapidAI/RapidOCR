@@ -15,13 +15,13 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List
 
 import numpy as np
 
 from rapidocr.utils import OrtInferSession
 
-from .utils import DBPostProcess, DetPreProcess
+from .utils import DBPostProcess, DetPreProcess, TextDetOutput
 
 
 class TextDetector:
@@ -44,7 +44,7 @@ class TextDetector:
 
         self.infer = OrtInferSession(config)
 
-    def __call__(self, img: np.ndarray) -> Tuple[Optional[np.ndarray], float]:
+    def __call__(self, img: np.ndarray) -> TextDetOutput:
         start_time = time.perf_counter()
 
         if img is None:
@@ -54,15 +54,18 @@ class TextDetector:
         self.preprocess_op = self.get_preprocess(max(img.shape[0], img.shape[1]))
         prepro_img = self.preprocess_op(img)
         if prepro_img is None:
-            return None, 0
+            return TextDetOutput()
 
         preds = self.infer(prepro_img)[0]
-        dt_boxes, dt_boxes_scores = self.postprocess_op(preds, ori_img_shape)
-        dt_boxes = self.filter_tag_det_res(dt_boxes, ori_img_shape)
-        elapse = time.perf_counter() - start_time
-        return dt_boxes, elapse
+        boxes, scores = self.postprocess_op(preds, ori_img_shape)
+        if len(boxes) < 1:
+            return TextDetOutput()
 
-    def get_preprocess(self, max_wh):
+        boxes = self.sorted_boxes(boxes)
+        elapse = time.perf_counter() - start_time
+        return TextDetOutput(boxes, scores, elapse=elapse)
+
+    def get_preprocess(self, max_wh: int) -> DetPreProcess:
         if self.limit_type == "min":
             limit_side_len = self.limit_side_len
         elif max_wh < 960:
@@ -73,52 +76,28 @@ class TextDetector:
             limit_side_len = 2000
         return DetPreProcess(limit_side_len, self.limit_type, self.mean, self.std)
 
-    def filter_tag_det_res(
-        self, dt_boxes: np.ndarray, image_shape: Tuple[int, int]
-    ) -> np.ndarray:
-        img_height, img_width = image_shape
-        dt_boxes_new = []
-        for box in dt_boxes:
-            box = self.order_points_clockwise(box)
-            box = self.clip_det_res(box, img_height, img_width)
-
-            rect_width = int(np.linalg.norm(box[0] - box[1]))
-            rect_height = int(np.linalg.norm(box[0] - box[3]))
-            if rect_width <= 3 or rect_height <= 3:
-                continue
-
-            dt_boxes_new.append(box)
-        return np.array(dt_boxes_new)
-
-    def order_points_clockwise(self, pts: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def sorted_boxes(dt_boxes: np.ndarray) -> List[np.ndarray]:
         """
-        reference from:
-        https://github.com/jrosebr1/imutils/blob/master/imutils/perspective.py
-        sort the points based on their x-coordinates
+        Sort text boxes in order from top to bottom, left to right
+        args:
+            dt_boxes(array):detected text boxes with shape [4, 2]
+        return:
+            sorted boxes(array) with shape [4, 2]
         """
-        xSorted = pts[np.argsort(pts[:, 0]), :]
+        num_boxes = dt_boxes.shape[0]
+        sorted_boxes = sorted(dt_boxes, key=lambda x: (x[0][1], x[0][0]))
+        _boxes = list(sorted_boxes)
 
-        # grab the left-most and right-most points from the sorted
-        # x-roodinate points
-        leftMost = xSorted[:2, :]
-        rightMost = xSorted[2:, :]
-
-        # now, sort the left-most coordinates according to their
-        # y-coordinates so we can grab the top-left and bottom-left
-        # points, respectively
-        leftMost = leftMost[np.argsort(leftMost[:, 1]), :]
-        (tl, bl) = leftMost
-
-        rightMost = rightMost[np.argsort(rightMost[:, 1]), :]
-        (tr, br) = rightMost
-
-        rect = np.array([tl, tr, br, bl], dtype="float32")
-        return rect
-
-    def clip_det_res(
-        self, points: np.ndarray, img_height: int, img_width: int
-    ) -> np.ndarray:
-        for pno in range(points.shape[0]):
-            points[pno, 0] = int(min(max(points[pno, 0], 0), img_width - 1))
-            points[pno, 1] = int(min(max(points[pno, 1], 0), img_height - 1))
-        return points
+        for i in range(num_boxes - 1):
+            for j in range(i, -1, -1):
+                if (
+                    abs(_boxes[j + 1][0][1] - _boxes[j][0][1]) < 10
+                    and _boxes[j + 1][0][0] < _boxes[j][0][0]
+                ):
+                    tmp = _boxes[j]
+                    _boxes[j] = _boxes[j + 1]
+                    _boxes[j + 1] = tmp
+                else:
+                    break
+        return _boxes

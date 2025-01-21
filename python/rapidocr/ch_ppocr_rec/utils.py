@@ -29,8 +29,10 @@ class TextRecArguments:
 
 @dataclass
 class TextRecOutput:
-    line_results: Tuple[List[Any]] = ([""],)
-    word_results: Tuple[List[Any]] = ([""],)
+    line_results: Tuple[Tuple[str, float]] = (("", 1.0),)
+    word_results: Tuple[Tuple[str, float, Optional[List[List[int]]]]] = (
+        ("", 1.0, None),
+    )
     elapse: Optional[float] = None
 
 

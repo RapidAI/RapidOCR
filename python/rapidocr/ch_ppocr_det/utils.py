@@ -1,12 +1,20 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
 import pyclipper
 from shapely.geometry import Polygon
+
+
+@dataclass
+class TextDetOutput:
+    boxes: Optional[np.ndarray] = None
+    scores: Optional[Tuple[float]] = None
+    elapse: float = 0.0
 
 
 class DetPreProcess:
@@ -119,6 +127,7 @@ class DBPostProcess:
                 np.array(segmentation[0]).astype(np.uint8), self.dilation_kernel
             )
         boxes, scores = self.boxes_from_bitmap(pred[0], mask, src_w, src_h)
+        boxes, scores = self.filter_det_res(boxes, scores, src_h, src_w)
         return boxes, scores
 
     def boxes_from_bitmap(
@@ -235,3 +244,53 @@ class DBPostProcess:
         offset.AddPath(box, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)
         expanded = np.array(offset.Execute(distance)).reshape((-1, 1, 2))
         return expanded
+
+    def filter_det_res(
+        self, dt_boxes: np.ndarray, scores: List[float], img_height: int, img_width: int
+    ) -> Tuple[np.ndarray, List[float]]:
+        dt_boxes_new, new_scores = [], []
+        for box, score in zip(dt_boxes, scores):
+            box = self.order_points_clockwise(box)
+            box = self.clip_det_res(box, img_height, img_width)
+
+            rect_width = int(np.linalg.norm(box[0] - box[1]))
+            rect_height = int(np.linalg.norm(box[0] - box[3]))
+            if rect_width <= 3 or rect_height <= 3:
+                continue
+
+            dt_boxes_new.append(box)
+            new_scores.append(score)
+        return np.array(dt_boxes_new), new_scores
+
+    def order_points_clockwise(self, pts: np.ndarray) -> np.ndarray:
+        """
+        reference from:
+        https://github.com/jrosebr1/imutils/blob/master/imutils/perspective.py
+        sort the points based on their x-coordinates
+        """
+        xSorted = pts[np.argsort(pts[:, 0]), :]
+
+        # grab the left-most and right-most points from the sorted
+        # x-roodinate points
+        leftMost = xSorted[:2, :]
+        rightMost = xSorted[2:, :]
+
+        # now, sort the left-most coordinates according to their
+        # y-coordinates so we can grab the top-left and bottom-left
+        # points, respectively
+        leftMost = leftMost[np.argsort(leftMost[:, 1]), :]
+        (tl, bl) = leftMost
+
+        rightMost = rightMost[np.argsort(rightMost[:, 1]), :]
+        (tr, br) = rightMost
+
+        rect = np.array([tl, tr, br, bl], dtype="float32")
+        return rect
+
+    def clip_det_res(
+        self, points: np.ndarray, img_height: int, img_width: int
+    ) -> np.ndarray:
+        for pno in range(points.shape[0]):
+            points[pno, 0] = int(min(max(points[pno, 0], 0), img_width - 1))
+            points[pno, 1] = int(min(max(points[pno, 1], 0), img_height - 1))
+        return points
