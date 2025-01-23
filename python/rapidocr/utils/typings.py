@@ -22,7 +22,11 @@ class RapidOCROutput:
     def to_json(self):
         pass
 
-    def to_paddleocr_format(self):
+    def to_paddleocr_format(self) -> List[List[List[float]], List[Tuple[str, float]]]:
         rec_res = list(zip(self.txts, self.scores))
+        dt_boxes = [v.tolist() for v in self.boxes]
 
-        print("ok")
+        final_res = []
+        for box, rec in zip(dt_boxes, rec_res):
+            final_res.append([box, list(rec)])
+        return final_res
