@@ -20,7 +20,7 @@ import numpy as np
 
 from rapidocr.utils import OrtInferSession
 
-from .utils import CTCLabelDecode, TextRecArguments, TextRecOutput
+from .utils import CTCLabelDecode, TextRecInput, TextRecOutput
 
 
 class TextRecognizer:
@@ -39,7 +39,7 @@ class TextRecognizer:
         self.rec_batch_num = config["rec_batch_num"]
         self.rec_image_shape = config["rec_img_shape"]
 
-    def __call__(self, args: TextRecArguments) -> TextRecOutput:
+    def __call__(self, args: TextRecInput) -> TextRecOutput:
         img_list = [args.img] if isinstance(args.img, np.ndarray) else args.img
         return_word_box = args.return_word_box
 
@@ -90,7 +90,8 @@ class TextRecognizer:
             elapse += time.perf_counter() - start_time
 
         all_line_results, all_word_results = list(zip(*rec_res))
-        return TextRecOutput(all_line_results, all_word_results, elapse)
+        line_txts, line_scores = list(zip(*all_line_results))
+        return TextRecOutput(line_txts, line_scores, all_word_results, elapse)
 
     def resize_norm_img(self, img: np.ndarray, max_wh_ratio: float) -> np.ndarray:
         img_channel, img_height, img_width = self.rec_image_shape

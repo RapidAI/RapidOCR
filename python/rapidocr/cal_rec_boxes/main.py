@@ -28,7 +28,7 @@ class CalRecBoxes:
         for idx, (img, box) in enumerate(zip(imgs, dt_boxes)):
             direction = self.get_box_direction(box)
 
-            rec_txt, rec_conf = rec_res.line_results[idx]
+            rec_txt = rec_res.line_txts[idx]
             rec_word_info = rec_res.word_results[idx]
 
             h, w = img.shape[:2]

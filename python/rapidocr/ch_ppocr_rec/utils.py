@@ -22,14 +22,15 @@ class TextRecConfig:
 
 
 @dataclass
-class TextRecArguments:
+class TextRecInput:
     img: Union[np.ndarray, List[np.ndarray], None] = None
     return_word_box: bool = False
 
 
 @dataclass
 class TextRecOutput:
-    line_results: Tuple[Tuple[str, float]] = (("", 1.0),)
+    line_txts: Optional[Tuple[str]] = None
+    line_scores: Tuple[float] = (1.0,)
     word_results: Tuple[Tuple[str, float, Optional[List[List[int]]]]] = (
         ("", 1.0, None),
     )

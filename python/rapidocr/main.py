@@ -9,9 +9,9 @@ import cv2
 import numpy as np
 
 from .cal_rec_boxes import CalRecBoxes
-from .ch_ppocr_cls import TextClassifier
-from .ch_ppocr_det import TextDetector
-from .ch_ppocr_rec import TextRecArguments, TextRecognizer, TextRecOutput
+from .ch_ppocr_cls import TextClassifier, TextClsOutput
+from .ch_ppocr_det import TextDetector, TextDetOutput
+from .ch_ppocr_rec import TextRecInput, TextRecognizer, TextRecOutput
 from .utils import (
     LoadImage,
     RapidOCROutput,
@@ -71,7 +71,7 @@ class RapidOCR:
         use_cls: Optional[bool] = None,
         use_rec: Optional[bool] = None,
         **kwargs,
-    ) -> Tuple[Optional[List[List[Union[Any, str]]]], Optional[List[float]]]:
+    ) -> RapidOCROutput:
         use_det = self.use_det if use_det is None else use_det
         use_cls = self.use_cls if use_cls is None else use_cls
         use_rec = self.use_rec if use_rec is None else use_rec
@@ -94,8 +94,7 @@ class RapidOCR:
         img, ratio_h, ratio_w = self.preprocess(img)
         op_record["preprocess"] = {"ratio_h": ratio_h, "ratio_w": ratio_w}
 
-        dt_boxes, cls_res, rec_res = None, None, TextRecOutput()
-        det_elapse, cls_elapse = 0.0, 0.0
+        det_res, cls_res, rec_res = TextDetOutput(), TextClsOutput(), TextRecOutput()
 
         if use_det:
             img, op_record = self.maybe_add_letterbox(img, op_record)
@@ -103,21 +102,22 @@ class RapidOCR:
             if det_res.boxes is None:
                 return RapidOCROutput()
 
-            img = self.get_crop_img_list(img, dt_boxes)
+            img = self.get_crop_img_list(img, det_res)
 
         if use_cls:
-            img, cls_res, cls_elapse = self.text_cls(img)
+            cls_res = self.text_cls(img)
+            img = cls_res.img_list
 
         if use_rec:
-            rec_input = TextRecArguments(img=img, return_word_box=return_word_box)
+            rec_input = TextRecInput(img=img, return_word_box=return_word_box)
             rec_res = self.text_rec(rec_input)
 
         if (
             return_word_box
-            and dt_boxes is not None
+            and det_res.boxes is not None
             and all(v for v in rec_res.word_results)
         ):
-            rec_res = self.cal_rec_boxes(img, dt_boxes, rec_res)
+            rec_res = self.cal_rec_boxes(img, det_res.boxes, rec_res)
             origin_words = []
             for one_word in rec_res.word_results:
                 one_word_points = one_word[2]
@@ -131,10 +131,12 @@ class RapidOCR:
                 origin_words.append((one_word[0], one_word[1], origin_words_points))
             rec_res.word_results = tuple(origin_words)
 
-        if dt_boxes is not None:
-            dt_boxes = self._get_origin_points(dt_boxes, op_record, raw_h, raw_w)
+        if det_res.boxes is not None:
+            det_res.boxes = self._get_origin_points(
+                det_res.boxes, op_record, raw_h, raw_w
+            )
 
-        ocr_res = self.get_final_res(dt_boxes, cls_res, rec_res, det_elapse, cls_elapse)
+        ocr_res = self.get_final_res(det_res, cls_res, rec_res)
         return ocr_res
 
     def preprocess(self, img: np.ndarray) -> Tuple[np.ndarray, float, float]:
@@ -174,18 +176,8 @@ class RapidOCR:
         padding_h = int(abs(new_h - h) / 2)
         return padding_h
 
-    def auto_text_det(
-        self, img: np.ndarray
-    ) -> Tuple[Optional[List[np.ndarray]], float]:
-        dt_boxes, det_elapse = self.text_det(img)
-        if dt_boxes is None or len(dt_boxes) < 1:
-            return None, 0.0
-
-        dt_boxes = self.sorted_boxes(dt_boxes)
-        return dt_boxes, det_elapse
-
     def get_crop_img_list(
-        self, img: np.ndarray, dt_boxes: List[np.ndarray]
+        self, img: np.ndarray, det_res: TextDetOutput
     ) -> List[np.ndarray]:
         def get_rotate_crop_image(img: np.ndarray, points: np.ndarray) -> np.ndarray:
             img_crop_width = int(
@@ -222,37 +214,11 @@ class RapidOCR:
             return dst_img
 
         img_crop_list = []
-        for box in dt_boxes:
+        for box in det_res.boxes:
             tmp_box = copy.deepcopy(box)
             img_crop = get_rotate_crop_image(img, tmp_box)
             img_crop_list.append(img_crop)
         return img_crop_list
-
-    @staticmethod
-    def sorted_boxes(dt_boxes: np.ndarray) -> List[np.ndarray]:
-        """
-        Sort text boxes in order from top to bottom, left to right
-        args:
-            dt_boxes(array):detected text boxes with shape [4, 2]
-        return:
-            sorted boxes(array) with shape [4, 2]
-        """
-        num_boxes = dt_boxes.shape[0]
-        sorted_boxes = sorted(dt_boxes, key=lambda x: (x[0][1], x[0][0]))
-        _boxes = list(sorted_boxes)
-
-        for i in range(num_boxes - 1):
-            for j in range(i, -1, -1):
-                if (
-                    abs(_boxes[j + 1][0][1] - _boxes[j][0][1]) < 10
-                    and _boxes[j + 1][0][0] < _boxes[j][0][0]
-                ):
-                    tmp = _boxes[j]
-                    _boxes[j] = _boxes[j + 1]
-                    _boxes[j + 1] = tmp
-                else:
-                    break
-        return _boxes
 
     def _get_origin_points(
         self,
@@ -284,28 +250,33 @@ class RapidOCR:
         return dt_boxes_array
 
     def get_final_res(
-        self,
-        dt_boxes: Optional[List[np.ndarray]],
-        cls_res: Optional[List[List[Union[str, float]]]],
-        rec_res: TextRecOutput,
-        det_elapse: float,
-        cls_elapse: float,
-    ) -> Tuple[Optional[List[List[Union[Any, str]]]], Optional[List[float]]]:
-        if dt_boxes is None and rec_res is None and cls_res is not None:
-            return cls_res, [cls_elapse]
+        self, det_res: TextDetOutput, cls_res: TextClsOutput, rec_res: TextRecOutput
+    ) -> Union[TextDetOutput, TextClsOutput, TextRecOutput, RapidOCROutput]:
+        dt_boxes = det_res.boxes
+        txt_res = rec_res.line_txts
 
-        if dt_boxes is None and rec_res is None:
-            return None, None
+        if dt_boxes is None and txt_res is None and cls_res.cls_res is not None:
+            return cls_res
 
-        if dt_boxes is None and rec_res is not None:
-            return [[v[0], v[1]] for v in rec_res.line_results], [rec_res.elapse]
+        if dt_boxes is None and txt_res is None:
+            return RapidOCROutput()
+
+        if dt_boxes is None and txt_res is not None:
+            return rec_res
 
         if dt_boxes is not None and rec_res is None:
-            return [box.tolist() for box in dt_boxes], [det_elapse]
+            return det_res
 
-        dt_boxes, rec_res = self.filter_result(dt_boxes, rec_res)
-        if not dt_boxes or not rec_res or len(dt_boxes) <= 0:
-            return None, None
+        ocr_res = RapidOCROutput(
+            boxes=det_res.boxes,
+            txts=rec_res.line_txts,
+            scores=rec_res.line_scores,
+            word_results=rec_res.word_results,
+            elapse_list=[det_res.elapse, cls_res.elapse, rec_res.elapse],
+        )
+        ocr_res = self.filter_by_text_score(ocr_res)
+        if len(ocr_res.boxes) <= 0:
+            return RapidOCROutput()
 
         ocr_res = [
             [box.tolist(), *res] for box, res in zip(dt_boxes, rec_res.line_results)
@@ -316,23 +287,18 @@ class RapidOCR:
         ]
         return ocr_res
 
-    def filter_result(
-        self,
-        dt_boxes: Optional[List[np.ndarray]],
-        rec_res: Optional[List[Tuple[str, float]]],
-    ) -> Tuple[Optional[List[np.ndarray]], TextRecOutput]:
-        if dt_boxes is None or rec_res is None:
-            return None, None
-
-        filter_boxes, filter_rec_res = [], []
-        for box, rec_reuslt in zip(dt_boxes, rec_res.line_results):
-            text, score = rec_reuslt[0], rec_reuslt[1]
+    def filter_by_text_score(self, ocr_res: RapidOCROutput) -> RapidOCROutput:
+        filter_boxes, filter_txts, filter_scores = [], [], []
+        for box, txt, score in zip(ocr_res.boxes, ocr_res.txts, ocr_res.scores):
             if float(score) >= self.text_score:
                 filter_boxes.append(box)
-                filter_rec_res.append(rec_reuslt)
+                filter_txts.append(txt)
+                filter_scores.append(score)
 
-        rec_res.line_results = filter_rec_res
-        return filter_boxes, rec_res
+        ocr_res.boxes = filter_boxes
+        ocr_res.txts = filter_txts
+        ocr_res.scores = filter_scores
+        return ocr_res
 
 
 def main():

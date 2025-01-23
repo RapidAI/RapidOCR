@@ -2,4 +2,4 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 from .main import TextRecognizer
-from .utils import TextRecArguments, TextRecOutput
+from .utils import TextRecInput, TextRecOutput
