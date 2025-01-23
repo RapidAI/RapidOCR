@@ -278,6 +278,7 @@ class RapidOCR:
         if len(ocr_res.boxes) <= 0:
             return RapidOCROutput()
 
+        return ocr_res.to_paddleocr_format()
         ocr_res = [
             [box.tolist(), *res] for box, res in zip(dt_boxes, rec_res.line_results)
         ], [

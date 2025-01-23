@@ -18,3 +18,11 @@ class RapidOCROutput:
 
     def __post_init__(self):
         self.elapse = sum(self.elapse_list)
+
+    def to_json(self):
+        pass
+
+    def to_paddleocr_format(self):
+        rec_res = list(zip(self.txts, self.scores))
+
+        print("ok")
