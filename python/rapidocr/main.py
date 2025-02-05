@@ -64,6 +64,8 @@ class RapidOCR:
 
         self.cal_rec_boxes = CalRecBoxes()
 
+        self.return_paddleocr_format = True
+
     def __call__(
         self,
         img_content: Union[str, np.ndarray, bytes, Path],
@@ -278,14 +280,9 @@ class RapidOCR:
         if len(ocr_res.boxes) <= 0:
             return RapidOCROutput()
 
-        return ocr_res.to_paddleocr_format()
-        ocr_res = [
-            [box.tolist(), *res] for box, res in zip(dt_boxes, rec_res.line_results)
-        ], [
-            det_elapse,
-            cls_elapse,
-            rec_res.elapse,
-        ]
+        if self.return_paddleocr_format:
+            return ocr_res.to_paddleocr_format()
+
         return ocr_res
 
     def filter_by_text_score(self, ocr_res: RapidOCROutput) -> RapidOCROutput:

@@ -22,7 +22,13 @@ class RapidOCROutput:
     def to_json(self):
         pass
 
-    def to_paddleocr_format(self) -> List[List[List[float]], List[Tuple[str, float]]]:
+    def to_paddleocr_format(self):
+        """Return format like:
+        [
+          [[[6.0, 2.0], [322.0, 9.0], [320.0, 104.0], [4.0, 97.0]], ['正品促销', 0.99893]],
+          [[[70.0, 98.0], [252.0, 98.0], [252.0, 125.0], [70.0, 125.0]], ['大桶装更划算', 0.9843]]
+        ]
+        """
         rec_res = list(zip(self.txts, self.scores))
         dt_boxes = [v.tolist() for v in self.boxes]
 
