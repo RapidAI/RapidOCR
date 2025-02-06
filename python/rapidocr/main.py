@@ -277,7 +277,7 @@ class RapidOCR:
             elapse_list=[det_res.elapse, cls_res.elapse, rec_res.elapse],
         )
         ocr_res = self.filter_by_text_score(ocr_res)
-        if len(ocr_res.boxes) <= 0:
+        if len(ocr_res) <= 0:
             return RapidOCROutput()
 
         if self.return_paddleocr_format:
@@ -293,9 +293,9 @@ class RapidOCR:
                 filter_txts.append(txt)
                 filter_scores.append(score)
 
-        ocr_res.boxes = filter_boxes
-        ocr_res.txts = filter_txts
-        ocr_res.scores = filter_scores
+        ocr_res.boxes = np.array(filter_boxes)
+        ocr_res.txts = tuple(filter_txts)
+        ocr_res.scores = tuple(filter_scores)
         return ocr_res
 
 
