@@ -64,7 +64,7 @@ class RapidOCR:
 
         self.cal_rec_boxes = CalRecBoxes()
 
-        self.return_paddleocr_format = True
+        self.return_paddleocr_format = False
 
     def __call__(
         self,
@@ -255,7 +255,7 @@ class RapidOCR:
         self, det_res: TextDetOutput, cls_res: TextClsOutput, rec_res: TextRecOutput
     ) -> Union[TextDetOutput, TextClsOutput, TextRecOutput, RapidOCROutput]:
         dt_boxes = det_res.boxes
-        txt_res = rec_res.line_txts
+        txt_res = rec_res.txts
 
         if dt_boxes is None and txt_res is None and cls_res.cls_res is not None:
             return cls_res
@@ -266,13 +266,13 @@ class RapidOCR:
         if dt_boxes is None and txt_res is not None:
             return rec_res
 
-        if dt_boxes is not None and rec_res is None:
+        if dt_boxes is not None and txt_res is None:
             return det_res
 
         ocr_res = RapidOCROutput(
             boxes=det_res.boxes,
-            txts=rec_res.line_txts,
-            scores=rec_res.line_scores,
+            txts=rec_res.txts,
+            scores=rec_res.scores,
             word_results=rec_res.word_results,
             elapse_list=[det_res.elapse, cls_res.elapse, rec_res.elapse],
         )

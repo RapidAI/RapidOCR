@@ -27,10 +27,10 @@ def test_long_img():
     img_url = "https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/long.jpeg"
     img_path = tests_dir / "long.jpeg"
     download_file(img_url, save_path=img_path)
-    result, _ = engine(img_path)
+    result = engine(img_path)
 
     assert result is not None
-    assert len(result) >= 53
+    assert len(result.boxes) >= 53
 
     img_path.unlink()
 
@@ -53,8 +53,8 @@ def test_ort_dml_warning(caplog):
 
 def test_mode_one_img():
     img_path = tests_dir / "issue_170.png"
-    result, _ = engine(img_path)
-    assert result[0][1] == "TEST"
+    result = engine(img_path)
+    assert result.txts[0] == "TEST"
 
 
 @pytest.mark.parametrize(
@@ -72,8 +72,8 @@ def test_mode_one_img():
 )
 def test_transparent_img(img_name: str, gt: str):
     img_path = tests_dir / img_name
-    result, _ = engine(img_path)
-    assert result[0][1] == gt
+    result = engine(img_path)
+    assert result.txts[0] == gt
 
 
 @pytest.mark.parametrize(
@@ -89,54 +89,53 @@ def test_transparent_img(img_name: str, gt: str):
 )
 def test_letterbox_like(img_name, gt_len, gt_first_len):
     img_path = tests_dir / img_name
-    result, _ = engine(img_path)
+    result = engine(img_path)
 
     assert len(result) == gt_len
-    assert result[0][1].lower() == gt_first_len.lower()
+    assert result.txts[0].lower() == gt_first_len.lower()
 
 
 def test_only_det():
-    result, _ = engine(img_path, use_det=True, use_cls=False, use_rec=False)
-
+    result = engine(img_path, use_det=True, use_cls=False, use_rec=False)
     assert len(result) == 18
 
 
 def test_only_cls():
     img_path = tests_dir / "text_cls.jpg"
-    result, _ = engine(img_path, use_det=False, use_cls=True, use_rec=False)
+    result = engine(img_path, use_det=False, use_cls=True, use_rec=False)
     assert len(result) == 1
-    assert result[0][0] == "0"
+    assert result.cls_res[0][0] == "0"
 
 
 def test_only_rec():
     img_path = tests_dir / "text_rec.jpg"
-    result, _ = engine(img_path, use_det=False, use_cls=False, use_rec=True)
+    result = engine(img_path, use_det=False, use_cls=False, use_rec=True)
     assert len(result) == 1
-    assert result[0][0] == "韩国小馆"
+    assert result.txts[0] == "韩国小馆"
 
 
 def test_det_rec():
-    result, _ = engine(img_path, use_det=True, use_cls=False, use_rec=True)
-    assert result[0][1] == "正品促销"
+    result = engine(img_path, use_det=True, use_cls=False, use_rec=True)
     assert len(result) == 18
+    assert result.txts[0] == "正品促销"
 
 
 def test_cls_rec():
     img_path = tests_dir / "text_cls.jpg"
-    result, _ = engine(img_path, use_det=False, use_cls=True, use_rec=True)
+    result = engine(img_path, use_det=False, use_cls=True, use_rec=True)
 
     assert result is not None
     assert len(result) == 1
-    assert result[0][0] == "韩国小馆"
+    assert result.txts[0] == "韩国小馆"
 
 
 def test_det_cls_rec():
     img = cv2.imread(str(img_path))
 
-    result, _ = engine(img)
+    result = engine(img)
     assert result is not None
-    assert result[0][1] == "正品促销"
     assert len(result) == 18
+    assert result.txts[0] == "正品促销"
 
 
 def test_empty():
@@ -149,41 +148,40 @@ def test_empty():
 
 def test_zeros():
     img = np.zeros([640, 640, 3], np.uint8)
-    result, _ = engine(img)
-    assert result is None
+    result = engine(img)
+    assert result.boxes is None
 
 
 def test_input_str():
-    result, _ = engine(str(img_path))
-    assert result[0][1] == "正品促销"
+    result = engine(str(img_path))
     assert len(result) == 18
+    assert result.txts[0] == "正品促销"
 
 
 def test_input_bytes():
     with open(img_path, "rb") as f:
-        result, _ = engine(f.read())
-    assert result[0][1] == "正品促销"
+        result = engine(f.read())
     assert len(result) == 18
+    assert result.txts[0] == "正品促销"
 
 
 def test_input_path():
-    result, _ = engine(img_path)
-    assert result[0][1] == "正品促销"
+    result = engine(img_path)
     assert len(result) == 18
+    assert result.txts[0] == "正品促销"
 
 
 def test_input_parameters():
     img_path = tests_dir / "ch_en_num.jpg"
     engine = RapidOCR(text_score=1)
-    result, _ = engine(img_path)
-
-    assert result is None
+    result = engine(img_path)
+    assert result.boxes is None
 
 
 def test_input_det_parameters():
     with pytest.raises(FileNotFoundError) as exc_info:
         engine = RapidOCR(det_model_path="1.onnx")
-        result, _ = engine(img_path)
+        result = engine(img_path)
         raise FileNotFoundError()
     assert exc_info.type is FileNotFoundError
 
@@ -191,7 +189,7 @@ def test_input_det_parameters():
 def test_input_cls_parameters():
     with pytest.raises(FileNotFoundError) as exc_info:
         engine = RapidOCR(cls_model_path="1.onnx")
-        result, _ = engine(img_path)
+        result = engine(img_path)
         raise FileNotFoundError()
     assert exc_info.type is FileNotFoundError
 
@@ -199,7 +197,7 @@ def test_input_cls_parameters():
 def test_input_rec_parameters():
     with pytest.raises(FileNotFoundError) as exc_info:
         engine = RapidOCR(rec_model_path="1.onnx")
-        result, _ = engine(img_path)
+        result = engine(img_path)
         raise FileNotFoundError()
     assert exc_info.type is FileNotFoundError
 
@@ -207,11 +205,11 @@ def test_input_rec_parameters():
 def test_input_three_ndim_two_channel():
     img_npy = tests_dir / "two_dim_image.npy"
     image_array = np.load(str(img_npy))
-    result, _ = engine(image_array)
+    result = engine(image_array)
 
     assert result is not None
     assert len(result) == 1
-    assert result[0][1] == "TREND PLOT REPORT"
+    assert result.txts[0] == "TREND PLOT REPORT"
 
 
 def test_input_three_ndim_one_channel():
@@ -220,30 +218,59 @@ def test_input_three_ndim_one_channel():
     img = img[:, :, 0]
     img = img[..., None]  # (H, W, 1)
 
-    result, _ = engine(img)
-
+    result = engine(img)
     assert len(result) >= 17
 
 
-@pytest.mark.skip(reason="no way of currently testing this")
 @pytest.mark.parametrize(
     "img_name,words",
     [
         (
             "black_font_color_transparent.png",
-            ["我", "是", "中", "国", "人"],
+            ("我", "是", "中", "国", "人"),
         ),
         (
             "text_vertical_words.png",
-            ["已", "取", "之", "時", "不", "參", "一", "人", "見", "而"],
+            (
+                "已",
+                "取",
+                "之",
+                "時",
+                "不",
+                "參",
+                "一",
+                "人",
+                "見",
+                "而",
+                "是",
+                "非",
+                "不",
+                "得",
+                "問",
+                "之",
+                "人",
+                "要",
+                "取",
+                "之",
+                "有",
+                "是",
+                "是",
+                "非",
+                "非",
+                "之",
+                "士",
+                "師",
+                "也",
+            ),
         ),
         (
             "issue_170.png",
-            ["T", "E", "S", "T"],
+            ("T", "E", "S", "T"),
         ),
     ],
 )
 def test_word_ocr(img_name: str, words: List[str]):
     img_path = tests_dir / img_name
-    result, _ = engine(img_path, return_word_box=True)
-    assert result[0][4] == words
+    result = engine(img_path, return_word_box=True)
+    txts, _, _ = list(zip(*result.word_results))
+    assert txts == words

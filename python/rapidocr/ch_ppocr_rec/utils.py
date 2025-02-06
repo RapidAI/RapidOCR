@@ -29,12 +29,17 @@ class TextRecInput:
 
 @dataclass
 class TextRecOutput:
-    line_txts: Optional[Tuple[str]] = None
-    line_scores: Tuple[float] = (1.0,)
+    txts: Optional[Tuple[str]] = None
+    scores: Tuple[float] = (1.0,)
     word_results: Tuple[Tuple[str, float, Optional[List[List[int]]]]] = (
         ("", 1.0, None),
     )
     elapse: Optional[float] = None
+
+    def __len__(self):
+        if self.txts is None:
+            return 0
+        return len(self.txts)
 
 
 class CTCLabelDecode:

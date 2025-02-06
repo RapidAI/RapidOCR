@@ -16,6 +16,11 @@ class TextDetOutput:
     scores: Optional[Tuple[float]] = None
     elapse: float = 0.0
 
+    def __len__(self):
+        if self.boxes is None:
+            return 0
+        return len(self.boxes)
+
 
 class DetPreProcess:
     def __init__(

@@ -23,6 +23,11 @@ class TextClsOutput:
     cls_res: Optional[List[Tuple[str, float]]] = None
     elapse: Optional[float] = None
 
+    def __len__(self):
+        if self.img_list is None:
+            return 0
+        return len(self.img_list)
+
 
 class ClsPostProcess:
     def __init__(self, label_list: List[str]):

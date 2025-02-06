@@ -19,28 +19,19 @@ with open(image_path, "rb") as f:
     img = f.read()
 
 # result, elapse_list = engine(img, use_det=True, use_cls=False, use_rec=False)
-result, elapse_list = engine(img, return_word_box=True)
+result = engine(img, return_word_box=True)
 print(result)
-print(elapse_list)
+print(result.elapse)
 
-# result, elapse = engine(image_path, use_det=False, use_cls=False, use_rec=True)
+boxes = result.boxes
+txts = result.txts
+scores = result.scores
 
-(boxes, txts, scores, words_boxes, words, words_scores) = list(zip(*result))
 font_path = "resources/fonts/FZYTK.TTF"
+vis_img = vis(img, result.boxes, result.txts, result.scores, font_path)
+cv2.imwrite("vis.png", vis_img)
 
-words_boxes = sum(words_boxes, [])
-words_all = sum(words, [])
-words_scores = sum(words_scores, [])
-vis_img = vis(img, words_boxes, words_all, words_scores, font_path)
+words_results = result.word_results
+words, words_scores, words_boxes = list(zip(*words_results))
+vis_img = vis(img, words_boxes, words, words_scores, font_path)
 cv2.imwrite("vis_single.png", vis_img)
-
-# (boxes, txts, scores, words_boxes, words) = list(zip(*result))
-
-# vis_img = vis(img, boxes, txts, scores, font_path)
-# cv2.imwrite("vis.png", vis_img)
-
-# words_boxes = sum(words_boxes, [])
-# words_all = sum(words, [])
-# words_scores = [1.0] * len(words_boxes)
-# vis_img = vis(img, words_boxes, words_all, words_scores, font_path)
-# cv2.imwrite("vis_single.png", vis_img)

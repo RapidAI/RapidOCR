@@ -17,13 +17,19 @@ class RapidOCROutput:
     elapse: float = field(init=False)
 
     def __post_init__(self):
-        self.elapse = sum(self.elapse_list)
+        self.elapse = sum(v for v in self.elapse_list if isinstance(v, float))
+
+    def __len__(self):
+        if self.txts is None:
+            return 0
+        return len(self.txts)
 
     def to_json(self):
         pass
 
     def to_paddleocr_format(self):
-        """Return format like:
+        """Refer: https://pypi.org/project/paddleocr/2.7.3/
+        Return format like:
         [
           [[[6.0, 2.0], [322.0, 9.0], [320.0, 104.0], [4.0, 97.0]], ['正品促销', 0.99893]],
           [[[70.0, 98.0], [252.0, 98.0], [252.0, 125.0], [70.0, 125.0]], ['大桶装更划算', 0.9843]]

@@ -90,8 +90,8 @@ class TextRecognizer:
             elapse += time.perf_counter() - start_time
 
         all_line_results, all_word_results = list(zip(*rec_res))
-        line_txts, line_scores = list(zip(*all_line_results))
-        return TextRecOutput(line_txts, line_scores, all_word_results, elapse)
+        txts, scores = list(zip(*all_line_results))
+        return TextRecOutput(txts, scores, all_word_results, elapse)
 
     def resize_norm_img(self, img: np.ndarray, max_wh_ratio: float) -> np.ndarray:
         img_channel, img_height, img_width = self.rec_image_shape
