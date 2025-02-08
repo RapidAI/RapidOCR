@@ -5,8 +5,7 @@ import os
 import platform
 import traceback
 from enum import Enum
-from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from onnxruntime import (
@@ -18,6 +17,7 @@ from onnxruntime import (
 )
 
 from ..utils.logger import get_logger
+from .base import InferSession
 
 
 class EP(Enum):
@@ -26,7 +26,7 @@ class EP(Enum):
     DIRECTML_EP = "DmlExecutionProvider"
 
 
-class OrtInferSession:
+class OrtInferSession(InferSession):
     def __init__(self, config: Dict[str, Any]):
         self.logger = get_logger("OrtInferSession")
 
@@ -213,18 +213,6 @@ class OrtInferSession:
         if key in meta_dict.keys():
             return True
         return False
-
-    @staticmethod
-    def _verify_model(model_path: Union[str, Path, None]):
-        if model_path is None:
-            raise ValueError("model_path is None!")
-
-        model_path = Path(model_path)
-        if not model_path.exists():
-            raise FileNotFoundError(f"{model_path} does not exists.")
-
-        if not model_path.is_file():
-            raise FileExistsError(f"{model_path} is not a file.")
 
 
 class ONNXRuntimeError(Exception):

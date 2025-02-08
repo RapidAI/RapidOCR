@@ -19,7 +19,7 @@ from typing import Any, Dict, List
 
 import numpy as np
 
-from rapidocr.utils import OrtInferSession
+from rapidocr.inference_engine import OrtInferSession
 
 from .utils import DBPostProcess, DetPreProcess, TextDetOutput
 

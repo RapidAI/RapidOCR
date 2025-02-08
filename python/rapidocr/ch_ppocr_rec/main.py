@@ -18,7 +18,7 @@ from typing import Any, Dict
 import cv2
 import numpy as np
 
-from rapidocr.utils import OrtInferSession
+from rapidocr.inference_engine import OrtInferSession
 
 from .utils import CTCLabelDecode, TextRecInput, TextRecOutput
 

@@ -44,8 +44,8 @@ class RapidOCR:
             updater = UpdateParameters()
             config = updater(config, **kwargs)
 
-        det_lang, rec_lang = parse_lang(config.Global.lang)
         # 根据选定的语言加载对应的模型
+        det_lang, rec_lang = parse_lang(config.Global.lang)
 
         self.print_verbose = config.Global.print_verbose
         self.text_score = config.Global.text_score
