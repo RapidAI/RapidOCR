@@ -17,7 +17,7 @@ from onnxruntime import (
     get_device,
 )
 
-from .logger import get_logger
+from ..utils.logger import get_logger
 
 
 class EP(Enum):

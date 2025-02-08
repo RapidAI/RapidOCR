@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import cv2
 import numpy as np
+from omegaconf import OmegaConf
 
 from .cal_rec_boxes import CalRecBoxes
 from .ch_ppocr_cls import TextClassifier, TextClsOutput
@@ -21,7 +22,7 @@ from .utils import (
     get_logger,
     increase_min_side,
     init_args,
-    read_yaml,
+    parse_lang,
     reduce_max_side,
     update_model_path,
 )
@@ -34,33 +35,37 @@ logger = get_logger("RapidOCR")
 class RapidOCR:
     def __init__(self, config_path: Optional[str] = None, **kwargs):
         if config_path is not None and Path(config_path).exists():
-            config = read_yaml(config_path)
+            config = OmegaConf.load(config_path)
         else:
-            config = read_yaml(DEFAULT_CFG_PATH)
+            config = OmegaConf.load(DEFAULT_CFG_PATH)
         config = update_model_path(config)
 
         if kwargs:
             updater = UpdateParameters()
             config = updater(config, **kwargs)
 
-        global_config = config["Global"]
-        self.print_verbose = global_config["print_verbose"]
-        self.text_score = global_config["text_score"]
-        self.min_height = global_config["min_height"]
-        self.width_height_ratio = global_config["width_height_ratio"]
+        det_lang, rec_lang = parse_lang(config.Global.lang)
+        # 根据选定的语言加载对应的模型
 
-        self.use_det = global_config["use_det"]
-        self.text_det = TextDetector(config["Det"])
+        self.print_verbose = config.Global.print_verbose
+        self.text_score = config.Global.text_score
+        self.min_height = config.Global.min_height
+        self.width_height_ratio = config.Global.width_height_ratio
 
-        self.use_cls = global_config["use_cls"]
-        self.text_cls = TextClassifier(config["Cls"])
+        self.use_det = config.Global.use_det
+        config.Det.lang = det_lang
+        self.text_det = TextDetector(config.Det)
 
-        self.use_rec = global_config["use_rec"]
-        self.text_rec = TextRecognizer(config["Rec"])
+        self.use_cls = config.Global.use_cls
+        self.text_cls = TextClassifier(config.Cls)
+
+        self.use_rec = config.Global.use_rec
+        config.Rec.lang = rec_lang
+        self.text_rec = TextRecognizer(config.Rec)
 
         self.load_img = LoadImage()
-        self.max_side_len = global_config["max_side_len"]
-        self.min_side_len = global_config["min_side_len"]
+        self.max_side_len = config.Global.max_side_len
+        self.min_side_len = config.Global.min_side_len
 
         self.cal_rec_boxes = CalRecBoxes()
 

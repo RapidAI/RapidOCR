@@ -1,4 +1,5 @@
 Global:
+    lang: "ch"
     text_score: 0.5
     use_det: true
     use_cls: true

@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import argparse
 import copy
 import math
 import time
@@ -20,7 +19,7 @@ from typing import Any, Dict, List, Union
 import cv2
 import numpy as np
 
-from rapidocr.utils import OrtInferSession, read_yaml
+from rapidocr.utils import OrtInferSession
 
 from .utils import ClsPostProcess, TextClsOutput
 
@@ -95,19 +94,3 @@ class TextClassifier:
         padding_im = np.zeros((img_c, img_h, img_w), dtype=np.float32)
         padding_im[:, :, :resized_w] = resized_image
         return padding_im
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--image_path", type=str, help="image_dir|image_path")
-    parser.add_argument("--config_path", type=str, default="config.yaml")
-    args = parser.parse_args()
-
-    config = read_yaml(args.config_path)
-
-    text_classifier = TextClassifier(config)
-
-    img = cv2.imread(args.image_path)
-    img_list, cls_res, predict_time = text_classifier(img)
-    for ino in range(len(img_list)):
-        print(f"cls result:{cls_res[ino]}")

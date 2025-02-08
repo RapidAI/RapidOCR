@@ -36,6 +36,7 @@ class ClsPostProcess:
     def __call__(self, preds: np.ndarray) -> List[Tuple[str, float]]:
         pred_idxs = preds.argmax(axis=1)
         decode_out = [
-            (self.label_list[idx], preds[i, idx]) for i, idx in enumerate(pred_idxs)
+            (self.label_list[int(idx)], preds[i, int(idx)])
+            for i, idx in enumerate(pred_idxs)
         ]
         return decode_out
