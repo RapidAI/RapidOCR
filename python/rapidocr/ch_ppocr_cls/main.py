@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Union
 import cv2
 import numpy as np
 
-from rapidocr.inference_engine import OrtInferSession
+from rapidocr.inference_engine import get_engine
 
 from .utils import ClsPostProcess, TextClsOutput
 
@@ -31,7 +31,7 @@ class TextClassifier:
         self.cls_thresh = config["cls_thresh"]
         self.postprocess_op = ClsPostProcess(config["label_list"])
 
-        self.infer = OrtInferSession(config)
+        self.session = get_engine(config.engine_name)(config)
 
     def __call__(self, img_list: Union[np.ndarray, List[np.ndarray]]) -> TextClsOutput:
         if isinstance(img_list, np.ndarray):
@@ -60,7 +60,7 @@ class TextClassifier:
             norm_img_batch = np.concatenate(norm_img_batch).astype(np.float32)
 
             starttime = time.time()
-            prob_out = self.infer(norm_img_batch)[0]
+            prob_out = self.session(norm_img_batch)
             cls_result = self.postprocess_op(prob_out)
             elapse += time.time() - starttime
 

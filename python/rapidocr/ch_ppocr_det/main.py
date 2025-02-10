@@ -19,7 +19,7 @@ from typing import Any, Dict, List
 
 import numpy as np
 
-from rapidocr.inference_engine import OrtInferSession
+from rapidocr.inference_engine import get_engine
 
 from .utils import DBPostProcess, DetPreProcess, TextDetOutput
 
@@ -42,7 +42,7 @@ class TextDetector:
         }
         self.postprocess_op = DBPostProcess(**post_process)
 
-        self.infer = OrtInferSession(config)
+        self.session = get_engine(config.engine_name)(config)
 
     def __call__(self, img: np.ndarray) -> TextDetOutput:
         start_time = time.perf_counter()
@@ -56,7 +56,7 @@ class TextDetector:
         if prepro_img is None:
             return TextDetOutput()
 
-        preds = self.infer(prepro_img)[0]
+        preds = self.session(prepro_img)
         boxes, scores = self.postprocess_op(preds, ori_img_shape)
         if len(boxes) < 1:
             return TextDetOutput()

@@ -13,6 +13,7 @@ from .cal_rec_boxes import CalRecBoxes
 from .ch_ppocr_cls import TextClassifier, TextClsOutput
 from .ch_ppocr_det import TextDetector, TextDetOutput
 from .ch_ppocr_rec import TextRecInput, TextRecognizer, TextRecOutput
+from .inference_engine import get_engine_name
 from .utils import (
     LoadImage,
     RapidOCROutput,
@@ -44,6 +45,8 @@ class RapidOCR:
             updater = UpdateParameters()
             config = updater(config, **kwargs)
 
+        engine_name = get_engine_name(config)
+
         # 根据选定的语言加载对应的模型
         det_lang, rec_lang = parse_lang(config.Global.lang)
 
@@ -54,13 +57,16 @@ class RapidOCR:
 
         self.use_det = config.Global.use_det
         config.Det.lang = det_lang
+        config.Det.engine_name = engine_name
         self.text_det = TextDetector(config.Det)
 
         self.use_cls = config.Global.use_cls
+        config.Cls.engine_name = engine_name
         self.text_cls = TextClassifier(config.Cls)
 
         self.use_rec = config.Global.use_rec
         config.Rec.lang = rec_lang
+        config.Rec.engine_name = engine_name
         self.text_rec = TextRecognizer(config.Rec)
 
         self.load_img = LoadImage()
@@ -302,6 +308,10 @@ class RapidOCR:
         ocr_res.txts = tuple(filter_txts)
         ocr_res.scores = tuple(filter_scores)
         return ocr_res
+
+    def export_config(self, save_path: Union[Path, str]) -> None:
+        with open(save_path, "w", encoding="utf-8") as f:
+            OmegaConf.save(self.config, f)
 
 
 def main():

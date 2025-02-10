@@ -13,27 +13,31 @@
 # limitations under the License.
 import math
 import time
+from pathlib import Path
 from typing import Any, Dict
 
 import cv2
 import numpy as np
 
-from rapidocr.inference_engine import OrtInferSession
+from rapidocr.inference_engine import get_engine
 
 from .utils import CTCLabelDecode, TextRecInput, TextRecOutput
+
+DEFAULT_DICT_PATH = str(Path(__file__).parent.parent / "models" / "ppocr_keys_v1.txt")
 
 
 class TextRecognizer:
     def __init__(self, config: Dict[str, Any]):
-        self.session = OrtInferSession(config)
+        self.session = get_engine(config.engine_name)(config)
 
         character = None
         if self.session.have_key():
             character = self.session.get_character_list()
 
-        character_path = config.get("rec_keys_path", None)
+        dict_path = config.get("rec_keys_path", None)
+        character_dict_path = dict_path if dict_path else DEFAULT_DICT_PATH
         self.postprocess_op = CTCLabelDecode(
-            character=character, character_path=character_path
+            character=character, character_path=character_dict_path
         )
 
         self.rec_batch_num = config["rec_batch_num"]
@@ -73,7 +77,7 @@ class TextRecognizer:
             norm_img_batch = np.concatenate(norm_img_batch).astype(np.float32)
 
             start_time = time.perf_counter()
-            preds = self.session(norm_img_batch)[0]
+            preds = self.session(norm_img_batch)
             line_results, word_results = self.postprocess_op(
                 preds,
                 return_word_box,

@@ -14,6 +14,11 @@ Global:
     intra_op_num_threads: &intra_nums -1
     inter_op_num_threads: &inter_nums -1
 
+    with_onnx: false
+    with_openvino: true
+    with_paddle: false
+    with_torch: false
+
 Det:
     intra_op_num_threads: *intra_nums
     inter_op_num_threads: *inter_nums

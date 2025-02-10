@@ -28,3 +28,7 @@ class InferSession(abc.ABC):
 
         if not model_path.is_file():
             raise FileExistsError(f"{model_path} is not a file.")
+
+    @abc.abstractmethod
+    def have_key(self, key: str = "character") -> bool:
+        pass

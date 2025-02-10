@@ -3,13 +3,14 @@
 # @Contact: liekkaskono@163.com
 import os
 import traceback
-from pathlib import Path
 
 import numpy as np
 from openvino.runtime import Core
 
+from .base import InferSession
 
-class OpenVINOInferSession:
+
+class OpenVINOInferSession(InferSession):
     def __init__(self, config):
         core = Core()
 
@@ -32,13 +33,8 @@ class OpenVINOInferSession:
             error_info = traceback.format_exc()
             raise OpenVIONError(error_info) from e
 
-    @staticmethod
-    def _verify_model(model_path):
-        model_path = Path(model_path)
-        if not model_path.exists():
-            raise FileNotFoundError(f"{model_path} does not exists.")
-        if not model_path.is_file():
-            raise FileExistsError(f"{model_path} is not a file.")
+    def have_key(self, key: str = "character") -> bool:
+        return False
 
 
 class OpenVIONError(Exception):
