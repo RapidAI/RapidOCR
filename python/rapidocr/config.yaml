@@ -29,9 +29,14 @@ EngineConfig:
         gpu_id: 0
         gpu_mem: 500
 
+    openvino:
+        inference_num_threads: -1
+
+    torch:
+        use_cuda: false
+
 Det:
     model_path: models/ch_PP-OCRv4_det_infer.onnx
-    paddle_model_dir: models/paddle/ch_PP-OCRv4_det_infer
 
     limit_side_len: 736
     limit_type: min
@@ -47,7 +52,6 @@ Det:
 
 Cls:
     model_path: models/ch_ppocr_mobile_v2.0_cls_infer.onnx
-    paddle_model_dir: models/paddle/ch_ppocr_mobile_v2_cls_infer
 
     cls_image_shape: [3, 48, 192]
     cls_batch_num: 6
@@ -56,7 +60,6 @@ Cls:
 
 Rec:
     model_path: models/ch_PP-OCRv4_rec_infer.onnx
-    paddle_model_dir: models/paddle/ch_PP-OCRv4_rec_infer
 
     rec_img_shape: [3, 48, 320]
     rec_batch_num: 6

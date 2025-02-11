@@ -5,13 +5,14 @@ import os
 import traceback
 
 import numpy as np
+from omegaconf import DictConfig
 from openvino.runtime import Core
 
 from .base import InferSession
 
 
 class OpenVINOInferSession(InferSession):
-    def __init__(self, config):
+    def __init__(self, config: DictConfig):
         core = Core()
 
         self._verify_model(config["model_path"])

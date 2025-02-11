@@ -25,15 +25,17 @@ from ..utils.logger import get_logger
 
 class TorchInferSession:
     def __init__(self, config, mode: Optional[str] = None) -> None:
+        self.logger = get_logger("TorchInferSession")
+
         all_arch_config = read_yaml(DEFAULT_CFG_PATH)
 
-        self.logger = get_logger("TorchInferSession")
         self.mode = mode
         model_path = Path(config["model_path"])
         self._verify_model(model_path)
         file_name = model_path.stem
         if file_name not in all_arch_config:
             raise ValueError(f"architecture {file_name} is not in config.yaml")
+
         arch_config = all_arch_config[file_name]
         self.predictor = BaseModel(arch_config)
         self.predictor.load_state_dict(torch.load(model_path, weights_only=True))

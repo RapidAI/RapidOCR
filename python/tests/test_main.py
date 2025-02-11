@@ -14,13 +14,29 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
 from rapidocr import LoadImageError, RapidOCR
-
-from .base_module import download_file
+from rapidocr.utils import download_file
 
 engine = RapidOCR()
 tests_dir = root_dir / "tests" / "test_files"
 img_path = tests_dir / "ch_en_num.jpg"
-package_name = "rapidocr_onnxruntime"
+
+
+def test_engine_openvino():
+    engine = RapidOCR(params={"Global.with_openvino": True})
+    result = engine(img_path)
+    assert result.txts[0] == "正品促销"
+
+
+def test_engine_paddle():
+    engine = RapidOCR(
+        params={
+            "Global.with_paddle": True,
+            "Det.model_path": "tests/test_files/ch_ppocr_server_v2.0_det_infer.onnx",
+            "Rec.model_path": "tests/test_files/ch_ppocr_server_v2.0_rec_infer.onnx",
+        }
+    )
+    result = engine(img_path)
+    assert result.txts[0] == "正品促销"
 
 
 def test_long_img():

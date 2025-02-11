@@ -1,10 +1,8 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-import os
-import platform
 from pathlib import Path
-from typing import Optional, Union, Dict
+from typing import Dict, Optional, Union
 
 import numpy as np
 import torch
@@ -13,18 +11,20 @@ import yaml
 root_dir = Path(__file__).resolve().parent.parent
 DEFAULT_CFG_PATH = root_dir / "arch_config.yaml"
 
+
 def read_yaml(yaml_path: Union[str, Path]) -> Dict[str, Dict]:
     with open(yaml_path, "rb") as f:
         data = yaml.load(f, Loader=yaml.Loader)
     return data
 
-from .logger import get_logger
+
 from rapidocr_torch.modeling.architectures.base_model import BaseModel
+
+from .logger import get_logger
 
 
 class TorchInferSession:
     def __init__(self, config, mode: Optional[str] = None) -> None:
-
         all_arch_config = read_yaml(DEFAULT_CFG_PATH)
 
         self.logger = get_logger("TorchInferSession")
@@ -42,6 +42,7 @@ class TorchInferSession:
         if config["use_cuda"]:
             self.predictor.cuda()
             self.use_gpu = True
+
     def __call__(self, img: np.ndarray):
         with torch.no_grad():
             inp = torch.from_numpy(img)
@@ -50,6 +51,7 @@ class TorchInferSession:
             # 适配跟onnx对齐取值逻辑
             outputs = self.predictor(inp).unsqueeze(0)
             return outputs.cpu().numpy()
+
     @staticmethod
     def _verify_model(model_path):
         model_path = Path(model_path)

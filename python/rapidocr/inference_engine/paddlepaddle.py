@@ -18,7 +18,7 @@ class PaddleInferSession:
         self.logger = get_logger("PaddleInferSession")
         self.mode = mode
 
-        model_dir = Path(config.padde_model_dir)
+        model_dir = Path(config.model_path)
         pdmodel_path = model_dir / "inference.pdmodel"
         pdiparams_path = model_dir / "inference.pdiparams"
 

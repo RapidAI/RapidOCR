@@ -46,7 +46,6 @@ class RapidOCR:
 
         engine_name = get_engine_name(config)
 
-        # 根据选定的语言加载对应的模型
         det_lang, rec_lang = parse_lang(config.Global.lang)
 
         self.print_verbose = config.Global.print_verbose
