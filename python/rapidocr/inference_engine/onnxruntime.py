@@ -33,13 +33,13 @@ class OrtInferSession(InferSession):
         model_path = config.get("model_path", None)
         self._verify_model(model_path)
 
-        self.cfg_use_cuda = config.get("use_cuda", None)
-        self.cfg_use_dml = config.get("use_dml", None)
+        self.cfg_use_cuda = config.engine_cfg.get("use_cuda", None)
+        self.cfg_use_dml = config.engine_cfg.get("use_dml", None)
 
         self.had_providers: List[str] = get_available_providers()
         EP_list = self._get_ep_list()
 
-        sess_opt = self._init_sess_opts(config)
+        sess_opt = self._init_sess_opts(config.engine_cfg)
         self.session = InferenceSession(
             model_path,
             sess_options=sess_opt,

@@ -18,7 +18,7 @@ class PaddleInferSession:
         self.logger = get_logger("PaddleInferSession")
         self.mode = mode
 
-        model_dir = Path(config["model_path"])
+        model_dir = Path(config.padde_model_dir)
         pdmodel_path = model_dir / "inference.pdmodel"
         pdiparams_path = model_dir / "inference.pdiparams"
 
@@ -65,7 +65,7 @@ class PaddleInferSession:
             outputs.append(output)
 
         self.predictor.try_shrink_memory()
-        return outputs
+        return outputs[0]
 
     @staticmethod
     def _verify_model(model_path):

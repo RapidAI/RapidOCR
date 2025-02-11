@@ -19,6 +19,8 @@ class Engine(Enum):
 
 
 def get_engine(engine_name: str):
+    print("engine_name:", engine_name)
+
     if engine_name == Engine.ONNXRUNTIME.value:
         return OrtInferSession
 
