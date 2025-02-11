@@ -36,7 +36,9 @@ def test_long_img():
 
 
 def test_ort_cuda_warning(caplog):
-    engine = RapidOCR(det_use_cuda=True)
+    engine = RapidOCR(
+        params={"Global.with_onnx": True, "EngineConfig.onnxruntime.use_cuda": True}
+    )
     caplog.set_level(logging.WARNING)
 
     assert caplog.records[0].levelname == "WARNING"
@@ -44,7 +46,9 @@ def test_ort_cuda_warning(caplog):
 
 
 def test_ort_dml_warning(caplog):
-    engine = RapidOCR(det_use_dml=True)
+    engine = RapidOCR(
+        params={"Global.with_onnx": True, "EngineConfig.onnxruntime.use_dml": True}
+    )
     caplog.set_level(logging.WARNING)
 
     assert caplog.records[0].levelname == "WARNING"
@@ -173,14 +177,14 @@ def test_input_path():
 
 def test_input_parameters():
     img_path = tests_dir / "ch_en_num.jpg"
-    engine = RapidOCR(text_score=1)
+    engine = RapidOCR(params={"Global.text_score": 1})
     result = engine(img_path)
     assert result.boxes is None
 
 
 def test_input_det_parameters():
     with pytest.raises(FileNotFoundError) as exc_info:
-        engine = RapidOCR(det_model_path="1.onnx")
+        engine = RapidOCR(params={"Det.model_path": "1.onnx"})
         result = engine(img_path)
         raise FileNotFoundError()
     assert exc_info.type is FileNotFoundError
@@ -188,7 +192,7 @@ def test_input_det_parameters():
 
 def test_input_cls_parameters():
     with pytest.raises(FileNotFoundError) as exc_info:
-        engine = RapidOCR(cls_model_path="1.onnx")
+        engine = RapidOCR(params={"Cls.model_path": "1.onnx"})
         result = engine(img_path)
         raise FileNotFoundError()
     assert exc_info.type is FileNotFoundError
@@ -196,7 +200,7 @@ def test_input_cls_parameters():
 
 def test_input_rec_parameters():
     with pytest.raises(FileNotFoundError) as exc_info:
-        engine = RapidOCR(rec_model_path="1.onnx")
+        engine = RapidOCR(params={"Rec.model_path": "1.onnx"})
         result = engine(img_path)
         raise FileNotFoundError()
     assert exc_info.type is FileNotFoundError

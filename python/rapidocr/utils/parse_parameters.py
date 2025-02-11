@@ -3,7 +3,7 @@
 # @Contact: liekkaskono@163.com
 import argparse
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, Union
 
 import numpy as np
 from omegaconf import DictConfig, OmegaConf
@@ -101,12 +101,6 @@ def parse_lang(lang):
     elif lang in devanagari_lang:
         lang = "devanagari"
 
-    assert (
-        lang in MODEL_URLS["OCR"][DEFAULT_OCR_MODEL_VERSION]["rec"]
-    ), "param lang must in {}, but got {}".format(
-        MODEL_URLS["OCR"][DEFAULT_OCR_MODEL_VERSION]["rec"].keys(), lang
-    )
-
     if lang == "ch":
         det_lang = "ch"
     elif lang in ["en", "latin"]:
@@ -117,12 +111,22 @@ def parse_lang(lang):
     return det_lang, lang
 
 
-def update_model_path(config: DictConfig) -> DictConfig:
-    key = "model_path"
-    OmegaConf.update(config, f"Det.{key}", str(root_dir / config.Det[key]))
-    OmegaConf.update(config, f"Cls.{key}", str(root_dir / config.Cls[key]))
-    OmegaConf.update(config, f"Rec.{key}", str(root_dir / config.Rec[key]))
-    return config
+class ParseParams(OmegaConf):
+    def __init__(self):
+        pass
+
+    @classmethod
+    def update_model_path(cls, cfg: DictConfig, key: str = "model_path") -> DictConfig:
+        cls.update(cfg, f"Det.{key}", str(root_dir / cfg.Det[key]))
+        cls.update(cfg, f"Cls.{key}", str(root_dir / cfg.Cls[key]))
+        cls.update(cfg, f"Rec.{key}", str(root_dir / cfg.Rec[key]))
+        return cfg
+
+    @classmethod
+    def update_batch(cls, cfg: DictConfig, params: Dict[str, str]) -> DictConfig:
+        for k, v in params.items():
+            cls.update(cfg, k, v)
+        return cfg
 
 
 def init_args():
@@ -199,103 +203,3 @@ def init_args():
 
     args = parser.parse_args()
     return args
-
-
-class UpdateParameters:
-    def __init__(self) -> None:
-        pass
-
-    def parse_kwargs(self, **kwargs):
-        global_dict, det_dict, cls_dict, rec_dict = {}, {}, {}, {}
-        for k, v in kwargs.items():
-            if k.startswith("det"):
-                k = k.split("det_")[1]
-                if k == "donot_use_dilation":
-                    k = "use_dilation"
-                    v = not v
-
-                det_dict[k] = v
-            elif k.startswith("cls"):
-                cls_dict[k] = v
-            elif k.startswith("rec"):
-                rec_dict[k] = v
-            else:
-                global_dict[k] = v
-        return global_dict, det_dict, cls_dict, rec_dict
-
-    def __call__(self, config, **kwargs):
-        global_dict, det_dict, cls_dict, rec_dict = self.parse_kwargs(**kwargs)
-        new_config = {
-            "Global": self.update_global_params(config["Global"], global_dict),
-            "Det": self.update_params(
-                config["Det"],
-                det_dict,
-                "det_",
-                ["det_model_path", "det_use_cuda", "det_use_dml"],
-            ),
-            "Cls": self.update_params(
-                config["Cls"],
-                cls_dict,
-                "cls_",
-                ["cls_label_list", "cls_model_path", "cls_use_cuda", "cls_use_dml"],
-            ),
-            "Rec": self.update_params(
-                config["Rec"],
-                rec_dict,
-                "rec_",
-                ["rec_model_path", "rec_use_cuda", "rec_use_dml"],
-            ),
-        }
-
-        update_params = ["intra_op_num_threads", "inter_op_num_threads"]
-        new_config = self.update_global_to_module(
-            config, update_params, src="Global", dsts=["Det", "Cls", "Rec"]
-        )
-        return new_config
-
-    def update_global_to_module(
-        self, config, params: List[str], src: str, dsts: List[str]
-    ):
-        for dst in dsts:
-            for param in params:
-                config[dst].update({param: config[src][param]})
-        return config
-
-    def update_global_params(self, config, global_dict):
-        if global_dict:
-            config.update(global_dict)
-        return config
-
-    def update_params(
-        self,
-        config,
-        param_dict: Dict[str, str],
-        prefix: str,
-        need_remove_prefix: Optional[List[str]] = None,
-    ):
-        if not param_dict:
-            return config
-
-        filter_dict = self.remove_prefix(param_dict, prefix, need_remove_prefix)
-        model_path = filter_dict.get("model_path", None)
-        if not model_path:
-            filter_dict["model_path"] = str(root_dir / config["model_path"])
-
-        config.update(filter_dict)
-        return config
-
-    @staticmethod
-    def remove_prefix(
-        config: Dict[str, str],
-        prefix: str,
-        need_remove_prefix: Optional[List[str]] = None,
-    ) -> Dict[str, str]:
-        if not need_remove_prefix:
-            return config
-
-        new_rec_dict = {}
-        for k, v in config.items():
-            if k in need_remove_prefix:
-                k = k.split(prefix)[1]
-            new_rec_dict[k] = v
-        return new_rec_dict

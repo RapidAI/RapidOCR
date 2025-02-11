@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import cv2
 import numpy as np
-from omegaconf import OmegaConf
 
 from .cal_rec_boxes import CalRecBoxes
 from .ch_ppocr_cls import TextClassifier, TextClsOutput
@@ -17,7 +16,6 @@ from .inference_engine import get_engine_name
 from .utils import (
     LoadImage,
     RapidOCROutput,
-    UpdateParameters,
     VisRes,
     add_round_letterbox,
     get_logger,
@@ -25,8 +23,8 @@ from .utils import (
     init_args,
     parse_lang,
     reduce_max_side,
-    update_model_path,
 )
+from .utils.parse_parameters import ParseParams
 
 root_dir = Path(__file__).resolve().parent
 DEFAULT_CFG_PATH = root_dir / "config.yaml"
@@ -34,16 +32,17 @@ logger = get_logger("RapidOCR")
 
 
 class RapidOCR:
-    def __init__(self, config_path: Optional[str] = None, **kwargs):
+    def __init__(
+        self, config_path: Optional[str] = None, params: Optional[Dict[str, Any]] = None
+    ):
         if config_path is not None and Path(config_path).exists():
-            config = OmegaConf.load(config_path)
+            config = ParseParams.load(config_path)
         else:
-            config = OmegaConf.load(DEFAULT_CFG_PATH)
-        config = update_model_path(config)
+            config = ParseParams.load(DEFAULT_CFG_PATH)
+            config = ParseParams.update_model_path(config)
 
-        if kwargs:
-            updater = UpdateParameters()
-            config = updater(config, **kwargs)
+        if params:
+            config = ParseParams.update_batch(config, params)
 
         engine_name = get_engine_name(config)
 
@@ -58,18 +57,18 @@ class RapidOCR:
         self.use_det = config.Global.use_det
         config.Det.lang = det_lang
         config.Det.engine_name = engine_name
-        config.Det.engine_cfg = config.InferEngineConfig[engine_name]
+        config.Det.engine_cfg = config.EngineConfig[engine_name]
         self.text_det = TextDetector(config.Det)
 
         self.use_cls = config.Global.use_cls
         config.Cls.engine_name = engine_name
-        config.Cls.engine_cfg = config.InferEngineConfig[engine_name]
+        config.Cls.engine_cfg = config.EngineConfig[engine_name]
         self.text_cls = TextClassifier(config.Cls)
 
         self.use_rec = config.Global.use_rec
         config.Rec.lang = rec_lang
         config.Rec.engine_name = engine_name
-        config.Rec.engine_cfg = config.InferEngineConfig[engine_name]
+        config.Rec.engine_cfg = config.EngineConfig[engine_name]
         self.text_rec = TextRecognizer(config.Rec)
 
         self.load_img = LoadImage()
@@ -314,7 +313,7 @@ class RapidOCR:
 
     def export_config(self, save_path: Union[Path, str]) -> None:
         with open(save_path, "w", encoding="utf-8") as f:
-            OmegaConf.save(self.config, f)
+            ParseParams.save(self.config, f)
 
 
 def main():
