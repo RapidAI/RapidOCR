@@ -106,7 +106,7 @@ def parse_lang(lang):
     elif lang in ["en", "latin"]:
         det_lang = "en"
     else:
-        det_lang = "ml"
+        det_lang = "Multilingual"
 
     return det_lang, lang
 

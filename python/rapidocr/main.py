@@ -57,17 +57,20 @@ class RapidOCR:
         config.Det.lang = det_lang
         config.Det.engine_name = engine_name
         config.Det.engine_cfg = config.EngineConfig[engine_name]
+        config.Det.task_type = "det"
         self.text_det = TextDetector(config.Det)
 
         self.use_cls = config.Global.use_cls
         config.Cls.engine_name = engine_name
         config.Cls.engine_cfg = config.EngineConfig[engine_name]
+        config.Cls.task_type = "cls"
         self.text_cls = TextClassifier(config.Cls)
 
         self.use_rec = config.Global.use_rec
         config.Rec.lang = rec_lang
         config.Rec.engine_name = engine_name
         config.Rec.engine_cfg = config.EngineConfig[engine_name]
+        config.Rec.task_type = "rec"
         self.text_rec = TextRecognizer(config.Rec)
 
         self.load_img = LoadImage()

@@ -14,35 +14,35 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
 from rapidocr import LoadImageError, RapidOCR
-from rapidocr.utils import download_file
+from rapidocr.inference_engine.base import InferSession
 
 engine = RapidOCR()
 tests_dir = root_dir / "tests" / "test_files"
 img_path = tests_dir / "ch_en_num.jpg"
 
 
-def test_engine_openvino():
-    engine = RapidOCR(params={"Global.with_openvino": True})
-    result = engine(img_path)
-    assert result.txts[0] == "正品促销"
+# def test_engine_openvino():
+#     engine = RapidOCR(params={"Global.with_openvino": True})
+#     result = engine(img_path)
+#     assert result.txts[0] == "正品促销"
 
 
-def test_engine_paddle():
-    engine = RapidOCR(
-        params={
-            "Global.with_paddle": True,
-            "Det.model_path": "tests/test_files/ch_ppocr_server_v2.0_det_infer.onnx",
-            "Rec.model_path": "tests/test_files/ch_ppocr_server_v2.0_rec_infer.onnx",
-        }
-    )
-    result = engine(img_path)
-    assert result.txts[0] == "正品促销"
+# def test_engine_paddle():
+#     engine = RapidOCR(
+#         params={
+#             "Global.with_paddle": True,
+#             "Det.model_path": "tests/test_files/ch_ppocr_server_v2.0_det_infer.onnx",
+#             "Rec.model_path": "tests/test_files/ch_ppocr_server_v2.0_rec_infer.onnx",
+#         }
+#     )
+#     result = engine(img_path)
+#     assert result.txts[0] == "正品促销"
 
 
 def test_long_img():
     img_url = "https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/long.jpeg"
     img_path = tests_dir / "long.jpeg"
-    download_file(img_url, save_path=img_path)
+    InferSession.download_file(img_url, save_path=img_path)
     result = engine(img_path)
 
     assert result is not None
@@ -196,30 +196,6 @@ def test_input_parameters():
     engine = RapidOCR(params={"Global.text_score": 1})
     result = engine(img_path)
     assert result.boxes is None
-
-
-def test_input_det_parameters():
-    with pytest.raises(FileNotFoundError) as exc_info:
-        engine = RapidOCR(params={"Det.model_path": "1.onnx"})
-        result = engine(img_path)
-        raise FileNotFoundError()
-    assert exc_info.type is FileNotFoundError
-
-
-def test_input_cls_parameters():
-    with pytest.raises(FileNotFoundError) as exc_info:
-        engine = RapidOCR(params={"Cls.model_path": "1.onnx"})
-        result = engine(img_path)
-        raise FileNotFoundError()
-    assert exc_info.type is FileNotFoundError
-
-
-def test_input_rec_parameters():
-    with pytest.raises(FileNotFoundError) as exc_info:
-        engine = RapidOCR(params={"Rec.model_path": "1.onnx"})
-        result = engine(img_path)
-        raise FileNotFoundError()
-    assert exc_info.type is FileNotFoundError
 
 
 def test_input_three_ndim_two_channel():

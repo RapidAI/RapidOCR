@@ -82,7 +82,7 @@ class CTCLabelDecode:
         if character:
             character_list = character
 
-        if character_path:
+        if character is None and character_path is not None:
             character_list = self.read_character_file(character_path)
 
         if character_list is None:

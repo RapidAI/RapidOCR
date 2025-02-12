@@ -3,10 +3,10 @@
 # @Contact: liekkaskono@163.com
 import cv2
 
-# from rapidocr_onnxruntime import RapidOCR, VisRes
-from rapidocr_torch import RapidOCR, VisRes
+from rapidocr import RapidOCR, VisRes
 
-# from rapidocr import RapidOCR, VisRes
+# from rapidocr_onnxruntime import RapidOCR, VisRes
+# from rapidocr_torch import RapidOCR, VisRes
 
 
 # from rapidocr_paddle import RapidOCR, VisRes
@@ -15,7 +15,7 @@ from rapidocr_torch import RapidOCR, VisRes
 # yaml_path = "tests/test_files/config.yaml"
 # engine = RapidOCR(config_path=yaml_path)
 
-engine = RapidOCR(params={"Global.with_paddle": True})
+engine = RapidOCR()
 vis = VisRes()
 
 image_path = "tests/test_files/ch_en_num.jpg"

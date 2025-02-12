@@ -24,13 +24,13 @@ EngineConfig:
         use_cuda: false
         use_dml: false
 
+    openvino:
+        inference_num_threads: -1
+
     paddlepaddle:
         cpu_math_library_num_threads: -1
         gpu_id: 0
         gpu_mem: 500
-
-    openvino:
-        inference_num_threads: -1
 
     torch:
         use_cuda: false

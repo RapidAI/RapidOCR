@@ -5,6 +5,7 @@ import os
 import platform
 import traceback
 from enum import Enum
+from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
@@ -31,7 +32,15 @@ class OrtInferSession(InferSession):
         self.logger = get_logger("OrtInferSession")
 
         model_path = config.get("model_path", None)
-        self._verify_model(model_path)
+        if not self._verify_model(model_path):
+            self.logger.warning(
+                "Model path is invalid, try to download the default model."
+            )
+            default_model_url = self.get_model_url(
+                config.engine_name, config.task_type, config.lang
+            )
+            model_path = self.DEFAULT_MODE_PATH / Path(default_model_url).name
+            self.download_file(default_model_url, model_path)
 
         self.cfg_use_cuda = config.engine_cfg.get("use_cuda", None)
         self.cfg_use_dml = config.engine_cfg.get("use_dml", None)
