@@ -20,12 +20,12 @@ def read_yaml(yaml_path: Union[str, Path]) -> Dict[str, Dict]:
 
 from rapidocr_torch.modeling.architectures.base_model import BaseModel
 
-from ..utils.logger import get_logger
+from ..utils.logger import Logger
 
 
 class TorchInferSession:
     def __init__(self, config, mode: Optional[str] = None) -> None:
-        self.logger = get_logger("TorchInferSession")
+        self.logger = Logger(logger_name=__name__).get_log()
 
         all_arch_config = read_yaml(DEFAULT_CFG_PATH)
 

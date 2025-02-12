@@ -15,10 +15,10 @@ from .ch_ppocr_rec import TextRecInput, TextRecognizer, TextRecOutput
 from .inference_engine import get_engine_name
 from .utils import (
     LoadImage,
+    Logger,
     RapidOCROutput,
     VisRes,
     add_round_letterbox,
-    get_logger,
     increase_min_side,
     init_args,
     parse_lang,
@@ -28,7 +28,6 @@ from .utils.parse_parameters import ParseParams
 
 root_dir = Path(__file__).resolve().parent
 DEFAULT_CFG_PATH = root_dir / "config.yaml"
-logger = get_logger("RapidOCR")
 
 
 class RapidOCR:
@@ -319,6 +318,8 @@ class RapidOCR:
 
 
 def main():
+    logger = Logger(logger_name=__name__).get_log()
+
     args = init_args()
     ocr_engine = RapidOCR(**vars(args))
 

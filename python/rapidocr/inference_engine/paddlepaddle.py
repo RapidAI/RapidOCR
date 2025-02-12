@@ -10,12 +10,12 @@ import numpy as np
 import paddle
 from paddle import inference
 
-from ..utils.logger import get_logger
+from ..utils.logger import Logger
 
 
 class PaddleInferSession:
     def __init__(self, config, mode: Optional[str] = None) -> None:
-        self.logger = get_logger("PaddleInferSession")
+        self.logger = Logger(logger_name=__name__).get_log()
         self.mode = mode
 
         model_dir = Path(config.model_path)

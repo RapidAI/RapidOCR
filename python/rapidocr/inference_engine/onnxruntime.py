@@ -17,7 +17,7 @@ from onnxruntime import (
     get_device,
 )
 
-from ..utils.logger import get_logger
+from ..utils.logger import Logger
 from .base import InferSession
 
 
@@ -29,7 +29,7 @@ class EP(Enum):
 
 class OrtInferSession(InferSession):
     def __init__(self, config: Dict[str, Any]):
-        self.logger = get_logger("OrtInferSession")
+        self.logger = Logger(logger_name=__name__).get_log()
 
         model_path = config.get("model_path", None)
         if not self._verify_model(model_path):
