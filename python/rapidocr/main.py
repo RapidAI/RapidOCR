@@ -12,7 +12,7 @@ from .cal_rec_boxes import CalRecBoxes
 from .ch_ppocr_cls import TextClassifier, TextClsOutput
 from .ch_ppocr_det import TextDetector, TextDetOutput
 from .ch_ppocr_rec import TextRecInput, TextRecognizer, TextRecOutput
-from .inference_engine import get_engine_name
+from .inference_engine.base import get_engine_name
 from .utils import (
     LoadImage,
     Logger,
@@ -39,6 +39,7 @@ class RapidOCR:
         else:
             config = ParseParams.load(DEFAULT_CFG_PATH)
             config = ParseParams.update_model_path(config)
+            config = ParseParams.update_dict_path(config)
 
         if params:
             config = ParseParams.update_batch(config, params)

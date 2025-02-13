@@ -2,21 +2,82 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import abc
+from enum import Enum
 from pathlib import Path
 from typing import Union
 
 import numpy as np
 import requests
-from omegaconf import OmegaConf
+from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
+
+from ..utils.logger import Logger
 
 cur_dir = Path(__file__).resolve().parent
 MODEL_URL_PATH = cur_dir / "MODEL_URL.yaml"
 
 
+logger = Logger(logger_name=__name__).get_log()
+
+
+class Engine(Enum):
+    ONNXRUNTIME = "onnxruntime"
+    OPENVINO = "openvino"
+    PADDLE = "paddlepaddle"
+    TORCH = "torch"
+
+
+def get_engine(engine_name: str):
+    logger.info("Using engine_name: %s", engine_name)
+
+    if engine_name == Engine.ONNXRUNTIME.value:
+        from .onnxruntime import OrtInferSession
+
+        return OrtInferSession
+
+    if engine_name == Engine.OPENVINO.value:
+        from .openvino import OpenVINOInferSession
+
+        return OpenVINOInferSession
+
+    if engine_name == Engine.PADDLE.value:
+        from .paddlepaddle import PaddleInferSession
+
+        return PaddleInferSession
+
+    if engine_name == Engine.TORCH.value:
+        from .torch import TorchInferSession
+
+        return TorchInferSession
+
+    raise ValueError(f"Unsupported engine: {engine_name}")
+
+
+def get_engine_name(config: DictConfig) -> str:
+    with_onnx = config.Global.with_onnx
+    with_openvino = config.Global.with_openvino
+    with_paddle = config.Global.with_paddle
+    with_torch = config.Global.with_torch
+
+    if with_onnx:
+        return Engine.ONNXRUNTIME.value
+
+    if with_openvino:
+        return Engine.OPENVINO.value
+
+    if with_paddle:
+        return Engine.PADDLE.value
+
+    if with_torch:
+        return Engine.TORCH.value
+
+    return Engine.ONNXRUNTIME.value
+
+
 class InferSession(abc.ABC):
     model_info = OmegaConf.load(MODEL_URL_PATH)
     DEFAULT_MODE_PATH = cur_dir.parent / "models"
+    logger = Logger(logger_name=__name__).get_log()
 
     @abc.abstractmethod
     def __init__(self, config):
@@ -44,9 +105,9 @@ class InferSession(abc.ABC):
     def have_key(self, key: str = "character") -> bool:
         pass
 
-    @staticmethod
-    def download_file(url: str, save_path: Union[str, Path]):
-        print(f"Downloading model from {url} to {save_path}")
+    @classmethod
+    def download_file(cls, url: str, save_path: Union[str, Path]):
+        cls.logger.info("Downloading model from %s to %s", url, save_path)
         response = requests.get(url, stream=True, timeout=60)
         status_code = response.status_code
 

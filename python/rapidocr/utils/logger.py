@@ -8,11 +8,10 @@ class Logger:
     def __init__(self, log_level=logging.DEBUG, logger_name=None):
         self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(log_level)
+        self.logger.propagate = False
 
         fmt = "[%(levelname)s] %(asctime)s %(filename)s:%(lineno)d: %(message)s"
         formatter = logging.Formatter(fmt)
-
-        self.logger.handlers.clear()
 
         if not self.logger.handlers:
             ch = logging.StreamHandler()

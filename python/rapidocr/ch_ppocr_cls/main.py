@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Union
 import cv2
 import numpy as np
 
-from rapidocr.inference_engine import get_engine
+from rapidocr.inference_engine.base import get_engine
 
 from .utils import ClsPostProcess, TextClsOutput
 

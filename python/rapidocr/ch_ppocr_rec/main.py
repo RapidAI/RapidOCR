@@ -19,11 +19,12 @@ from typing import Any, Dict
 import cv2
 import numpy as np
 
-from rapidocr.inference_engine import get_engine
+from rapidocr.inference_engine.base import get_engine
 
 from .utils import CTCLabelDecode, TextRecInput, TextRecOutput
 
 DEFAULT_DICT_PATH = str(Path(__file__).parent.parent / "models" / "ppocr_keys_v1.txt")
+DEFAULT_DICT_URL = "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer/ppocr_keys_v1.txt"
 
 
 class TextRecognizer:
@@ -36,6 +37,9 @@ class TextRecognizer:
 
         dict_path = config.get("rec_keys_path", None)
         character_dict_path = dict_path if dict_path else DEFAULT_DICT_PATH
+        if not Path(character_dict_path).exists():
+            self.session.download_file(DEFAULT_DICT_URL, character_dict_path)
+
         self.postprocess_op = CTCLabelDecode(
             character=character, character_path=character_dict_path
         )

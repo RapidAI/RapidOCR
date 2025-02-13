@@ -13,6 +13,8 @@ from .base import InferSession
 
 class OpenVINOInferSession(InferSession):
     def __init__(self, config: DictConfig):
+        super().__init__(config)
+
         core = Core()
 
         self._verify_model(config["model_path"])

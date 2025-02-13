@@ -123,6 +123,13 @@ class ParseParams(OmegaConf):
         return cfg
 
     @classmethod
+    def update_dict_path(
+        cls, cfg: DictConfig, key: str = "rec_keys_path"
+    ) -> DictConfig:
+        cls.update(cfg, f"Rec.{key}", str(root_dir / cfg.Rec[key]))
+        return cfg
+
+    @classmethod
     def update_batch(cls, cfg: DictConfig, params: Dict[str, str]) -> DictConfig:
         for k, v in params.items():
             cls.update(cfg, k, v)

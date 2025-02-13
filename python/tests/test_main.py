@@ -4,7 +4,7 @@
 import logging
 import sys
 from pathlib import Path
-from typing import List
+from typing import Any, Dict, List, Optional
 
 import cv2
 import numpy as np
@@ -16,15 +16,29 @@ sys.path.append(str(root_dir))
 from rapidocr import LoadImageError, RapidOCR
 from rapidocr.inference_engine.base import InferSession
 
-engine = RapidOCR()
 tests_dir = root_dir / "tests" / "test_files"
 img_path = tests_dir / "ch_en_num.jpg"
 
 
-# def test_engine_openvino():
-#     engine = RapidOCR(params={"Global.with_openvino": True})
-#     result = engine(img_path)
-#     assert result.txts[0] == "正品促销"
+@pytest.fixture()
+def engine():
+    engine = RapidOCR()
+    return engine
+
+
+def get_engine(params: Optional[Dict[str, Any]] = None):
+    if params:
+        engine = RapidOCR(params=params)
+        return engine
+
+    engine = RapidOCR()
+    return engine
+
+
+def test_engine_openvino():
+    engine = get_engine(params={"Global.with_openvino": True})
+    result = engine(img_path)
+    assert result.txts[0] == "正品促销"
 
 
 # def test_engine_paddle():
@@ -39,7 +53,7 @@ img_path = tests_dir / "ch_en_num.jpg"
 #     assert result.txts[0] == "正品促销"
 
 
-def test_long_img():
+def test_long_img(engine):
     img_url = "https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/long.jpeg"
     img_path = tests_dir / "long.jpeg"
     InferSession.download_file(img_url, save_path=img_path)
@@ -56,7 +70,6 @@ def test_ort_cuda_warning(caplog):
         params={"Global.with_onnx": True, "EngineConfig.onnxruntime.use_cuda": True}
     )
     caplog.set_level(logging.WARNING)
-
     assert caplog.records[0].levelname == "WARNING"
     assert "CUDAExecutionProvider" in caplog.records[0].message
 
@@ -71,7 +84,7 @@ def test_ort_dml_warning(caplog):
     assert "DirectML" in caplog.records[0].message
 
 
-def test_mode_one_img():
+def test_mode_one_img(engine):
     img_path = tests_dir / "issue_170.png"
     result = engine(img_path)
     assert result.txts[0] == "TEST"
