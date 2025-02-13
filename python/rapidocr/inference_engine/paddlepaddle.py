@@ -11,34 +11,58 @@ import paddle
 from paddle import inference
 
 from ..utils.logger import Logger
+from .base import InferSession
 
 
-class PaddleInferSession:
+class PaddleInferSession(InferSession):
     def __init__(self, config, mode: Optional[str] = None) -> None:
         self.logger = Logger(logger_name=__name__).get_log()
         self.mode = mode
 
-        model_dir = Path(config.model_path)
+        model_dir = Path(config.model_dir)
         pdmodel_path = model_dir / "inference.pdmodel"
         pdiparams_path = model_dir / "inference.pdiparams"
 
-        self._verify_model(pdmodel_path)
-        self._verify_model(pdiparams_path)
+        if not self._verify_model(pdmodel_path):
+            self.logger.warning(
+                "%s model path is invalid, try to download the default model.",
+                pdmodel_path,
+            )
+            default_model_url = self.get_model_url(
+                config.engine_name, config.task_type, config.lang
+            )
+            default_model_url = f"{default_model_url}/{pdmodel_path.name}"
+            model_path = model_dir / pdmodel_path.name
+            self.download_file(default_model_url, model_path)
+
+        if not self._verify_model(pdiparams_path):
+            self.logger.warning(
+                "%s model path is invalid, try to download the default model.",
+                pdiparams_path,
+            )
+            default_model_url = self.get_model_url(
+                config.engine_name, config.task_type, config.lang
+            )
+            default_model_url = f"{default_model_url}/{pdiparams_path.name}"
+            model_path = model_dir / pdiparams_path.name
+            self.download_file(default_model_url, model_path)
 
         infer_opts = inference.Config(str(pdmodel_path), str(pdiparams_path))
 
-        if config["use_cuda"]:
+        if config.engine_cfg.use_cuda:
             gpu_id = self.get_infer_gpuid()
             if gpu_id is None:
                 self.logger.warning(
                     "GPU is not found in current device by nvidia-smi. Please check your device or ignore it if run on jetson."
                 )
-            infer_opts.enable_use_gpu(config["gpu_mem"], config["gpu_id"])
+            infer_opts.enable_use_gpu(
+                config.engine_cfg.gpu_mem, config.engine_cfg.gpu_id
+            )
         else:
             infer_opts.disable_gpu()
 
         cpu_nums = os.cpu_count()
-        infer_num_threads = config.get("cpu_math_library_num_threads", -1)
+        infer_num_threads = config.engine_cfg.get("cpu_math_library_num_threads", -1)
         if infer_num_threads != -1 and 1 <= infer_num_threads <= cpu_nums:
             infer_opts.set_cpu_math_library_num_threads(infer_num_threads)
 
@@ -66,14 +90,6 @@ class PaddleInferSession:
 
         self.predictor.try_shrink_memory()
         return outputs[0]
-
-    @staticmethod
-    def _verify_model(model_path):
-        model_path = Path(model_path)
-        if not model_path.exists():
-            raise FileNotFoundError(f"{model_path} does not exists.")
-        if not model_path.is_file():
-            raise FileExistsError(f"{model_path} is not a file.")
 
     def get_input_tensors(self):
         input_names = self.predictor.get_input_names()
@@ -111,6 +127,9 @@ class PaddleInferSession:
 
         gpu_id = env_cuda[0].strip().split("=")[1]
         return int(gpu_id[0])
+
+    def have_key(self, key: str = "character") -> bool:
+        return False
 
 
 class PaddleInferError(Exception):

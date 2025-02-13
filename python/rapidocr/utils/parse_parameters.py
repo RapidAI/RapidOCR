@@ -116,10 +116,12 @@ class ParseParams(OmegaConf):
         pass
 
     @classmethod
-    def update_model_path(cls, cfg: DictConfig, key: str = "model_path") -> DictConfig:
-        cls.update(cfg, f"Det.{key}", str(root_dir / cfg.Det[key]))
-        cls.update(cfg, f"Cls.{key}", str(root_dir / cfg.Cls[key]))
-        cls.update(cfg, f"Rec.{key}", str(root_dir / cfg.Rec[key]))
+    def update_model_path(cls, cfg: DictConfig) -> DictConfig:
+        keys = ["model_path", "model_dir"]
+        for key in keys:
+            cls.update(cfg, f"Det.{key}", str(root_dir / cfg.Det[key]))
+            cls.update(cfg, f"Cls.{key}", str(root_dir / cfg.Cls[key]))
+            cls.update(cfg, f"Rec.{key}", str(root_dir / cfg.Rec[key]))
         return cfg
 
     @classmethod

@@ -15,10 +15,10 @@ from rapidocr import RapidOCR, VisRes
 # yaml_path = "tests/test_files/config.yaml"
 # engine = RapidOCR(config_path=yaml_path)
 
-engine = engine = RapidOCR(
-    params={"Global.with_onnx": True, "EngineConfig.onnxruntime.use_cuda": True}
-)
-# engine = RapidOCR(params={"Global.with_openvino": True})
+# engine = engine = RapidOCR(
+#     params={"Global.with_onnx": True, "EngineConfig.onnxruntime.use_cuda": True}
+# )
+engine = RapidOCR(params={"Global.lang": "en"})
 vis = VisRes()
 
 image_path = "tests/test_files/ch_en_num.jpg"

@@ -61,6 +61,7 @@ class RapidOCR:
         self.text_det = TextDetector(config.Det)
 
         self.use_cls = config.Global.use_cls
+        config.Cls.lang = "ch"
         config.Cls.engine_name = engine_name
         config.Cls.engine_cfg = config.EngineConfig[engine_name]
         config.Cls.task_type = "cls"
@@ -80,6 +81,7 @@ class RapidOCR:
         self.cal_rec_boxes = CalRecBoxes()
 
         self.return_paddleocr_format = False
+        self.return_word_box = False
 
     def __call__(
         self,
@@ -87,22 +89,19 @@ class RapidOCR:
         use_det: Optional[bool] = None,
         use_cls: Optional[bool] = None,
         use_rec: Optional[bool] = None,
-        **kwargs,
+        return_word_box: bool = False,
+        text_score: float = 0.5,
+        box_thresh: float = 0.5,
+        unclip_ratio: float = 1.6,
     ) -> RapidOCROutput:
         use_det = self.use_det if use_det is None else use_det
         use_cls = self.use_cls if use_cls is None else use_cls
         use_rec = self.use_rec if use_rec is None else use_rec
-        return_word_box = False
-        if kwargs:
-            box_thresh = kwargs.get("box_thresh", 0.5)
-            unclip_ratio = kwargs.get("unclip_ratio", 1.6)
-            text_score = kwargs.get("text_score", 0.5)
-            return_word_box = kwargs.get("return_word_box", False)
-            self.text_det.postprocess_op.box_thresh = box_thresh
-            self.text_det.postprocess_op.unclip_ratio = unclip_ratio
-            self.text_score = text_score
 
         self.return_word_box = return_word_box
+        self.text_score = text_score
+        self.text_det.postprocess_op.box_thresh = box_thresh
+        self.text_det.postprocess_op.unclip_ratio = unclip_ratio
 
         img = self.load_img(img_content)
 
@@ -126,11 +125,11 @@ class RapidOCR:
             img = cls_res.img_list
 
         if use_rec:
-            rec_input = TextRecInput(img=img, return_word_box=return_word_box)
+            rec_input = TextRecInput(img=img, return_word_box=self.return_word_box)
             rec_res = self.text_rec(rec_input)
 
         if (
-            return_word_box
+            self.return_word_box
             and det_res.boxes is not None
             and all(v for v in rec_res.word_results)
         ):
