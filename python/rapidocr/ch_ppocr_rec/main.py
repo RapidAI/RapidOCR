@@ -29,7 +29,7 @@ DEFAULT_DICT_URL = "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/ma
 
 class TextRecognizer:
     def __init__(self, config: Dict[str, Any]):
-        self.session = get_engine(config.engine_name)(config)
+        self.session = get_engine(config.engine_name)(config, mode="rec")
 
         character = None
         if self.session.have_key():

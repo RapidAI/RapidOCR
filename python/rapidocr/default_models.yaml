@@ -120,7 +120,7 @@ paddlepaddle:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/rec/te_PP-OCRv4_rec_infer
         dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/rec/te_PP-OCRv4_rec_infer/te_dict.txt
     cls:
-      ch_ppocr_mobile_v2.0_cls_infer: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/cls/ch_ppocr_mobile_v2_cls_infer/inference.pdiparams
+      ch_ppocr_mobile_v2.0_cls_infer: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/cls/ch_ppocr_mobile_v2_cls_infer
 
 torch:
   PP-OCRv4:

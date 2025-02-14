@@ -105,6 +105,9 @@ class InferSession(abc.ABC):
 
     @classmethod
     def download_file(cls, url: str, save_path: Union[str, Path]):
+        if not Path(save_path).parent.exists():
+            Path(save_path).parent.mkdir(parents=True, exist_ok=True)
+
         if Path(save_path).exists():
             cls.logger.info("Model already exists in %s", save_path)
             return

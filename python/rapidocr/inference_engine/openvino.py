@@ -20,7 +20,6 @@ class OpenVINOInferSession(InferSession):
 
         model_path = config.get("model_path", None)
         if model_path is None:
-            # 说明用户没有指定自己模型，使用默认模型
             default_model_url = self.get_model_url(
                 config.engine_name, config.task_type, config.lang
             )

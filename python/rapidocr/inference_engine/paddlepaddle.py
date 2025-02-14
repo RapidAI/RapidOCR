@@ -13,39 +13,41 @@ from paddle import inference
 from ..utils.logger import Logger
 from .base import InferSession
 
+PDMODEL_NAME = "inference.pdmodel"
+PDIPARAMS_NAME = "inference.pdiparams"
+PDIPRAMS_INFO_NAME = "inference.pdiparams.info"
+
 
 class PaddleInferSession(InferSession):
     def __init__(self, config, mode: Optional[str] = None) -> None:
         self.logger = Logger(logger_name=__name__).get_log()
         self.mode = mode
 
-        model_dir = Path(config.model_dir)
-        pdmodel_path = model_dir / "inference.pdmodel"
-        pdiparams_path = model_dir / "inference.pdiparams"
-
-        if not self._verify_model(pdmodel_path):
-            self.logger.warning(
-                "%s model path is invalid, try to download the default model.",
-                pdmodel_path,
-            )
+        model_dir = config.get("model_dir", None)
+        if model_dir is None:
             default_model_url = self.get_model_url(
                 config.engine_name, config.task_type, config.lang
             )
-            default_model_url = f"{default_model_url}/{pdmodel_path.name}"
-            model_path = model_dir / pdmodel_path.name
-            self.download_file(default_model_url, model_path)
+            if self.mode == "rec":
+                default_model_url = default_model_url["model_dir"]
 
-        if not self._verify_model(pdiparams_path):
-            self.logger.warning(
-                "%s model path is invalid, try to download the default model.",
-                pdiparams_path,
+            pd_model_url = f"{default_model_url}/{PDMODEL_NAME}"
+            pdmodel_path = (
+                self.DEFAULT_MODE_PATH / Path(default_model_url).name / PDMODEL_NAME
             )
-            default_model_url = self.get_model_url(
-                config.engine_name, config.task_type, config.lang
+            self.download_file(pd_model_url, pdmodel_path)
+
+            pdiparams_url = f"{default_model_url}/{PDIPARAMS_NAME}"
+            pdiparams_path = (
+                self.DEFAULT_MODE_PATH / Path(default_model_url).name / PDIPARAMS_NAME
             )
-            default_model_url = f"{default_model_url}/{pdiparams_path.name}"
-            model_path = model_dir / pdiparams_path.name
-            self.download_file(default_model_url, model_path)
+            self.download_file(pdiparams_url, pdiparams_path)
+        else:
+            pdmodel_path = model_dir / "inference.pdmodel"
+            pdiparams_path = model_dir / "inference.pdiparams"
+
+        self._verify_model(pdmodel_path)
+        self._verify_model(pdiparams_path)
 
         infer_opts = inference.Config(str(pdmodel_path), str(pdiparams_path))
 
