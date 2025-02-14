@@ -13,8 +13,8 @@ from tqdm import tqdm
 
 from ..utils.logger import Logger
 
-cur_dir = Path(__file__).resolve().parent
-MODEL_URL_PATH = cur_dir / "MODEL_URL.yaml"
+cur_dir = Path(__file__).resolve().parent.parent
+MODEL_URL_PATH = cur_dir / "default_models.yaml"
 
 
 logger = Logger(logger_name=__name__).get_log()
@@ -76,7 +76,7 @@ def get_engine_name(config: DictConfig) -> str:
 
 class InferSession(abc.ABC):
     model_info = OmegaConf.load(MODEL_URL_PATH)
-    DEFAULT_MODE_PATH = cur_dir.parent / "models"
+    DEFAULT_MODE_PATH = cur_dir / "models"
     logger = Logger(logger_name=__name__).get_log()
 
     @abc.abstractmethod
@@ -88,18 +88,16 @@ class InferSession(abc.ABC):
         pass
 
     @staticmethod
-    def _verify_model(model_path: Union[str, Path, None]) -> bool:
+    def _verify_model(model_path: Union[str, Path, None]):
         if model_path is None:
-            return False
+            raise ValueError("model_path is None!")
 
         model_path = Path(model_path)
         if not model_path.exists():
-            return False
+            raise FileNotFoundError(f"{model_path} does not exists.")
 
         if not model_path.is_file():
-            return False
-
-        return True
+            raise FileExistsError(f"{model_path} is not a file.")
 
     @abc.abstractmethod
     def have_key(self, key: str = "character") -> bool:
@@ -107,7 +105,12 @@ class InferSession(abc.ABC):
 
     @classmethod
     def download_file(cls, url: str, save_path: Union[str, Path]):
+        if Path(save_path).exists():
+            cls.logger.info("Model already exists in %s", save_path)
+            return
+
         cls.logger.info("Downloading model from %s to %s", url, save_path)
+
         response = requests.get(url, stream=True, timeout=60)
         status_code = response.status_code
 

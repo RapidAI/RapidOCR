@@ -38,8 +38,8 @@ class RapidOCR:
             config = ParseParams.load(config_path)
         else:
             config = ParseParams.load(DEFAULT_CFG_PATH)
-            config = ParseParams.update_model_path(config)
-            config = ParseParams.update_dict_path(config)
+            # config = ParseParams.update_model_path(config)
+            # config = ParseParams.update_dict_path(config)
 
         if params:
             config = ParseParams.update_batch(config, params)

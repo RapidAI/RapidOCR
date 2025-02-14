@@ -38,8 +38,8 @@ EngineConfig:
         use_cuda: false
 
 Det:
-    model_path: models/ch_PP-OCRv4_det_infer.onnx
-    model_dir: models/ch_PP-OCRv4_det_infer
+    model_path: null
+    model_dir: null
 
     limit_side_len: 736
     limit_type: min
@@ -54,8 +54,8 @@ Det:
     score_mode: fast
 
 Cls:
-    model_path: models/ch_ppocr_mobile_v2.0_cls_infer.onnx
-    model_dir: models/ch_ppocr_mobile_v2_cls_infer
+    model_path: null
+    model_dir: null
 
     cls_image_shape: [3, 48, 192]
     cls_batch_num: 6
@@ -63,9 +63,9 @@ Cls:
     label_list: ['0', '180']
 
 Rec:
-    model_path: models/ch_PP-OCRv4_rec_infer.onnx
-    model_dir: models/ch_PP-OCRv4_rec_infer
+    model_path: null
+    model_dir: null
 
-    rec_keys_path: models/ppocr_keys_v1.txt
+    rec_keys_path: null
     rec_img_shape: [3, 48, 320]
     rec_batch_num: 6

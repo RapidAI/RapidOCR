@@ -3,6 +3,7 @@
 # @Contact: liekkaskono@163.com
 import os
 import traceback
+from pathlib import Path
 
 import numpy as np
 from omegaconf import DictConfig
@@ -17,8 +18,17 @@ class OpenVINOInferSession(InferSession):
 
         core = Core()
 
-        self._verify_model(config["model_path"])
-        model_onnx = core.read_model(config["model_path"])
+        model_path = config.get("model_path", None)
+        if model_path is None:
+            # 说明用户没有指定自己模型，使用默认模型
+            default_model_url = self.get_model_url(
+                config.engine_name, config.task_type, config.lang
+            )
+            model_path = self.DEFAULT_MODE_PATH / Path(default_model_url).name
+            self.download_file(default_model_url, model_path)
+
+        self._verify_model(model_path)
+        model_onnx = core.read_model(model_path)
 
         cpu_nums = os.cpu_count()
         infer_num_threads = config.get("inference_num_threads", -1)

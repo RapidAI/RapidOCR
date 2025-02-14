@@ -32,15 +32,15 @@ class OrtInferSession(InferSession):
         self.logger = Logger(logger_name=__name__).get_log()
 
         model_path = config.get("model_path", None)
-        if not self._verify_model(model_path):
-            self.logger.warning(
-                "Model path is invalid, try to download the default model."
-            )
+        if model_path is None:
+            # 说明用户没有指定自己模型，使用默认模型
             default_model_url = self.get_model_url(
                 config.engine_name, config.task_type, config.lang
             )
             model_path = self.DEFAULT_MODE_PATH / Path(default_model_url).name
             self.download_file(default_model_url, model_path)
+
+        self._verify_model(model_path)
 
         self.cfg_use_cuda = config.engine_cfg.get("use_cuda", None)
         self.cfg_use_dml = config.engine_cfg.get("use_dml", None)
