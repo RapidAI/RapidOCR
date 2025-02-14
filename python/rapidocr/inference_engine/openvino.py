@@ -4,6 +4,7 @@
 import os
 import traceback
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 from omegaconf import DictConfig
@@ -13,8 +14,9 @@ from .base import InferSession
 
 
 class OpenVINOInferSession(InferSession):
-    def __init__(self, config: DictConfig):
+    def __init__(self, config: DictConfig, mode: Optional[str] = None):
         super().__init__(config)
+        self.mode = mode
 
         core = Core()
 
@@ -23,6 +25,9 @@ class OpenVINOInferSession(InferSession):
             default_model_url = self.get_model_url(
                 config.engine_name, config.task_type, config.lang
             )
+            if self.mode == "rec":
+                default_model_url = default_model_url.model_dir
+
             model_path = self.DEFAULT_MODE_PATH / Path(default_model_url).name
             self.download_file(default_model_url, model_path)
 

@@ -34,15 +34,24 @@ def get_engine(params: Optional[Dict[str, Any]] = None):
     return engine
 
 
+def test_lang():
+    engine = get_engine(params={"Global.lang": "ch", "Global.with_openvino": True})
+    result = engine(img_path)
+    assert result.txts is not None
+    assert result.txts[0] == "正品促销"
+
+
 def test_engine_openvino():
     engine = get_engine(params={"Global.with_openvino": True})
     result = engine(img_path)
+    assert result.txts is not None
     assert result.txts[0] == "正品促销"
 
 
 def test_engine_paddle():
     engine = RapidOCR(params={"Global.with_paddle": True})
     result = engine(img_path)
+    assert result.txts is not None
     assert result.txts[0] == "正品促销"
 
 
