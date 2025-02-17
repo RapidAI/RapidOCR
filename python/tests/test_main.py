@@ -34,11 +34,18 @@ def get_engine(params: Optional[Dict[str, Any]] = None):
     return engine
 
 
+def test_error_lang():
+    with pytest.raises(ValueError) as exc_info:
+        engine = get_engine(params={"Global.lang": "eh"})
+    assert exc_info.type is ValueError
+
+
 def test_lang():
-    engine = get_engine(params={"Global.lang": "ch", "Global.with_openvino": True})
+    engine = get_engine(params={"Global.lang": "en"})
+    img_path = tests_dir / "en.jpg"
     result = engine(img_path)
     assert result.txts is not None
-    assert result.txts[0] == "正品促销"
+    assert result.txts[0] == "MovieShots Dataset"
 
 
 def test_engine_openvino():

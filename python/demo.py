@@ -18,7 +18,7 @@ from rapidocr import RapidOCR, VisRes
 # engine = engine = RapidOCR(
 #     params={"Global.with_onnx": True, "EngineConfig.onnxruntime.use_cuda": True}
 # )
-engine = RapidOCR(params={"Global.with_openvino": True, "Global.lang": "ch"})
+engine = RapidOCR(params={"Global.with_torch": True, "Global.lang": "ch"})
 vis = VisRes()
 
 image_path = "tests/test_files/ch_en_num.jpg"

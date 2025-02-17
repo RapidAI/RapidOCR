@@ -2,44 +2,39 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Optional
 
 import numpy as np
 import torch
-import yaml
+from omegaconf import OmegaConf
+
+from ..networks.architectures.base_model import BaseModel
+from ..utils.logger import Logger
+from .base import InferSession
 
 root_dir = Path(__file__).resolve().parent.parent
-DEFAULT_CFG_PATH = root_dir / "arch_config.yaml"
+DEFAULT_CFG_PATH = root_dir / "networks" / "arch_config.yaml"
 
 
-def read_yaml(yaml_path: Union[str, Path]) -> Dict[str, Dict]:
-    with open(yaml_path, "rb") as f:
-        data = yaml.load(f, Loader=yaml.Loader)
-    return data
-
-
-from rapidocr_torch.modeling.architectures.base_model import BaseModel
-
-from ..utils.logger import Logger
-
-
-class TorchInferSession:
+class TorchInferSession(InferSession):
     def __init__(self, config, mode: Optional[str] = None) -> None:
         self.logger = Logger(logger_name=__name__).get_log()
 
-        all_arch_config = read_yaml(DEFAULT_CFG_PATH)
+        all_arch_config = OmegaConf.load(DEFAULT_CFG_PATH)
 
         self.mode = mode
         model_path = Path(config["model_path"])
         self._verify_model(model_path)
+
         file_name = model_path.stem
         if file_name not in all_arch_config:
-            raise ValueError(f"architecture {file_name} is not in config.yaml")
+            raise ValueError(f"architecture {file_name} is not in arch_config.yaml")
 
         arch_config = all_arch_config[file_name]
         self.predictor = BaseModel(arch_config)
         self.predictor.load_state_dict(torch.load(model_path, weights_only=True))
         self.predictor.eval()
+
         self.use_gpu = False
         if config["use_cuda"]:
             self.predictor.cuda()
@@ -50,17 +45,13 @@ class TorchInferSession:
             inp = torch.from_numpy(img)
             if self.use_gpu:
                 inp = inp.cuda()
+
             # 适配跟onnx对齐取值逻辑
             outputs = self.predictor(inp).unsqueeze(0)
             return outputs.cpu().numpy()
 
-    @staticmethod
-    def _verify_model(model_path):
-        model_path = Path(model_path)
-        if not model_path.exists():
-            raise FileNotFoundError(f"{model_path} does not exists.")
-        if not model_path.is_file():
-            raise FileExistsError(f"{model_path} is not a file.")
+    def have_key(self, key: str = "character") -> bool:
+        return False
 
 
 class TorchInferError(Exception):

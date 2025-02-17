@@ -100,6 +100,10 @@ def parse_lang(lang):
         lang = "cyrillic"
     elif lang in devanagari_lang:
         lang = "devanagari"
+    elif lang in ["ch", "en"]:
+        pass
+    else:
+        raise ValueError(f"lang: {lang} is not in the supported list.")
 
     if lang == "ch":
         det_lang = "ch"
