@@ -145,69 +145,15 @@ class ParseParams(OmegaConf):
 def init_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-img", "--img_path", type=str, default=None, required=True)
-    parser.add_argument("-p", "--print_cost", action="store_true", default=False)
-
-    global_group = parser.add_argument_group(title="Global")
-    global_group.add_argument("--text_score", type=float, default=0.5)
-
-    global_group.add_argument("--no_det", action="store_true", default=False)
-    global_group.add_argument("--no_cls", action="store_true", default=False)
-    global_group.add_argument("--no_rec", action="store_true", default=False)
-
-    global_group.add_argument("--print_verbose", action="store_true", default=False)
-    global_group.add_argument("--min_height", type=int, default=30)
-    global_group.add_argument("--width_height_ratio", type=int, default=8)
-    global_group.add_argument("--max_side_len", type=int, default=2000)
-    global_group.add_argument("--min_side_len", type=int, default=30)
-    global_group.add_argument("--return_word_box", action="store_true", default=False)
-
-    global_group.add_argument("--intra_op_num_threads", type=int, default=-1)
-    global_group.add_argument("--inter_op_num_threads", type=int, default=-1)
-
-    det_group = parser.add_argument_group(title="Det")
-    det_group.add_argument("--det_use_cuda", action="store_true", default=False)
-    det_group.add_argument("--det_use_dml", action="store_true", default=False)
-    det_group.add_argument("--det_model_path", type=str, default=None)
-    det_group.add_argument("--det_limit_side_len", type=float, default=736)
-    det_group.add_argument(
-        "--det_limit_type", type=str, default="min", choices=["max", "min"]
-    )
-    det_group.add_argument("--det_thresh", type=float, default=0.3)
-    det_group.add_argument("--det_box_thresh", type=float, default=0.5)
-    det_group.add_argument("--det_unclip_ratio", type=float, default=1.6)
-    det_group.add_argument(
-        "--det_donot_use_dilation", action="store_true", default=False
-    )
-    det_group.add_argument(
-        "--det_score_mode", type=str, default="fast", choices=["slow", "fast"]
-    )
-
-    cls_group = parser.add_argument_group(title="Cls")
-    cls_group.add_argument("--cls_use_cuda", action="store_true", default=False)
-    cls_group.add_argument("--cls_use_dml", action="store_true", default=False)
-    cls_group.add_argument("--cls_model_path", type=str, default=None)
-    cls_group.add_argument("--cls_image_shape", type=list, default=[3, 48, 192])
-    cls_group.add_argument("--cls_label_list", type=list, default=["0", "180"])
-    cls_group.add_argument("--cls_batch_num", type=int, default=6)
-    cls_group.add_argument("--cls_thresh", type=float, default=0.9)
-
-    rec_group = parser.add_argument_group(title="Rec")
-    rec_group.add_argument("--rec_use_cuda", action="store_true", default=False)
-    rec_group.add_argument("--rec_use_dml", action="store_true", default=False)
-    rec_group.add_argument("--rec_model_path", type=str, default=None)
-    rec_group.add_argument("--rec_keys_path", type=str, default=None)
-    rec_group.add_argument("--rec_img_shape", type=list, default=[3, 48, 320])
-    rec_group.add_argument("--rec_batch_num", type=int, default=6)
-
-    vis_group = parser.add_argument_group(title="Visual Result")
-    vis_group.add_argument("-vis", "--vis_res", action="store_true", default=False)
-    vis_group.add_argument(
+    parser.add_argument("--text_score", type=float, default=0.5)
+    parser.add_argument("-vis", "--vis_res", action="store_true", default=False)
+    parser.add_argument(
         "--vis_font_path",
         type=str,
         default=None,
         help="When -vis is True, the font_path must have value.",
     )
-    vis_group.add_argument(
+    parser.add_argument(
         "--vis_save_path",
         type=str,
         default=".",

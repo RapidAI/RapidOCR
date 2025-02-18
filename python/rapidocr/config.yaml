@@ -18,6 +18,8 @@ Global:
     with_paddle: false
     with_torch: false
 
+    font_path: null
+
 EngineConfig:
     onnxruntime:
         intra_op_num_threads: -1

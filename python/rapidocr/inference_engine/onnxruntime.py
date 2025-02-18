@@ -17,6 +17,7 @@ from onnxruntime import (
     get_device,
 )
 
+from ..utils import download_file
 from ..utils.logger import Logger
 from .base import InferSession
 
@@ -38,7 +39,7 @@ class OrtInferSession(InferSession):
                 config.engine_name, config.task_type, config.lang
             )
             model_path = self.DEFAULT_MODE_PATH / Path(default_model_url).name
-            self.download_file(default_model_url, model_path)
+            download_file(default_model_url, model_path, self.logger)
 
         self._verify_model(model_path)
 

@@ -1,12 +1,10 @@
 onnxruntime:
   PP-OCRv4:
     det:
-      default: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/ch_PP-OCRv4_det_infer.onnx
       ch_PP-OCRv4_det_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/ch_PP-OCRv4_det_infer.onnx
       en_PP-OCRv3_det_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/en_PP-OCRv3_det_infer.onnx
       Multilingual_PP-OCRv3_det_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/Multilingual_PP-OCRv3_det_infer.onnx
     rec:
-      default: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer.onnx
       arabic_PP-OCRv4_rec_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/rec/arabic_PP-OCRv4_rec_infer.onnx
       ch_PP-OCRv4_rec_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer.onnx
       chinese_cht_PP-OCRv3_rec_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/rec/chinese_cht_PP-OCRv3_rec_infer.onnx
@@ -25,14 +23,10 @@ onnxruntime:
 openvino:
   PP-OCRv4:
     det:
-      default: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/ch_PP-OCRv4_det_infer.onnx
       ch_PP-OCRv4_det_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/ch_PP-OCRv4_det_infer.onnx
       en_PP-OCRv3_det_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/en_PP-OCRv3_det_infer.onnx
       Multilingual_PP-OCRv3_det_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/Multilingual_PP-OCRv3_det_infer.onnx
     rec:
-      default:
-        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer.onnx
-        dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer/ppocr_keys_v1.txt
       arabic_PP-OCRv4_rec_infer:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/rec/arabic_PP-OCRv4_rec_infer.onnx
         dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/rec/arabic_PP-OCRv4_rec_infer/arabic_dict.txt
@@ -75,14 +69,10 @@ openvino:
 paddlepaddle:
   PP-OCRv4:
     det:
-      default: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/det/ch_PP-OCRv4_det_infer
       ch_PP-OCRv4_det_infer: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/det/ch_PP-OCRv4_det_infer
       en_PP-OCRv3_det_infer: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/det/en_PP-OCRv3_det_infer
       Multilingual_PP-OCRv3_det_infer: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/det/Multilingual_PP-OCRv3_det_infer
     rec:
-      default:
-        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer
-        dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer/ppocr_keys_v1.txt
       arabic_PP-OCRv4_rec_infer:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/rec/arabic_PP-OCRv4_rec_infer
         dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/rec/arabic_PP-OCRv4_rec_infer/arabic_dict.txt
@@ -125,13 +115,9 @@ paddlepaddle:
 torch:
   PP-OCRv4:
     det:
-      default: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/torch/ch_PP-OCRv4_det_infer.pth
       ch_PP-OCRv4_det_infer.pth: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/torch/ch_PP-OCRv4_det_infer.pth
       ch_PP-OCRv4_det_server_infer.pth: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/torch/ch_PP-OCRv4_det_server_infer.pth
     rec:
-      default:
-        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/torch/ch_PP-OCRv4_rec_infer.pth
-        dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer/ppocr_keys_v1.txt
       ch_PP-OCRv4_rec_infer.pth:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/torch/ch_PP-OCRv4_rec_infer.pth
         dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer/ppocr_keys_v1.txt

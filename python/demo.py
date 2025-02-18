@@ -8,7 +8,6 @@ from rapidocr import RapidOCR, VisRes
 # from rapidocr_onnxruntime import RapidOCR, VisRes
 # from rapidocr_torch import RapidOCR, VisRes
 
-
 # from rapidocr_paddle import RapidOCR, VisRes
 # from rapidocr_openvino import RapidOCR, VisRes
 
@@ -18,7 +17,8 @@ from rapidocr import RapidOCR, VisRes
 # engine = engine = RapidOCR(
 #     params={"Global.with_onnx": True, "EngineConfig.onnxruntime.use_cuda": True}
 # )
-engine = RapidOCR(params={"Global.with_torch": True, "Global.lang": "ch"})
+# engine = RapidOCR(params={"Global.with_torch": True, "Global.lang": "ch"})
+engine = RapidOCR(params={"Global.with_openvino": True, "Global.lang": "ch"})
 vis = VisRes()
 
 image_path = "tests/test_files/ch_en_num.jpg"
@@ -34,11 +34,10 @@ boxes = result.boxes
 txts = result.txts
 scores = result.scores
 
-font_path = "resources/fonts/FZYTK.TTF"
-vis_img = vis(img, result.boxes, result.txts, result.scores, font_path)
+vis_img = vis(img, result.boxes, result.txts, result.scores)
 cv2.imwrite("vis.png", vis_img)
 
 words_results = result.word_results
 words, words_scores, words_boxes = list(zip(*words_results))
-vis_img = vis(img, words_boxes, words, words_scores, font_path)
+vis_img = vis(img, words_boxes, words, words_scores)
 cv2.imwrite("vis_single.png", vis_img)

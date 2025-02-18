@@ -13,10 +13,12 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
 from rapidocr import LoadImageError, RapidOCR
-from rapidocr.inference_engine.base import InferSession
+from rapidocr.utils.logger import Logger
+from rapidocr.utils.utils import download_file
 
 tests_dir = root_dir / "tests" / "test_files"
 img_path = tests_dir / "ch_en_num.jpg"
+logger = Logger(logger_name=__name__).get_log()
 
 
 @pytest.fixture()
@@ -62,10 +64,18 @@ def test_engine_paddle():
     assert result.txts[0] == "正品促销"
 
 
+def test_engine_torch():
+    engine = RapidOCR(params={"Global.with_torch": True})
+    result = engine(img_path)
+    assert result.txts is not None
+    assert result.txts[0] == "正品促销"
+
+
 def test_long_img(engine):
     img_url = "https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/long.jpeg"
     img_path = tests_dir / "long.jpeg"
-    InferSession.download_file(img_url, save_path=img_path)
+
+    download_file(img_url, img_path, logger)
     result = engine(img_path)
 
     assert result is not None

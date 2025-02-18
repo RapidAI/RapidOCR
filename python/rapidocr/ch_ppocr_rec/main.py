@@ -21,6 +21,7 @@ import numpy as np
 
 from rapidocr.inference_engine.base import get_engine
 
+from ..utils import Logger, download_file
 from .utils import CTCLabelDecode, TextRecInput, TextRecOutput
 
 DEFAULT_DICT_PATH = Path(__file__).parent.parent / "models" / "ppocr_keys_v1.txt"
@@ -30,6 +31,7 @@ DEFAULT_DICT_URL = "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/ma
 class TextRecognizer:
     def __init__(self, config: Dict[str, Any]):
         self.session = get_engine(config.engine_name)(config, mode="rec")
+        self.logger = Logger(logger_name=__name__).get_log()
 
         character = None
         if self.session.have_key():
@@ -38,7 +40,7 @@ class TextRecognizer:
         dict_path = config.get("rec_keys_path", None)
         character_dict_path = dict_path if dict_path else DEFAULT_DICT_PATH
         if not Path(character_dict_path).exists():
-            self.session.download_file(DEFAULT_DICT_URL, character_dict_path)
+            download_file(DEFAULT_DICT_URL, character_dict_path, self.logger)
 
         self.postprocess_op = CTCLabelDecode(
             character=character, character_path=character_dict_path

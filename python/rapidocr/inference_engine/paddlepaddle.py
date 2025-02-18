@@ -10,6 +10,7 @@ import numpy as np
 import paddle
 from paddle import inference
 
+from ..utils import download_file
 from ..utils.logger import Logger
 from .base import InferSession
 
@@ -35,13 +36,13 @@ class PaddleInferSession(InferSession):
             pdmodel_path = (
                 self.DEFAULT_MODE_PATH / Path(default_model_url).name / PDMODEL_NAME
             )
-            self.download_file(pd_model_url, pdmodel_path)
+            download_file(pd_model_url, pdmodel_path, self.logger)
 
             pdiparams_url = f"{default_model_url}/{PDIPARAMS_NAME}"
             pdiparams_path = (
                 self.DEFAULT_MODE_PATH / Path(default_model_url).name / PDIPARAMS_NAME
             )
-            self.download_file(pdiparams_url, pdiparams_path)
+            download_file(pdiparams_url, pdiparams_path, self.logger)
         else:
             pdmodel_path = model_dir / "inference.pdmodel"
             pdiparams_path = model_dir / "inference.pdiparams"

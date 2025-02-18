@@ -331,9 +331,6 @@ def main():
     )
     logger.info(result)
 
-    if args.print_cost:
-        logger.info(elapse_list)
-
     if args.vis_res:
         vis = VisRes()
         Path(args.vis_save_path).mkdir(parents=True, exist_ok=True)

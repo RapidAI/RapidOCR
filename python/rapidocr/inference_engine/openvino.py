@@ -10,6 +10,7 @@ import numpy as np
 from omegaconf import DictConfig
 from openvino.runtime import Core
 
+from ..utils import Logger, download_file
 from .base import InferSession
 
 
@@ -17,6 +18,7 @@ class OpenVINOInferSession(InferSession):
     def __init__(self, config: DictConfig, mode: Optional[str] = None):
         super().__init__(config)
         self.mode = mode
+        self.logger = Logger(logger_name=__name__).get_log()
 
         core = Core()
 
@@ -29,7 +31,7 @@ class OpenVINOInferSession(InferSession):
                 default_model_url = default_model_url.model_dir
 
             model_path = self.DEFAULT_MODE_PATH / Path(default_model_url).name
-            self.download_file(default_model_url, model_path)
+            download_file(default_model_url, model_path, self.logger)
 
         self._verify_model(model_path)
         model_onnx = core.read_model(model_path)

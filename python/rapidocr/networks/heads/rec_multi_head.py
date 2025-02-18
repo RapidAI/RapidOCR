@@ -1,6 +1,7 @@
 from torch import nn
 
 from ..necks.rnn import Im2Seq, SequenceEncoder
+from .rec_ctc_head import CTCHead
 
 
 class FCTranspose(nn.Module):
@@ -43,15 +44,14 @@ class MultiHead(nn.Module):
                 head_args = self.head_list[idx][name].get("Head", {})
                 if head_args is None:
                     head_args = {}
-                self.ctc_head = eval(name)(
+
+                self.ctc_head = CTCHead(
                     in_channels=self.ctc_encoder.out_channels,
                     out_channels=out_channels_list["CTCLabelDecode"],
-                    **head_args
+                    **head_args,
                 )
             else:
-                raise NotImplementedError(
-                    "{} is not supported in MultiHead yet".format(name)
-                )
+                raise NotImplementedError(f"{name} is not supported in MultiHead yet")
 
     def forward(self, x, data=None):
         ctc_encoder = self.ctc_encoder(x)

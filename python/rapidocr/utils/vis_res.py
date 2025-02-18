@@ -11,9 +11,13 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 from .load_image import LoadImage
+from .utils import download_file
 
-root_dir = Path(__file__).resolve().parent
+root_dir = Path(__file__).resolve().parent.parent
 InputType = Union[str, np.ndarray, bytes, Path, Image.Image]
+
+DEFAULT_FONT_PATH = root_dir / "models" / "FZYTK.TTF"
+DEFAULT_FONT_URL = "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/resources/fonts/FZYTK.TTF"
 
 
 class VisRes:
@@ -105,10 +109,8 @@ class VisRes:
     @staticmethod
     def get_font_path(font_path: Optional[Union[str, Path]] = None) -> str:
         if font_path is None or not Path(font_path).exists():
-            raise FileNotFoundError(
-                f"The {font_path} does not exists! \n"
-                f"You could download the file in the https://drive.google.com/file/d/1evWVX38EFNwTq_n5gTFgnlv8tdaNcyIA/view?usp=sharing"
-            )
+            download_file(DEFAULT_FONT_URL, DEFAULT_FONT_PATH, logger=None)
+            return str(DEFAULT_FONT_PATH)
         return str(font_path)
 
     @staticmethod

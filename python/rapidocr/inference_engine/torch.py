@@ -10,6 +10,7 @@ from omegaconf import OmegaConf
 
 from ..networks.architectures.base_model import BaseModel
 from ..utils.logger import Logger
+from ..utils.utils import download_file
 from .base import InferSession
 
 root_dir = Path(__file__).resolve().parent.parent
@@ -19,13 +20,22 @@ DEFAULT_CFG_PATH = root_dir / "networks" / "arch_config.yaml"
 class TorchInferSession(InferSession):
     def __init__(self, config, mode: Optional[str] = None) -> None:
         self.logger = Logger(logger_name=__name__).get_log()
-
-        all_arch_config = OmegaConf.load(DEFAULT_CFG_PATH)
-
         self.mode = mode
-        model_path = Path(config["model_path"])
+
+        model_path = config.get("model_path", None)
+        if model_path is None:
+            default_model_url = self.get_model_url(
+                config.engine_name, config.task_type, config.lang
+            )
+            if self.mode == "rec":
+                default_model_url = default_model_url["model_dir"]
+
+            model_path = self.DEFAULT_MODE_PATH / Path(default_model_url).name
+            download_file(default_model_url, model_path, self.logger)
+
         self._verify_model(model_path)
 
+        all_arch_config = OmegaConf.load(DEFAULT_CFG_PATH)
         file_name = model_path.stem
         if file_name not in all_arch_config:
             raise ValueError(f"architecture {file_name} is not in arch_config.yaml")
@@ -36,7 +46,7 @@ class TorchInferSession(InferSession):
         self.predictor.eval()
 
         self.use_gpu = False
-        if config["use_cuda"]:
+        if config.engine_cfg.use_cuda:
             self.predictor.cuda()
             self.use_gpu = True
 
@@ -47,8 +57,8 @@ class TorchInferSession(InferSession):
                 inp = inp.cuda()
 
             # 适配跟onnx对齐取值逻辑
-            outputs = self.predictor(inp).unsqueeze(0)
-            return outputs.cpu().numpy()
+            outputs = self.predictor(inp).cpu().numpy()
+            return outputs
 
     def have_key(self, key: str = "character") -> bool:
         return False

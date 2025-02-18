@@ -6,4 +6,5 @@ from .logger import Logger
 from .parse_parameters import ParseParams, init_args, parse_lang
 from .process_img import add_round_letterbox, increase_min_side, reduce_max_side
 from .typings import RapidOCROutput
+from .utils import download_file
 from .vis_res import VisRes
