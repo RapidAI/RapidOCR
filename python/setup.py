@@ -17,7 +17,7 @@ def read_txt(txt_path: Union[Path, str]) -> List[str]:
 
 def get_readme():
     root_dir = Path(__file__).resolve().parent.parent
-    readme_path = str(root_dir / "docs" / "doc_whl_rapidocr_ort.md")
+    readme_path = str(root_dir / "docs" / "doc_whl_rapidocr.md")
     print(readme_path)
     with open(readme_path, "r", encoding="utf-8") as f:
         readme = f.read()
@@ -27,7 +27,10 @@ def get_readme():
 MODULE_NAME = "rapidocr"
 
 obtainer = GetPyPiLatestVersion()
-latest_version = obtainer(MODULE_NAME)
+try:
+    latest_version = obtainer(MODULE_NAME)
+except Exception as e:
+    latest_version = "0.0.0"
 VERSION_NUM = obtainer.version_add_one(latest_version, add_patch=True)
 
 if len(sys.argv) > 2:

@@ -14,11 +14,15 @@ def download_file(url: str, save_path: Union[str, Path], logger=None):
 
     if Path(save_path).exists():
         if logger is not None:
-            logger.info("Model already exists in %s", save_path)
+            logger.info("File already exists in %s", save_path)
+        else:
+            print(f"File already exists in {save_path}")
         return
 
     if logger is not None:
-        logger.info("Downloading model from %s to %s", url, save_path)
+        logger.info("Downloading file from %s to %s", url, save_path)
+    else:
+        print(f"Downloading file from {url} to {save_path}")
 
     response = requests.get(url, stream=True, timeout=60)
     status_code = response.status_code

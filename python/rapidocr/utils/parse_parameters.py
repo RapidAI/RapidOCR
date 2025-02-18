@@ -1,7 +1,6 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-import argparse
 from pathlib import Path
 from typing import Dict, Union
 
@@ -120,45 +119,7 @@ class ParseParams(OmegaConf):
         pass
 
     @classmethod
-    def update_model_path(cls, cfg: DictConfig) -> DictConfig:
-        keys = ["model_path", "model_dir"]
-        for key in keys:
-            cls.update(cfg, f"Det.{key}", str(root_dir / cfg.Det[key]))
-            cls.update(cfg, f"Cls.{key}", str(root_dir / cfg.Cls[key]))
-            cls.update(cfg, f"Rec.{key}", str(root_dir / cfg.Rec[key]))
-        return cfg
-
-    @classmethod
-    def update_dict_path(
-        cls, cfg: DictConfig, key: str = "rec_keys_path"
-    ) -> DictConfig:
-        cls.update(cfg, f"Rec.{key}", str(root_dir / cfg.Rec[key]))
-        return cfg
-
-    @classmethod
     def update_batch(cls, cfg: DictConfig, params: Dict[str, str]) -> DictConfig:
         for k, v in params.items():
             cls.update(cfg, k, v)
         return cfg
-
-
-def init_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-img", "--img_path", type=str, default=None, required=True)
-    parser.add_argument("--text_score", type=float, default=0.5)
-    parser.add_argument("-vis", "--vis_res", action="store_true", default=False)
-    parser.add_argument(
-        "--vis_font_path",
-        type=str,
-        default=None,
-        help="When -vis is True, the font_path must have value.",
-    )
-    parser.add_argument(
-        "--vis_save_path",
-        type=str,
-        default=".",
-        help="The directory of saving the vis image.",
-    )
-
-    args = parser.parse_args()
-    return args

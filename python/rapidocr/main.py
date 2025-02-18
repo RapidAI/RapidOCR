@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+import argparse
 import copy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -15,12 +16,10 @@ from .ch_ppocr_rec import TextRecInput, TextRecognizer, TextRecOutput
 from .inference_engine.base import get_engine_name
 from .utils import (
     LoadImage,
-    Logger,
     RapidOCROutput,
     VisRes,
     add_round_letterbox,
     increase_min_side,
-    init_args,
     parse_lang,
     reduce_max_side,
 )
@@ -38,8 +37,6 @@ class RapidOCR:
             config = ParseParams.load(config_path)
         else:
             config = ParseParams.load(DEFAULT_CFG_PATH)
-            # config = ParseParams.update_model_path(config)
-            # config = ParseParams.update_dict_path(config)
 
         if params:
             config = ParseParams.update_batch(config, params)
@@ -317,40 +314,50 @@ class RapidOCR:
             ParseParams.save(self.config, f)
 
 
-def main():
-    logger = Logger(logger_name=__name__).get_log()
-
-    args = init_args()
-    ocr_engine = RapidOCR(**vars(args))
-
-    use_det = not args.no_det
-    use_cls = not args.no_cls
-    use_rec = not args.no_rec
-    result, elapse_list = ocr_engine(
-        args.img_path, use_det=use_det, use_cls=use_cls, use_rec=use_rec, **vars(args)
+def parse_args(arg_list: Optional[List[str]] = None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-img", "--img_path", type=str, default=None, required=True)
+    parser.add_argument("--text_score", type=float, default=0.5)
+    parser.add_argument("-vis", "--vis_res", action="store_true", default=False)
+    parser.add_argument("--vis_save_dir", type=Path, default=".")
+    parser.add_argument(
+        "-word", "--return_word_box", action="store_true", default=False
     )
-    logger.info(result)
+    args = parser.parse_args(arg_list)
+    return args
+
+
+def main(arg_list: Optional[List[str]] = None):
+    args = parse_args(arg_list)
+    params = {
+        "Global.text_score": args.text_score,
+        "Global.return_word_box": args.return_word_box,
+    }
+    ocr_engine = RapidOCR(params=params)
+
+    if args.return_word_box:
+        result = ocr_engine(args.img_path, return_word_box=args.return_word_box)
+    else:
+        result = ocr_engine(args.img_path)
+
+    print(result)
 
     if args.vis_res:
         vis = VisRes()
-        Path(args.vis_save_path).mkdir(parents=True, exist_ok=True)
-        save_path = Path(args.vis_save_path) / f"{Path(args.img_path).stem}_vis.png"
+        cur_dir = args.vis_save_dir
 
-        if use_det and not use_cls and not use_rec:
-            boxes, *_ = list(zip(*result))
-            vis_img = vis(args.img_path, boxes)
+        if args.return_word_box:
+            words_results = result.word_results
+            words, words_scores, words_boxes = list(zip(*words_results))
+            vis_img = vis(args.img_path, words_boxes, words, words_scores)
+            save_path = cur_dir / f"{Path(args.img_path).stem}_vis_single.png"
             cv2.imwrite(str(save_path), vis_img)
-            logger.info("The vis result has saved in %s", save_path)
-
-        elif use_det and use_rec:
-            font_path = Path(args.vis_font_path)
-            if not font_path.exists():
-                raise FileExistsError(f"{font_path} does not exist!")
-
-            boxes, txts, scores = list(zip(*result))
-            vis_img = vis(args.img_path, boxes, txts, scores, font_path=font_path)
+            print("The vis single result has saved in %s", save_path)
+        else:
+            save_path = cur_dir / f"{Path(args.img_path).stem}_vis.png"
+            vis_img = vis(args.img_path, result.boxes, result.txts, result.scores)
             cv2.imwrite(str(save_path), vis_img)
-            logger.info("The vis result has saved in %s", save_path)
+            print("The vis result has saved in %s", save_path)
 
 
 if __name__ == "__main__":

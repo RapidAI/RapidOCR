@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+import shlex
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -13,6 +14,7 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
 from rapidocr import LoadImageError, RapidOCR
+from rapidocr.main import main
 from rapidocr.utils.logger import Logger
 from rapidocr.utils.utils import download_file
 
@@ -34,6 +36,33 @@ def get_engine(params: Optional[Dict[str, Any]] = None):
 
     engine = RapidOCR()
     return engine
+
+
+@pytest.mark.parametrize("cmd,gt", [(f"--img_path {img_path}", "正品促销")])
+def test_cli(capsys, cmd, gt):
+    main(shlex.split(cmd))
+    output = capsys.readouterr().out.strip()
+    assert gt in output
+
+
+@pytest.mark.parametrize(
+    "cmd,img_name",
+    [
+        (
+            f"--img_path {img_path} -vis --vis_save_dir {tests_dir}",
+            f"{img_path.stem}_vis.png",
+        ),
+        (
+            f"--img_path {img_path} -vis --vis_save_dir {tests_dir} -word",
+            f"{img_path.stem}_vis_single.png",
+        ),
+    ],
+)
+def test_cli_vis(cmd, img_name):
+    main(shlex.split(cmd))
+    vis_path = tests_dir / img_name
+    assert vis_path.exists()
+    vis_path.unlink()
 
 
 def test_error_lang():
