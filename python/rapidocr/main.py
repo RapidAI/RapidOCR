@@ -45,7 +45,6 @@ class RapidOCR:
 
         det_lang, rec_lang = parse_lang(config.Global.lang)
 
-        self.print_verbose = config.Global.print_verbose
         self.text_score = config.Global.text_score
         self.min_height = config.Global.min_height
         self.width_height_ratio = config.Global.width_height_ratio
