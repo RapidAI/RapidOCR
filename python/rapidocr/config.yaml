@@ -1,13 +1,11 @@
 Global:
-    lang: "ch"
+    lang_det: "ch_mobile" # ch_server
+    lang_rec: "ch_mobile"
     text_score: 0.5
 
     use_det: true
     use_cls: true
     use_rec: true
-
-    use_default_mobile: false
-    use_default_server: false
 
     min_height: 30
     width_height_ratio: 8

@@ -16,11 +16,11 @@ from .ch_ppocr_rec import TextRecInput, TextRecognizer, TextRecOutput
 from .inference_engine.base import get_engine_name
 from .utils import (
     LoadImage,
+    ParseLang,
     RapidOCROutput,
     VisRes,
     add_round_letterbox,
     increase_min_side,
-    parse_lang,
     reduce_max_side,
 )
 from .utils.parse_parameters import ParseParams
@@ -43,28 +43,28 @@ class RapidOCR:
 
         engine_name = get_engine_name(config)
 
-        det_lang, rec_lang = parse_lang(config.Global.lang)
+        lang_det, lang_rec = ParseLang()(config.Global.lang_det, config.Global.lang_rec)
 
         self.text_score = config.Global.text_score
         self.min_height = config.Global.min_height
         self.width_height_ratio = config.Global.width_height_ratio
 
         self.use_det = config.Global.use_det
-        config.Det.lang = det_lang
+        config.Det.lang = lang_det
         config.Det.engine_name = engine_name
         config.Det.engine_cfg = config.EngineConfig[engine_name]
         config.Det.task_type = "det"
         self.text_det = TextDetector(config.Det)
 
         self.use_cls = config.Global.use_cls
-        config.Cls.lang = "ch"
+        config.Cls.lang = "ch_mobile"
         config.Cls.engine_name = engine_name
         config.Cls.engine_cfg = config.EngineConfig[engine_name]
         config.Cls.task_type = "cls"
         self.text_cls = TextClassifier(config.Cls)
 
         self.use_rec = config.Global.use_rec
-        config.Rec.lang = rec_lang
+        config.Rec.lang = lang_rec
         config.Rec.engine_name = engine_name
         config.Rec.engine_cfg = config.EngineConfig[engine_name]
         config.Rec.task_type = "rec"

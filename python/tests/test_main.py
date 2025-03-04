@@ -38,6 +38,13 @@ def get_engine(params: Optional[Dict[str, Any]] = None):
     return engine
 
 
+def test_server_rec():
+    engine = RapidOCR(params={"Global.lang_rec": "ch_server"})
+    result = engine(img_path)
+    assert result.txts is not None
+    assert result.txts[0] == "正品促销"
+
+
 @pytest.mark.parametrize("cmd,gt", [(f"--img_path {img_path}", "正品促销")])
 def test_cli(capsys, cmd, gt):
     main(shlex.split(cmd))
