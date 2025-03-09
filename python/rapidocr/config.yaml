@@ -1,0 +1,74 @@
+Global:
+    lang_det: "ch_mobile" # ch_server
+    lang_rec: "ch_mobile"
+    text_score: 0.5
+
+    use_det: true
+    use_cls: true
+    use_rec: true
+
+    min_height: 30
+    width_height_ratio: 8
+    max_side_len: 2000
+    min_side_len: 30
+
+    return_word_box: false
+
+    with_onnx: false
+    with_openvino: false
+    with_paddle: false
+    with_torch: false
+
+    font_path: null
+
+EngineConfig:
+    onnxruntime:
+        intra_op_num_threads: -1
+        inter_op_num_threads: -1
+        use_cuda: false
+        use_dml: false
+
+    openvino:
+        inference_num_threads: -1
+
+    paddlepaddle:
+        cpu_math_library_num_threads: -1
+        use_cuda: false
+        gpu_id: 0
+        gpu_mem: 500
+
+    torch:
+        use_cuda: false
+
+Det:
+    model_path: null
+    model_dir: null
+
+    limit_side_len: 736
+    limit_type: min
+    std: [ 0.5, 0.5, 0.5 ]
+    mean: [ 0.5, 0.5, 0.5 ]
+
+    thresh: 0.3
+    box_thresh: 0.5
+    max_candidates: 1000
+    unclip_ratio: 1.6
+    use_dilation: true
+    score_mode: fast
+
+Cls:
+    model_path: null
+    model_dir: null
+
+    cls_image_shape: [3, 48, 192]
+    cls_batch_num: 6
+    cls_thresh: 0.9
+    label_list: ['0', '180']
+
+Rec:
+    model_path: null
+    model_dir: null
+
+    rec_keys_path: null
+    rec_img_shape: [3, 48, 320]
+    rec_batch_num: 6

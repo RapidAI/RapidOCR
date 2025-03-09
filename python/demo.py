@@ -3,30 +3,27 @@
 # @Contact: liekkaskono@163.com
 import cv2
 
-from rapidocr_onnxruntime import RapidOCR, VisRes
+from rapidocr import RapidOCR, VisRes
 
-# from rapidocr_paddle import RapidOCR, VisRes
-# from rapidocr_openvino import RapidOCR, VisRes
-
-engine = RapidOCR()
+engine = RapidOCR(params={"Global.with_openvino": True})
 vis = VisRes()
 
 image_path = "tests/test_files/ch_en_num.jpg"
 with open(image_path, "rb") as f:
     img = f.read()
 
-result, elapse_list = engine(img, return_word_box=True)
+result = engine(img, return_word_box=True)
 print(result)
-print(elapse_list)
+print(result.elapse)
 
-(boxes, txts, scores, words_boxes, words) = list(zip(*result))
+boxes = result.boxes
+txts = result.txts
+scores = result.scores
 
-font_path = "resources/fonts/FZYTK.TTF"
-vis_img = vis(img, boxes, txts, scores, font_path)
+vis_img = vis(img, result.boxes, result.txts, result.scores)
 cv2.imwrite("vis.png", vis_img)
 
-words_boxes = sum(words_boxes, [])
-words_all = sum(words, [])
-words_scores = [1.0] * len(words_boxes)
-vis_img = vis(img, words_boxes, words_all, words_scores, font_path)
+words_results = result.word_results
+words, words_scores, words_boxes = list(zip(*words_results))
+vis_img = vis(img, words_boxes, words, words_scores)
 cv2.imwrite("vis_single.png", vis_img)
