@@ -46,7 +46,7 @@ def get_engine(engine_name: str):
         return OpenVINOInferSession
 
     if engine_name == Engine.PADDLE.value:
-        if not import_package("paddlepaddle"):
+        if not import_package("paddle"):
             raise ImportError("paddleopaddle is not installed")
 
         from .paddlepaddle import PaddleInferSession
