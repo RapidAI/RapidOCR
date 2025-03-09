@@ -5,27 +5,13 @@ import cv2
 
 from rapidocr import RapidOCR, VisRes
 
-# from rapidocr_onnxruntime import RapidOCR, VisRes
-# from rapidocr_torch import RapidOCR, VisRes
-
-# from rapidocr_paddle import RapidOCR, VisRes
-# from rapidocr_openvino import RapidOCR, VisRes
-
-# yaml_path = "tests/test_files/config.yaml"
-# engine = RapidOCR(config_path=yaml_path)
-
-# engine = engine = RapidOCR(
-#     params={"Global.with_onnx": True, "EngineConfig.onnxruntime.use_cuda": True}
-# )
-# engine = RapidOCR(params={"Global.with_torch": True, "Global.lang": "ch"})
-engine = RapidOCR(params={"Global.with_openvino": True, "Global.lang_rec": "ch_server"})
+engine = RapidOCR(params={"Global.with_openvino": True})
 vis = VisRes()
 
 image_path = "tests/test_files/ch_en_num.jpg"
 with open(image_path, "rb") as f:
     img = f.read()
 
-# result, elapse_list = engine(img, use_det=True, use_cls=False, use_rec=False)
 result = engine(img, return_word_box=True)
 print(result)
 print(result.elapse)

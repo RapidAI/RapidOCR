@@ -122,111 +122,9 @@ class ParseLang:
             return "devanagari"
 
         if lang in ["ch", "en"]:
-            return
+            pass
 
         raise ValueError(f"lang: {lang} is not in the supported list.")
-
-
-def parse_lang(lang):
-    latin_lang = [
-        "af",
-        "az",
-        "bs",
-        "cs",
-        "cy",
-        "da",
-        "de",
-        "es",
-        "et",
-        "fr",
-        "ga",
-        "hr",
-        "hu",
-        "id",
-        "is",
-        "it",
-        "ku",
-        "la",
-        "lt",
-        "lv",
-        "mi",
-        "ms",
-        "mt",
-        "nl",
-        "no",
-        "oc",
-        "pi",
-        "pl",
-        "pt",
-        "ro",
-        "rs_latin",
-        "sk",
-        "sl",
-        "sq",
-        "sv",
-        "sw",
-        "tl",
-        "tr",
-        "uz",
-        "vi",
-        "french",
-        "german",
-    ]
-    arabic_lang = ["ar", "fa", "ug", "ur"]
-    cyrillic_lang = [
-        "ru",
-        "rs_cyrillic",
-        "be",
-        "bg",
-        "uk",
-        "mn",
-        "abq",
-        "ady",
-        "kbd",
-        "ava",
-        "dar",
-        "inh",
-        "che",
-        "lbe",
-        "lez",
-        "tab",
-    ]
-    devanagari_lang = [
-        "hi",
-        "mr",
-        "ne",
-        "bh",
-        "mai",
-        "ang",
-        "bho",
-        "mah",
-        "sck",
-        "new",
-        "gom",
-        "sa",
-        "bgc",
-    ]
-    if lang in latin_lang:
-        lang = "latin"
-    elif lang in arabic_lang:
-        lang = "arabic"
-    elif lang in cyrillic_lang:
-        lang = "cyrillic"
-    elif lang in devanagari_lang:
-        lang = "devanagari"
-    elif lang in ["ch", "en"]:
-        pass
-    else:
-        raise ValueError(f"lang: {lang} is not in the supported list.")
-
-    if lang == "ch":
-        det_lang = "ch"
-    elif lang in ["en", "latin"]:
-        det_lang = "en"
-    else:
-        det_lang = "Multilingual"
-
-    return det_lang, lang
 
 
 class ParseParams(OmegaConf):
@@ -235,6 +133,9 @@ class ParseParams(OmegaConf):
 
     @classmethod
     def update_batch(cls, cfg: DictConfig, params: Dict[str, str]) -> DictConfig:
+        global_keys = list(OmegaConf.to_container(cfg.Global).keys())
         for k, v in params.items():
+            if k.startswith("Global") and k.split(".")[1] not in global_keys:
+                raise ValueError(f"{k} is not a valid key.")
             cls.update(cfg, k, v)
         return cfg

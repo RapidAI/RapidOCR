@@ -7,3 +7,4 @@ PyYAML
 Pillow
 onnxruntime>=1.7.0
 tqdm
+omegaconf

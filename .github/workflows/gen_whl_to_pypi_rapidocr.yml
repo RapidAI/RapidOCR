@@ -1,14 +1,15 @@
-name: Push rapidocr_onnxruntime to pypi
+name: Push rapidocr to pypi
 
 on:
   push:
-    branches: [ main ]
-    paths:
-      - 'python/rapidocr_onnxruntime/**'
-      - 'docs/doc_whl_rapidocr_ort.md'
-      - 'python/setup_onnxruntime.py'
-      # - '.github/workflows/gen_whl_to_pypi_rapidocr_ort.yml'
-
+    # branches: [ main ]
+    # paths:
+    #   - 'python/rapidocr_onnxruntime/**'
+    #   - 'docs/doc_whl_rapidocr_ort.md'
+    #   - 'python/setup_onnxruntime.py'
+    #   - '.github/workflows/gen_whl_to_pypi_rapidocr_ort.yml'
+    tags:
+      - v*
 
 env:
   RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.3.0.zip
@@ -31,18 +32,13 @@ jobs:
 
       - name: Unit testings
         run: |
-          wget $RESOURCES_URL
-          ZIP_NAME=${RESOURCES_URL##*/}
-          DIR_NAME=${ZIP_NAME%.*}
-          unzip $DIR_NAME
-          cp $DIR_NAME/resources/models/*.onnx python/rapidocr_onnxruntime/models/
-
           cd python
-          pip install -r requirements_ort.txt
-          pip install pytest wheel get_pypi_latest_version openvino
+          pip install -r requirements.txt
+          pip install pytest wheel get_pypi_latest_version openvino>=2022.2.0,<=2024.0.0
+          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install paddlepaddle==3.0.0rc1 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
 
-          cd tests
-          pytest test_ort.py
+          pytest tests/test_main.py
 
   GenerateWHL_PushPyPi:
     needs: UnitTesting
@@ -64,21 +60,21 @@ jobs:
           ZIP_NAME=${RESOURCES_URL##*/}
           DIR_NAME=${ZIP_NAME%.*}
           unzip $ZIP_NAME
-          cp $DIR_NAME/resources/models/*.onnx rapidocr_onnxruntime/models
+          cp $DIR_NAME/resources/models/*.onnx rapidocr/models
 
-      - name: Run setup_onnxruntime.py
+      - name: Run setup.py
         run: |
           cd python
           pip install setuptools get_pypi_latest_version wheel
-          mkdir rapidocr_onnxruntime_t
-          mv rapidocr_onnxruntime rapidocr_onnxruntime_t
-          mv rapidocr_onnxruntime_t rapidocr_onnxruntime
-          cd rapidocr_onnxruntime
-          echo "from .rapidocr_onnxruntime.main import RapidOCR, VisRes" > __init__.py
+          mkdir rapidocr_t
+          mv rapidocr rapidocr_t
+          mv rapidocr_t rapidocr
+          cd rapidocr
+          echo "from .rapidocr.main import RapidOCR, VisRes" > __init__.py
 
           cd ..
           python -m pip install --upgrade pip
-          python setup_onnxruntime.py bdist_wheel ${{ github.ref_name }}
+          python setup.py bdist_wheel ${{ github.ref_name }}
           mv dist ../
 
       - name: Publish distribution 📦 to PyPI

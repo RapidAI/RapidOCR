@@ -79,11 +79,11 @@ def test_error_lang():
 
 
 def test_lang():
-    engine = get_engine(params={"Global.lang": "en"})
+    engine = get_engine(params={"Global.lang_rec": "en_mobile"})
     img_path = tests_dir / "en.jpg"
     result = engine(img_path)
     assert result.txts is not None
-    assert result.txts[0] == "MovieShots Dataset"
+    assert result.txts[0] == "3"
 
 
 def test_engine_openvino():

@@ -351,12 +351,12 @@ def main(arg_list: Optional[List[str]] = None):
             vis_img = vis(args.img_path, words_boxes, words, words_scores)
             save_path = cur_dir / f"{Path(args.img_path).stem}_vis_single.png"
             cv2.imwrite(str(save_path), vis_img)
-            print("The vis single result has saved in %s", save_path)
+            print(f"The vis single result has saved in {save_path}")
         else:
             save_path = cur_dir / f"{Path(args.img_path).stem}_vis.png"
             vis_img = vis(args.img_path, result.boxes, result.txts, result.scores)
             cv2.imwrite(str(save_path), vis_img)
-            print("The vis result has saved in %s", save_path)
+            print(f"The vis result has saved in {save_path}")
 
 
 if __name__ == "__main__":
