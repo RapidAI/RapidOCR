@@ -58,7 +58,7 @@ setuptools.setup(
     project_urls=project_urls,
     license="Apache-2.0",
     include_package_data=True,
-    install_requires=read_txt("requirements_ort.txt"),
+    install_requires=read_txt("requirements.txt"),
     package_dir={"": MODULE_NAME},
     packages=setuptools.find_namespace_packages(where=MODULE_NAME),
     package_data={"": ["*.onnx", "*.yaml"]},

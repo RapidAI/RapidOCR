@@ -10,6 +10,7 @@ import numpy as np
 from omegaconf import DictConfig, OmegaConf
 
 from ..utils.logger import Logger
+from ..utils.utils import import_package
 
 cur_dir = Path(__file__).resolve().parent.parent
 MODEL_URL_PATH = cur_dir / "default_models.yaml"
@@ -29,21 +30,33 @@ def get_engine(engine_name: str):
     logger.info("Using engine_name: %s", engine_name)
 
     if engine_name == Engine.ONNXRUNTIME.value:
+        if not import_package("onnxruntime"):
+            raise ImportError("onnxruntime is not installed.")
+
         from .onnxruntime import OrtInferSession
 
         return OrtInferSession
 
     if engine_name == Engine.OPENVINO.value:
+        if not import_package("openvino"):
+            raise ImportError("openvino is not installed")
+
         from .openvino import OpenVINOInferSession
 
         return OpenVINOInferSession
 
     if engine_name == Engine.PADDLE.value:
+        if not import_package("paddleocr"):
+            raise ImportError("paddleocr is not installed")
+
         from .paddlepaddle import PaddleInferSession
 
         return PaddleInferSession
 
     if engine_name == Engine.TORCH.value:
+        if not import_package("torch"):
+            raise ImportError("torch is not installed")
+
         from .torch import TorchInferSession
 
         return TorchInferSession

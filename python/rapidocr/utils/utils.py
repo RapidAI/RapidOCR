@@ -1,11 +1,20 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+import importlib
 from pathlib import Path
 from typing import Union
 
 import requests
 from tqdm import tqdm
+
+
+def import_package(name, package=None):
+    try:
+        module = importlib.import_module(name, package=package)
+        return module
+    except ModuleNotFoundError:
+        return None
 
 
 def download_file(url: str, save_path: Union[str, Path], logger=None):
