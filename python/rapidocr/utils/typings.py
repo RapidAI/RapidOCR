@@ -9,6 +9,7 @@ import numpy as np
 
 @dataclass
 class RapidOCROutput:
+    img: Optional[np.ndarray] = None
     boxes: Optional[np.ndarray] = None
     txts: Optional[Tuple[str]] = None
     scores: Optional[Tuple[float]] = None
@@ -44,3 +45,14 @@ class RapidOCROutput:
         for box, rec in zip(dt_boxes, rec_res):
             final_res.append([box, list(rec)])
         return final_res
+
+    def vis(self):
+        pass
+        # vis = VisRes()
+        # if any(v for v in self.word_results if v is not None):
+        #     words_results = self.word_results
+        #     words, words_scores, words_boxes = list(zip(*words_results))
+        #     vis_img = vis(args.img_path, words_boxes, words, words_scores)
+        #     save_path = cur_dir / f"{Path(args.img_path).stem}_vis_single.png"
+        #     cv2.imwrite(str(save_path), vis_img)
+        #     print(f"The vis single result has saved in {save_path}")

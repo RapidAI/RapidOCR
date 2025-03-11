@@ -38,6 +38,13 @@ def get_engine(params: Optional[Dict[str, Any]] = None):
     return engine
 
 
+def test_img_url_input(engine):
+    img_url = "https://github.com/RapidAI/RapidOCR/blob/a9bb7c1f44b6e00556ada90ac588f020d7637c4b/python/tests/test_files/ch_en_num.jpg?raw=true"
+    result = engine(img_url)
+    assert result.txts is not None
+    assert result.txts[0] == "正品促销"
+
+
 def test_server_rec():
     engine = RapidOCR(params={"Global.lang_rec": "ch_server"})
     result = engine(img_path)

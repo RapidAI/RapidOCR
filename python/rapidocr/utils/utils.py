@@ -4,9 +4,18 @@
 import importlib
 from pathlib import Path
 from typing import Union
+from urllib.parse import urlparse
 
 import requests
 from tqdm import tqdm
+
+
+def is_url(url: str) -> bool:
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except Exception as e:
+        return False
 
 
 def import_package(name, package=None):
