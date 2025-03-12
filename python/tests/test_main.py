@@ -38,6 +38,13 @@ def get_engine(params: Optional[Dict[str, Any]] = None):
     return engine
 
 
+def test_full_black_img(engine):
+    img_path = tests_dir / "empty_black.jpg"
+    result = engine(img_path)
+    assert result.img is None
+    assert result.boxes is None
+
+
 def test_img_url_input(engine):
     img_url = "https://github.com/RapidAI/RapidOCR/blob/a9bb7c1f44b6e00556ada90ac588f020d7637c4b/python/tests/test_files/ch_en_num.jpg?raw=true"
     result = engine(img_url)
