@@ -66,9 +66,11 @@ from rapidocr import RapidOCR
 
 engine = RapidOCR()
 
-img_path = "tests/test_files/ch_en_num.jpg"
+img_url = "https://github.com/RapidAI/RapidOCR/blob/main/python/tests/test_files/ch_en_num.jpg?raw=true"
 result = engine(img_path)
 print(result)
+
+result.vis()
 ```
 
 ### Documentation
