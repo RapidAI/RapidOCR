@@ -7,7 +7,10 @@ from typing import Any, Union
 
 import cv2
 import numpy as np
+import requests
 from PIL import Image, UnidentifiedImageError
+
+from .utils import is_url
 
 root_dir = Path(__file__).resolve().parent
 InputType = Union[str, np.ndarray, bytes, Path, Image.Image]
@@ -30,9 +33,14 @@ class LoadImage:
 
     def load_img(self, img: InputType) -> np.ndarray:
         if isinstance(img, (str, Path)):
-            self.verify_exist(img)
+            if is_url(img):
+                img = Image.open(requests.get(img, stream=True, timeout=60).raw)
+            else:
+                self.verify_exist(img)
+                img = Image.open(img)
+
             try:
-                img = self.img_to_ndarray(Image.open(img))
+                img = self.img_to_ndarray(img)
             except UnidentifiedImageError as e:
                 raise LoadImageError(f"cannot identify image file {img}") from e
             return img

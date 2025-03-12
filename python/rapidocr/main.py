@@ -99,11 +99,11 @@ class RapidOCR:
         self.text_det.postprocess_op.box_thresh = box_thresh
         self.text_det.postprocess_op.unclip_ratio = unclip_ratio
 
-        img = self.load_img(img_content)
+        ori_img = self.load_img(img_content)
 
-        raw_h, raw_w = img.shape[:2]
+        raw_h, raw_w = ori_img.shape[:2]
         op_record = {}
-        img, ratio_h, ratio_w = self.preprocess(img)
+        img, ratio_h, ratio_w = self.preprocess(ori_img)
         op_record["preprocess"] = {"ratio_h": ratio_h, "ratio_w": ratio_w}
 
         det_res, cls_res, rec_res = TextDetOutput(), TextClsOutput(), TextRecOutput()
@@ -148,7 +148,7 @@ class RapidOCR:
                 det_res.boxes, op_record, raw_h, raw_w
             )
 
-        ocr_res = self.get_final_res(det_res, cls_res, rec_res)
+        ocr_res = self.get_final_res(ori_img, det_res, cls_res, rec_res)
         return ocr_res
 
     def preprocess(self, img: np.ndarray) -> Tuple[np.ndarray, float, float]:
@@ -262,7 +262,11 @@ class RapidOCR:
         return dt_boxes_array
 
     def get_final_res(
-        self, det_res: TextDetOutput, cls_res: TextClsOutput, rec_res: TextRecOutput
+        self,
+        ori_img: np.ndarray,
+        det_res: TextDetOutput,
+        cls_res: TextClsOutput,
+        rec_res: TextRecOutput,
     ) -> Union[TextDetOutput, TextClsOutput, TextRecOutput, RapidOCROutput]:
         dt_boxes = det_res.boxes
         txt_res = rec_res.txts
@@ -280,6 +284,7 @@ class RapidOCR:
             return det_res
 
         ocr_res = RapidOCROutput(
+            img=ori_img,
             boxes=det_res.boxes,
             txts=rec_res.txts,
             scores=rec_res.scores,
