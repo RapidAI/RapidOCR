@@ -79,6 +79,8 @@ class RapidOCR:
         self.return_paddleocr_format = False
         self.return_word_box = False
 
+        self.config = config
+
     def __call__(
         self,
         img_content: Union[str, np.ndarray, bytes, Path],

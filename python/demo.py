@@ -10,3 +10,5 @@ result = engine(img_url)
 print(result)
 
 result.vis()
+
+engine.export_config("1.yaml")
