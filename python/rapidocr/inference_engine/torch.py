@@ -47,14 +47,15 @@ class TorchInferSession(InferSession):
 
         self.use_gpu = False
         if config.engine_cfg.use_cuda:
-            self.predictor.cuda()
+            self.device = torch.device(f"cuda:{config.engine_cfg.gpu_id}")
+            self.predictor.to(self.device)
             self.use_gpu = True
 
     def __call__(self, img: np.ndarray):
         with torch.no_grad():
             inp = torch.from_numpy(img)
             if self.use_gpu:
-                inp = inp.cuda()
+                inp = inp.to(self.device)
 
             # 适配跟onnx对齐取值逻辑
             outputs = self.predictor(inp).cpu().numpy()
