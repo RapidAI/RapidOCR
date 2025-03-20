@@ -39,6 +39,7 @@ EngineConfig:
 
     torch:
         use_cuda: false
+        gpu_id: 0
 
 Det:
     model_path: null
