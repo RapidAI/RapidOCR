@@ -3,6 +3,7 @@
 # @Contact: liekkaskono@163.com
 import argparse
 import copy
+import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -322,9 +323,9 @@ class RapidOCR:
 
 def generate_cfg(args):
     if args.save_cfg_file is None:
-        args.save_cfg_file = "."
+        args.save_cfg_file = "./default_rapidocr.yaml"
 
-    RapidOCR().export_config(args.save_cfg_file)
+    shutil.copyfile(DEFAULT_CFG_PATH, args.save_cfg_file)
     print(f"The config file has saved in {args.save_cfg_file}")
 
 
@@ -335,12 +336,12 @@ def check_install():
     if result.txts is None or result.txts[0] != "正品促销":
         raise ValueError("The installation is incorrect!")
 
-    print("Success! The installation is correct!")
+    print("Success! rapidocr is installed correctly!")
 
 
 def parse_args(arg_list: Optional[List[str]] = None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("-img", "--img_path", type=str, default=None, required=True)
+    parser.add_argument("-img", "--img_path", type=str, default=None)
     parser.add_argument("--text_score", type=float, default=0.5)
     parser.add_argument("-vis", "--vis_res", action="store_true", default=False)
     parser.add_argument("--vis_save_dir", type=Path, default=".")
@@ -348,13 +349,12 @@ def parse_args(arg_list: Optional[List[str]] = None):
         "-word", "--return_word_box", action="store_true", default=False
     )
 
-    config_subparser = parser.add_subparsers()
-    parser_cfg = config_subparser.add_parser("config", help="Generate config file")
+    subparser = parser.add_subparsers(dest="command", help="Sub-command help")
+    parser_cfg = subparser.add_parser("config", help="Generate config file")
     parser_cfg.add_argument("--save_cfg_file", type=Path, default=None)
     parser_cfg.set_defaults(func=generate_cfg)
 
-    check_subparser = parser.add_subparsers()
-    parser_check = check_subparser.add_parser(
+    parser_check = subparser.add_parser(
         "check", help="Check if it is installed correctly "
     )
     parser_check.set_defaults(func=check_install)
@@ -365,11 +365,23 @@ def parse_args(arg_list: Optional[List[str]] = None):
 
 def main(arg_list: Optional[List[str]] = None):
     args = parse_args(arg_list)
+
+    if args.command == "config":
+        generate_cfg(args)
+        return
+
+    if args.command == "check":
+        check_install()
+        return
+
     params = {
         "Global.text_score": args.text_score,
         "Global.return_word_box": args.return_word_box,
     }
     ocr_engine = RapidOCR(params=params)
+
+    if args.img_path is None:
+        raise ValueError("Please input the image path")
 
     if args.return_word_box:
         result = ocr_engine(args.img_path, return_word_box=args.return_word_box)
