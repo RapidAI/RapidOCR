@@ -320,6 +320,24 @@ class RapidOCR:
             ParseParams.save(self.config, f)
 
 
+def generate_cfg(args):
+    if args.save_cfg_file is None:
+        args.save_cfg_file = "."
+
+    RapidOCR().export_config(args.save_cfg_file)
+    print(f"The config file has saved in {args.save_cfg_file}")
+
+
+def check_install():
+    img_url = "https://github.com/RapidAI/RapidOCR/blob/a9bb7c1f44b6e00556ada90ac588f020d7637c4b/python/tests/test_files/ch_en_num.jpg?raw=true"
+    result = RapidOCR()(img_url)
+
+    if result.txts is None or result.txts[0] != "正品促销":
+        raise ValueError("The installation is incorrect!")
+
+    print("Success! The installation is correct!")
+
+
 def parse_args(arg_list: Optional[List[str]] = None):
     parser = argparse.ArgumentParser()
     parser.add_argument("-img", "--img_path", type=str, default=None, required=True)
@@ -329,6 +347,18 @@ def parse_args(arg_list: Optional[List[str]] = None):
     parser.add_argument(
         "-word", "--return_word_box", action="store_true", default=False
     )
+
+    config_subparser = parser.add_subparsers()
+    parser_cfg = config_subparser.add_parser("config", help="Generate config file")
+    parser_cfg.add_argument("--save_cfg_file", type=Path, default=None)
+    parser_cfg.set_defaults(func=generate_cfg)
+
+    check_subparser = parser.add_subparsers()
+    parser_check = check_subparser.add_parser(
+        "check", help="Check if it is installed correctly "
+    )
+    parser_check.set_defaults(func=check_install)
+
     args = parser.parse_args(arg_list)
     return args
 
