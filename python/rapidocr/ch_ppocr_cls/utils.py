@@ -46,9 +46,11 @@ class TextClsOutput:
         vis = VisRes()
         vis_img = vis.draw_rec_res(self.img_list, txts, scores)
 
-        if save_path is not None:
-            save_img(save_path, vis_img)
-            logger.info("Visualization saved as %s", save_path)
+        if save_path is None:
+            save_path = "vis_cls.jpg"
+
+        save_img(save_path, vis_img)
+        logger.info("Visualization saved as %s", save_path)
         return vis_img
 
 
