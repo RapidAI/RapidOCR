@@ -46,6 +46,8 @@ class RapidOCR:
 
         lang_det, lang_rec = ParseLang()(config.Global.lang_det, config.Global.lang_rec)
 
+        self.lang_rec = lang_rec
+
         self.text_score = config.Global.text_score
         self.min_height = config.Global.min_height
         self.width_height_ratio = config.Global.width_height_ratio
@@ -293,6 +295,7 @@ class RapidOCR:
             scores=rec_res.scores,
             word_results=rec_res.word_results,
             elapse_list=[det_res.elapse, cls_res.elapse, rec_res.elapse],
+            lang_rec=self.lang_rec,
         )
         ocr_res = self.filter_by_text_score(ocr_res)
         if len(ocr_res) <= 0:

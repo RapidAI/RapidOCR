@@ -14,117 +14,49 @@ InputType = Union[str, np.ndarray, bytes, Path, Image.Image]
 
 class ParseLang:
     def __init__(self):
-        self.latin_lang = [
-            "af",
-            "az",
-            "bs",
-            "cs",
-            "cy",
-            "da",
-            "de",
-            "es",
-            "et",
-            "fr",
-            "ga",
-            "hr",
-            "hu",
-            "id",
-            "is",
-            "it",
-            "ku",
-            "la",
-            "lt",
-            "lv",
-            "mi",
-            "ms",
-            "mt",
-            "nl",
-            "no",
-            "oc",
-            "pi",
-            "pl",
-            "pt",
-            "ro",
-            "rs_latin",
-            "sk",
-            "sl",
-            "sq",
-            "sv",
-            "sw",
-            "tl",
-            "tr",
-            "uz",
-            "vi",
-            "french",
-            "german",
-        ]
-
-        self.arabic_lang = ["ar", "fa", "ug", "ur"]
-        self.cyrillic_lang = [
-            "ru",
-            "rs_cyrillic",
-            "be",
-            "bg",
-            "uk",
-            "mn",
-            "abq",
-            "ady",
-            "kbd",
-            "ava",
-            "dar",
-            "inh",
-            "che",
-            "lbe",
-            "lez",
-            "tab",
-        ]
-        self.devanagari_lang = [
-            "hi",
-            "mr",
-            "ne",
-            "bh",
-            "mai",
-            "ang",
-            "bho",
-            "mah",
-            "sck",
-            "new",
-            "gom",
-            "sa",
-            "bgc",
+        self.lang_det_list = ["ch", "en", "multi"]
+        self.lang_rec_list = [
+            "ch",
+            "en",
+            "arabic",
+            "chinese_cht",
+            "cyrillic",
+            "devanagari",
+            "japan",
+            "korean",
+            "ka",
+            "latin",
+            "ta",
+            "te",
         ]
 
     def __call__(self, lang_det: str, lang_rec: str) -> Tuple[str, str]:
-        lang_det, det_model_type = lang_det.split("_")
-        lang_rec, rec_model_type = lang_rec.split("_")
+        lang_det, det_model_type = lang_det.rsplit("_", 1)
+        lang_det = self.parse_det_lang(lang_det)
+
+        lang_rec, rec_model_type = lang_rec.rsplit("_", 1)
+        lang_rec = self.parse_rec_lang(lang_rec)
+
         return f"{lang_det}_{det_model_type}", f"{lang_rec}_{rec_model_type}"
 
     def parse_det_lang(self, lang: str) -> str:
-        if lang == "ch":
-            return "ch"
+        lang = lang.strip().lower()
 
-        if lang in ["en", "latin"]:
-            return "en"
+        if lang in self.lang_det_list:
+            return lang
+        raise ValueError(
+            f"lang: {lang} is not in the supported list: {self.lang_det_list}"
+        )
 
-        return "Multilingual"
+    def parse_rec_lang(self, lang: str) -> str:
+        lang = lang.strip().lower()
 
-    def parse_rec_lang(self, lang: str):
-        if lang in self.latin_lang:
-            return "latin"
+        if lang in self.lang_rec_list:
+            return lang
 
-        if lang in self.arabic_lang:
-            return "arabic"
-
-        if lang in self.cyrillic_lang:
-            return "cyrillic"
-
-        if lang in self.devanagari_lang:
-            return "devanagari"
-
-        if lang in ["ch", "en"]:
-            pass
-
-        raise ValueError(f"lang: {lang} is not in the supported list.")
+        raise ValueError(
+            f"lang: {lang} is not in the supported list: {self.lang_rec_list}"
+        )
 
 
 class ParseParams(OmegaConf):
