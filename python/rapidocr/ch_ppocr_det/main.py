@@ -63,7 +63,7 @@ class TextDetector:
 
         boxes = self.sorted_boxes(boxes)
         elapse = time.perf_counter() - start_time
-        return TextDetOutput(boxes, scores, elapse=elapse)
+        return TextDetOutput(img, boxes, scores, elapse=elapse)
 
     def get_preprocess(self, max_wh: int) -> DetPreProcess:
         if self.limit_type == "min":

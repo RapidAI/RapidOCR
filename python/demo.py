@@ -5,10 +5,9 @@ from rapidocr import RapidOCR
 
 engine = RapidOCR()
 
-img_url = "https://img1.baidu.com/it/u=3619974146,1266987475&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=516"
-result = engine(img_url)
+img_path = "tests/test_files/text_rec.jpg"
+# img_url = "https://img1.baidu.com/it/u=3619974146,1266987475&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=516"
+result = engine(img_path, use_det=False, use_cls=False, use_rec=True)
 print(result)
 
 result.vis()
-
-engine.export_config("1.yaml")

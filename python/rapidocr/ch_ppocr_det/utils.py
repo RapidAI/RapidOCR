@@ -9,9 +9,16 @@ import numpy as np
 import pyclipper
 from shapely.geometry import Polygon
 
+from ..utils.logger import Logger
+from ..utils.utils import save_img
+from ..utils.vis_res import VisRes
+
+logger = Logger(logger_name=__name__).get_log()
+
 
 @dataclass
 class TextDetOutput:
+    img: Optional[np.ndarray] = None
     boxes: Optional[np.ndarray] = None
     scores: Optional[Tuple[float]] = None
     elapse: float = 0.0
@@ -20,6 +27,18 @@ class TextDetOutput:
         if self.boxes is None:
             return 0
         return len(self.boxes)
+
+    def vis(self):
+        if self.img is None or self.boxes is None:
+            logger.warning("No image or boxes to visualize.")
+            return
+
+        vis = VisRes()
+        vis_img = vis.draw_dt_boxes(self.img, self.boxes, self.scores)
+
+        save_path = "vis_only_det_result.png"
+        save_img(save_path, vis_img)
+        logger.info("Visualization saved as %s", save_path)
 
 
 class DetPreProcess:

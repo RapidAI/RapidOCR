@@ -4,10 +4,10 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Union
 
-import cv2
 import numpy as np
 
 from .logger import Logger
+from .utils import save_img
 from .vis_res import VisRes
 
 logger = Logger(logger_name=__name__).get_log()
@@ -68,8 +68,9 @@ class RapidOCROutput:
                 font_path=font_path,
                 lang_rec=self.lang_rec,
             )
-            cv2.imwrite("vis.png", vis_img)
-            logger.info("Visualization saved as vis.png.")
+            save_path = "vis_det_cls_rec_result.png"
+            save_img(save_path, vis_img)
+            logger.info("Visualization saved as %s", save_path)
             return
 
         # single word vis
@@ -83,6 +84,6 @@ class RapidOCROutput:
             font_path=font_path,
             lang_rec=self.lang_rec,
         )
-        cv2.imwrite("vis_single.png", vis_img)
-        logger.info("Single word visualization saved as vis_single.png.")
-        return
+        save_single_path = "vis_single.png"
+        save_img(save_single_path, vis_img)
+        logger.info("Single word visualization saved as %s", save_single_path)

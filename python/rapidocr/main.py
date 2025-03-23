@@ -94,7 +94,7 @@ class RapidOCR:
         text_score: float = 0.5,
         box_thresh: float = 0.5,
         unclip_ratio: float = 1.6,
-    ) -> RapidOCROutput:
+    ) -> Union[TextDetOutput, TextClsOutput, TextRecOutput, RapidOCROutput]:
         use_det = self.use_det if use_det is None else use_det
         use_cls = self.use_cls if use_cls is None else use_cls
         use_rec = self.use_rec if use_rec is None else use_rec

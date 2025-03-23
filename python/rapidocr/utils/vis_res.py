@@ -37,20 +37,22 @@ class VisRes:
         img_content: InputType,
         dt_boxes: np.ndarray,
         txts: Optional[Union[List[str], Tuple[str]]] = None,
-        scores: Optional[Tuple[float]] = None,
+        scores: Optional[Union[Tuple[float], List[float]]] = None,
         font_path: Optional[str] = None,
         lang_rec: Optional[str] = None,
     ) -> np.ndarray:
         if txts is None:
-            return self.draw_dt_boxes(img_content, dt_boxes)
+            return self.draw_dt_boxes(img_content, dt_boxes, scores)
 
         font_path = self.get_font_path(font_path, lang_rec)
         return self.draw_ocr_box_txt(img_content, dt_boxes, txts, scores, font_path)
 
-    def draw_dt_boxes(self, img_content: InputType, dt_boxes: np.ndarray) -> np.ndarray:
+    def draw_dt_boxes(
+        self, img_content: InputType, dt_boxes: np.ndarray, scores: List[float]
+    ) -> np.ndarray:
         img = self.load_img(img_content)
 
-        for idx, box in enumerate(dt_boxes):
+        for idx, (box, score) in enumerate(zip(dt_boxes, scores)):
             color = self.get_random_color()
 
             points = np.array(box)
@@ -58,7 +60,13 @@ class VisRes:
 
             start_point = round(points[0][0]), round(points[0][1])
             cv2.putText(
-                img, f"{idx}", start_point, cv2.FONT_HERSHEY_SIMPLEX, 1, color, 3
+                img,
+                f"{idx}:{score:.3f}",
+                start_point,
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                color,
+                3,
             )
         return img
 
@@ -91,6 +99,14 @@ class VisRes:
             return str(save_font_path)
 
         return str(font_path)
+
+    def draw_rec_res(
+        self,
+        imgs: List[InputType],
+        txts: Union[List[str], Tuple[str]],
+        scores: Optional[Tuple[float]] = None,
+    ) -> np.ndarray:
+        print("ok")
 
     def draw_ocr_box_txt(
         self,
