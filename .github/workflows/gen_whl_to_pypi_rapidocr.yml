@@ -55,6 +55,7 @@ jobs:
         run: |
           cd python
           pip install -r requirements.txt 
+          pip install requests
           python demo_ch.py
           pip install setuptools get_pypi_latest_version wheel
           mkdir rapidocr_t
