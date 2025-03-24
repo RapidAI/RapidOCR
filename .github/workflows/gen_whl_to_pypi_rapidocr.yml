@@ -36,7 +36,7 @@ jobs:
           pip install -r requirements_dml.txt          
           pip install pytest wheel get_pypi_latest_version pytest/
 
-          pytest tests/test_dml.py
+          python -m pytest tests/test_dml.py
 
   GenerateWHL_PushPyPi:
     needs: UnitTesting
