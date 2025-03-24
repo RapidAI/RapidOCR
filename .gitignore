@@ -141,6 +141,7 @@ dmypy.json
 
 #models
 *.onnx
+ppocr_keys_v1.txt
 
 *.ttf
 *.ttc

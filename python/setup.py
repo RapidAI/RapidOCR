@@ -25,10 +25,10 @@ def get_readme():
 
 
 MODULE_NAME = "rapidocr"
-
+my_name = "ok-rapidocr-dml"
 obtainer = GetPyPiLatestVersion()
 try:
-    latest_version = obtainer(MODULE_NAME)
+    latest_version = obtainer(my_name)
 except Exception as e:
     latest_version = "0.0.0"
 VERSION_NUM = obtainer.version_add_one(latest_version, add_patch=True)
@@ -46,7 +46,7 @@ project_urls = {
 }
 
 setuptools.setup(
-    name=MODULE_NAME,
+    name=my_name,
     version=VERSION_NUM,
     platforms="Any",
     description="Awesome OCR Library",
@@ -58,9 +58,8 @@ setuptools.setup(
     project_urls=project_urls,
     license="Apache-2.0",
     include_package_data=True,
-    install_requires=read_txt("requirements.txt"),
-    package_dir={"": MODULE_NAME},
-    packages=setuptools.find_namespace_packages(where=MODULE_NAME),
+    install_requires=read_txt("requirements_directml.txt"),
+    packages=setuptools.find_packages(exclude=['rapidocr_onnxruntime', 'rapidocr_openvino', 'rapidocr_openvino']),
     package_data={"": ["*.onnx", "*.yaml"]},
     keywords=[
         "ocr,text_detection,text_recognition,db,onnxruntime,paddleocr,openvino,rapidocr"

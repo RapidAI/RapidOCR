@@ -2,14 +2,14 @@ name: Push rapidocr to pypi
 
 on:
   push:
-    # branches: [ main ]
+     branches: [ main ]
     # paths:
     #   - 'python/rapidocr_onnxruntime/**'
     #   - 'docs/doc_whl_rapidocr_ort.md'
     #   - 'python/setup_onnxruntime.py'
     #   - '.github/workflows/gen_whl_to_pypi_rapidocr_ort.yml'
-    tags:
-      - v*
+#    tags:
+#      - v*
 
 env:
   RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.3.0.zip
@@ -24,7 +24,7 @@ jobs:
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.12'
           architecture: 'x64'
 
       - name: Display Python version
