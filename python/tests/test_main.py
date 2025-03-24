@@ -99,6 +99,11 @@ def test_lang():
     assert result.txts is not None
     assert result.txts[0] == "3"
 
+def test_dml():
+    engine = get_engine(params={"EngineConfig.onnxruntime.use_dml": True})
+    result = engine(img_path)
+    assert result.txts is not None
+    assert result.txts[0] == "正品促销"
 
 def test_engine_openvino():
     engine = get_engine(params={"Global.with_openvino": True})

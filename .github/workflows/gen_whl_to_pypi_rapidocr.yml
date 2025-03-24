@@ -33,7 +33,7 @@ jobs:
       - name: Unit testings
         run: |
           cd python
-          pip install -r requirements.txt          
+          pip install -r requirements_dml.txt          
           pip install pytest wheel get_pypi_latest_version openvino pytest
           pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
           python -m pip install paddlepaddle==3.0.0rc1 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
