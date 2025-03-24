@@ -16,7 +16,7 @@ env:
 
 jobs:
   UnitTesting:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Pull latest code
         uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
       - name: Unit testings
         run: |
           cd python
-          pip install -r requirements.txt
+          pip install -r requirements.txt          
           pip install pytest wheel get_pypi_latest_version openvino==2023.3.0
           pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
           python -m pip install paddlepaddle==3.0.0rc1 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
@@ -50,21 +50,14 @@ jobs:
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.12'
           architecture: 'x64'
-
-      - name: Download models
-        run: |
-          cd python
-          wget $RESOURCES_URL
-          ZIP_NAME=${RESOURCES_URL##*/}
-          DIR_NAME=${ZIP_NAME%.*}
-          unzip $ZIP_NAME
-          cp $DIR_NAME/resources/models/*.onnx rapidocr/models
 
       - name: Run setup.py
         run: |
           cd python
+          pip install -r requirements.txt 
+          python demo_ch.py
           pip install setuptools get_pypi_latest_version wheel
           mkdir rapidocr_t
           mv rapidocr rapidocr_t
@@ -74,7 +67,7 @@ jobs:
 
           cd ..
           python -m pip install --upgrade pip
-          python setup.py bdist_wheel ${{ github.ref_name }}
+          python setup_dml.py bdist_wheel ${{ github.ref_name }}
           mv dist ../
 
       - name: Publish distribution 📦 to PyPI
