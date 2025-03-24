@@ -16,7 +16,7 @@ env:
 
 jobs:
   UnitTesting:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Pull latest code
         uses: actions/checkout@v4
