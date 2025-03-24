@@ -61,7 +61,7 @@ setuptools.setup(
     install_requires=read_txt("requirements_dml.txt"),
     package_dir={"": MODULE_NAME},
     packages=setuptools.find_namespace_packages(where=MODULE_NAME),
-    package_data={"": ["*.onnx", "*.yaml"]},
+    package_data={"": ["*.onnx", "*.yaml", "*.txt"]},
     keywords=[
         "ocr,text_detection,text_recognition,db,onnxruntime,paddleocr,openvino,rapidocr"
     ],
