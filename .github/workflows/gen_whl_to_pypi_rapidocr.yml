@@ -34,7 +34,7 @@ jobs:
         run: |
           cd python
           pip install -r requirements_dml.txt          
-          pip install pytest wheel get_pypi_latest_version pytest/
+          pip install pytest wheel get_pypi_latest_version
 
           python -m pytest tests/test_dml.py
 
