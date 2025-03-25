@@ -153,6 +153,7 @@ class RapidOCR:
                 det_res.boxes, op_record, raw_h, raw_w
             )
 
+        rec_res.lang_rec = self.lang_rec
         ocr_res = self.get_final_res(ori_img, det_res, cls_res, rec_res)
         return ocr_res
 

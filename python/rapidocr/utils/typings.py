@@ -53,7 +53,7 @@ class RapidOCROutput:
             final_res.append([box, list(rec)])
         return final_res
 
-    def vis(self, font_path: Optional[str] = None):
+    def vis(self, save_path: Optional[str] = None, font_path: Optional[str] = None):
         if self.img is None or self.boxes is None:
             logger.warning("No image or boxes to visualize.")
             return
@@ -68,7 +68,9 @@ class RapidOCROutput:
                 font_path=font_path,
                 lang_rec=self.lang_rec,
             )
-            save_path = "vis_det_cls_rec_result.png"
+            if save_path is None:
+                save_path = "vis_det_cls_rec_result.png"
+
             save_img(save_path, vis_img)
             logger.info("Visualization saved as %s", save_path)
             return
@@ -84,6 +86,8 @@ class RapidOCROutput:
             font_path=font_path,
             lang_rec=self.lang_rec,
         )
-        save_single_path = "vis_single.png"
+        if save_path is None:
+            save_single_path = "vis_single.png"
+
         save_img(save_single_path, vis_img)
         logger.info("Single word visualization saved as %s", save_single_path)

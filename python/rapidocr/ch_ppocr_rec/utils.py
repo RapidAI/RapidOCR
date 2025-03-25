@@ -35,30 +35,34 @@ class TextRecInput:
 
 @dataclass
 class TextRecOutput:
-    imgs: Optional[np.ndarray] = None
+    imgs: Optional[List[np.ndarray]] = None
     txts: Optional[Tuple[str]] = None
     scores: Tuple[float] = (1.0,)
     word_results: Tuple[Tuple[str, float, Optional[List[List[int]]]]] = (
         ("", 1.0, None),
     )
     elapse: Optional[float] = None
+    lang_rec: Optional[str] = None
 
     def __len__(self):
         if self.txts is None:
             return 0
         return len(self.txts)
 
-    def vis(self):
+    def vis(self, save_path: Optional[Union[str, Path]] = None) -> Optional[np.ndarray]:
         if self.imgs is None or self.txts is None:
             logger.warning("No image or txts to visualize.")
-            return
+            return None
 
         vis = VisRes()
-        vis_img = vis.draw_rec_res(self.imgs, self.txts, self.scores)
+        vis_img = vis.draw_rec_res(
+            self.imgs, self.txts, self.scores, lang_rec=self.lang_rec
+        )
 
-        save_path = "vis_only_rec_result.png"
-        save_img(save_path, vis_img)
-        logger.info("Visualization saved as %s", save_path)
+        if save_path is not None:
+            save_img(save_path, vis_img)
+            logger.info("Visualization saved as %s", save_path)
+        return vis_img
 
 
 class CTCLabelDecode:

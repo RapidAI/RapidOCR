@@ -48,7 +48,7 @@ class VisRes:
         return self.draw_ocr_box_txt(img_content, dt_boxes, txts, scores, font_path)
 
     def draw_dt_boxes(
-        self, img_content: InputType, dt_boxes: np.ndarray, scores: List[float]
+        self, img_content: InputType, dt_boxes: np.ndarray, scores: Tuple[float]
     ) -> np.ndarray:
         img = self.load_img(img_content)
 
@@ -105,8 +105,53 @@ class VisRes:
         imgs: List[InputType],
         txts: Union[List[str], Tuple[str]],
         scores: Optional[Tuple[float]] = None,
+        lang_rec: Optional[str] = None,
     ) -> np.ndarray:
-        print("ok")
+        result_imgs = []
+        for img, txt, score in zip(imgs, txts, scores):
+            vis_img = self.draw_one_rec_res(img, txt, score, lang_rec)
+            result_imgs.append(vis_img)
+        return self.concat_imgs(result_imgs, direction="vertical")
+
+    def draw_one_rec_res(
+        self,
+        img_content: InputType,
+        txt: str,
+        score: float,
+        lang_rec: Optional[str] = None,
+    ) -> np.ndarray:
+        font_path = self.get_font_path(None, lang_rec)
+
+        image = Image.fromarray(self.load_img(img_content))
+        h, w = image.height, image.width
+        if image.mode == "L":
+            image = image.convert("RGB")
+
+        img_left = image.copy()
+        img_right = Image.new("RGB", (w, h), (255, 255, 255))
+        draw_right = ImageDraw.Draw(img_right)
+        box = [[0, 0], [w, 0], [w, h], [0, h]]
+
+        box_height = self.get_box_height(box)
+        box_width = self.get_box_width(box)
+        if box_height > 2 * box_width:
+            font_size = max(int(box_width * 0.9), 10)
+            font = ImageFont.truetype(font_path, font_size, encoding="utf-8")
+            cur_y = box[0][1]
+
+            for c in txt:
+                draw_right.text((box[0][0] + 3, cur_y), c, fill=(0, 0, 0), font=font)
+                cur_y += self.get_char_size(font, c)
+        else:
+            font_size = max(int(box_height * 0.8), 10)
+            font = ImageFont.truetype(font_path, font_size, encoding="utf-8")
+            draw_right.text([box[0][0], box[0][1]], txt, fill=(0, 0, 0), font=font)
+
+        img_left = Image.blend(image, img_left, 0.5)
+        img_show = Image.new("RGB", (w * 2, h), (255, 255, 255))
+        img_show.paste(img_left, (0, 0, w, h))
+        img_show.paste(img_right, (w, 0, w * 2, h))
+        return np.array(img_show)
 
     def draw_ocr_box_txt(
         self,
@@ -190,3 +235,36 @@ class VisRes:
         raise ValueError(
             "The Pillow ImageFont instance has not getsize or getlength func."
         )
+
+    @staticmethod
+    def concat_imgs(
+        imgs: List[np.ndarray], direction: str = "horizontal"
+    ) -> np.ndarray:
+        img_list = [Image.fromarray(img_path) for img_path in imgs]
+
+        img_sizes = np.array([v.size for v in img_list])
+
+        if direction == "horizontal":
+            width = np.sum(img_sizes[:, 0])
+            height = np.max(img_sizes[:, 1])
+        elif direction == "vertical":
+            width = np.max(img_sizes[:, 0])
+            height = np.sum(img_sizes[:, 1])
+        else:
+            raise ValueError(f"{direction} is not supported.")
+
+        new_image = Image.new("RGB", (width, height), color="white")
+
+        for i, img in enumerate(img_list):
+            if i == 0:
+                new_image.paste(img, (0, 0))
+                continue
+
+            if direction == "horizontal":
+                x = np.sum(img_sizes[:, 0][:i])
+                new_image.paste(img, (x, 0))
+            elif direction == "vertical":
+                y = np.sum(img_sizes[:, 1][:i])
+                new_image.paste(img, (0, y))
+
+        return np.array(new_image)

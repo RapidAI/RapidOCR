@@ -28,17 +28,18 @@ class TextDetOutput:
             return 0
         return len(self.boxes)
 
-    def vis(self):
-        if self.img is None or self.boxes is None:
+    def vis(self, save_path: Optional[str] = None) -> Optional[np.ndarray]:
+        if self.img is None or self.boxes is None or self.scores is None:
             logger.warning("No image or boxes to visualize.")
-            return
+            return None
 
         vis = VisRes()
         vis_img = vis.draw_dt_boxes(self.img, self.boxes, self.scores)
 
-        save_path = "vis_only_det_result.png"
-        save_img(save_path, vis_img)
-        logger.info("Visualization saved as %s", save_path)
+        if save_path is not None:
+            save_img(save_path, vis_img)
+            logger.info("Visualization saved as %s", save_path)
+        return vis_img
 
 
 class DetPreProcess:

@@ -38,6 +38,18 @@ def get_engine(params: Optional[Dict[str, Any]] = None):
     return engine
 
 
+def test_vis_only_det(engine):
+    img_path = tests_dir / "ch_en_num.jpg"
+    result = engine(img_path, use_det=True, use_cls=False, use_rec=False)
+    assert result is not None
+
+
+def test_vis_only_rec(engine):
+    img_path = tests_dir / "text_rec.jpg"
+    result = engine(img_path, use_det=False, use_cls=False, use_rec=True)
+    assert result is not None
+
+
 def test_full_black_img(engine):
     img_path = tests_dir / "empty_black.jpg"
     result = engine(img_path)
