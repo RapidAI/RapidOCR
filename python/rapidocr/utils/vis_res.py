@@ -30,14 +30,14 @@ class VisRes:
         self.text_score = text_score
         self.load_img = LoadImage()
 
-        self.font_cfg = OmegaConf.load(FONT_YAML_PATH)["fonts"]
+        self.font_cfg = OmegaConf.load(FONT_YAML_PATH).fonts
 
     def __call__(
         self,
         img_content: InputType,
         dt_boxes: np.ndarray,
         txts: Optional[Union[List[str], Tuple[str]]] = None,
-        scores: Optional[Union[Tuple[float], List[float]]] = None,
+        scores: Optional[Tuple[float]] = None,
         font_path: Optional[str] = None,
         lang_rec: Optional[str] = None,
     ) -> np.ndarray:
@@ -45,12 +45,17 @@ class VisRes:
             return self.draw_dt_boxes(img_content, dt_boxes, scores)
 
         font_path = self.get_font_path(font_path, lang_rec)
-        return self.draw_ocr_box_txt(img_content, dt_boxes, txts, scores, font_path)
+        return self.draw_ocr_box_txt(img_content, dt_boxes, txts, font_path, scores)
 
     def draw_dt_boxes(
-        self, img_content: InputType, dt_boxes: np.ndarray, scores: Tuple[float]
+        self,
+        img_content: InputType,
+        dt_boxes: np.ndarray,
+        scores: Optional[Tuple[float]] = None,
     ) -> np.ndarray:
         img = self.load_img(img_content)
+        if scores is None:
+            scores = [1.0] * len(dt_boxes)
 
         for idx, (box, score) in enumerate(zip(dt_boxes, scores)):
             color = self.get_random_color()
@@ -104,7 +109,7 @@ class VisRes:
         self,
         imgs: List[InputType],
         txts: Union[List[str], Tuple[str]],
-        scores: Optional[Tuple[float]] = None,
+        scores: Tuple[float],
         lang_rec: Optional[str] = None,
     ) -> np.ndarray:
         result_imgs = []
@@ -148,7 +153,7 @@ class VisRes:
             draw_right.text([box[0][0], box[0][1]], txt, fill=(0, 0, 0), font=font)
 
         img_left = Image.blend(image, img_left, 0.5)
-        img_show = Image.new("RGB", (w * 2, h), (255, 255, 255))
+        img_show = Image.new("RGB", (w * 2, h), 255)
         img_show.paste(img_left, (0, 0, w, h))
         img_show.paste(img_right, (w, 0, w * 2, h))
         return np.array(img_show)
@@ -158,8 +163,8 @@ class VisRes:
         img_content: InputType,
         dt_boxes: np.ndarray,
         txts: Union[List[str], Tuple[str]],
+        font_path: str,
         scores: Optional[Tuple[float]] = None,
-        font_path: Optional[str] = None,
     ) -> np.ndarray:
         image = Image.fromarray(self.load_img(img_content))
         h, w = image.height, image.width
@@ -214,11 +219,11 @@ class VisRes:
         )
 
     @staticmethod
-    def get_box_height(box: List[List[float]]) -> float:
+    def get_box_height(box: List[List[Union[float, int]]]) -> float:
         return math.sqrt((box[0][0] - box[3][0]) ** 2 + (box[0][1] - box[3][1]) ** 2)
 
     @staticmethod
-    def get_box_width(box: List[List[float]]) -> float:
+    def get_box_width(box: List[List[Union[float, int]]]) -> float:
         return math.sqrt((box[0][0] - box[1][0]) ** 2 + (box[0][1] - box[1][1]) ** 2)
 
     @staticmethod
