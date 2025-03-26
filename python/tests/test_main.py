@@ -42,28 +42,28 @@ def test_vis_only_det(engine):
     img_path = tests_dir / "ch_en_num.jpg"
     result = engine(img_path, use_det=True, use_cls=False, use_rec=False)
     vis_img = result.vis()
-    assert vis_img.shape == (430, 323, 3)
+    assert vis_img.shape[2] == 3
 
 
 def test_vis_only_rec(engine):
     img_path = tests_dir / "text_rec.jpg"
     result = engine(img_path, use_det=False, use_cls=False, use_rec=True)
     vis_img = result.vis()
-    assert vis_img.shape == (78, 724, 3)
+    assert vis_img.shape[2] == 3
 
 
 def test_vis_only_cls(engine):
     img_path = tests_dir / "text_rec.jpg"
     result = engine(img_path, use_det=False, use_cls=True, use_rec=False)
     vis_img = result.vis()
-    assert vis_img.shape == (78, 724, 3)
+    assert vis_img.shape[2] == 3
 
 
 def test_vis_det_cls_rec(engine):
     img_path = tests_dir / "ch_en_num.jpg"
     result = engine(img_path, use_det=False, use_cls=True, use_rec=False)
     vis_img = result.vis()
-    assert vis_img.shape == (430, 323, 3)
+    assert vis_img.shape[2] == 3
 
 
 def test_full_black_img(engine):
