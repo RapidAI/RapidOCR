@@ -101,7 +101,7 @@ class TextRecognizer:
 
         all_line_results, all_word_results = list(zip(*rec_res))
         txts, scores = list(zip(*all_line_results))
-        return TextRecOutput(txts, scores, all_word_results, elapse)
+        return TextRecOutput(img_list, txts, scores, all_word_results, elapse)
 
     def resize_norm_img(self, img: np.ndarray, max_wh_ratio: float) -> np.ndarray:
         img_channel, img_height, img_width = self.rec_image_shape

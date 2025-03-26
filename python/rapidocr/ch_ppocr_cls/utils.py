@@ -12,9 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from pathlib import Path
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
+
+from ..utils.logger import Logger
+from ..utils.utils import save_img
+from ..utils.vis_res import VisRes
+
+logger = Logger(logger_name=__name__).get_log()
 
 
 @dataclass
@@ -27,6 +34,22 @@ class TextClsOutput:
         if self.img_list is None:
             return 0
         return len(self.img_list)
+
+    def vis(self, save_path: Optional[Union[str, Path]] = None) -> Optional[np.ndarray]:
+        if self.img_list is None or self.cls_res is None:
+            logger.warning("No image or txts to visualize.")
+            return None
+
+        txts = [f"{txt} {score:.2f}" for txt, score in self.cls_res]
+        scores = [score for _, score in self.cls_res]
+
+        vis = VisRes()
+        vis_img = vis.draw_rec_res(self.img_list, txts, scores)
+
+        if save_path is not None:
+            save_img(save_path, vis_img)
+            logger.info("Visualization saved as %s", save_path)
+        return vis_img
 
 
 class ClsPostProcess:

@@ -4,7 +4,7 @@ onnxruntime:
       ch_PP-OCRv4_det_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/ch_PP-OCRv4_det_infer.onnx
       ch_PP-OCRv4_det_server_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/ch_PP-OCRv4_det_server_infer.onnx
       en_PP-OCRv3_det_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/en_PP-OCRv3_det_infer.onnx
-      Multilingual_PP-OCRv3_det_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/Multilingual_PP-OCRv3_det_infer.onnx
+      multi_PP-OCRv3_det_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/Multilingual_PP-OCRv3_det_infer.onnx
     rec:
       arabic_PP-OCRv4_rec_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/rec/arabic_PP-OCRv4_rec_infer.onnx
       ch_PP-OCRv4_rec_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer.onnx
@@ -28,7 +28,7 @@ openvino:
       ch_PP-OCRv4_det_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/ch_PP-OCRv4_det_infer.onnx
       ch_PP-OCRv4_det_server_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/ch_PP-OCRv4_det_server_infer.onnx
       en_PP-OCRv3_det_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/en_PP-OCRv3_det_infer.onnx
-      Multilingual_PP-OCRv3_det_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/Multilingual_PP-OCRv3_det_infer.onnx
+      multi_PP-OCRv3_det_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/Multilingual_PP-OCRv3_det_infer.onnx
     rec:
       arabic_PP-OCRv4_rec_infer:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/rec/arabic_PP-OCRv4_rec_infer.onnx
@@ -78,7 +78,7 @@ paddlepaddle:
       ch_PP-OCRv4_det_infer: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/det/ch_PP-OCRv4_det_infer
       ch_PP-OCRv4_det_server_infer: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/det/ch_PP-OCRv4_det_server_infer
       en_PP-OCRv3_det_infer: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/det/en_PP-OCRv3_det_infer
-      Multilingual_PP-OCRv3_det_infer: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/det/Multilingual_PP-OCRv3_det_infer
+      multi_PP-OCRv3_det_infer: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/det/Multilingual_PP-OCRv3_det_infer
     rec:
       arabic_PP-OCRv4_rec_infer:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/rec/arabic_PP-OCRv4_rec_infer
@@ -136,3 +136,17 @@ torch:
         dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer/ppocr_keys_v1.txt
     cls:
       ch_ptocr_mobile_v2.0_cls_infer.pth: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/torch/ch_ptocr_mobile_v2.0_cls_infer.pth
+
+fonts:
+  ch: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/resources/fonts/FZYTK.TTF
+  en: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/resources/fonts/FZYTK.TTF
+  japan: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/resources/fonts/japan.ttc
+  arabic: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/resources/fonts/arabic.ttf
+  chinese_cht: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/resources/fonts/chinese_cht.ttf
+  cyrillic: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/resources/fonts/cyrillic.ttf
+  devanagari: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/resources/fonts/devanagari_Martel-Regular.ttf
+  korean: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/resources/fonts/korean.ttf
+  ka: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/resources/fonts/kannada.ttf
+  latin: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/resources/fonts/latin.ttf
+  ta: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/resources/fonts/tamil.ttf
+  te: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/resources/fonts/telugu.ttf

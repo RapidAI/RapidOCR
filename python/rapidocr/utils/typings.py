@@ -4,10 +4,10 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Union
 
-import cv2
 import numpy as np
 
 from .logger import Logger
+from .utils import save_img
 from .vis_res import VisRes
 
 logger = Logger(logger_name=__name__).get_log()
@@ -24,6 +24,7 @@ class RapidOCROutput:
     )
     elapse_list: List[Union[float, None]] = field(default_factory=list)
     elapse: float = field(init=False)
+    lang_rec: Optional[str] = None
 
     def __post_init__(self):
         self.elapse = sum(v for v in self.elapse_list if isinstance(v, float))
@@ -52,22 +53,41 @@ class RapidOCROutput:
             final_res.append([box, list(rec)])
         return final_res
 
-    def vis(self):
+    def vis(self, save_path: Optional[str] = None, font_path: Optional[str] = None):
         if self.img is None or self.boxes is None:
             logger.warning("No image or boxes to visualize.")
             return
 
         vis = VisRes()
         if all(v is None for v in self.word_results):
-            vis_img = vis(self.img, self.boxes, self.txts, self.scores)
-            cv2.imwrite("vis.png", vis_img)
-            logger.info("Visualization saved as vis.png.")
+            vis_img = vis(
+                self.img,
+                self.boxes,
+                self.txts,
+                self.scores,
+                font_path=font_path,
+                lang_rec=self.lang_rec,
+            )
+            if save_path is None:
+                save_path = "vis_det_cls_rec_result.png"
+
+            save_img(save_path, vis_img)
+            logger.info("Visualization saved as %s", save_path)
             return
 
         # single word vis
         words_results = self.word_results
         words, words_scores, words_boxes = list(zip(*words_results))
-        vis_img = vis(self.img, words_boxes, words, words_scores)
-        cv2.imwrite("vis_single.png", vis_img)
-        logger.info("Single word visualization saved as vis_single.png.")
-        return
+        vis_img = vis(
+            self.img,
+            words_boxes,
+            words,
+            words_scores,
+            font_path=font_path,
+            lang_rec=self.lang_rec,
+        )
+        if save_path is None:
+            save_single_path = "vis_single.png"
+
+        save_img(save_single_path, vis_img)
+        logger.info("Single word visualization saved as %s", save_single_path)

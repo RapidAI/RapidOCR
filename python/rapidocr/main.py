@@ -46,6 +46,8 @@ class RapidOCR:
 
         lang_det, lang_rec = ParseLang()(config.Global.lang_det, config.Global.lang_rec)
 
+        self.lang_rec = lang_rec
+
         self.text_score = config.Global.text_score
         self.min_height = config.Global.min_height
         self.width_height_ratio = config.Global.width_height_ratio
@@ -92,7 +94,7 @@ class RapidOCR:
         text_score: float = 0.5,
         box_thresh: float = 0.5,
         unclip_ratio: float = 1.6,
-    ) -> RapidOCROutput:
+    ) -> Union[TextDetOutput, TextClsOutput, TextRecOutput, RapidOCROutput]:
         use_det = self.use_det if use_det is None else use_det
         use_cls = self.use_cls if use_cls is None else use_cls
         use_rec = self.use_rec if use_rec is None else use_rec
@@ -151,6 +153,7 @@ class RapidOCR:
                 det_res.boxes, op_record, raw_h, raw_w
             )
 
+        rec_res.lang_rec = self.lang_rec
         ocr_res = self.get_final_res(ori_img, det_res, cls_res, rec_res)
         return ocr_res
 
@@ -293,6 +296,7 @@ class RapidOCR:
             scores=rec_res.scores,
             word_results=rec_res.word_results,
             elapse_list=[det_res.elapse, cls_res.elapse, rec_res.elapse],
+            lang_rec=self.lang_rec,
         )
         ocr_res = self.filter_by_text_score(ocr_res)
         if len(ocr_res) <= 0:

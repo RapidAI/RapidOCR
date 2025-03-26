@@ -6,8 +6,17 @@ from pathlib import Path
 from typing import Union
 from urllib.parse import urlparse
 
+import cv2
+import numpy as np
 import requests
 from tqdm import tqdm
+
+
+def save_img(save_path: Union[str, Path], img: np.ndarray):
+    if not Path(save_path).parent.exists():
+        Path(save_path).parent.mkdir(parents=True, exist_ok=True)
+
+    cv2.imwrite(str(save_path), img)
 
 
 def is_url(url: str) -> bool:

@@ -7,6 +7,12 @@ from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 
+from ..utils.logger import Logger
+from ..utils.utils import save_img
+from ..utils.vis_res import VisRes
+
+logger = Logger(logger_name=__name__).get_log()
+
 
 @dataclass
 class TextRecConfig:
@@ -29,17 +35,34 @@ class TextRecInput:
 
 @dataclass
 class TextRecOutput:
+    imgs: Optional[List[np.ndarray]] = None
     txts: Optional[Tuple[str]] = None
     scores: Tuple[float] = (1.0,)
     word_results: Tuple[Tuple[str, float, Optional[List[List[int]]]]] = (
         ("", 1.0, None),
     )
     elapse: Optional[float] = None
+    lang_rec: Optional[str] = None
 
     def __len__(self):
         if self.txts is None:
             return 0
         return len(self.txts)
+
+    def vis(self, save_path: Optional[Union[str, Path]] = None) -> Optional[np.ndarray]:
+        if self.imgs is None or self.txts is None:
+            logger.warning("No image or txts to visualize.")
+            return None
+
+        vis = VisRes()
+        vis_img = vis.draw_rec_res(
+            self.imgs, self.txts, self.scores, lang_rec=self.lang_rec
+        )
+
+        if save_path is not None:
+            save_img(save_path, vis_img)
+            logger.info("Visualization saved as %s", save_path)
+        return vis_img
 
 
 class CTCLabelDecode:

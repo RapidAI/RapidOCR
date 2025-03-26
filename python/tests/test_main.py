@@ -38,6 +38,34 @@ def get_engine(params: Optional[Dict[str, Any]] = None):
     return engine
 
 
+def test_vis_only_det(engine):
+    img_path = tests_dir / "ch_en_num.jpg"
+    result = engine(img_path, use_det=True, use_cls=False, use_rec=False)
+    vis_img = result.vis()
+    assert vis_img.shape == (430, 323, 3)
+
+
+def test_vis_only_rec(engine):
+    img_path = tests_dir / "text_rec.jpg"
+    result = engine(img_path, use_det=False, use_cls=False, use_rec=True)
+    vis_img = result.vis()
+    assert vis_img.shape == (78, 724, 3)
+
+
+def test_vis_only_cls(engine):
+    img_path = tests_dir / "text_rec.jpg"
+    result = engine(img_path, use_det=False, use_cls=True, use_rec=False)
+    vis_img = result.vis()
+    assert vis_img.shape == (78, 724, 3)
+
+
+def test_vis_det_cls_rec(engine):
+    img_path = tests_dir / "ch_en_num.jpg"
+    result = engine(img_path, use_det=False, use_cls=True, use_rec=False)
+    vis_img = result.vis()
+    assert vis_img.shape == (430, 323, 3)
+
+
 def test_full_black_img(engine):
     img_path = tests_dir / "empty_black.jpg"
     result = engine(img_path)
@@ -92,7 +120,15 @@ def test_error_lang():
     assert exc_info.type is ValueError
 
 
-def test_lang():
+def test_korean_lang():
+    engine = get_engine(params={"Global.lang_rec": "korean_mobile"})
+    img_path = tests_dir / "korean.jpg"
+    result = engine(img_path)
+    assert result.txts is not None
+    assert result.txts[0] == "베이징차오양"
+
+
+def test_en_lang():
     engine = get_engine(params={"Global.lang_rec": "en_mobile"})
     img_path = tests_dir / "en.jpg"
     result = engine(img_path)
