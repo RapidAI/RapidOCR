@@ -87,7 +87,7 @@ class RapidOCROutput:
             lang_rec=self.lang_rec,
         )
         if save_path is None:
-            save_single_path = "vis_single.png"
+            save_path = "vis_single.png"
 
-        save_img(save_single_path, vis_img)
-        logger.info("Single word visualization saved as %s", save_single_path)
+        save_img(save_path, vis_img)
+        logger.info("Single word visualization saved as %s", save_path)
