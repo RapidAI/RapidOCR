@@ -56,7 +56,7 @@ engine = RapidOCR(params={"Global.use_cls": False, "Global.max_side_len":4000, "
                           "EngineConfig.onnxruntime.use_dml": True
                           })
 
-img_url = cv2.imread('negative_text.png')
+img_url = cv2.imread('tests/test_files/negative_text.png')
 
 for i in range(20):
     start = time.time()
