@@ -34,6 +34,7 @@ def build_backbone(config, model_type):
         from .rec_lcnetv3 import PPLCNetV3
         from .rec_mobilenet_v3 import MobileNetV3
         from .rec_svtrnet import SVTRNet
+        from .rec_mv1_enhance import MobileNetV1Enhance
 
         support_dict = [
             "MobileNetV1Enhance",

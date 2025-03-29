@@ -26,21 +26,14 @@ from .utils import CTCLabelDecode, TextRecInput, TextRecOutput
 
 DEFAULT_DICT_PATH = Path(__file__).parent.parent / "models" / "ppocr_keys_v1.txt"
 DEFAULT_DICT_URL = "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer/ppocr_keys_v1.txt"
-
+DEFAULT_MODE_PATH = Path(__file__).parent.parent / "models"
 
 class TextRecognizer:
     def __init__(self, config: Dict[str, Any]):
         self.session = get_engine(config.engine_name)(config, mode="rec")
         self.logger = Logger(logger_name=__name__).get_log()
-
-        character = None
-        if self.session.have_key():
-            character = self.session.get_character_list()
-
-        dict_path = config.get("rec_keys_path", None)
-        character_dict_path = dict_path if dict_path else DEFAULT_DICT_PATH
-        if not Path(character_dict_path).exists():
-            download_file(DEFAULT_DICT_URL, character_dict_path, self.logger)
+        # onnx has inner character, other engine get or download character_dict_path
+        character, character_dict_path = self.get_character_dict(config)
 
         self.postprocess_op = CTCLabelDecode(
             character=character, character_path=character_dict_path
@@ -48,6 +41,25 @@ class TextRecognizer:
 
         self.rec_batch_num = config["rec_batch_num"]
         self.rec_image_shape = config["rec_img_shape"]
+
+    def get_character_dict(self, config):
+        character = None
+        dict_path = config.get("rec_keys_path", None)
+        if self.session.have_key():
+            character = self.session.get_character_list()
+            return character, dict_path
+
+        # onnx has character, other engine need dict_path
+        if (not dict_path and not character) or (not Path(dict_path).exists()):
+            dict_download_url = self.session.get_dict_key_url(
+                self.session.__class__, config.engine_name, config.task_type, config.lang
+            )
+            dict_download_url = dict_download_url if dict_download_url is not None else DEFAULT_DICT_URL
+            dict_path = DEFAULT_MODE_PATH / Path(dict_download_url).name
+            if not Path(dict_path).exists():
+                download_file(dict_download_url, dict_path, self.logger)
+
+        return character, dict_path
 
     def __call__(self, args: TextRecInput) -> TextRecOutput:
         img_list = [args.img] if isinstance(args.img, np.ndarray) else args.img
