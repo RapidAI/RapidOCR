@@ -17,6 +17,7 @@ __all__ = ["build_neck"]
 
 def build_neck(config):
     from .db_fpn import DBFPN, LKPAN, RSEFPN
+    from .rnn import SequenceEncoder
 
     support_dict = ["DBFPN", "SequenceEncoder", "RSEFPN", "LKPAN"]
 
