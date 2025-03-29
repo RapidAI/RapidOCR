@@ -151,13 +151,13 @@ class OrtInferSession(InferSession):
             )
             return False
 
-        cur_window_version_str = platform.release().split(".")[0]
-        cur_window_version = int(cur_window_version_str) if cur_window_version_str.isdigit() else 0
+        window_build_number_str = platform.version().split(".")[-1]
+        window_build_number = int(window_build_number_str) if window_build_number_str.isdigit() else 0
         
-        if cur_window_version < 10:
+        if window_build_number < 18362:
             self.logger.warning(
-                "DirectML is only supported in Windows 10 and above OS. The current Windows version is %s. Use %s inference by default.",
-                cur_window_version,
+                "DirectML is only supported in Windows 10 Build 18362 and above OS. The current Windows Build is %s. Use %s inference by default.",
+                window_build_number,
                 self.had_providers[0],
             )
             return False
