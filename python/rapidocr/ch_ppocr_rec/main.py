@@ -53,7 +53,6 @@ class TextRecognizer:
         # onnx has character, other engine need dict_path
         if (not dict_path and not character) or (not Path(dict_path).exists()):
             dict_download_url = self.session.get_dict_key_url(
-                self.session.__class__,
                 config.engine_name,
                 config.task_type,
                 config.lang,

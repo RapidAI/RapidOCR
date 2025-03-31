@@ -122,7 +122,7 @@ class InferSession(abc.ABC):
         # 优先查找 server 模型
         if model_type == "server":
             for k in model_dict:
-                if k.starswith(lang) and "server" in k:
+                if k.startswith(lang) and "server" in k:
                     return model_dict[k]
 
         for k in model_dict:
@@ -139,7 +139,7 @@ class InferSession(abc.ABC):
         # 优先查找 server 模型
         if model_type == "server":
             for k in model_dict:
-                if k.starswith(lang) and "server" in k:
+                if k.startswith(lang) and "server" in k:
                     return model_dict[k]["dict_url"]
 
         for k in model_dict:
