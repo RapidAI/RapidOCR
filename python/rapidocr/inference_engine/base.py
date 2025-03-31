@@ -116,36 +116,34 @@ class InferSession(abc.ABC):
 
     @classmethod
     def get_model_url(cls, engine_name: str, task_type: str, lang: str) -> str:
-        lang, model_type = lang.split("_")
+        lang, model_type = lang.rsplit("_", 1)
         model_dict = cls.model_info[engine_name]["PP-OCRv4"][task_type]
 
         # 优先查找 server 模型
         if model_type == "server":
             for k in model_dict:
-                prefix = k.split("_")[0]
-                if lang == prefix and "server" in k:
+                if k.starswith(lang) and "server" in k:
                     return model_dict[k]
 
         for k in model_dict:
-            prefix = k.split("_")[0]
-            if lang == prefix:
+            if k.startswith(lang):
                 return model_dict[k]
 
         raise KeyError("Model not found")
 
-    @staticmethod
+    @classmethod
     def get_dict_key_url(cls, engine_name: str, task_type: str, lang: str) -> str:
-        lang, model_type = lang.split("_")
+        lang, model_type = lang.rsplit("_", 1)
         model_dict = cls.model_info[engine_name]["PP-OCRv4"][task_type]
 
         # 优先查找 server 模型
         if model_type == "server":
             for k in model_dict:
-                prefix = k.split("_")[0]
-                if lang == prefix and "server" in k:
-                    return model_dict[k]['dict_url']
+                if k.starswith(lang) and "server" in k:
+                    return model_dict[k]["dict_url"]
 
         for k in model_dict:
-            prefix = k.split("_")[0]
-            if lang == prefix:
-                return model_dict[k]['dict_url']
+            if k.startswith(lang):
+                return model_dict[k]["dict_url"]
+
+        raise KeyError("Rec Model dict not found")

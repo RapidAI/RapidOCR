@@ -28,6 +28,7 @@ DEFAULT_DICT_PATH = Path(__file__).parent.parent / "models" / "ppocr_keys_v1.txt
 DEFAULT_DICT_URL = "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer/ppocr_keys_v1.txt"
 DEFAULT_MODE_PATH = Path(__file__).parent.parent / "models"
 
+
 class TextRecognizer:
     def __init__(self, config: Dict[str, Any]):
         self.session = get_engine(config.engine_name)(config, mode="rec")
@@ -52,9 +53,14 @@ class TextRecognizer:
         # onnx has character, other engine need dict_path
         if (not dict_path and not character) or (not Path(dict_path).exists()):
             dict_download_url = self.session.get_dict_key_url(
-                self.session.__class__, config.engine_name, config.task_type, config.lang
+                self.session.__class__,
+                config.engine_name,
+                config.task_type,
+                config.lang,
             )
-            dict_download_url = dict_download_url if dict_download_url is not None else DEFAULT_DICT_URL
+            dict_download_url = (
+                dict_download_url if dict_download_url is not None else DEFAULT_DICT_URL
+            )
             dict_path = DEFAULT_MODE_PATH / Path(dict_download_url).name
             if not Path(dict_path).exists():
                 download_file(dict_download_url, dict_path, self.logger)
