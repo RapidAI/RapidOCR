@@ -85,8 +85,6 @@ class RapidOCROutput:
             font_path=font_path,
             lang_rec=self.lang_rec,
         )
-        if save_path is None:
-            save_path = "vis_return_words.png"
 
         if save_path is not None:
             save_img(save_path, vis_img)
