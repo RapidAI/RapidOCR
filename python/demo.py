@@ -9,4 +9,4 @@ img_url = "https://img1.baidu.com/it/u=3619974146,1266987475&fm=253&fmt=auto&app
 result = engine(img_url)
 print(result)
 
-result.vis()
+result.vis("vis_result.jpg")

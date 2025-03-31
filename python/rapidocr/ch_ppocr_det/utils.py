@@ -36,11 +36,9 @@ class TextDetOutput:
         vis = VisRes()
         vis_img = vis.draw_dt_boxes(self.img, self.boxes, self.scores)
 
-        if save_path is None:
-            save_path = "vis_det.jpg"
-
-        save_img(save_path, vis_img)
-        logger.info("Visualization saved as %s", save_path)
+        if save_path is not None:
+            save_img(save_path, vis_img)
+            logger.info("Visualization saved as %s", save_path)
         return vis_img
 
 
