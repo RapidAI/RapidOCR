@@ -128,7 +128,7 @@ torch:
       ch_PP-OCRv4_det_infer.pth: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/torch/ch_PP-OCRv4_det_infer.pth
       ch_PP-OCRv4_det_server_infer.pth: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/torch/ch_PP-OCRv4_det_server_infer.pth
       en_PP-OCRv3_det_infer.pth: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/torch/en_PP-OCRv3_det_infer.pth
-      Multilingual_PP-OCRv3_det_infer.pth: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/torch/Multilingual_PP-OCRv3_det_infer.pth
+      multi_PP-OCRv3_det_infer.pth: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/torch/Multilingual_PP-OCRv3_det_infer.pth
     rec:
       arabic_PP-OCRv4_rec_infer:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/torch/arabic_PP-OCRv4_rec_infer.pth
