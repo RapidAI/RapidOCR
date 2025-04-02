@@ -3,7 +3,6 @@
 # @Contact: liekkaskono@163.com
 import argparse
 import copy
-import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -14,6 +13,7 @@ from .cal_rec_boxes import CalRecBoxes
 from .ch_ppocr_cls import TextClassifier, TextClsOutput
 from .ch_ppocr_det import TextDetector, TextDetOutput
 from .ch_ppocr_rec import TextRecInput, TextRecognizer, TextRecOutput
+from .cli import check_install, generate_cfg
 from .inference_engine.base import get_engine_name
 from .utils import (
     LoadImage,
@@ -325,24 +325,6 @@ class RapidOCR:
             ParseParams.save(self.config, f)
 
 
-def generate_cfg(args):
-    if args.save_cfg_file is None:
-        args.save_cfg_file = "./default_rapidocr.yaml"
-
-    shutil.copyfile(DEFAULT_CFG_PATH, args.save_cfg_file)
-    print(f"The config file has saved in {args.save_cfg_file}")
-
-
-def check_install():
-    img_url = "https://github.com/RapidAI/RapidOCR/blob/a9bb7c1f44b6e00556ada90ac588f020d7637c4b/python/tests/test_files/ch_en_num.jpg?raw=true"
-    result = RapidOCR()(img_url)
-
-    if result.txts is None or result.txts[0] != "正品促销":
-        raise ValueError("The installation is incorrect!")
-
-    print("Success! rapidocr is installed correctly!")
-
-
 def parse_args(arg_list: Optional[List[str]] = None):
     parser = argparse.ArgumentParser()
     parser.add_argument("-img", "--img_path", type=str, default=None)
@@ -374,15 +356,15 @@ def main(arg_list: Optional[List[str]] = None):
         generate_cfg(args)
         return
 
-    if args.command == "check":
-        check_install()
-        return
-
     params = {
         "Global.text_score": args.text_score,
         "Global.return_word_box": args.return_word_box,
     }
     ocr_engine = RapidOCR(params=params)
+
+    if args.command == "check":
+        check_install(ocr_engine)
+        return
 
     if args.img_path is None:
         raise ValueError("Please input the image path")
