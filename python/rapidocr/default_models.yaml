@@ -72,7 +72,7 @@ openvino:
     cls:
       ch_ppocr_mobile_v2.0_cls_infer.onnx: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/cls/ch_ppocr_mobile_v2.0_cls_infer.onnx
 
-paddlepaddle:
+paddle:
   PP-OCRv4:
     det:
       ch_PP-OCRv4_det_infer: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/det/ch_PP-OCRv4_det_infer

@@ -320,10 +320,6 @@ class RapidOCR:
         ocr_res.scores = tuple(filter_scores)
         return ocr_res
 
-    def export_config(self, save_path: Union[Path, str]) -> None:
-        with open(save_path, "w", encoding="utf-8") as f:
-            ParseParams.save(self.config, f)
-
 
 def parse_args(arg_list: Optional[List[str]] = None):
     parser = argparse.ArgumentParser()

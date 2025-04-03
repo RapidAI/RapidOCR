@@ -4,6 +4,7 @@
 import shutil
 from pathlib import Path
 
+
 root_dir = Path(__file__).resolve().parent
 DEFAULT_CFG_PATH = root_dir / "config.yaml"
 
