@@ -4,7 +4,7 @@
 import abc
 from enum import Enum
 from pathlib import Path
-from typing import Union
+from typing import List, Union
 
 import numpy as np
 from omegaconf import DictConfig, OmegaConf
@@ -22,8 +22,19 @@ logger = Logger(logger_name=__name__).get_log()
 class Engine(Enum):
     ONNXRUNTIME = "onnxruntime"
     OPENVINO = "openvino"
-    PADDLE = "paddlepaddle"
+    PADDLE = "paddle"
     TORCH = "torch"
+
+
+def get_installed_engine() -> List[str]:
+    installed_engine = []
+    for v in Engine.__members__:
+        engine_name = Engine[v].value
+        if import_package(engine_name) is None:
+            continue
+
+        installed_engine.append(engine_name)
+    return installed_engine
 
 
 def get_engine(engine_name: str):
@@ -49,7 +60,7 @@ def get_engine(engine_name: str):
         if not import_package("paddle"):
             raise ImportError("paddleopaddle is not installed")
 
-        from .paddlepaddle import PaddleInferSession
+        from .paddle import PaddleInferSession
 
         return PaddleInferSession
 

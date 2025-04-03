@@ -94,6 +94,26 @@ def test_cli(capsys, cmd, gt):
     assert gt in output
 
 
+@pytest.mark.parametrize("cmd", [f"config --save_cfg_file {tests_dir}/config.yaml"])
+def test_cli_config(capsys, cmd):
+    main(shlex.split(cmd))
+    output = capsys.readouterr().out.strip()
+
+    assert "The config file has saved in" in output
+
+    cfg_yaml_path = tests_dir / "config.yaml"
+    assert cfg_yaml_path.exists()
+    cfg_yaml_path.unlink()
+
+
+@pytest.mark.parametrize("cmd", ["check"])
+def test_cli_check(capsys, cmd):
+    main(shlex.split(cmd))
+    output = capsys.readouterr().out.strip()
+
+    assert "Success! rapidocr is installed correctly!" in output
+
+
 @pytest.mark.parametrize(
     "cmd,img_name",
     [
