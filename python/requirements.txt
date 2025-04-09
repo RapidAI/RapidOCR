@@ -8,3 +8,4 @@ Pillow
 tqdm
 omegaconf
 requests
+colorlog

@@ -3,6 +3,8 @@
 # @Contact: liekkaskono@163.com
 import logging
 
+import colorlog
+
 
 class Logger:
     def __init__(self, log_level=logging.DEBUG, logger_name=None):
@@ -10,15 +12,26 @@ class Logger:
         self.logger.setLevel(log_level)
         self.logger.propagate = False
 
-        fmt = "[%(levelname)s] %(asctime)s %(filename)s:%(lineno)d: %(message)s"
-        formatter = logging.Formatter(fmt)
+        formatter = colorlog.ColoredFormatter(
+            "%(log_color)s[%(levelname)s] %(asctime)s [RapidOCR] %(filename)s:%(lineno)d: %(message)s",
+            log_colors={
+                "DEBUG": "cyan",
+                "INFO": "green",
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "red,bg_white",
+            },
+        )
 
         if not self.logger.handlers:
-            ch = logging.StreamHandler()
-            ch.setLevel(log_level)
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(formatter)
 
-            ch.setFormatter(formatter)
-            self.logger.addHandler(ch)
+            for handler in self.logger.handlers:
+                self.logger.removeHandler(handler)
+
+            console_handler.setLevel(log_level)
+            self.logger.addHandler(console_handler)
 
     def get_log(self):
         return self.logger
