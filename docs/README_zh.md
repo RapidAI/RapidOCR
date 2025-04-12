@@ -11,11 +11,10 @@
 </div>
 <div>&nbsp;</div>
 
-<a href="https://huggingface.co/spaces/SWHL/RapidOCRDemo" target="_blank"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Hugging Face Demo-blue"></a>
-<a href="https://www.modelscope.cn/studios/RapidAI/RapidOCRDemo" target="_blank"><img src="https://img.shields.io/badge/魔搭-Demo-blue"></a>
-<a href="https://aistudio.baidu.com/app/highcode/33121" target="_blank"><img src="https://img.shields.io/badge/百度AI%20Studio-Demo-blue"></a>
+<a href="https://huggingface.co/spaces/RapidAI/RapidOCRv2" target="_blank"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Hugging Face Demo-blue"></a>
+<a href="https://www.modelscope.cn/studios/RapidAI/RapidOCRv2/summary" target="_blank"><img src="https://img.shields.io/badge/魔搭-Demo-blue"></a>
 <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/colab-badge.svg" alt="Open in Colab"></a>
-<a href=""><img src="https://img.shields.io/badge/Python->=3.6,<3.13-aff.svg"></a>
+<a href=""><img src="https://img.shields.io/badge/Python->=3.6-aff.svg"></a>
 <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
 <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors"><img src="https://img.shields.io/github/contributors/RapidAI/RapidOCR?color=9ea"></a>
 <a href="https://pepy.tech/project/rapidocr"><img src="https://static.pepy.tech/personalized-badge/rapidocr?period=total&units=abbreviation&left_color=grey&right_color=blue&left_text=Downloads%20rapidocr"></a>
