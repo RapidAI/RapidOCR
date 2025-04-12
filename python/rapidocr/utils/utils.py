@@ -2,6 +2,7 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import importlib
+import sys
 from pathlib import Path
 from typing import Union
 from urllib.parse import urlparse
@@ -59,7 +60,17 @@ def download_file(url: str, save_path: Union[str, Path], logger=None):
 
     total_size_in_bytes = int(response.headers.get("content-length", 1))
     block_size = 1024  # 1 Kibibyte
-    with tqdm(total=total_size_in_bytes, unit="iB", unit_scale=True) as pb:
+
+    try:
+        is_interactive = sys.stderr.isatty()
+    except AttributeError:
+        if logger is not None:
+            logger.info("sys.stderr.isatty() failed disable tqdm progress bar")
+        else:
+            print(f"sys.stderr.isatty() failed disable tqdm progress bar")
+        is_interactive = False
+
+    with tqdm(total=total_size_in_bytes, unit="iB", unit_scale=True, disable=is_interactive) as pb:
         with open(save_path, "wb") as file:
             for data in response.iter_content(block_size):
                 pb.update(len(data))
