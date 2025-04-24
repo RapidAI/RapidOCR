@@ -10,7 +10,6 @@ from omegaconf import OmegaConf
 
 from ..networks.architectures.base_model import BaseModel
 from ..utils.logger import Logger
-from ..utils.utils import download_file
 from .base import InferSession
 
 root_dir = Path(__file__).resolve().parent.parent

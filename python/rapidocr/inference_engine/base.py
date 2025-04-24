@@ -4,7 +4,7 @@
 import abc
 from enum import Enum
 from pathlib import Path
-from typing import List, Union
+from typing import Dict, List, Union
 
 import numpy as np
 from omegaconf import DictConfig, OmegaConf
@@ -126,7 +126,9 @@ class InferSession(abc.ABC):
         pass
 
     @classmethod
-    def get_model_url(cls, engine_name: str, task_type: str, lang: str) -> str:
+    def get_model_url(
+        cls, engine_name: str, task_type: str, lang: str
+    ) -> Dict[str, str]:
         lang, model_type = lang.rsplit("_", 1)
         model_dict = cls.model_info[engine_name]["PP-OCRv4"][task_type]
 

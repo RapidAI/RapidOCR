@@ -16,7 +16,6 @@ sys.path.append(str(root_dir))
 from rapidocr import LoadImageError, RapidOCR
 from rapidocr.main import main
 from rapidocr.utils.logger import Logger
-from rapidocr.utils.utils import download_file
 
 tests_dir = root_dir / "tests" / "test_files"
 img_path = tests_dir / "ch_en_num.jpg"
@@ -179,15 +178,10 @@ def test_engine_torch():
 
 def test_long_img(engine):
     img_url = "https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/long.jpeg"
-    img_path = tests_dir / "long.jpeg"
-
-    download_file(img_url, img_path, logger)
-    result = engine(img_path)
+    result = engine(img_url)
 
     assert result is not None
     assert len(result.boxes) >= 53
-
-    img_path.unlink()
 
 
 def test_mode_one_img(engine):

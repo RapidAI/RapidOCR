@@ -21,11 +21,12 @@ import numpy as np
 
 from rapidocr.inference_engine.base import get_engine
 
-from ..utils import Logger, download_file
+from ..utils import Logger
+from ..utils.download_file import DownloadFile, DownloadFileInput
 from .utils import CTCLabelDecode, TextRecInput, TextRecOutput
 
 DEFAULT_DICT_PATH = Path(__file__).parent.parent / "models" / "ppocr_keys_v1.txt"
-DEFAULT_DICT_URL = "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer/ppocr_keys_v1.txt"
+DEFAULT_DICT_URL = "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v2.0.7/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer/ppocr_keys_v1.txt"
 DEFAULT_MODE_PATH = Path(__file__).parent.parent / "models"
 
 
@@ -62,7 +63,12 @@ class TextRecognizer:
             )
             dict_path = DEFAULT_MODE_PATH / Path(dict_download_url).name
             if not Path(dict_path).exists():
-                download_file(dict_download_url, dict_path, self.logger)
+                DownloadFile.run(
+                    DownloadFileInput(
+                        file_url=dict_download_url, sha256=None, save_path=dict_path
+                    ),
+                    self.logger,
+                )
 
         return character, dict_path
 
