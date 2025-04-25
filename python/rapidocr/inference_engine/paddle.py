@@ -24,7 +24,7 @@ class PaddleInferSession(InferSession):
         self.logger = Logger(logger_name=__name__).get_log()
         self.mode = mode
 
-        model_dir = Path(config.get("model_dir", None))
+        model_dir = config.get("model_dir", None)
         if model_dir is None:
             model_info = self.get_model_url(
                 config.engine_name, config.task_type, config.lang
@@ -57,6 +57,7 @@ class PaddleInferSession(InferSession):
                 )
             )
         else:
+            model_dir = Path(model_dir)
             pdmodel_path = model_dir / "inference.pdmodel"
             pdiparams_path = model_dir / "inference.pdiparams"
 

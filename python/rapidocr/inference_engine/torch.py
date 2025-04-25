@@ -20,7 +20,7 @@ class TorchInferSession(InferSession):
     def __init__(self, config) -> None:
         self.logger = Logger(logger_name=__name__).get_log()
 
-        model_path = Path(config.get("model_path", None))
+        model_path = config.get("model_path", None)
         if model_path is None:
             model_info = self.get_model_url(
                 config.engine_name, config.task_type, config.lang
@@ -36,6 +36,7 @@ class TorchInferSession(InferSession):
                 )
             )
 
+        model_path = Path(model_path)
         self._verify_model(model_path)
 
         all_arch_config = OmegaConf.load(DEFAULT_CFG_PATH)

@@ -21,7 +21,7 @@ class OpenVINOInferSession(InferSession):
 
         core = Core()
 
-        model_path = Path(config.get("model_path", None))
+        model_path = config.get("model_path", None)
         if model_path is None:
             model_info = self.get_model_url(
                 config.engine_name, config.task_type, config.lang
@@ -35,14 +35,15 @@ class OpenVINOInferSession(InferSession):
             )
             DownloadFile.run(download_params)
 
+        model_path = Path(model_path)
         self._verify_model(model_path)
-        model_onnx = core.read_model(model_path)
 
         cpu_nums = os.cpu_count()
         infer_num_threads = config.get("inference_num_threads", -1)
         if infer_num_threads != -1 and 1 <= infer_num_threads <= cpu_nums:
             core.set_property("CPU", {"INFERENCE_NUM_THREADS": str(infer_num_threads)})
 
+        model_onnx = core.read_model(model_path)
         compile_model = core.compile_model(model=model_onnx, device_name="CPU")
         self.session = compile_model.create_infer_request()
 
