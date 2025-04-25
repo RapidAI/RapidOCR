@@ -32,7 +32,7 @@ class OrtInferSession(InferSession):
     def __init__(self, config: Dict[str, Any]):
         self.logger = Logger(logger_name=__name__).get_log()
 
-        model_path = config.get("model_path", None)
+        model_path = Path(config.get("model_path", None))
         if model_path is None:
             # 说明用户没有指定自己模型，使用默认模型
             model_info = self.get_model_url(

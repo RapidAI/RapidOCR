@@ -21,7 +21,7 @@ class OpenVINOInferSession(InferSession):
 
         core = Core()
 
-        model_path = config.get("model_path", None)
+        model_path = Path(config.get("model_path", None))
         if model_path is None:
             model_info = self.get_model_url(
                 config.engine_name, config.task_type, config.lang
