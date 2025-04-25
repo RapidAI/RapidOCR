@@ -98,7 +98,7 @@ def get_engine_name(config: DictConfig) -> str:
 
 class InferSession(abc.ABC):
     model_info = OmegaConf.load(MODEL_URL_PATH)
-    DEFAULT_MODE_PATH = cur_dir / "models"
+    DEFAULT_MODEL_PATH = cur_dir / "models"
     logger = Logger(logger_name=__name__).get_log()
 
     @abc.abstractmethod

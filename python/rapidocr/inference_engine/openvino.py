@@ -26,13 +26,14 @@ class OpenVINOInferSession(InferSession):
             model_info = self.get_model_url(
                 config.engine_name, config.task_type, config.lang
             )
-            model_path = self.DEFAULT_MODE_PATH / Path(model_info["model_dir"]).name
+            model_path = self.DEFAULT_MODEL_PATH / Path(model_info["model_dir"]).name
             download_params = DownloadFileInput(
                 file_url=model_info["model_dir"],
                 sha256=model_info["SHA256"],
                 save_path=model_path,
+                logger=self.logger,
             )
-            DownloadFile.run(download_params, self.logger)
+            DownloadFile.run(download_params)
 
         self._verify_model(model_path)
         model_onnx = core.read_model(model_path)

@@ -85,11 +85,12 @@ class VisRes:
             file_url=default_info["path"],
             sha256=default_info["SHA256"],
             save_path=DEFAULT_FONT_PATH,
+            logger=self.logger,
         )
 
         if lang_rec is None:
             # 没有指定语种，用默认字体文件
-            DownloadFile.run(default_input_params, self.logger)
+            DownloadFile.run(default_input_params)
             return str(DEFAULT_FONT_PATH)
 
         if font_path is None:
@@ -104,14 +105,17 @@ class VisRes:
                     lang_rec,
                 )
 
-                DownloadFile.run(default_input_params, self.logger)
+                DownloadFile.run(default_input_params)
                 return str(DEFAULT_FONT_PATH)
 
             save_font_path = DEFAULT_FONT_DIR / f"{Path(font_url).name}"
             input_param = DownloadFileInput(
-                file_url=font_url, sha256=font_sha256, save_path=save_font_path
+                file_url=font_url,
+                sha256=font_sha256,
+                save_path=save_font_path,
+                logger=self.logger,
             )
-            DownloadFile.run(input_param, self.logger)
+            DownloadFile.run(input_param)
             return str(save_font_path)
 
         return str(font_path)

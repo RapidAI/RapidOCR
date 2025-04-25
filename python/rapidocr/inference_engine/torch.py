@@ -26,14 +26,14 @@ class TorchInferSession(InferSession):
                 config.engine_name, config.task_type, config.lang
             )
             default_model_url = model_info["model_dir"]
-            model_path = self.DEFAULT_MODE_PATH / Path(default_model_url).name
+            model_path = self.DEFAULT_MODEL_PATH / Path(default_model_url).name
             DownloadFile.run(
                 DownloadFileInput(
                     file_url=default_model_url,
                     sha256=model_info["SHA256"],
                     save_path=model_path,
-                ),
-                self.logger,
+                    logger=self.logger,
+                )
             )
 
         self._verify_model(model_path)

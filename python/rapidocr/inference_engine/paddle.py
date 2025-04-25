@@ -33,28 +33,28 @@ class PaddleInferSession(InferSession):
             default_model_dir = model_info["model_dir"]
             pd_model_url = f"{default_model_dir}/{PDMODEL_NAME}"
             pdmodel_path = (
-                self.DEFAULT_MODE_PATH / Path(default_model_dir).name / PDMODEL_NAME
+                self.DEFAULT_MODEL_PATH / Path(default_model_dir).name / PDMODEL_NAME
             )
             DownloadFile.run(
                 DownloadFileInput(
                     file_url=pd_model_url,
                     sha256=model_info[PDMODEL_NAME],
                     save_path=pdmodel_path,
-                ),
-                self.logger,
+                    logger=self.logger,
+                )
             )
 
             pdiparams_url = f"{default_model_dir}/{PDIPARAMS_NAME}"
             pdiparams_path = (
-                self.DEFAULT_MODE_PATH / Path(default_model_dir).name / PDIPARAMS_NAME
+                self.DEFAULT_MODEL_PATH / Path(default_model_dir).name / PDIPARAMS_NAME
             )
             DownloadFile.run(
                 DownloadFileInput(
                     file_url=pdiparams_url,
                     sha256=model_info[PDIPARAMS_NAME],
                     save_path=pdiparams_path,
-                ),
-                self.logger,
+                    logger=self.logger,
+                )
             )
         else:
             pdmodel_path = model_dir / "inference.pdmodel"

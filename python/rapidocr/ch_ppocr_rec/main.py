@@ -27,7 +27,7 @@ from .utils import CTCLabelDecode, TextRecInput, TextRecOutput
 
 DEFAULT_DICT_PATH = Path(__file__).parent.parent / "models" / "ppocr_keys_v1.txt"
 DEFAULT_DICT_URL = "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v2.0.7/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer/ppocr_keys_v1.txt"
-DEFAULT_MODE_PATH = Path(__file__).parent.parent / "models"
+DEFAULT_MODEL_PATH = Path(__file__).parent.parent / "models"
 
 
 class TextRecognizer:
@@ -62,7 +62,7 @@ class TextRecognizer:
             dict_download_url = (
                 dict_download_url if dict_download_url is not None else DEFAULT_DICT_URL
             )
-            dict_path = DEFAULT_MODE_PATH / Path(dict_download_url).name
+            dict_path = DEFAULT_MODEL_PATH / Path(dict_download_url).name
             if not Path(dict_path).exists():
                 DownloadFile.run(
                     DownloadFileInput(

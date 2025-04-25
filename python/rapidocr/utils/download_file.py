@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Union
@@ -15,43 +16,75 @@ from .utils import get_file_sha256
 class DownloadFileInput:
     file_url: str
     save_path: Union[str, Path]
+    logger: logging.Logger
     sha256: Optional[str] = None
 
 
 class DownloadFile:
+    BLOCK_SIZE = 1024  # 1 KiB
+    REQUEST_TIMEOUT = 60
+
     @classmethod
-    def run(cls, input_params: DownloadFileInput, logger):
+    def run(cls, input_params: DownloadFileInput):
         save_path = Path(input_params.save_path)
-        if not save_path.parent.exists():
-            save_path.parent.mkdir(parents=True, exist_ok=True)
 
-        if save_path.exists():
-            if input_params.sha256 is not None and cls.check_file_sha256(
-                save_path, input_params.sha256
-            ):
-                logger.info("File already exists in %s", save_path)
-                return
-            logger.warning("%s is damaged and needs to be downloaded again.", save_path)
+        logger = input_params.logger
+        cls._ensure_parent_dir_exists(save_path)
+        if cls._should_skip_download(save_path, input_params.sha256, logger):
+            return
 
-        logger.info("Downloading %s to %s", input_params.file_url, save_path)
+        response = cls._make_http_request(input_params.file_url, logger)
+        cls._save_response_with_progress(response, save_path, logger)
+
+    @staticmethod
+    def _ensure_parent_dir_exists(path: Path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+    @classmethod
+    def _should_skip_download(
+        cls, path: Path, expected_sha256: Optional[str], logger: logging.Logger
+    ) -> bool:
+        if not path.exists():
+            return False
+
+        if expected_sha256 is None:
+            logger.info("File exists (no checksum verification): %s", path)
+            return True
+
+        if cls.check_file_sha256(path, expected_sha256):
+            logger.info("File exists and is valid: %s", path)
+            return True
+
+        logger.warning("File exists but is invalid, redownloading: %s", path)
+        return False
+
+    @classmethod
+    def _make_http_request(cls, url: str, logger: logging.Logger) -> requests.Response:
+        logger.info("Initiating download: %s", url)
         try:
-            response = requests.get(input_params.file_url, stream=True, timeout=60)
-        except Exception as e:
-            raise e
+            response = requests.get(url, stream=True, timeout=cls.REQUEST_TIMEOUT)
+            response.raise_for_status()  # Raises HTTPError for 4XX/5XX
+            return response
+        except requests.RequestException as e:
+            logger.error("Download failed: %s", url)
+            raise DownloadFileException(f"Failed to download {url}") from e
 
-        status_code = response.status_code
-        if status_code != 200:
-            raise DownloadFileException(
-                f"Something went wrong while downloading {input_params.file_url}"
-            )
+    @classmethod
+    def _save_response_with_progress(
+        cls, response: requests.Response, save_path: Path, logger: logging.Logger
+    ) -> None:
+        total_size = int(response.headers.get("content-length", 0))
+        logger.debug("Download size: %d bytes", total_size)
 
-        total_size_in_bytes = int(response.headers.get("content-length", 1))
-        block_size = 1024  # 1 Kibibyte
-        with tqdm(total=total_size_in_bytes, unit="iB", unit_scale=True) as pb:
-            with open(save_path, "wb") as file:
-                for data in response.iter_content(block_size):
-                    pb.update(len(data))
-                    file.write(data)
+        with (
+            tqdm(total=total_size, unit="iB", unit_scale=True) as progress_bar,
+            open(save_path, "wb") as output_file,
+        ):
+            for chunk in response.iter_content(chunk_size=cls.BLOCK_SIZE):
+                progress_bar.update(len(chunk))
+                output_file.write(chunk)
+
+        logger.info("Successfully saved to: %s", save_path)
 
     @staticmethod
     def check_file_sha256(file_path: Union[str, Path], gt_sha256: str) -> bool:
