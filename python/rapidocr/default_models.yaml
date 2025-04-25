@@ -143,7 +143,7 @@ paddle:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v2.0.7/paddle/PP-OCRv4/det/ch_PP-OCRv4_det_server_infer
         inference.pdiparams: 48cecf9e30e9261a634126bc5211a2736508ae89d2d6199ef2ede06cdebe678f
         inference.pdiparams.info: 231d32f0fc329cffcd3f756ef6ab6899663222a6b655b577400a2dd9cb8d2ac8
-        inference.pdmodel: fec18291e9994c66a8c6877c7194c094071f115f7fd9f48b4da40e966749b03agit
+        inference.pdmodel: fec18291e9994c66a8c6877c7194c094071f115f7fd9f48b4da40e966749b03a
       en_PP-OCRv3_det_infer:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v2.0.7/paddle/PP-OCRv4/det/en_PP-OCRv3_det_infer
         inference.pdiparams: 83676ec730627ab4502f401410a4b6a3ce1c0bb98fa249b71db055b6bddae051
