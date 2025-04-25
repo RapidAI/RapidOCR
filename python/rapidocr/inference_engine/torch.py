@@ -33,7 +33,7 @@ class TorchInferSession(InferSession):
             model_path = self.DEFAULT_MODE_PATH / Path(default_model_url).name
             download_file(default_model_url, model_path, self.logger)
 
-        self._verify_model(model_path)
+        model_path = self._verify_model(model_path)
 
         all_arch_config = OmegaConf.load(DEFAULT_CFG_PATH)
         file_name = model_path.stem
