@@ -6,7 +6,7 @@ import platform
 import traceback
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from onnxruntime import (
@@ -29,7 +29,7 @@ class EP(Enum):
 
 
 class OrtInferSession(InferSession):
-    def __init__(self, config: Dict[str, Any], mode: Optional[str] = None):
+    def __init__(self, config: Dict[str, Any]):
         self.logger = Logger(logger_name=__name__).get_log()
 
         model_path = config.get("model_path", None)

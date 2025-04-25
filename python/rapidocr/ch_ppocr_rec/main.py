@@ -32,8 +32,9 @@ DEFAULT_MODE_PATH = Path(__file__).parent.parent / "models"
 
 class TextRecognizer:
     def __init__(self, config: Dict[str, Any]):
-        self.session = get_engine(config.engine_name)(config, mode="rec")
+        self.session = get_engine(config.engine_name)(config)
         self.logger = Logger(logger_name=__name__).get_log()
+
         # onnx has inner character, other engine get or download character_dict_path
         character, character_dict_path = self.get_character_dict(config)
 

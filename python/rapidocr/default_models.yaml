@@ -310,7 +310,7 @@ torch:
         SHA256: 0597e97b27be9298d703267ed28227abfa6c0a60c07817575b5fa7d2124e7dbc
     cls:
       ch_ptocr_mobile_v2.0_cls_infer.pth:
-        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v2.0.7/torch/ch_ptocr_mobile_v2.0_cls_infer.pth
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v2.0.7/torch/PP-OCRv4/cls/ch_ptocr_mobile_v2.0_cls_infer.pth
         SHA256: bfe13860824b3365c0c7f7ccfcddc8ff11645c60051739ff18bc9913f60c98e1
 
 fonts:
