@@ -66,9 +66,11 @@ class TextRecognizer:
             if not Path(dict_path).exists():
                 DownloadFile.run(
                     DownloadFileInput(
-                        file_url=dict_download_url, sha256=None, save_path=dict_path
-                    ),
-                    self.logger,
+                        file_url=dict_download_url,
+                        sha256=None,
+                        save_path=dict_path,
+                        logger=self.logger,
+                    )
                 )
 
         return character, dict_path
