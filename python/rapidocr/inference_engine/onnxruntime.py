@@ -6,7 +6,7 @@ import platform
 import traceback
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from onnxruntime import (
@@ -17,7 +17,7 @@ from onnxruntime import (
     get_device,
 )
 
-from ..utils import download_file
+from ..utils import DownloadFile, DownloadFileInput
 from ..utils.logger import Logger
 from .base import InferSession
 
@@ -29,17 +29,23 @@ class EP(Enum):
 
 
 class OrtInferSession(InferSession):
-    def __init__(self, config: Dict[str, Any], mode: Optional[str] = None):
+    def __init__(self, config: Dict[str, Any]):
         self.logger = Logger(logger_name=__name__).get_log()
 
         model_path = config.get("model_path", None)
         if model_path is None:
             # 说明用户没有指定自己模型，使用默认模型
-            default_model_url = self.get_model_url(
+            model_info = self.get_model_url(
                 config.engine_name, config.task_type, config.lang
             )
-            model_path = self.DEFAULT_MODE_PATH / Path(default_model_url).name
-            download_file(default_model_url, model_path, self.logger)
+            model_path = self.DEFAULT_MODEL_PATH / Path(model_info["model_dir"]).name
+            download_params = DownloadFileInput(
+                file_url=model_info["model_dir"],
+                sha256=model_info["SHA256"],
+                save_path=model_path,
+                logger=self.logger,
+            )
+            DownloadFile.run(download_params)
 
         self._verify_model(model_path)
 
@@ -152,8 +158,10 @@ class OrtInferSession(InferSession):
             return False
 
         window_build_number_str = platform.version().split(".")[-1]
-        window_build_number = int(window_build_number_str) if window_build_number_str.isdigit() else 0
-        
+        window_build_number = (
+            int(window_build_number_str) if window_build_number_str.isdigit() else 0
+        )
+
         if window_build_number < 18362:
             self.logger.warning(
                 "DirectML is only supported in Windows 10 Build 18362 and above OS. The current Windows Build is %s. Use %s inference by default.",
