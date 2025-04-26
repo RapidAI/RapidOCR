@@ -3,6 +3,7 @@
 # @Contact: liekkaskono@163.com
 import hashlib
 import importlib
+import sys
 from pathlib import Path
 from typing import Union
 from urllib.parse import urlparse
