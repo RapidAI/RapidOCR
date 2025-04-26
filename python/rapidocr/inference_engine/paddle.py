@@ -10,7 +10,7 @@ import numpy as np
 import paddle
 from paddle import inference
 
-from ..utils import download_file
+from ..utils.download_file import DownloadFile, DownloadFileInput
 from ..utils.logger import Logger
 from .base import InferSession
 
@@ -26,24 +26,38 @@ class PaddleInferSession(InferSession):
 
         model_dir = config.get("model_dir", None)
         if model_dir is None:
-            default_model_url = self.get_model_url(
+            model_info = self.get_model_url(
                 config.engine_name, config.task_type, config.lang
             )
-            if self.mode == "rec":
-                default_model_url = default_model_url["model_dir"]
 
-            pd_model_url = f"{default_model_url}/{PDMODEL_NAME}"
+            default_model_dir = model_info["model_dir"]
+            pd_model_url = f"{default_model_dir}/{PDMODEL_NAME}"
             pdmodel_path = (
-                self.DEFAULT_MODE_PATH / Path(default_model_url).name / PDMODEL_NAME
+                self.DEFAULT_MODEL_PATH / Path(default_model_dir).name / PDMODEL_NAME
             )
-            download_file(pd_model_url, pdmodel_path, self.logger)
+            DownloadFile.run(
+                DownloadFileInput(
+                    file_url=pd_model_url,
+                    sha256=model_info[PDMODEL_NAME],
+                    save_path=pdmodel_path,
+                    logger=self.logger,
+                )
+            )
 
-            pdiparams_url = f"{default_model_url}/{PDIPARAMS_NAME}"
+            pdiparams_url = f"{default_model_dir}/{PDIPARAMS_NAME}"
             pdiparams_path = (
-                self.DEFAULT_MODE_PATH / Path(default_model_url).name / PDIPARAMS_NAME
+                self.DEFAULT_MODEL_PATH / Path(default_model_dir).name / PDIPARAMS_NAME
             )
-            download_file(pdiparams_url, pdiparams_path, self.logger)
+            DownloadFile.run(
+                DownloadFileInput(
+                    file_url=pdiparams_url,
+                    sha256=model_info[PDIPARAMS_NAME],
+                    save_path=pdiparams_path,
+                    logger=self.logger,
+                )
+            )
         else:
+            model_dir = Path(model_dir)
             pdmodel_path = model_dir / "inference.pdmodel"
             pdiparams_path = model_dir / "inference.pdiparams"
 

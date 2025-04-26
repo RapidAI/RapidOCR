@@ -2,15 +2,14 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import torch
 from omegaconf import OmegaConf
 
 from ..networks.architectures.base_model import BaseModel
+from ..utils.download_file import DownloadFile, DownloadFileInput
 from ..utils.logger import Logger
-from ..utils.utils import download_file
 from .base import InferSession
 
 root_dir = Path(__file__).resolve().parent.parent
@@ -18,21 +17,26 @@ DEFAULT_CFG_PATH = root_dir / "networks" / "arch_config.yaml"
 
 
 class TorchInferSession(InferSession):
-    def __init__(self, config, mode: Optional[str] = None) -> None:
+    def __init__(self, config) -> None:
         self.logger = Logger(logger_name=__name__).get_log()
-        self.mode = mode
 
         model_path = config.get("model_path", None)
         if model_path is None:
-            default_model_url = self.get_model_url(
+            model_info = self.get_model_url(
                 config.engine_name, config.task_type, config.lang
             )
-            if self.mode == "rec":
-                default_model_url = default_model_url["model_dir"]
+            default_model_url = model_info["model_dir"]
+            model_path = self.DEFAULT_MODEL_PATH / Path(default_model_url).name
+            DownloadFile.run(
+                DownloadFileInput(
+                    file_url=default_model_url,
+                    sha256=model_info["SHA256"],
+                    save_path=model_path,
+                    logger=self.logger,
+                )
+            )
 
-            model_path = self.DEFAULT_MODE_PATH / Path(default_model_url).name
-            download_file(default_model_url, model_path, self.logger)
-
+        model_path = Path(model_path)
         self._verify_model(model_path)
 
         all_arch_config = OmegaConf.load(DEFAULT_CFG_PATH)

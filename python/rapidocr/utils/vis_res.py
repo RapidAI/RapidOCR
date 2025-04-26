@@ -11,9 +11,9 @@ import numpy as np
 from omegaconf import OmegaConf
 from PIL import Image, ImageDraw, ImageFont
 
+from .download_file import DownloadFile, DownloadFileInput
 from .load_image import LoadImage
 from .logger import Logger
-from .utils import download_file
 
 root_dir = Path(__file__).resolve().parent.parent
 InputType = Union[str, np.ndarray, bytes, Path, Image.Image]
@@ -80,27 +80,42 @@ class VisRes:
         font_path: Optional[Union[str, Path]] = None,
         lang_rec: Optional[str] = None,
     ) -> str:
+        default_info = self.font_cfg["ch"]
+        default_input_params = DownloadFileInput(
+            file_url=default_info["path"],
+            sha256=default_info["SHA256"],
+            save_path=DEFAULT_FONT_PATH,
+            logger=self.logger,
+        )
+
         if lang_rec is None:
             # 没有指定语种，用默认字体文件
-            download_file(self.font_cfg["ch"], DEFAULT_FONT_PATH, logger=self.logger)
+            DownloadFile.run(default_input_params)
             return str(DEFAULT_FONT_PATH)
 
         if font_path is None:
             # 指定了语种，但是没有指定字体文件，根据语种选择字体文件
             lang_rec = lang_rec.rsplit("_", 1)[0]
-            font_url = self.font_cfg.get(lang_rec, None)
+            font_info = self.font_cfg.get(lang_rec, None)
+            font_url, font_sha256 = font_info["path"], font_info["SHA256"]
+
             if font_url is None:
                 self.logger.warning(
                     "Font file for %s is not found in the supported font list. Default font file will be used.",
                     lang_rec,
                 )
-                download_file(
-                    self.font_cfg["ch"], DEFAULT_FONT_PATH, logger=self.logger
-                )
+
+                DownloadFile.run(default_input_params)
                 return str(DEFAULT_FONT_PATH)
 
             save_font_path = DEFAULT_FONT_DIR / f"{Path(font_url).name}"
-            download_file(font_url, save_font_path, logger=self.logger)
+            input_param = DownloadFileInput(
+                file_url=font_url,
+                sha256=font_sha256,
+                save_path=save_font_path,
+                logger=self.logger,
+            )
+            DownloadFile.run(input_param)
             return str(save_font_path)
 
         return str(font_path)
