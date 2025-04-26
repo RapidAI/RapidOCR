@@ -2,17 +2,11 @@ name: Push rapidocr to pypi
 
 on:
   push:
-    # branches: [ main ]
-    # paths:
-    #   - 'python/rapidocr_onnxruntime/**'
-    #   - 'docs/doc_whl_rapidocr_ort.md'
-    #   - 'python/setup_onnxruntime.py'
-    #   - '.github/workflows/gen_whl_to_pypi_rapidocr_ort.yml'
     tags:
       - v*
 
 env:
-  RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v1.3.0.zip
+  RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v2.0.7.zip
 
 jobs:
   UnitTesting:
@@ -60,7 +54,7 @@ jobs:
           ZIP_NAME=${RESOURCES_URL##*/}
           DIR_NAME=${ZIP_NAME%.*}
           unzip $ZIP_NAME
-          cp $DIR_NAME/resources/models/*.onnx rapidocr/models
+          cp $DIR_NAME/resources/models/*.* rapidocr/models
 
       - name: Run setup.py
         run: |
