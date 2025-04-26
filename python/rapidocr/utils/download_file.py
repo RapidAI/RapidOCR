@@ -2,6 +2,7 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import logging
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Union
@@ -77,7 +78,12 @@ class DownloadFile:
         logger.debug("Download size: %d bytes", total_size)
 
         with (
-            tqdm(total=total_size, unit="iB", unit_scale=True) as progress_bar,
+            tqdm(
+                total=total_size,
+                unit="iB",
+                unit_scale=True,
+                disable=cls.check_is_atty(),
+            ) as progress_bar,
             open(save_path, "wb") as output_file,
         ):
             for chunk in response.iter_content(chunk_size=cls.BLOCK_SIZE):
@@ -89,6 +95,14 @@ class DownloadFile:
     @staticmethod
     def check_file_sha256(file_path: Union[str, Path], gt_sha256: str) -> bool:
         return get_file_sha256(file_path) == gt_sha256
+
+    @staticmethod
+    def check_is_atty() -> bool:
+        try:
+            is_interactive = sys.stderr.isatty()
+        except AttributeError:
+            return False
+        return is_interactive
 
 
 class DownloadFileException(Exception):
