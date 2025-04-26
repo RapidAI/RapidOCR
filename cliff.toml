@@ -29,10 +29,14 @@ body = """
     {% endfor -%}
 {% endfor %}
 
-### 👏 Contrubutors
-{% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
-  - [@{{ contributor.username }}](https://github.com/{{ contributor.username }}) made their first contribution in #{{ contributor.pr_number }}\n
+
+{% if github.contributors | length > 0 %}
+### 🎉 Contributors
+
+{% for contributor in github.contributors %}
+  - [@{{ contributor.username }}](https://github.com/{{ contributor.username }})
 {%- endfor -%}
+{% endif %}
 
 
 {% if version %}
