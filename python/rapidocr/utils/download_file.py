@@ -75,14 +75,14 @@ class DownloadFile:
         cls, response: requests.Response, save_path: Path, logger: logging.Logger
     ) -> None:
         total_size = int(response.headers.get("content-length", 0))
-        logger.debug("Download size: %d bytes", total_size)
+        logger.info("Download size: %d bytes", total_size)
 
         with (
             tqdm(
                 total=total_size,
                 unit="iB",
                 unit_scale=True,
-                disable=cls.check_is_atty(),
+                disable=not cls.check_is_atty(),
             ) as progress_bar,
             open(save_path, "wb") as output_file,
         ):
