@@ -106,9 +106,9 @@ Used by [link](https://github.com/RapidAI/RapidOCR/discussions/286)
         <img src="https://raw.githubusercontent.com/RapidAI/.github/main/assets/RapidAI_WeChatAccount.jpg" width="25%" height="25%" align="center">
     </div>
 
-- 欢迎加入我们的QQ群下载模型及测试程序。1群：~~887298230~~ 已满，2群：~~755960114~~ 已满，3群：~~450338158~~ 已满, 4群：~~419196348~~ 已满，5群：1032382811
+- 欢迎加入我们的QQ群下载模型及测试程序。1群：~~887298230~~ 已满，2群：~~755960114~~ 已满，3群：~~450338158~~ 已满, 4群：~~419196348~~ 已满，5群：~~1032382811~~ 已满，6群：910202308
     <div align="left">
-        <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/qq_group5.jpg" width="25%" height="25%" align="center">
+        <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/qq_group6.jpg" width="25%" height="25%" align="center">
     </div>
 
 ### [赞助](https://rapidai.github.io/RapidOCRDocs/sponsor)
