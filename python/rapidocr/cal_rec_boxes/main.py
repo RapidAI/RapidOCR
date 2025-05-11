@@ -105,8 +105,8 @@ class CalRecBoxes:
             else:
                 avg_char_width = (bbox_x_end - bbox_x_start) / len(rec_txt)
 
-            for center_idx in col_list:
-                center_x = (center_idx + 0.5) * cell_width
+            for col_idx in col_list:
+                center_x = (col_idx + 0.5) * cell_width
                 cell_x_start = max(int(center_x - avg_char_width / 2), 0) + bbox_x_start
                 cell_x_end = (
                     min(int(center_x + avg_char_width / 2), bbox_x_end - bbox_x_start)
@@ -120,6 +120,44 @@ class CalRecBoxes:
                 ]
                 word_box_list_.append(cell)
 
+        def cal_en_box(col_list, width_list, word_box_list_):
+            if len(col_list) == 0:
+                return
+            if len(width_list) != 0:
+                avg_char_width = np.mean(width_list)
+            else:
+                avg_char_width = (bbox_x_end - bbox_x_start) / len(rec_txt)
+
+            for i, one_col in enumerate(col_list):
+                cur_word_cell = []
+                for center_idx in one_col:
+                    center_x = (center_idx + 0.5) * cell_width
+                    cell_x_start = (
+                        max(int(center_x - avg_char_width / 2), 0) + bbox_x_start
+                    )
+                    cell_x_end = (
+                        min(
+                            int(center_x + avg_char_width / 2),
+                            bbox_x_end - bbox_x_start,
+                        )
+                        + bbox_x_start
+                    )
+                    cell = [
+                        [cell_x_start, bbox_y_start],
+                        [cell_x_end, bbox_y_start],
+                        [cell_x_end, bbox_y_end],
+                        [cell_x_start, bbox_y_end],
+                    ]
+                    cur_word_cell.append(cell)
+
+                cur_word_cell = np.array(cur_word_cell)
+                all_x, all_y = cur_word_cell[:, :, 0], cur_word_cell[:, :, 1]
+                x_min, y_min = np.min(all_x), np.min(all_y)  # 左上角
+                x_max, y_max = np.max(all_x), np.max(all_y)  # 右下角
+                word_box_list_.append(
+                    [[x_min, y_min], [x_max, y_min], [x_max, y_max], [x_min, y_max]]
+                )
+
         for word, word_col, state in zip(word_list, word_col_list, state_list):
             if state == "cn":
                 cal_char_width(cn_width_list, word_col)
@@ -127,11 +165,12 @@ class CalRecBoxes:
                 word_box_content_list += word
             else:
                 cal_char_width(en_width_list, word_col)
-                en_col_list += word_col
-                word_box_content_list += word
+                en_col_list.append(word_col)
+                # word_box_content_list += word
+                word_box_content_list.append("".join(word))
 
         cal_box(cn_col_list, cn_width_list, word_box_list)
-        cal_box(en_col_list, en_width_list, word_box_list)
+        cal_en_box(en_col_list, en_width_list, word_box_list)
         sorted_word_box_list = sorted(word_box_list, key=lambda box: box[0][0])
         return word_box_content_list, sorted_word_box_list, conf_list
 

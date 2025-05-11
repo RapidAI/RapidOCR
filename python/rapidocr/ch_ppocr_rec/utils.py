@@ -8,7 +8,7 @@ from typing import Any, List, Optional, Tuple, Union
 import numpy as np
 
 from ..utils.logger import Logger
-from ..utils.utils import save_img
+from ..utils.utils import has_chinese_char, save_img
 from ..utils.vis_res import VisRes
 
 logger = Logger(logger_name=__name__).get_log()
@@ -89,7 +89,7 @@ class CTCLabelDecode:
             return_word_box,
             wh_ratio_list,
             max_wh_ratio,
-            is_remove_duplicate=True,
+            remove_duplicate=True,
         )
         return line_results, word_results
 
@@ -141,18 +141,20 @@ class CTCLabelDecode:
         return_word_box: bool = False,
         wh_ratio_list: Tuple[float] = (1.0,),
         max_wh_ratio: float = 1.0,
-        is_remove_duplicate: bool = False,
+        remove_duplicate: bool = False,
     ) -> Tuple[List[Tuple[str, float]], List[Tuple[Any]]]:
         result_list, result_words_list = [], []
         ignored_tokens = self.get_ignored_tokens()
         batch_size = len(text_index)
         for batch_idx in range(batch_size):
-            selection = np.ones(len(text_index[batch_idx]), dtype=bool)
-            if is_remove_duplicate:
-                selection[1:] = text_index[batch_idx][1:] != text_index[batch_idx][:-1]
+            cur_txt_idx = text_index[batch_idx]
+
+            selection = np.ones(len(cur_txt_idx), dtype=bool)
+            if remove_duplicate:
+                selection[1:] = cur_txt_idx[1:] != cur_txt_idx[:-1]
 
             for ignored_token in ignored_tokens:
-                selection &= text_index[batch_idx] != ignored_token
+                selection &= cur_txt_idx != ignored_token
 
             if text_prob is not None:
                 conf_list = np.array(text_prob[batch_idx][selection]).tolist()
@@ -163,9 +165,7 @@ class CTCLabelDecode:
             if len(conf_list) == 0:
                 conf_list = [0]
 
-            char_list = [
-                self.character[text_id] for text_id in text_index[batch_idx][selection]
-            ]
+            char_list = [self.character[text_id] for text_id in cur_txt_idx[selection]]
             text = "".join(char_list)
 
             result_list.append((text, np.mean(conf_list).round(5).tolist()))
@@ -175,7 +175,7 @@ class CTCLabelDecode:
                     text, selection
                 )
 
-                word_len = len(text_index[batch_idx])
+                word_len = len(cur_txt_idx)
                 word_len *= wh_ratio_list[batch_idx] / max_wh_ratio
 
                 result_words_list.append(
@@ -201,30 +201,37 @@ class CTCLabelDecode:
                         - 'cn': continous chinese characters (e.g., 你好啊)
                         - 'en&num': continous english characters (e.g., hello), number (e.g., 123, 1.123), or mixed of them connected by '-' (e.g., VGG-16)
         """
-        state = None
         word_content = []
         word_col_content = []
         word_list = []
         word_col_list = []
         state_list = []
+
         valid_col = np.where(selection)[0]
+        if len(valid_col) <= 0:
+            return word_list, word_col_list, state_list
+
         col_width = np.zeros(valid_col.shape)
-        if len(valid_col) > 0:
-            col_width[1:] = valid_col[1:] - valid_col[:-1]
-            col_width[0] = min(
-                3 if "\u4e00" <= text[0] <= "\u9fff" else 2, int(valid_col[0])
-            )
+        col_width[1:] = valid_col[1:] - valid_col[:-1]
+        col_width[0] = min(3 if has_chinese_char(text[0]) else 2, int(valid_col[0]))
 
+        state = None
         for c_i, char in enumerate(text):
-            if "\u4e00" <= char <= "\u9fff":
-                c_state = "cn"
-            else:
-                c_state = "en&num"
+            # 处理空格情况
+            if char.isspace():
+                if word_content:  # 如果当前有积累的字符，先保存
+                    word_list.append(word_content)
+                    word_col_list.append(word_col_content)
+                    state_list.append(state)
+                    word_content = []
+                    word_col_content = []
+                continue  # 跳过空格处理
 
+            c_state = "cn" if has_chinese_char(char) else "en&num"
             if state is None:
                 state = c_state
 
-            if state != c_state or col_width[c_i] > 4:
+            if state != c_state or col_width[c_i] > 5:
                 if len(word_content) != 0:
                     word_list.append(word_content)
                     word_col_list.append(word_col_content)

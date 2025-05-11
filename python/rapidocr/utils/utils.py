@@ -3,13 +3,16 @@
 # @Contact: liekkaskono@163.com
 import hashlib
 import importlib
-import sys
 from pathlib import Path
 from typing import Union
 from urllib.parse import urlparse
 
 import cv2
 import numpy as np
+
+
+def has_chinese_char(text: str) -> bool:
+    return any("\u4e00" <= ch <= "\u9fff" for ch in text)
 
 
 def get_file_sha256(file_path: Union[str, Path], chunk_size: int = 65536) -> str:
