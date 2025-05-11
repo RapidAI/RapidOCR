@@ -2,6 +2,7 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
@@ -63,6 +64,13 @@ class TextRecOutput:
             save_img(save_path, vis_img)
             logger.info("Visualization saved as %s", save_path)
         return vis_img
+
+
+class WordType(Enum):
+    CN = "cn"
+    EN = "en"
+    NUM = "num"
+    EN_NUM = "en&num"
 
 
 class CTCLabelDecode:
@@ -217,17 +225,16 @@ class CTCLabelDecode:
 
         state = None
         for c_i, char in enumerate(text):
-            # 处理空格情况
             if char.isspace():
-                if word_content:  # 如果当前有积累的字符，先保存
+                if word_content:
                     word_list.append(word_content)
                     word_col_list.append(word_col_content)
                     state_list.append(state)
                     word_content = []
                     word_col_content = []
-                continue  # 跳过空格处理
+                continue
 
-            c_state = "cn" if has_chinese_char(char) else "en&num"
+            c_state = WordType.CN if has_chinese_char(char) else WordType.EN_NUM
             if state is None:
                 state = c_state
 

@@ -372,12 +372,23 @@ def test_input_three_ndim_one_channel(engine):
         ),
         (
             "issue_170.png",
-            ("T", "E", "S", "T"),
+            "TEST",
         ),
     ],
 )
-def test_word_ocr(engine, img_name: str, words: List[str]):
+def test_cn_word_ocr(engine, img_name: str, words: List[str]):
     img_path = tests_dir / img_name
     result = engine(img_path, return_word_box=True)
     txts, _, _ = list(zip(*result.word_results))
     assert txts == words
+
+
+@pytest.mark.parametrize(
+    "img_name,words",
+    [("issue_170.png", "TEST")],
+)
+def test_en_word_ocr(engine, img_name: str, words: List[str]):
+    img_path = tests_dir / img_name
+    result = engine(img_path, return_word_box=True)
+    txts, _, _ = list(zip(*result.word_results))
+    assert txts[0] == words
