@@ -69,6 +69,10 @@ class CalRecBoxes:
         """Calculate the detection frame for each word based on the results of recognition and detection of ocr
         汉字坐标是单字的
         英语坐标是单词级别的
+        三种情况：
+        1. 全是汉字
+        2. 全是英文
+        3. 中英混合
         """
 
         col_num, word_list, word_col_list, state_list, conf_list = rec_word_info
@@ -77,55 +81,112 @@ class CalRecBoxes:
         )
         each_col_width = (bbox_x_end - bbox_x_start) / col_num
 
-        cn_word_box_content_list, en_word_box_content_list = [], []
-        cn_width_list, cn_col_list = [], []
-        en_width_list, en_col_list = [], []
-        for i, (word, word_col, state) in enumerate(
-            zip(word_list, word_col_list, state_list)
-        ):
+        if all(v is WordType.EN_NUM for v in state_list):
+            return self.all_en_num_process(
+                word_list,
+                word_col_list,
+                each_col_width,
+                bbox_x_start,
+                bbox_y_start,
+                bbox_x_end,
+                bbox_y_end,
+                rec_txt,
+                conf_list,
+            )
+
+        if all(v is WordType.CN for v in state_list):
+            return self.all_cn_process(
+                word_list,
+                word_col_list,
+                each_col_width,
+                bbox_x_start,
+                bbox_y_start,
+                bbox_x_end,
+                bbox_y_end,
+                rec_txt,
+                conf_list,
+            )
+
+        if all(v in [WordType.CN, WordType.EN_NUM] for v in state_list):
+            return self.all_cn_process(
+                word_list,
+                word_col_list,
+                each_col_width,
+                bbox_x_start,
+                bbox_y_start,
+                bbox_x_end,
+                bbox_y_end,
+                rec_txt,
+                conf_list,
+            )
+
+    def all_cn_process(
+        self,
+        word_list,
+        word_col_list,
+        each_col_width,
+        bbox_x_start,
+        bbox_y_start,
+        bbox_x_end,
+        bbox_y_end,
+        rec_txt,
+        conf_list,
+    ):
+        cn_width_list, cn_col_list, cn_word_box_content_list = [], [], []
+        for word, word_col in zip(word_list, word_col_list):
             char_avg_width = self.calc_char_avg_width(word_col, each_col_width)
+            cn_width_list.append(char_avg_width)
+            cn_col_list.extend(word_col)
+            cn_word_box_content_list.extend(word)
 
-            if state == WordType.CN:
-                cn_width_list.append(char_avg_width)
-                cn_col_list += word_col
-                cn_word_box_content_list += word
-            else:
-                en_width_list.append(char_avg_width)
-                en_col_list.append(word_col)
-                en_word_box_content_list.append("".join(word))
+        cn_cell_avg_width = self.calc_cell_avg_width(
+            cn_width_list, bbox_x_start, bbox_x_end, len(rec_txt)
+        )
+        cn_word_box_list = self.calc_box(
+            cn_col_list,
+            cn_cell_avg_width,
+            each_col_width,
+            bbox_x_start,
+            bbox_y_start,
+            bbox_x_end,
+            bbox_y_end,
+        )
+        sorted_word_box_list = sorted(cn_word_box_list, key=lambda box: box[0][0])
+        return cn_word_box_content_list, sorted_word_box_list, conf_list
 
-        if len(cn_col_list) > 0 and len(en_col_list) <= 0:
-            cn_cell_avg_width = self.calc_cell_avg_width(
-                cn_width_list, bbox_x_start, bbox_x_end, len(rec_txt)
-            )
-            cn_word_box_list = self.calc_box(
-                cn_col_list,
-                cn_cell_avg_width,
-                each_col_width,
-                bbox_x_start,
-                bbox_y_start,
-                bbox_x_end,
-                bbox_y_end,
-            )
-            sorted_word_box_list = sorted(cn_word_box_list, key=lambda box: box[0][0])
-            return cn_word_box_content_list, sorted_word_box_list, conf_list
+    def all_en_num_process(
+        self,
+        word_list,
+        word_col_list,
+        each_col_width,
+        bbox_x_start,
+        bbox_y_start,
+        bbox_x_end,
+        bbox_y_end,
+        rec_txt,
+        conf_list,
+    ):
+        en_width_list, en_col_list, en_word_box_content_list = [], [], []
+        for word, word_col in zip(word_list, word_col_list):
+            char_avg_width = self.calc_char_avg_width(word_col, each_col_width)
+            en_width_list.append(char_avg_width)
+            en_col_list.append(word_col)
+            en_word_box_content_list.append("".join(word))
 
-        if len(cn_col_list) <= 0 and len(en_col_list) > 0:
-            en_cell_avg_width = self.calc_cell_avg_width(
-                en_width_list, bbox_x_start, bbox_x_end, len(rec_txt)
-            )
-            en_word_box_list = self.calc_en_box(
-                en_col_list,
-                en_cell_avg_width,
-                each_col_width,
-                bbox_x_start,
-                bbox_y_start,
-                bbox_x_end,
-                bbox_y_end,
-            )
-
-            sorted_word_box_list = sorted(en_word_box_list, key=lambda box: box[0][0])
-            return en_word_box_content_list, sorted_word_box_list, conf_list
+        en_cell_avg_width = self.calc_cell_avg_width(
+            en_width_list, bbox_x_start, bbox_x_end, len(rec_txt)
+        )
+        en_word_box_list = self.calc_en_box(
+            en_col_list,
+            en_cell_avg_width,
+            each_col_width,
+            bbox_x_start,
+            bbox_y_start,
+            bbox_x_end,
+            bbox_y_end,
+        )
+        sorted_word_box_list = sorted(en_word_box_list, key=lambda box: box[0][0])
+        return en_word_box_content_list, sorted_word_box_list, conf_list
 
     def calc_en_box(
         self,
@@ -181,15 +242,18 @@ class CalRecBoxes:
     @staticmethod
     def calc_char_avg_width(word_col: List[int], each_col_width: float) -> float:
         if len(word_col) == 1:
-            return each_col_width
+            return float(each_col_width)
         char_total_length = (word_col[-1] - word_col[0]) * each_col_width
         return char_total_length / (len(word_col) - 1)
 
     @staticmethod
     def calc_cell_avg_width(
-        width_list: List[float], bbox_x0: float, bbox_x1: float, txt_len: int
+        width_list: List[float],
+        bbox_x0: float,
+        bbox_x1: float,
+        txt_len: int,
     ) -> float:
-        if len(width_list) != 0:
+        if len(width_list) > 0:
             return sum(width_list) / len(width_list)
         return (bbox_x1 - bbox_x0) / txt_len
 

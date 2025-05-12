@@ -11,9 +11,7 @@ import cv2
 import numpy as np
 
 
-def quads_to_rect_bbox(
-    bbox: np.ndarray,
-) -> Tuple[float, float, float, float]:
+def quads_to_rect_bbox(bbox: np.ndarray) -> Tuple[float, float, float, float]:
     if bbox.ndim != 3:
         raise ValueError("bbox shape must be 3")
 
@@ -23,7 +21,7 @@ def quads_to_rect_bbox(
     all_x, all_y = (bbox[:, :, 0].flatten(), bbox[:, :, 1].flatten())
     x_min, y_min = np.min(all_x), np.min(all_y)
     x_max, y_max = np.max(all_x), np.max(all_y)
-    return x_min, y_min, x_max, y_max
+    return float(x_min), float(y_min), float(x_max), float(y_max)
 
 
 def has_chinese_char(text: str) -> bool:

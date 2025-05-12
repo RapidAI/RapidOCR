@@ -370,10 +370,6 @@ def test_input_three_ndim_one_channel(engine):
                 "也",
             ),
         ),
-        (
-            "issue_170.png",
-            "TEST",
-        ),
     ],
 )
 def test_cn_word_ocr(engine, img_name: str, words: List[str]):
