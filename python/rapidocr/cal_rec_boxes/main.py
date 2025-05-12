@@ -3,12 +3,12 @@
 # @Contact: liekkaskono@163.com
 import copy
 import math
-from typing import List, Tuple
+from typing import List
 
 import cv2
 import numpy as np
 
-from ..ch_ppocr_rec.utils import TextRecOutput, WordType
+from ..ch_ppocr_rec.typings import TextRecOutput, WordInfo, WordType
 from ..utils.utils import quads_to_rect_bbox
 
 
@@ -26,13 +26,13 @@ class CalRecBoxes:
         for idx, (img, box) in enumerate(zip(imgs, dt_boxes)):
             direction = self.get_box_direction(box)
 
-            rec_txt = rec_res.txts[idx]
-            rec_word_info = rec_res.word_results[idx]
+            if rec_res.txts is None:
+                continue
 
             h, w = img.shape[:2]
             img_box = np.array([[0, 0], [w, 0], [w, h], [0, h]])
             word_box_content_list, word_box_list, conf_list = self.cal_ocr_word_box(
-                rec_txt, img_box, rec_word_info
+                rec_res.txts[idx], img_box, rec_res.word_results[idx]
             )
             word_box_list = self.adjust_box_overlap(copy.deepcopy(word_box_list))
             word_box_list = self.reverse_rotate_crop_image(
@@ -62,9 +62,7 @@ class CalRecBoxes:
         self,
         rec_txt: str,
         bbox: np.ndarray,
-        rec_word_info: Tuple[
-            float, List[List[str]], List[List[int]], List[str], List[float]
-        ],
+        word_info: List[WordInfo],
     ):
         """Calculate the detection frame for each word based on the results of recognition and detection of ocr
         汉字坐标是单字的
@@ -74,50 +72,54 @@ class CalRecBoxes:
         2. 全是英文
         3. 中英混合
         """
+        word_len = word_info.word_len
+        words = word_info.words
+        word_cols = word_info.word_cols
+        word_types = word_info.word_types
+        confs = word_info.confs
 
-        col_num, word_list, word_col_list, state_list, conf_list = rec_word_info
         bbox_x_start, bbox_y_start, bbox_x_end, bbox_y_end = quads_to_rect_bbox(
             bbox[None, ...]
         )
-        each_col_width = (bbox_x_end - bbox_x_start) / col_num
+        each_col_width = (bbox_x_end - bbox_x_start) / word_len
 
-        if all(v is WordType.EN_NUM for v in state_list):
+        if all(v is WordType.EN_NUM for v in word_types):
             return self.all_en_num_process(
-                word_list,
-                word_col_list,
+                words,
+                word_cols,
                 each_col_width,
                 bbox_x_start,
                 bbox_y_start,
                 bbox_x_end,
                 bbox_y_end,
                 rec_txt,
-                conf_list,
+                confs,
             )
 
-        if all(v is WordType.CN for v in state_list):
+        if all(v is WordType.CN for v in word_types):
             return self.all_cn_process(
-                word_list,
-                word_col_list,
+                words,
+                word_cols,
                 each_col_width,
                 bbox_x_start,
                 bbox_y_start,
                 bbox_x_end,
                 bbox_y_end,
                 rec_txt,
-                conf_list,
+                confs,
             )
 
-        if all(v in [WordType.CN, WordType.EN_NUM] for v in state_list):
+        if all(v in [WordType.CN, WordType.EN_NUM] for v in word_types):
             return self.all_cn_process(
-                word_list,
-                word_col_list,
+                words,
+                word_cols,
                 each_col_width,
                 bbox_x_start,
                 bbox_y_start,
                 bbox_x_end,
                 bbox_y_end,
                 rec_txt,
-                conf_list,
+                confs,
             )
 
     def all_cn_process(
@@ -134,10 +136,14 @@ class CalRecBoxes:
     ):
         cn_width_list, cn_col_list, cn_word_box_content_list = [], [], []
         for word, word_col in zip(word_list, word_col_list):
-            char_avg_width = self.calc_char_avg_width(word_col, each_col_width)
-            cn_width_list.append(char_avg_width)
             cn_col_list.extend(word_col)
             cn_word_box_content_list.extend(word)
+
+            if len(word_col) == 1:
+                continue
+
+            char_avg_width = self.calc_char_avg_width(word_col, each_col_width)
+            cn_width_list.append(char_avg_width)
 
         cn_cell_avg_width = self.calc_cell_avg_width(
             cn_width_list, bbox_x_start, bbox_x_end, len(rec_txt)
@@ -168,10 +174,14 @@ class CalRecBoxes:
     ):
         en_width_list, en_col_list, en_word_box_content_list = [], [], []
         for word, word_col in zip(word_list, word_col_list):
-            char_avg_width = self.calc_char_avg_width(word_col, each_col_width)
-            en_width_list.append(char_avg_width)
             en_col_list.append(word_col)
             en_word_box_content_list.append("".join(word))
+
+            if len(word_col) == 1:
+                continue
+
+            char_avg_width = self.calc_char_avg_width(word_col, each_col_width)
+            en_width_list.append(char_avg_width)
 
         en_cell_avg_width = self.calc_cell_avg_width(
             en_width_list, bbox_x_start, bbox_x_end, len(rec_txt)
@@ -241,8 +251,6 @@ class CalRecBoxes:
 
     @staticmethod
     def calc_char_avg_width(word_col: List[int], each_col_width: float) -> float:
-        if len(word_col) == 1:
-            return float(each_col_width)
         char_total_length = (word_col[-1] - word_col[0]) * each_col_width
         return char_total_length / (len(word_col) - 1)
 

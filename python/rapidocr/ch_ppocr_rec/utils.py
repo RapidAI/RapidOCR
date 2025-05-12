@@ -1,76 +1,13 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 
-from ..utils.logger import Logger
-from ..utils.utils import has_chinese_char, save_img
-from ..utils.vis_res import VisRes
-
-logger = Logger(logger_name=__name__).get_log()
-
-
-@dataclass
-class TextRecConfig:
-    intra_op_num_threads: int = -1
-    inter_op_num_threads: int = -1
-    use_cuda: bool = False
-    use_dml: bool = False
-    model_path: Union[str, Path, None] = None
-
-    rec_batch_num: int = 6
-    rec_img_shape: Tuple[int, int, int] = (3, 48, 320)
-    rec_keys_path: Union[str, Path, None] = None
-
-
-@dataclass
-class TextRecInput:
-    img: Union[np.ndarray, List[np.ndarray], None] = None
-    return_word_box: bool = False
-
-
-@dataclass
-class TextRecOutput:
-    imgs: Optional[List[np.ndarray]] = None
-    txts: Optional[Tuple[str]] = None
-    scores: Tuple[float] = (1.0,)
-    word_results: Tuple[Tuple[str, float, Optional[List[List[int]]]]] = (
-        ("", 1.0, None),
-    )
-    elapse: Optional[float] = None
-    lang_rec: Optional[str] = None
-
-    def __len__(self):
-        if self.txts is None:
-            return 0
-        return len(self.txts)
-
-    def vis(self, save_path: Optional[Union[str, Path]] = None) -> Optional[np.ndarray]:
-        if self.imgs is None or self.txts is None:
-            logger.warning("No image or txts to visualize.")
-            return None
-
-        vis = VisRes()
-        vis_img = vis.draw_rec_res(
-            self.imgs, self.txts, self.scores, lang_rec=self.lang_rec
-        )
-
-        if save_path is not None:
-            save_img(save_path, vis_img)
-            logger.info("Visualization saved as %s", save_path)
-        return vis_img
-
-
-class WordType(Enum):
-    CN = "cn"
-    EN = "en"
-    NUM = "num"
-    EN_NUM = "en&num"
+from ..utils.utils import has_chinese_char
+from .typings import WordInfo, WordType
 
 
 class CTCLabelDecode:
@@ -150,19 +87,19 @@ class CTCLabelDecode:
         wh_ratio_list: Tuple[float] = (1.0,),
         max_wh_ratio: float = 1.0,
         remove_duplicate: bool = False,
-    ) -> Tuple[List[Tuple[str, float]], List[Tuple[Any]]]:
+    ) -> Tuple[List[Tuple[str, float]], List[WordInfo]]:
         result_list, result_words_list = [], []
         ignored_tokens = self.get_ignored_tokens()
         batch_size = len(text_index)
         for batch_idx in range(batch_size):
-            cur_txt_idx = text_index[batch_idx]
+            token_indices = text_index[batch_idx]
 
-            selection = np.ones(len(cur_txt_idx), dtype=bool)
+            selection = np.ones(len(token_indices), dtype=bool)
             if remove_duplicate:
-                selection[1:] = cur_txt_idx[1:] != cur_txt_idx[:-1]
+                selection[1:] = token_indices[1:] != token_indices[:-1]
 
             for ignored_token in ignored_tokens:
-                selection &= cur_txt_idx != ignored_token
+                selection &= token_indices != ignored_token
 
             if text_prob is not None:
                 conf_list = np.array(text_prob[batch_idx][selection]).tolist()
@@ -173,51 +110,38 @@ class CTCLabelDecode:
             if len(conf_list) == 0:
                 conf_list = [0]
 
-            char_list = [self.character[text_id] for text_id in cur_txt_idx[selection]]
+            char_list = [
+                self.character[text_id] for text_id in token_indices[selection]
+            ]
             text = "".join(char_list)
 
             result_list.append((text, np.mean(conf_list).round(5).tolist()))
 
             if return_word_box:
-                word_list, word_col_list, state_list = self.get_word_info(
-                    text, selection
+                rec_word_info = self.get_word_info(text, selection)
+                rec_word_info.word_len = (
+                    len(token_indices) * wh_ratio_list[batch_idx] / max_wh_ratio
                 )
-
-                word_len = len(cur_txt_idx)
-                word_len *= wh_ratio_list[batch_idx] / max_wh_ratio
-
-                result_words_list.append(
-                    (word_len, word_list, word_col_list, state_list, conf_list)
-                )
+                rec_word_info.confs = conf_list
+                result_words_list.append(rec_word_info)
         return result_list, result_words_list
 
     @staticmethod
-    def get_word_info(
-        text: str, selection: np.ndarray
-    ) -> Tuple[List[List[str]], List[List[int]], List[str]]:
+    def get_word_info(text: str, selection: np.ndarray) -> WordInfo:
         """
         Group the decoded characters and record the corresponding decoded positions.
         from https://github.com/PaddlePaddle/PaddleOCR/blob/fbba2178d7093f1dffca65a5b963ec277f1a6125/ppocr/postprocess/rec_postprocess.py#L70
-
-        Args:
-            text: the decoded text
-            selection: the bool array that identifies which columns of features are decoded as non-separated characters
-        Returns:
-            word_list: list of the grouped words
-            word_col_list: list of decoding positions corresponding to each character in the grouped word
-            state_list: list of marker to identify the type of grouping words, including two types of grouping words:
-                        - 'cn': continous chinese characters (e.g., 你好啊)
-                        - 'en&num': continous english characters (e.g., hello), number (e.g., 123, 1.123), or mixed of them connected by '-' (e.g., VGG-16)
         """
-        word_content = []
-        word_col_content = []
         word_list = []
         word_col_list = []
         state_list = []
 
+        word_content = []
+        word_col_content = []
+
         valid_col = np.where(selection)[0]
         if len(valid_col) <= 0:
-            return word_list, word_col_list, state_list
+            return WordInfo()
 
         col_width = np.zeros(valid_col.shape)
         col_width[1:] = valid_col[1:] - valid_col[:-1]
@@ -255,7 +179,7 @@ class CTCLabelDecode:
             word_col_list.append(word_col_content)
             state_list.append(state)
 
-        return word_list, word_col_list, state_list
+        return WordInfo(words=word_list, word_cols=word_col_list, word_types=state_list)
 
     @staticmethod
     def get_ignored_tokens() -> List[int]:
