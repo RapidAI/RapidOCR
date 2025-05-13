@@ -78,5 +78,5 @@ class WordInfo:
     words: List[List[str]] = field(default_factory=list)
     word_cols: List[List[int]] = field(default_factory=list)
     word_types: List[WordType] = field(default_factory=list)
-    word_len: Optional[float] = None
+    line_txt_len: Optional[float] = None
     confs: List[float] = field(default_factory=list)

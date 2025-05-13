@@ -119,7 +119,7 @@ class CTCLabelDecode:
 
             if return_word_box:
                 rec_word_info = self.get_word_info(text, selection)
-                rec_word_info.word_len = (
+                rec_word_info.line_txt_len = (
                     len(token_indices) * wh_ratio_list[batch_idx] / max_wh_ratio
                 )
                 rec_word_info.confs = conf_list

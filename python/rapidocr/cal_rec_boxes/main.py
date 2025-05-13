@@ -3,7 +3,7 @@
 # @Contact: liekkaskono@163.com
 import copy
 import math
-from typing import List
+from typing import List, Tuple
 
 import cv2
 import numpy as np
@@ -15,9 +15,6 @@ from ..utils.utils import quads_to_rect_bbox
 class CalRecBoxes:
     """计算识别文字的汉字单字和英文单词的坐标框。
     代码借鉴自PaddlePaddle/PaddleOCR和fanqie03/char-detection"""
-
-    def __init__(self):
-        pass
 
     def __call__(
         self, imgs: List[np.ndarray], dt_boxes: List[np.ndarray], rec_res: TextRecOutput
@@ -72,152 +69,57 @@ class CalRecBoxes:
         2. 全是英文
         3. 中英混合
         """
-        word_len = word_info.word_len
+        line_txt_len = word_info.line_txt_len
         words = word_info.words
         word_cols = word_info.word_cols
         word_types = word_info.word_types
         confs = word_info.confs
 
-        bbox_x_start, bbox_y_start, bbox_x_end, bbox_y_end = quads_to_rect_bbox(
-            bbox[None, ...]
-        )
-        each_col_width = (bbox_x_end - bbox_x_start) / word_len
+        bbox_points = quads_to_rect_bbox(bbox[None, ...])
+        avg_col_width = (bbox_points[2] - bbox_points[0]) / line_txt_len
 
-        if all(v is WordType.EN_NUM for v in word_types):
-            return self.all_en_num_process(
-                words,
-                word_cols,
-                each_col_width,
-                bbox_x_start,
-                bbox_y_start,
-                bbox_x_end,
-                bbox_y_end,
-                rec_txt,
-                confs,
-            )
+        is_all_en_num = all(v is WordType.EN_NUM for v in word_types)
 
-        if all(v is WordType.CN for v in word_types):
-            return self.all_cn_process(
-                words,
-                word_cols,
-                each_col_width,
-                bbox_x_start,
-                bbox_y_start,
-                bbox_x_end,
-                bbox_y_end,
-                rec_txt,
-                confs,
-            )
-
-        if all(v in [WordType.CN, WordType.EN_NUM] for v in word_types):
-            return self.all_cn_process(
-                words,
-                word_cols,
-                each_col_width,
-                bbox_x_start,
-                bbox_y_start,
-                bbox_x_end,
-                bbox_y_end,
-                rec_txt,
-                confs,
-            )
-
-    def all_cn_process(
-        self,
-        word_list,
-        word_col_list,
-        each_col_width,
-        bbox_x_start,
-        bbox_y_start,
-        bbox_x_end,
-        bbox_y_end,
-        rec_txt,
-        conf_list,
-    ):
-        cn_width_list, cn_col_list, cn_word_box_content_list = [], [], []
-        for word, word_col in zip(word_list, word_col_list):
-            cn_col_list.extend(word_col)
-            cn_word_box_content_list.extend(word)
+        line_cols, char_widths, word_contents = [], [], []
+        for word, word_col in zip(words, word_cols):
+            if is_all_en_num:
+                line_cols.append(word_col)
+                word_contents.append("".join(word))
+            else:
+                line_cols.extend(word_col)
+                word_contents.extend(word)
 
             if len(word_col) == 1:
                 continue
 
-            char_avg_width = self.calc_char_avg_width(word_col, each_col_width)
-            cn_width_list.append(char_avg_width)
+            avg_width = self.calc_avg_char_width(word_col, avg_col_width)
+            char_widths.append(avg_width)
 
-        cn_cell_avg_width = self.calc_cell_avg_width(
-            cn_width_list, bbox_x_start, bbox_x_end, len(rec_txt)
+        avg_char_width = self.calc_all_char_avg_width(
+            char_widths, bbox_points[0], bbox_points[2], len(rec_txt)
         )
-        cn_word_box_list = self.calc_box(
-            cn_col_list,
-            cn_cell_avg_width,
-            each_col_width,
-            bbox_x_start,
-            bbox_y_start,
-            bbox_x_end,
-            bbox_y_end,
-        )
-        sorted_word_box_list = sorted(cn_word_box_list, key=lambda box: box[0][0])
-        return cn_word_box_content_list, sorted_word_box_list, conf_list
 
-    def all_en_num_process(
-        self,
-        word_list,
-        word_col_list,
-        each_col_width,
-        bbox_x_start,
-        bbox_y_start,
-        bbox_x_end,
-        bbox_y_end,
-        rec_txt,
-        conf_list,
-    ):
-        en_width_list, en_col_list, en_word_box_content_list = [], [], []
-        for word, word_col in zip(word_list, word_col_list):
-            en_col_list.append(word_col)
-            en_word_box_content_list.append("".join(word))
-
-            if len(word_col) == 1:
-                continue
-
-            char_avg_width = self.calc_char_avg_width(word_col, each_col_width)
-            en_width_list.append(char_avg_width)
-
-        en_cell_avg_width = self.calc_cell_avg_width(
-            en_width_list, bbox_x_start, bbox_x_end, len(rec_txt)
-        )
-        en_word_box_list = self.calc_en_box(
-            en_col_list,
-            en_cell_avg_width,
-            each_col_width,
-            bbox_x_start,
-            bbox_y_start,
-            bbox_x_end,
-            bbox_y_end,
-        )
-        sorted_word_box_list = sorted(en_word_box_list, key=lambda box: box[0][0])
-        return en_word_box_content_list, sorted_word_box_list, conf_list
+        if is_all_en_num:
+            word_boxes = self.calc_en_box(
+                line_cols, avg_char_width, avg_col_width, bbox_points
+            )
+        else:
+            word_boxes = self.calc_box(
+                line_cols, avg_char_width, avg_col_width, bbox_points
+            )
+        return word_contents, word_boxes, confs
 
     def calc_en_box(
         self,
-        col_list,
-        cell_avg_width: float,
-        each_col_width: float,
-        bbox_x0: float,
-        bbox_y0: float,
-        bbox_x1: float,
-        bbox_y1: float,
+        col_list: List[List[int]],
+        avg_char_width: float,
+        avg_col_width: float,
+        bbox_points: Tuple[float, float, float, float],
     ):
         results = []
         for one_col in col_list:
             cur_word_cell = self.calc_box(
-                one_col,
-                cell_avg_width,
-                each_col_width,
-                bbox_x0,
-                bbox_y0,
-                bbox_x1,
-                bbox_y1,
+                one_col, avg_char_width, avg_col_width, bbox_points
             )
             x0, y0, x1, y1 = quads_to_rect_bbox(np.array(cur_word_cell))
             results.append([[x0, y0], [x1, y0], [x1, y1], [x0, y1]])
@@ -225,41 +127,38 @@ class CalRecBoxes:
 
     @staticmethod
     def calc_box(
-        col_list,
-        cell_avg_width: float,
-        each_col_width: float,
-        bbox_x0: float,
-        bbox_y0: float,
-        bbox_x1: float,
-        bbox_y1: float,
+        col_list: List[int],
+        avg_char_width: float,
+        avg_col_width: float,
+        bbox_points: Tuple[float, float, float, float],
     ) -> List[List[float]]:
+        x0, y0, x1, y1 = bbox_points
+
         results = []
         for col_idx in col_list:
-            center_x = (col_idx + 0.5) * each_col_width
-            cell_x_start = max(int(center_x - cell_avg_width / 2), 0) + bbox_x0
-            cell_x_end = (
-                min(int(center_x + cell_avg_width / 2), bbox_x1 - bbox_x0) + bbox_x0
-            )
+            # 将中心点定位在列的中间位置
+            center_x = (col_idx + 0.5) * avg_col_width
+
+            # 计算字符单元格的左右边界
+            char_x0 = max(int(center_x - avg_char_width / 2), 0) + x0
+            char_x1 = min(int(center_x + avg_char_width / 2), x1 - x0) + x0
             cell = [
-                [cell_x_start, bbox_y0],
-                [cell_x_end, bbox_y0],
-                [cell_x_end, bbox_y1],
-                [cell_x_start, bbox_y1],
+                [char_x0, y0],
+                [char_x1, y0],
+                [char_x1, y1],
+                [char_x0, y1],
             ]
             results.append(cell)
-        return results
+        return sorted(results, key=lambda x: x[0][0])
 
     @staticmethod
-    def calc_char_avg_width(word_col: List[int], each_col_width: float) -> float:
+    def calc_avg_char_width(word_col: List[int], each_col_width: float) -> float:
         char_total_length = (word_col[-1] - word_col[0]) * each_col_width
         return char_total_length / (len(word_col) - 1)
 
     @staticmethod
-    def calc_cell_avg_width(
-        width_list: List[float],
-        bbox_x0: float,
-        bbox_x1: float,
-        txt_len: int,
+    def calc_all_char_avg_width(
+        width_list: List[float], bbox_x0: float, bbox_x1: float, txt_len: int
     ) -> float:
         if len(width_list) > 0:
             return sum(width_list) / len(width_list)
