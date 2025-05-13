@@ -254,18 +254,18 @@ class CalRecBoxes:
         return [sRotatex, sRotatey]
 
     @staticmethod
-    def order_points(box: List[List[int]]) -> List[List[int]]:
+    def order_points(ori_box: List[List[int]]) -> List[List[int]]:
         """矩形框顺序排列"""
 
         def convert_to_1x2(p):
             if p.shape == (2,):
                 return p.reshape((1, 2))
-            elif p.shape == (1, 2):
-                return p
-            else:
-                return p[:1, :]
 
-        box = np.array(box).reshape((-1, 2))
+            if p.shape == (1, 2):
+                return p
+            return p[:1, :]
+
+        box = np.array(ori_box).reshape((-1, 2))
         center_x, center_y = np.mean(box[:, 0]), np.mean(box[:, 1])
         if np.any(box[:, 0] == center_x) and np.any(
             box[:, 1] == center_y
