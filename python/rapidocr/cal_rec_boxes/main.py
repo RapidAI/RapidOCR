@@ -3,6 +3,7 @@
 # @Contact: liekkaskono@163.com
 import copy
 import math
+from enum import Enum
 from typing import List, Tuple
 
 import cv2
@@ -10,6 +11,11 @@ import numpy as np
 
 from ..ch_ppocr_rec.typings import TextRecOutput, WordInfo, WordType
 from ..utils.utils import quads_to_rect_bbox
+
+
+class Direction(Enum):
+    HORIZONTAL = "horizontal_direct"  # 水平
+    VERTICAL = "vertical_direct"  # 垂直
 
 
 class CalRecBoxes:
@@ -21,8 +27,6 @@ class CalRecBoxes:
     ) -> TextRecOutput:
         word_results = []
         for idx, (img, box) in enumerate(zip(imgs, dt_boxes)):
-            direction = self.get_box_direction(box)
-
             if rec_res.txts is None:
                 continue
 
@@ -32,6 +36,7 @@ class CalRecBoxes:
                 rec_res.txts[idx], img_box, rec_res.word_results[idx]
             )
             word_box_list = self.adjust_box_overlap(copy.deepcopy(word_box_list))
+            direction = self.get_box_direction(box)
             word_box_list = self.reverse_rotate_crop_image(
                 copy.deepcopy(box), word_box_list, direction
             )
@@ -43,24 +48,27 @@ class CalRecBoxes:
         return rec_res
 
     @staticmethod
-    def get_box_direction(box: np.ndarray) -> str:
-        direction = "w"
-        img_crop_width = int(
-            max(np.linalg.norm(box[0] - box[1]), np.linalg.norm(box[2] - box[3]))
-        )
-        img_crop_height = int(
-            max(np.linalg.norm(box[0] - box[3]), np.linalg.norm(box[1] - box[2]))
-        )
-        if img_crop_height * 1.0 / img_crop_width >= 1.5:
-            direction = "h"
-        return direction
+    def get_box_direction(box: np.ndarray) -> Direction:
+        edge_lengths = [
+            float(np.linalg.norm(box[0] - box[1])),  # 上边
+            float(np.linalg.norm(box[1] - box[2])),  # 右边
+            float(np.linalg.norm(box[2] - box[3])),  # 下边
+            float(np.linalg.norm(box[3] - box[0])),  # 左边
+        ]
+
+        # 宽和高取对边的最大距离
+        width = max(edge_lengths[0], edge_lengths[2])
+        height = max(edge_lengths[1], edge_lengths[3])
+
+        if width < 1e-6:
+            return Direction.VERTICAL
+
+        aspect_ratio = round(height / width, 2)
+        return Direction.VERTICAL if aspect_ratio >= 1.5 else Direction.HORIZONTAL
 
     def cal_ocr_word_box(
-        self,
-        rec_txt: str,
-        bbox: np.ndarray,
-        word_info: List[WordInfo],
-    ):
+        self, rec_txt: str, bbox: np.ndarray, word_info: WordInfo
+    ) -> Tuple[List[str], List[List[List[float]]], List[float]]:
         """Calculate the detection frame for each word based on the results of recognition and detection of ocr
         汉字坐标是单字的
         英语坐标是单词级别的
@@ -69,19 +77,13 @@ class CalRecBoxes:
         2. 全是英文
         3. 中英混合
         """
-        line_txt_len = word_info.line_txt_len
-        words = word_info.words
-        word_cols = word_info.word_cols
-        word_types = word_info.word_types
-        confs = word_info.confs
-
         bbox_points = quads_to_rect_bbox(bbox[None, ...])
-        avg_col_width = (bbox_points[2] - bbox_points[0]) / line_txt_len
+        avg_col_width = (bbox_points[2] - bbox_points[0]) / word_info.line_txt_len
 
-        is_all_en_num = all(v is WordType.EN_NUM for v in word_types)
+        is_all_en_num = all(v is WordType.EN_NUM for v in word_info.word_types)
 
         line_cols, char_widths, word_contents = [], [], []
-        for word, word_col in zip(words, word_cols):
+        for word, word_col in zip(word_info.words, word_info.word_cols):
             if is_all_en_num:
                 line_cols.append(word_col)
                 word_contents.append("".join(word))
@@ -100,24 +102,24 @@ class CalRecBoxes:
         )
 
         if is_all_en_num:
-            word_boxes = self.calc_en_box(
+            word_boxes = self.calc_en_num_box(
                 line_cols, avg_char_width, avg_col_width, bbox_points
             )
         else:
             word_boxes = self.calc_box(
                 line_cols, avg_char_width, avg_col_width, bbox_points
             )
-        return word_contents, word_boxes, confs
+        return word_contents, word_boxes, word_info.confs
 
-    def calc_en_box(
+    def calc_en_num_box(
         self,
-        col_list: List[List[int]],
+        line_cols: List[List[int]],
         avg_char_width: float,
         avg_col_width: float,
         bbox_points: Tuple[float, float, float, float],
-    ):
+    ) -> List[List[List[float]]]:
         results = []
-        for one_col in col_list:
+        for one_col in line_cols:
             cur_word_cell = self.calc_box(
                 one_col, avg_char_width, avg_col_width, bbox_points
             )
@@ -127,15 +129,15 @@ class CalRecBoxes:
 
     @staticmethod
     def calc_box(
-        col_list: List[int],
+        line_cols: List[int],
         avg_char_width: float,
         avg_col_width: float,
         bbox_points: Tuple[float, float, float, float],
-    ) -> List[List[float]]:
+    ) -> List[List[List[float]]]:
         x0, y0, x1, y1 = bbox_points
 
         results = []
-        for col_idx in col_list:
+        for col_idx in line_cols:
             # 将中心点定位在列的中间位置
             center_x = (col_idx + 0.5) * avg_col_width
 
@@ -166,8 +168,8 @@ class CalRecBoxes:
 
     @staticmethod
     def adjust_box_overlap(
-        word_box_list: List[List[List[int]]],
-    ) -> List[List[List[int]]]:
+        word_box_list: List[List[List[float]]],
+    ) -> List[List[List[float]]]:
         # 调整bbox有重叠的地方
         for i in range(len(word_box_list) - 1):
             cur, nxt = word_box_list[i], word_box_list[i + 1]
@@ -182,8 +184,8 @@ class CalRecBoxes:
     def reverse_rotate_crop_image(
         self,
         bbox_points: np.ndarray,
-        word_points_list: List[List[List[int]]],
-        direction: str = "w",
+        word_points_list: List[List[List[float]]],
+        direction: Direction,
     ) -> List[List[List[int]]]:
         """
         get_rotate_crop_image的逆操作
@@ -192,8 +194,6 @@ class CalRecBoxes:
         bbox_points为part_img中对应在原图的bbox, 四个点，左上，右上，右下，左下
         part_points为在part_img中的点[(x, y), (x, y)]
         """
-        bbox_points = np.float32(bbox_points)
-
         left = int(np.min(bbox_points[:, 0]))
         top = int(np.min(bbox_points[:, 1]))
         bbox_points[:, 0] = bbox_points[:, 0] - left
@@ -218,13 +218,13 @@ class CalRecBoxes:
             new_word_points = []
             for point in word_points:
                 new_point = point
-                if direction == "h":
+                if direction == Direction.VERTICAL:
                     new_point = self.s_rotate(
                         math.radians(-90), new_point[0], new_point[1], 0, 0
                     )
                     new_point[0] = new_point[0] + img_crop_width
 
-                p = np.float32(new_point + [1])
+                p = np.array(new_point + [1])
                 x, y, z = np.dot(IM, p)
                 new_point = [x / z, y / z]
 
