@@ -23,7 +23,8 @@ from rapidocr.inference_engine.base import get_engine
 
 from ..utils import Logger
 from ..utils.download_file import DownloadFile, DownloadFileInput
-from .utils import CTCLabelDecode, TextRecInput, TextRecOutput
+from .utils import CTCLabelDecode
+from .typings import TextRecInput, TextRecOutput
 
 DEFAULT_DICT_PATH = Path(__file__).parent.parent / "models" / "ppocr_keys_v1.txt"
 DEFAULT_DICT_URL = "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v2.0.7/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer/ppocr_keys_v1.txt"

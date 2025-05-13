@@ -19,7 +19,7 @@ MODEL_URL_PATH = cur_dir / "default_models.yaml"
 logger = Logger(logger_name=__name__).get_log()
 
 
-class Engine(Enum):
+class EngineType(Enum):
     ONNXRUNTIME = "onnxruntime"
     OPENVINO = "openvino"
     PADDLE = "paddle"
@@ -28,8 +28,8 @@ class Engine(Enum):
 
 def get_installed_engine() -> List[str]:
     installed_engine = []
-    for v in Engine.__members__:
-        engine_name = Engine[v].value
+    for v in EngineType:
+        engine_name = v.value
         if import_package(engine_name) is None:
             continue
 
@@ -40,7 +40,8 @@ def get_installed_engine() -> List[str]:
 def get_engine(engine_name: str):
     logger.info("Using engine_name: %s", engine_name)
 
-    if engine_name == Engine.ONNXRUNTIME.value:
+    engine_type = EngineType(engine_name)
+    if engine_type == EngineType.ONNXRUNTIME:
         if not import_package("onnxruntime"):
             raise ImportError("onnxruntime is not installed.")
 
@@ -48,7 +49,7 @@ def get_engine(engine_name: str):
 
         return OrtInferSession
 
-    if engine_name == Engine.OPENVINO.value:
+    if engine_type == EngineType.OPENVINO:
         if not import_package("openvino"):
             raise ImportError("openvino is not installed")
 
@@ -56,7 +57,7 @@ def get_engine(engine_name: str):
 
         return OpenVINOInferSession
 
-    if engine_name == Engine.PADDLE.value:
+    if engine_type == EngineType.PADDLE:
         if not import_package("paddle"):
             raise ImportError("paddleopaddle is not installed")
 
@@ -64,7 +65,7 @@ def get_engine(engine_name: str):
 
         return PaddleInferSession
 
-    if engine_name == Engine.TORCH.value:
+    if engine_type == EngineType.TORCH:
         if not import_package("torch"):
             raise ImportError("torch is not installed")
 
@@ -82,18 +83,18 @@ def get_engine_name(config: DictConfig) -> str:
     with_torch = config.Global.with_torch
 
     if with_onnx:
-        return Engine.ONNXRUNTIME.value
+        return EngineType.ONNXRUNTIME.value
 
     if with_openvino:
-        return Engine.OPENVINO.value
+        return EngineType.OPENVINO.value
 
     if with_paddle:
-        return Engine.PADDLE.value
+        return EngineType.PADDLE.value
 
     if with_torch:
-        return Engine.TORCH.value
+        return EngineType.TORCH.value
 
-    return Engine.ONNXRUNTIME.value
+    return EngineType.ONNXRUNTIME.value
 
 
 class InferSession(abc.ABC):
