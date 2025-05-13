@@ -383,7 +383,7 @@ def test_cn_word_ocr(engine, img_name: str, words: List[str]):
     "img_name,words",
     [("issue_170.png", "TEST")],
 )
-def test_en_word_ocr(engine, img_name: str, words: List[str]):
+def test_en_word_ocr(engine, img_name: str, words: str):
     img_path = tests_dir / img_name
     result = engine(img_path, return_word_box=True)
     txts, _, _ = list(zip(*result.word_results))
