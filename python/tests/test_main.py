@@ -37,6 +37,16 @@ def get_engine(params: Optional[Dict[str, Any]] = None):
     return engine
 
 
+def test_ch_doc_server():
+    img_path = tests_dir / "ch_doc_server.png"
+    engine = RapidOCR(params={"Global.lang_rec": "ch_doc_server"})
+    result = engine(img_path)
+    import pdb
+
+    pdb.set_trace()
+    assert result.txts[0] == "嫖娼"
+
+
 def test_vis_only_det(engine):
     img_path = tests_dir / "ch_en_num.jpg"
     result = engine(img_path, use_det=True, use_cls=False, use_rec=False)

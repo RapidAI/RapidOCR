@@ -17,6 +17,7 @@ class ParseLang:
         self.lang_det_list = ["ch", "en", "multi"]
         self.lang_rec_list = [
             "ch",
+            "ch_doc",
             "en",
             "arabic",
             "chinese_cht",
