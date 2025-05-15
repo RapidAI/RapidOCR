@@ -6,8 +6,13 @@
 # @Contact: liekkaskono@163.com
 from rapidocr import RapidOCR
 
+model_dir = "/Users/joshuawang/projects/_self/tmp/RapidOCR/paddle/PP-OCRv4/rec/ch_doc_PP-OCRv4_rec_server_infer"
 engine = RapidOCR(
-    params={"Global.lang_rec": "ch_doc_server", "Global.with_paddle": True}
+    params={
+        "Global.lang_rec": "ch_doc_server",
+        "Global.with_paddle": True,
+        "Rec.model_dir": model_dir,
+    }
 )
 
 # img_url = "https://img1.baidu.com/it/u=3619974146,1266987475&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=516"

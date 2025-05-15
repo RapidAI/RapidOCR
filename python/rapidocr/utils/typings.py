@@ -2,6 +2,7 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
@@ -90,3 +91,13 @@ class RapidOCROutput:
             save_img(save_path, vis_img)
             logger.info("Single word visualization saved as %s", save_path)
         return vis_img
+
+
+class DeviceType(Enum):
+    CPU = "cpu"
+    GPU = "gpu"
+    NPU = "npu"
+    XPU = "xpu"
+    MLU = "mlu"
+    GCU = "gcu"
+    DCU = "dcu"
