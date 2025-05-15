@@ -14,9 +14,6 @@ from ..utils.download_file import DownloadFile, DownloadFileInput
 from ..utils.logger import Logger
 from .base import InferSession
 
-PDMODEL_NAME = "inference.pdmodel"
-PDIPARAMS_NAME = "inference.pdiparams"
-
 
 class PaddleInferSession(InferSession):
     def __init__(self, config, mode: Optional[str] = None) -> None:
@@ -32,6 +29,8 @@ class PaddleInferSession(InferSession):
 
     def _setup_model(self, config) -> Tuple[Path, Path]:
         model_dir = config.get("model_dir", None)
+        pdmodel_name = "inference.pdmodel"
+        pdiparams_name = "inference.pdiparams"
         if model_dir is None:
             model_info = self.get_model_url(
                 config.engine_name, config.task_type, config.lang
@@ -39,16 +38,16 @@ class PaddleInferSession(InferSession):
 
             default_model_dir = Path(model_info["model_dir"])
             pdmodel_path = self.download_model(
-                model_info, default_model_dir, PDMODEL_NAME
+                model_info, default_model_dir, pdmodel_name
             )
             pdiparams_path = self.download_model(
-                model_info, default_model_dir, PDIPARAMS_NAME
+                model_info, default_model_dir, pdiparams_name
             )
             return pdmodel_path, pdiparams_path
 
         model_dir = Path(model_dir)
-        pdmodel_path = model_dir / PDMODEL_NAME
-        pdiparams_path = model_dir / PDIPARAMS_NAME
+        pdmodel_path = model_dir / pdmodel_name
+        pdiparams_path = model_dir / pdiparams_name
 
         self._verify_model(pdmodel_path)
         self._verify_model(pdiparams_path)
@@ -56,23 +55,32 @@ class PaddleInferSession(InferSession):
 
     def _setup_model_v2(self, config) -> Tuple[Path, Path]:
         model_dir = config.get("model_dir", None)
+        pdmodel_name = "inference.json"
+        pdiparams_name = "inference.pdiparams"
         if model_dir is None:
             model_info = self.get_model_url(
                 config.engine_name, config.task_type, config.lang
             )
 
             default_model_dir = Path(model_info["model_dir"])
-            pdmodel_path = self.download_model(
-                model_info, default_model_dir, PDMODEL_NAME
-            )
+            try:
+                pdmodel_path = self.download_model(
+                    model_info, default_model_dir, pdmodel_name
+                )
+            except Exception as e:
+                pdmodel_name = "inference.pdmodel"
+                pdmodel_path = self.download_model(
+                    model_info, default_model_dir, pdmodel_name
+                )
+
             pdiparams_path = self.download_model(
-                model_info, default_model_dir, PDIPARAMS_NAME
+                model_info, default_model_dir, pdiparams_name
             )
             return pdmodel_path, pdiparams_path
 
         model_dir = Path(model_dir)
-        pdmodel_path = model_dir / PDMODEL_NAME
-        pdiparams_path = model_dir / PDIPARAMS_NAME
+        pdmodel_path = model_dir / pdmodel_name
+        pdiparams_path = model_dir / pdiparams_name
         self._verify_model(pdmodel_path)
         self._verify_model(pdiparams_path)
         return pdmodel_path, pdiparams_path
