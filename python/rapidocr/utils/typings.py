@@ -93,11 +93,23 @@ class RapidOCROutput:
         return vis_img
 
 
-class DeviceType(Enum):
-    CPU = "cpu"
-    GPU = "gpu"
-    NPU = "npu"
-    XPU = "xpu"
-    MLU = "mlu"
-    GCU = "gcu"
-    DCU = "dcu"
+class LangDet(Enum):
+    CH = "ch"
+    EN = "en"
+    MULTI = "multi"
+
+
+class LangRec(Enum):
+    CH = "ch"
+    CH_DOC = "ch_doc"
+    EN = "en"
+    ARABIC = "arabic"
+    CHINESE_CHT = "chinese_cht"
+    CYRILLIC = "cyrillic"
+    DEVANAGARI = "devanagari"
+    JAPAN = "japan"
+    KOREAN = "korean"
+    KA = "ka"
+    LATIN = "latin"
+    TA = "ta"
+    TE = "te"

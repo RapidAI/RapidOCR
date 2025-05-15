@@ -41,9 +41,6 @@ def test_ch_doc_server():
     img_path = tests_dir / "ch_doc_server.png"
     engine = RapidOCR(params={"Global.lang_rec": "ch_doc_server"})
     result = engine(img_path)
-    import pdb
-
-    pdb.set_trace()
     assert result.txts[0] == "嫖娼"
 
 

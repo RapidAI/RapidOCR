@@ -23,19 +23,11 @@ class PaddleInferSession(InferSession):
         self.logger = Logger(logger_name=__name__).get_log()
         self.mode = mode
 
-        pdmodel_path, pdiparams_path = self._setup_model(config)
-        # self._verify_model(pdmodel_path)
-        # self._verify_model(pdiparams_path)
-
-        if "doc" in pdmodel_path.parent.stem:
-            pdmodel = Path(
-                "/Users/joshuawang/projects/_self/tmp/RapidOCR/paddle/PP-OCRv4/rec/ch_doc_PP-OCRv4_rec_server_infer/inference.json"
-            )
-            pdiparams = Path(
-                "/Users/joshuawang/projects/_self/tmp/RapidOCR/paddle/PP-OCRv4/rec/ch_doc_PP-OCRv4_rec_server_infer/inference.pdiparams"
-            )
-            self._init_predictor_v2(config, pdmodel, pdiparams)
+        if "doc" in config.lang:
+            pdmodel_path, pdiparams_path = self._setup_model_v2(config)
+            self._init_predictor_v2(config, pdmodel_path, pdiparams_path)
         else:
+            pdmodel_path, pdiparams_path = self._setup_model(config)
             self._init_predictor_v1(config, pdmodel_path, pdiparams_path)
 
     def _setup_model(self, config) -> Tuple[Path, Path]:
@@ -57,6 +49,32 @@ class PaddleInferSession(InferSession):
         model_dir = Path(model_dir)
         pdmodel_path = model_dir / PDMODEL_NAME
         pdiparams_path = model_dir / PDIPARAMS_NAME
+
+        self._verify_model(pdmodel_path)
+        self._verify_model(pdiparams_path)
+        return pdmodel_path, pdiparams_path
+
+    def _setup_model_v2(self, config) -> Tuple[Path, Path]:
+        model_dir = config.get("model_dir", None)
+        if model_dir is None:
+            model_info = self.get_model_url(
+                config.engine_name, config.task_type, config.lang
+            )
+
+            default_model_dir = Path(model_info["model_dir"])
+            pdmodel_path = self.download_model(
+                model_info, default_model_dir, PDMODEL_NAME
+            )
+            pdiparams_path = self.download_model(
+                model_info, default_model_dir, PDIPARAMS_NAME
+            )
+            return pdmodel_path, pdiparams_path
+
+        model_dir = Path(model_dir)
+        pdmodel_path = model_dir / PDMODEL_NAME
+        pdiparams_path = model_dir / PDIPARAMS_NAME
+        self._verify_model(pdmodel_path)
+        self._verify_model(pdiparams_path)
         return pdmodel_path, pdiparams_path
 
     def download_model(
