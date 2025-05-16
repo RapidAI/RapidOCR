@@ -1,9 +1,6 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-# -*- encoding: utf-8 -*-
-# @Author: SWHL
-# @Contact: liekkaskono@163.com
 from rapidocr import RapidOCR
 
 engine = RapidOCR(params={"Global.with_torch": True})

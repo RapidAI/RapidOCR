@@ -97,6 +97,11 @@ def get_engine_name(config: DictConfig) -> str:
     return EngineType.ONNXRUNTIME.value
 
 
+class ModelType(Enum):
+    MOBILE = "mobile"
+    SERVER = "server"
+
+
 class InferSession(abc.ABC):
     model_info = OmegaConf.load(MODEL_URL_PATH)
     DEFAULT_MODEL_PATH = cur_dir / "models"
@@ -134,9 +139,9 @@ class InferSession(abc.ABC):
         model_dict = cls.model_info[engine_name]["PP-OCRv4"][task_type]
 
         # 优先查找 server 模型
-        if model_type == "server":
+        if model_type == ModelType.SERVER.value:
             for k in model_dict:
-                if k.startswith(lang) and "server" in k:
+                if k.startswith(lang) and model_type in k:
                     return model_dict[k]
 
         for k in model_dict:
@@ -151,9 +156,9 @@ class InferSession(abc.ABC):
         model_dict = cls.model_info[engine_name]["PP-OCRv4"][task_type]
 
         # 优先查找 server 模型
-        if model_type == "server":
+        if model_type == ModelType.SERVER.value:
             for k in model_dict:
-                if k.startswith(lang) and "server" in k:
+                if k.startswith(lang) and model_type in k:
                     return model_dict[k]["dict_url"]
 
         for k in model_dict:
