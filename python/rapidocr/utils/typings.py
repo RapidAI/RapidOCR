@@ -2,6 +2,7 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
@@ -90,3 +91,25 @@ class RapidOCROutput:
             save_img(save_path, vis_img)
             logger.info("Single word visualization saved as %s", save_path)
         return vis_img
+
+
+class LangDet(Enum):
+    CH = "ch"
+    EN = "en"
+    MULTI = "multi"
+
+
+class LangRec(Enum):
+    CH = "ch"
+    CH_DOC = "ch_doc"
+    EN = "en"
+    ARABIC = "arabic"
+    CHINESE_CHT = "chinese_cht"
+    CYRILLIC = "cyrillic"
+    DEVANAGARI = "devanagari"
+    JAPAN = "japan"
+    KOREAN = "korean"
+    KA = "ka"
+    LATIN = "latin"
+    TA = "ta"
+    TE = "te"

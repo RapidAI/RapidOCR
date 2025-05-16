@@ -8,27 +8,16 @@ import numpy as np
 from omegaconf import DictConfig, OmegaConf
 from PIL import Image
 
+from .typings import LangDet, LangRec
+
 root_dir = Path(__file__).resolve().parent.parent
 InputType = Union[str, np.ndarray, bytes, Path, Image.Image]
 
 
 class ParseLang:
     def __init__(self):
-        self.lang_det_list = ["ch", "en", "multi"]
-        self.lang_rec_list = [
-            "ch",
-            "en",
-            "arabic",
-            "chinese_cht",
-            "cyrillic",
-            "devanagari",
-            "japan",
-            "korean",
-            "ka",
-            "latin",
-            "ta",
-            "te",
-        ]
+        self.lang_det_list = [v.value for v in LangDet]
+        self.lang_rec_list = [v.value for v in LangRec]
 
     def __call__(self, lang_det: str, lang_rec: str) -> Tuple[str, str]:
         lang_det, det_model_type = lang_det.rsplit("_", 1)
