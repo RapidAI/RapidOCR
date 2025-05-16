@@ -8,10 +8,12 @@ from typing import Optional, Tuple
 
 import numpy as np
 import paddle
+from omegaconf.errors import ConfigKeyError
 from paddle import inference
 
 from ..utils.download_file import DownloadFile, DownloadFileInput
 from ..utils.logger import Logger
+from ..utils.typings import LangRec
 from .base import InferSession
 
 
@@ -20,58 +22,34 @@ class PaddleInferSession(InferSession):
         self.logger = Logger(logger_name=__name__).get_log()
         self.mode = mode
 
-        if "doc" in config.lang:
-            pdmodel_path, pdiparams_path = self._setup_model_v2(config)
+        pdmodel_path, pdiparams_path = self._setup_model(config)
+        if LangRec.CH_DOC.value in config.lang:
             self._init_predictor_v2(config, pdmodel_path, pdiparams_path)
         else:
-            pdmodel_path, pdiparams_path = self._setup_model(config)
             self._init_predictor_v1(config, pdmodel_path, pdiparams_path)
 
     def _setup_model(self, config) -> Tuple[Path, Path]:
-        model_dir = config.get("model_dir", None)
-        pdmodel_name = "inference.pdmodel"
-        pdiparams_name = "inference.pdiparams"
-        if model_dir is None:
-            model_info = self.get_model_url(
-                config.engine_name, config.task_type, config.lang
-            )
-
-            default_model_dir = Path(model_info["model_dir"])
-            pdmodel_path = self.download_model(
-                model_info, default_model_dir, pdmodel_name
-            )
-            pdiparams_path = self.download_model(
-                model_info, default_model_dir, pdiparams_name
-            )
-            return pdmodel_path, pdiparams_path
-
-        model_dir = Path(model_dir)
-        pdmodel_path = model_dir / pdmodel_name
-        pdiparams_path = model_dir / pdiparams_name
-
-        self._verify_model(pdmodel_path)
-        self._verify_model(pdiparams_path)
-        return pdmodel_path, pdiparams_path
-
-    def _setup_model_v2(self, config) -> Tuple[Path, Path]:
-        model_dir = config.get("model_dir", None)
         pdmodel_name = "inference.json"
+        pdmodel_name_v2 = "inference.pdmodel"
         pdiparams_name = "inference.pdiparams"
+
+        model_dir = config.get("model_dir", None)
         if model_dir is None:
             model_info = self.get_model_url(
                 config.engine_name, config.task_type, config.lang
             )
+            default_model_dir = model_info["model_dir"]
 
-            default_model_dir = Path(model_info["model_dir"])
             try:
                 pdmodel_path = self.download_model(
                     model_info, default_model_dir, pdmodel_name
                 )
-            except Exception as e:
-                pdmodel_name = "inference.pdmodel"
+            except ConfigKeyError as e:
                 pdmodel_path = self.download_model(
-                    model_info, default_model_dir, pdmodel_name
+                    model_info, default_model_dir, pdmodel_name_v2
                 )
+            except Exception as e:
+                raise PaddleInferError(f"Download model error: {e}") from e
 
             pdiparams_path = self.download_model(
                 model_info, default_model_dir, pdiparams_name
@@ -86,11 +64,11 @@ class PaddleInferSession(InferSession):
         return pdmodel_path, pdiparams_path
 
     def download_model(
-        self, model_info, default_model_dir: Path, model_file_name: str
+        self, model_info, default_model_dir: str, model_file_name: str
     ) -> Path:
         model_file_url = f"{default_model_dir}/{model_file_name}"
         model_file_path = (
-            self.DEFAULT_MODEL_PATH / default_model_dir.name / model_file_name
+            self.DEFAULT_MODEL_PATH / Path(default_model_dir).name / model_file_name
         )
         DownloadFile.run(
             DownloadFileInput(
