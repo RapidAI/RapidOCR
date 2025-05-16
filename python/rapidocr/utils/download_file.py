@@ -75,7 +75,7 @@ class DownloadFile:
         cls, response: requests.Response, save_path: Path, logger: logging.Logger
     ) -> None:
         total_size = int(response.headers.get("content-length", 0))
-        logger.info("Download size: ~%dMB", total_size / 1024 / 1024)
+        logger.info("Download size: ~%.2fMB", total_size / 1024 / 1024)
 
         with (
             tqdm(
