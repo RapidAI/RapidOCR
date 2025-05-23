@@ -45,6 +45,7 @@ def init_args():
     det_group = parser.add_argument_group(title="Det")
     det_group.add_argument("--det_use_cuda", action="store_true", default=False)
     det_group.add_argument("--det_use_dml", action="store_true", default=False)
+    det_group.add_argument("--det_use_cann", action="store_true", default=False)
     det_group.add_argument("--det_model_path", type=str, default=None)
     det_group.add_argument("--det_limit_side_len", type=float, default=736)
     det_group.add_argument(
@@ -63,6 +64,7 @@ def init_args():
     cls_group = parser.add_argument_group(title="Cls")
     cls_group.add_argument("--cls_use_cuda", action="store_true", default=False)
     cls_group.add_argument("--cls_use_dml", action="store_true", default=False)
+    cls_group.add_argument("--cls_use_cann", action="store_true", default=False)
     cls_group.add_argument("--cls_model_path", type=str, default=None)
     cls_group.add_argument("--cls_image_shape", type=list, default=[3, 48, 192])
     cls_group.add_argument("--cls_label_list", type=list, default=["0", "180"])
@@ -72,6 +74,7 @@ def init_args():
     rec_group = parser.add_argument_group(title="Rec")
     rec_group.add_argument("--rec_use_cuda", action="store_true", default=False)
     rec_group.add_argument("--rec_use_dml", action="store_true", default=False)
+    rec_group.add_argument("--rec_use_cann", action="store_true", default=False)
     rec_group.add_argument("--rec_model_path", type=str, default=None)
     rec_group.add_argument("--rec_keys_path", type=str, default=None)
     rec_group.add_argument("--rec_img_shape", type=list, default=[3, 48, 320])
@@ -126,19 +129,19 @@ class UpdateParameters:
                 config["Det"],
                 det_dict,
                 "det_",
-                ["det_model_path", "det_use_cuda", "det_use_dml"],
+                ["det_model_path", "det_use_cuda", "det_use_dml", "det_use_cann"],
             ),
             "Cls": self.update_params(
                 config["Cls"],
                 cls_dict,
                 "cls_",
-                ["cls_label_list", "cls_model_path", "cls_use_cuda", "cls_use_dml"],
+                ["cls_label_list", "cls_model_path", "cls_use_cuda", "cls_use_dml", "cls_use_cann"],
             ),
             "Rec": self.update_params(
                 config["Rec"],
                 rec_dict,
                 "rec_",
-                ["rec_model_path", "rec_use_cuda", "rec_use_dml"],
+                ["rec_model_path", "rec_use_cuda", "rec_use_dml", "rec_use_cann"],
             ),
         }
 

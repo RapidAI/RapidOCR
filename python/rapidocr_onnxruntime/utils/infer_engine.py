@@ -24,6 +24,7 @@ class EP(Enum):
     CPU_EP = "CPUExecutionProvider"
     CUDA_EP = "CUDAExecutionProvider"
     DIRECTML_EP = "DmlExecutionProvider"
+    CANN_EP = "CANNExecutionProvider"
 
 
 class OrtInferSession:
@@ -35,6 +36,7 @@ class OrtInferSession:
 
         self.cfg_use_cuda = config.get("use_cuda", None)
         self.cfg_use_dml = config.get("use_dml", None)
+        self.cfg_use_cann = config.get("use_cann", None)
 
         self.had_providers: List[str] = get_available_providers()
         EP_list = self._get_ep_list()
@@ -80,6 +82,18 @@ class OrtInferSession:
         self.use_cuda = self._check_cuda()
         if self.use_cuda:
             EP_list.insert(0, (EP.CUDA_EP.value, cuda_provider_opts))
+
+        cann_provider_opts = {
+            "device_id": 0,
+            "arena_extend_strategy": "kNextPowerOfTwo",
+            "npu_mem_limit": 20 * 1024 * 1024 * 1024,
+            "op_select_impl_mode": "high_performance",
+            "optypelist_for_implmode": "Gelu",
+            "enable_cann_graph": True,
+        }
+        self.use_cann = self._check_cann()
+        if self.use_cann:
+            EP_list.insert(0, (EP.CANN_EP.value, cann_provider_opts))
 
         self.use_directml = self._check_dml()
         if self.use_directml:
@@ -172,6 +186,35 @@ class OrtInferSession:
         )
         return False
 
+    def _check_cann(self) -> bool:
+        if not self.cfg_use_cann:
+            return False
+
+        if EP.CANN_EP.value in self.had_providers:
+            return True
+
+        self.logger.warning(
+            "%s is not in available providers (%s). Use %s inference by default.",
+            EP.CANN_EP.value,
+            self.had_providers,
+            self.had_providers[0],
+        )
+        self.logger.info("If you want to use CANN acceleration, you must do:")
+        self.logger.info(
+            "First, ensure you have installed Huawei Ascend software stack."
+        )
+        self.logger.info(
+            "Second, install onnxruntime with CANN support by following the instructions at:"
+        )
+        self.logger.info(
+            "\thttps://onnxruntime.ai/docs/execution-providers/CANN-ExecutionProvider.html"
+        )
+        self.logger.info(
+            "Third, ensure %s is in available providers list. e.g. ['CANNExecutionProvider', 'CPUExecutionProvider']",
+            EP.CANN_EP.value,
+        )
+        return False
+
     def _verify_providers(self):
         session_providers = self.session.get_providers()
         first_provider = session_providers[0]
@@ -180,6 +223,13 @@ class OrtInferSession:
             self.logger.warning(
                 "%s is not avaiable for current env, the inference part is automatically shifted to be executed under %s.",
                 EP.CUDA_EP.value,
+                first_provider,
+            )
+
+        if self.use_cann and first_provider != EP.CANN_EP.value:
+            self.logger.warning(
+                "%s is not available for current env, the inference part is automatically shifted to be executed under %s.",
+                EP.CANN_EP.value,
                 first_provider,
             )
 
