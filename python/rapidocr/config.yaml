@@ -1,11 +1,4 @@
 Global:
-    ocr_version_det: "PP-OCRv4" # PP-OCRv5
-    ocr_version_rec: "PP-OCRv4"
-    ocr_version_cls: "PP-OCRv4"
-
-    lang_det: "ch_mobile" # ch_server
-    lang_rec: "ch_mobile"
-
     text_score: 0.5
 
     use_det: true
@@ -18,11 +11,6 @@ Global:
     min_side_len: 30
 
     return_word_box: false
-
-    with_onnx: false
-    with_openvino: false
-    with_paddle: false
-    with_torch: false
 
     font_path: null
 
@@ -47,6 +35,12 @@ EngineConfig:
         gpu_id: 0
 
 Det:
+    engine_name: 'onnxruntime'
+    lang_type: 'ch'
+    model_type: 'mobile'
+    ocr_version: 'PP-OCRv4'
+    task_type: 'det'
+
     model_path: null
     model_dir: null
 
@@ -63,6 +57,12 @@ Det:
     score_mode: fast
 
 Cls:
+    engine_name: 'onnxruntime'
+    lang_type: 'ch'
+    model_type: 'mobile'
+    ocr_version: 'PP-OCRv4'
+    task_type: 'cls'
+
     model_path: null
     model_dir: null
 
@@ -72,6 +72,12 @@ Cls:
     label_list: ['0', '180']
 
 Rec:
+    engine_name: 'onnxruntime'
+    lang_type: 'ch'
+    model_type: 'mobile'
+    ocr_version: 'PP-OCRv4'
+    task_type: 'rec'
+
     model_path: null
     model_dir: null
 
