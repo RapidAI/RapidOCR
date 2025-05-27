@@ -9,7 +9,10 @@ from typing import Dict, List, Union
 import numpy as np
 from omegaconf import DictConfig, OmegaConf
 
+from rapidocr.utils.typings import OCRVersion
+
 from ..utils.logger import Logger
+from ..utils.typings import OCRVersion
 from ..utils.utils import import_package
 
 cur_dir = Path(__file__).resolve().parent.parent
@@ -133,10 +136,10 @@ class InferSession(abc.ABC):
 
     @classmethod
     def get_model_url(
-        cls, engine_name: str, task_type: str, lang: str
+        cls, engine_name: str, task_type: str, lang: str, ocr_version: OCRVersion
     ) -> Dict[str, str]:
         lang, model_type = lang.rsplit("_", 1)
-        model_dict = cls.model_info[engine_name]["PP-OCRv4"][task_type]
+        model_dict = cls.model_info[engine_name][ocr_version.value][task_type]
 
         # 优先查找 server 模型
         if model_type == ModelType.SERVER.value:
@@ -151,9 +154,11 @@ class InferSession(abc.ABC):
         raise KeyError("Model not found")
 
     @classmethod
-    def get_dict_key_url(cls, engine_name: str, task_type: str, lang: str) -> str:
+    def get_dict_key_url(
+        cls, engine_name: str, task_type: str, lang: str, ocr_version: OCRVersion
+    ) -> str:
         lang, model_type = lang.rsplit("_", 1)
-        model_dict = cls.model_info[engine_name]["PP-OCRv4"][task_type]
+        model_dict = cls.model_info[engine_name][ocr_version.value][task_type]
 
         # 优先查找 server 模型
         if model_type == ModelType.SERVER.value:

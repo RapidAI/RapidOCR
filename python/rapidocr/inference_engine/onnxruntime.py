@@ -36,7 +36,7 @@ class OrtInferSession(InferSession):
         if model_path is None:
             # 说明用户没有指定自己模型，使用默认模型
             model_info = self.get_model_url(
-                config.engine_name, config.task_type, config.lang
+                config.engine_name, config.task_type, config.lang, config.ocr_version
             )
             model_path = self.DEFAULT_MODEL_PATH / Path(model_info["model_dir"]).name
             download_params = DownloadFileInput(

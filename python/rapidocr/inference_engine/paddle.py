@@ -36,7 +36,7 @@ class PaddleInferSession(InferSession):
         model_dir = config.get("model_dir", None)
         if model_dir is None:
             model_info = self.get_model_url(
-                config.engine_name, config.task_type, config.lang
+                config.engine_name, config.task_type, config.lang, config.ocr_version
             )
             default_model_dir = model_info["model_dir"]
 

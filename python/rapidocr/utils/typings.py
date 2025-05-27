@@ -113,3 +113,8 @@ class LangRec(Enum):
     LATIN = "latin"
     TA = "ta"
     TE = "te"
+
+
+class OCRVersion(Enum):
+    PPOCRV4 = "PP-OCRv4"
+    PPOCRV5 = "PP-OCRv5"

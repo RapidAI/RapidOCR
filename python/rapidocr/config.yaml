@@ -1,6 +1,11 @@
 Global:
+    ocr_version_det: "PP-OCRv4" # PP-OCRv5
+    ocr_version_rec: "PP-OCRv4"
+    ocr_version_cls: "PP-OCRv4"
+
     lang_det: "ch_mobile" # ch_server
     lang_rec: "ch_mobile"
+
     text_score: 0.5
 
     use_det: true

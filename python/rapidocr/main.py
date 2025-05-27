@@ -25,6 +25,7 @@ from .utils import (
     reduce_max_side,
 )
 from .utils.parse_parameters import ParseParams
+from .utils.typings import OCRVersion
 
 root_dir = Path(__file__).resolve().parent
 DEFAULT_CFG_PATH = root_dir / "config.yaml"
@@ -53,6 +54,7 @@ class RapidOCR:
         self.width_height_ratio = config.Global.width_height_ratio
 
         self.use_det = config.Global.use_det
+        config.Det.ocr_version = OCRVersion(config.Global.ocr_version_det)
         config.Det.lang = lang_det
         config.Det.engine_name = engine_name
         config.Det.engine_cfg = config.EngineConfig[engine_name]
@@ -60,6 +62,7 @@ class RapidOCR:
         self.text_det = TextDetector(config.Det)
 
         self.use_cls = config.Global.use_cls
+        config.Cls.ocr_version = OCRVersion(config.Global.ocr_version_cls)
         config.Cls.lang = "ch_mobile"
         config.Cls.engine_name = engine_name
         config.Cls.engine_cfg = config.EngineConfig[engine_name]
@@ -67,6 +70,7 @@ class RapidOCR:
         self.text_cls = TextClassifier(config.Cls)
 
         self.use_rec = config.Global.use_rec
+        config.Rec.ocr_version = OCRVersion(config.Global.ocr_version_rec)
         config.Rec.lang = lang_rec
         config.Rec.engine_name = engine_name
         config.Rec.engine_cfg = config.EngineConfig[engine_name]

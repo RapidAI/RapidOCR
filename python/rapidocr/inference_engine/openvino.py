@@ -24,7 +24,7 @@ class OpenVINOInferSession(InferSession):
         model_path = config.get("model_path", None)
         if model_path is None:
             model_info = self.get_model_url(
-                config.engine_name, config.task_type, config.lang
+                config.engine_name, config.task_type, config.lang, config.ocr_version
             )
             model_path = self.DEFAULT_MODEL_PATH / Path(model_info["model_dir"]).name
             download_params = DownloadFileInput(
