@@ -2,34 +2,21 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import abc
-from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Union
 
 import numpy as np
 from attr import dataclass
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import OmegaConf
 
 from ..utils.logger import Logger
+from ..utils.typings import EngineType, ModelType
 from ..utils.utils import import_package
 
 cur_dir = Path(__file__).resolve().parent.parent
 MODEL_URL_PATH = cur_dir / "default_models.yaml"
 
-
 logger = Logger(logger_name=__name__).get_log()
-
-
-class EngineType(Enum):
-    ONNXRUNTIME = "onnxruntime"
-    OPENVINO = "openvino"
-    PADDLE = "paddle"
-    TORCH = "torch"
-
-
-class ModelType(Enum):
-    MOBILE = "mobile"
-    SERVER = "server"
 
 
 def get_installed_engine() -> List[str]:
@@ -80,27 +67,6 @@ def get_engine(engine_name: str):
         return TorchInferSession
 
     raise ValueError(f"Unsupported engine: {engine_name}")
-
-
-def get_engine_name(config: DictConfig) -> str:
-    with_onnx = config.Global.with_onnx
-    with_openvino = config.Global.with_openvino
-    with_paddle = config.Global.with_paddle
-    with_torch = config.Global.with_torch
-
-    if with_onnx:
-        return EngineType.ONNXRUNTIME.value
-
-    if with_openvino:
-        return EngineType.OPENVINO.value
-
-    if with_paddle:
-        return EngineType.PADDLE.value
-
-    if with_torch:
-        return EngineType.TORCH.value
-
-    return EngineType.ONNXRUNTIME.value
 
 
 @dataclass
@@ -158,7 +124,7 @@ class InferSession(abc.ABC):
             if k.startswith(file_info.lang_type):
                 return model_dict[k]
 
-        raise KeyError("Model not found")
+        raise KeyError("File not found")
 
     @classmethod
     def get_dict_key_url(cls, file_info: FileInfo) -> str:

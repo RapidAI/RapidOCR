@@ -14,6 +14,49 @@ from .vis_res import VisRes
 logger = Logger(logger_name=__name__).get_log()
 
 
+class LangDet(Enum):
+    CH = "ch"
+    EN = "en"
+    MULTI = "multi"
+
+
+class LangCls(Enum):
+    CH = "ch"
+
+
+class LangRec(Enum):
+    CH = "ch"
+    CH_DOC = "ch_doc"
+    EN = "en"
+    ARABIC = "arabic"
+    CHINESE_CHT = "chinese_cht"
+    CYRILLIC = "cyrillic"
+    DEVANAGARI = "devanagari"
+    JAPAN = "japan"
+    KOREAN = "korean"
+    KA = "ka"
+    LATIN = "latin"
+    TA = "ta"
+    TE = "te"
+
+
+class OCRVersion(Enum):
+    PPOCRV4 = "PP-OCRv4"
+    PPOCRV5 = "PP-OCRv5"
+
+
+class EngineType(Enum):
+    ONNXRUNTIME = "onnxruntime"
+    OPENVINO = "openvino"
+    PADDLE = "paddle"
+    TORCH = "torch"
+
+
+class ModelType(Enum):
+    MOBILE = "mobile"
+    SERVER = "server"
+
+
 @dataclass
 class RapidOCROutput:
     img: Optional[np.ndarray] = None
@@ -37,22 +80,6 @@ class RapidOCROutput:
 
     def to_json(self):
         pass
-
-    def to_paddleocr_format(self):
-        """Refer: https://pypi.org/project/paddleocr/2.7.3/
-        Return format like:
-        [
-          [[[6.0, 2.0], [322.0, 9.0], [320.0, 104.0], [4.0, 97.0]], ['正品促销', 0.99893]],
-          [[[70.0, 98.0], [252.0, 98.0], [252.0, 125.0], [70.0, 125.0]], ['大桶装更划算', 0.9843]]
-        ]
-        """
-        rec_res = list(zip(self.txts, self.scores))
-        dt_boxes = [v.tolist() for v in self.boxes]
-
-        final_res = []
-        for box, rec in zip(dt_boxes, rec_res):
-            final_res.append([box, list(rec)])
-        return final_res
 
     def vis(self, save_path: Optional[str] = None, font_path: Optional[str] = None):
         if self.img is None or self.boxes is None:
@@ -91,30 +118,3 @@ class RapidOCROutput:
             save_img(save_path, vis_img)
             logger.info("Single word visualization saved as %s", save_path)
         return vis_img
-
-
-class LangDet(Enum):
-    CH = "ch"
-    EN = "en"
-    MULTI = "multi"
-
-
-class LangRec(Enum):
-    CH = "ch"
-    CH_DOC = "ch_doc"
-    EN = "en"
-    ARABIC = "arabic"
-    CHINESE_CHT = "chinese_cht"
-    CYRILLIC = "cyrillic"
-    DEVANAGARI = "devanagari"
-    JAPAN = "japan"
-    KOREAN = "korean"
-    KA = "ka"
-    LATIN = "latin"
-    TA = "ta"
-    TE = "te"
-
-
-class OCRVersion(Enum):
-    PPOCRV4 = "PP-OCRv4"
-    PPOCRV5 = "PP-OCRv5"

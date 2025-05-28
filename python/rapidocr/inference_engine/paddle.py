@@ -13,7 +13,7 @@ from paddle import inference
 
 from ..utils.download_file import DownloadFile, DownloadFileInput
 from ..utils.logger import Logger
-from ..utils.typings import LangRec
+from ..utils.typings import OCRVersion
 from .base import FileInfo, InferSession
 
 
@@ -23,7 +23,7 @@ class PaddleInferSession(InferSession):
         self.mode = mode
 
         pdmodel_path, pdiparams_path = self._setup_model(cfg)
-        if LangRec.CH_DOC.value in cfg.lang_type:
+        if cfg.ocr_version == OCRVersion.PPOCRV5.value:
             self._init_predictor_v2(cfg, pdmodel_path, pdiparams_path)
         else:
             self._init_predictor_v1(cfg, pdmodel_path, pdiparams_path)
@@ -60,6 +60,9 @@ class PaddleInferSession(InferSession):
             pdiparams_path = self.download_model(
                 model_info, default_model_dir, pdiparams_name
             )
+
+            self.logger.info(f"Using {pdmodel_path}")
+            self.logger.info(f"Using {pdiparams_path}")
             return pdmodel_path, pdiparams_path
 
         model_dir = Path(model_dir)
@@ -67,6 +70,9 @@ class PaddleInferSession(InferSession):
         pdiparams_path = model_dir / pdiparams_name
         self._verify_model(pdmodel_path)
         self._verify_model(pdiparams_path)
+
+        self.logger.info(f"Using {pdmodel_path}")
+        self.logger.info(f"Using {pdiparams_path}")
         return pdmodel_path, pdiparams_path
 
     def download_model(

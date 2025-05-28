@@ -144,9 +144,9 @@ def test_cli_vis(cmd, img_name):
 
 
 def test_error_lang():
-    with pytest.raises(ValueError) as exc_info:
-        engine = get_engine(params={"Global.lang": "eh"})
-    assert exc_info.type is ValueError
+    with pytest.raises(KeyError) as exc_info:
+        engine = get_engine(params={"Rec.lang_type": "eh"})
+    assert exc_info.type is KeyError
 
 
 def test_korean_lang():

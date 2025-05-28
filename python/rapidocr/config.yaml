@@ -35,7 +35,7 @@ EngineConfig:
         gpu_id: 0
 
 Det:
-    engine_name: 'onnxruntime'
+    engine_type: 'onnxruntime'
     lang_type: 'ch'
     model_type: 'mobile'
     ocr_version: 'PP-OCRv4'
@@ -57,7 +57,7 @@ Det:
     score_mode: fast
 
 Cls:
-    engine_name: 'onnxruntime'
+    engine_type: 'onnxruntime'
     lang_type: 'ch'
     model_type: 'mobile'
     ocr_version: 'PP-OCRv4'
@@ -72,7 +72,7 @@ Cls:
     label_list: ['0', '180']
 
 Rec:
-    engine_name: 'onnxruntime'
+    engine_type: 'onnxruntime'
     lang_type: 'ch'
     model_type: 'mobile'
     ocr_version: 'PP-OCRv4'

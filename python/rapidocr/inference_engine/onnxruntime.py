@@ -53,6 +53,7 @@ class OrtInferSession(InferSession):
             )
             DownloadFile.run(download_params)
 
+        self.logger.info(f"Using {model_path}")
         model_path = Path(model_path)
         self._verify_model(model_path)
 
