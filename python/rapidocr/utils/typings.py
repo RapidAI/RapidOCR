@@ -25,7 +25,7 @@ class RapidOCROutput:
     )
     elapse_list: List[Union[float, None]] = field(default_factory=list)
     elapse: float = field(init=False)
-    lang_rec: Optional[str] = None
+    lang_type: Optional[str] = None
 
     def __post_init__(self):
         self.elapse = sum(v for v in self.elapse_list if isinstance(v, float))
@@ -67,7 +67,7 @@ class RapidOCROutput:
                 self.txts,
                 self.scores,
                 font_path=font_path,
-                lang_rec=self.lang_rec,
+                lang_type=self.lang_type,
             )
 
             if save_path is not None:
@@ -84,7 +84,7 @@ class RapidOCROutput:
             words,
             words_scores,
             font_path=font_path,
-            lang_rec=self.lang_rec,
+            lang_type=self.lang_type,
         )
 
         if save_path is not None:

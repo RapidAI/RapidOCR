@@ -39,12 +39,12 @@ class VisRes:
         txts: Optional[Union[List[str], Tuple[str]]] = None,
         scores: Optional[Tuple[float]] = None,
         font_path: Optional[str] = None,
-        lang_rec: Optional[str] = None,
+        lang_type: Optional[str] = None,
     ) -> np.ndarray:
         if txts is None:
             return self.draw_dt_boxes(img_content, dt_boxes, scores)
 
-        font_path = self.get_font_path(font_path, lang_rec)
+        font_path = self.get_font_path(font_path, lang_type)
         return self.draw_ocr_box_txt(img_content, dt_boxes, txts, font_path, scores)
 
     def draw_dt_boxes(
@@ -78,7 +78,7 @@ class VisRes:
     def get_font_path(
         self,
         font_path: Optional[Union[str, Path]] = None,
-        lang_rec: Optional[str] = None,
+        lang_type: Optional[str] = None,
     ) -> str:
         default_info = self.font_cfg["ch"]
         default_input_params = DownloadFileInput(
@@ -88,21 +88,20 @@ class VisRes:
             logger=self.logger,
         )
 
-        if lang_rec is None:
+        if lang_type is None:
             # 没有指定语种，用默认字体文件
             DownloadFile.run(default_input_params)
             return str(DEFAULT_FONT_PATH)
 
         if font_path is None:
             # 指定了语种，但是没有指定字体文件，根据语种选择字体文件
-            lang_rec = lang_rec.rsplit("_", 1)[0]
-            font_info = self.font_cfg.get(lang_rec, None)
+            font_info = self.font_cfg.get(lang_type, None)
             font_url, font_sha256 = font_info["path"], font_info["SHA256"]
 
             if font_url is None:
                 self.logger.warning(
                     "Font file for %s is not found in the supported font list. Default font file will be used.",
-                    lang_rec,
+                    lang_type,
                 )
 
                 DownloadFile.run(default_input_params)
@@ -125,11 +124,11 @@ class VisRes:
         imgs: List[InputType],
         txts: Union[List[str], Tuple[str]],
         scores: Tuple[float],
-        lang_rec: Optional[str] = None,
+        lang_type: Optional[str] = None,
     ) -> np.ndarray:
         result_imgs = []
         for img, txt, score in zip(imgs, txts, scores):
-            vis_img = self.draw_one_rec_res(img, txt, score, lang_rec)
+            vis_img = self.draw_one_rec_res(img, txt, score, lang_type)
             result_imgs.append(vis_img)
         return self.concat_imgs(result_imgs, direction="vertical")
 
@@ -138,9 +137,9 @@ class VisRes:
         img_content: InputType,
         txt: str,
         score: float,
-        lang_rec: Optional[str] = None,
+        lang_type: Optional[str] = None,
     ) -> np.ndarray:
-        font_path = self.get_font_path(None, lang_rec)
+        font_path = self.get_font_path(None, lang_type)
 
         image = Image.fromarray(self.load_img(img_content))
         h, w = image.height, image.width

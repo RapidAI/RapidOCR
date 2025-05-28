@@ -43,7 +43,7 @@ class TextRecOutput:
         ("", 1.0, None),
     )
     elapse: Optional[float] = None
-    lang_rec: Optional[str] = None
+    lang_type: Optional[str] = None
 
     def __len__(self):
         if self.txts is None:
@@ -57,7 +57,7 @@ class TextRecOutput:
 
         vis = VisRes()
         vis_img = vis.draw_rec_res(
-            self.imgs, self.txts, self.scores, lang_rec=self.lang_rec
+            self.imgs, self.txts, self.scores, lang_type=self.lang_type
         )
 
         if save_path is not None:

@@ -19,7 +19,7 @@ from onnxruntime import (
 
 from ..utils import DownloadFile, DownloadFileInput
 from ..utils.logger import Logger
-from .base import InferSession
+from .base import FileInfo, InferSession
 
 
 class EP(Enum):
@@ -29,14 +29,20 @@ class EP(Enum):
 
 
 class OrtInferSession(InferSession):
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, cfg: Dict[str, Any]):
         self.logger = Logger(logger_name=__name__).get_log()
 
-        model_path = config.get("model_path", None)
+        model_path = cfg.get("model_path", None)
         if model_path is None:
             # 说明用户没有指定自己模型，使用默认模型
             model_info = self.get_model_url(
-                config.engine_name, config.task_type, config.lang, config.ocr_version
+                FileInfo(
+                    engine_name=cfg.engine_name,
+                    ocr_version=cfg.ocr_version,
+                    task_type=cfg.task_type,
+                    lang_type=cfg.lang_type,
+                    model_type=cfg.model_type,
+                )
             )
             model_path = self.DEFAULT_MODEL_PATH / Path(model_info["model_dir"]).name
             download_params = DownloadFileInput(
@@ -50,13 +56,13 @@ class OrtInferSession(InferSession):
         model_path = Path(model_path)
         self._verify_model(model_path)
 
-        self.cfg_use_cuda = config.engine_cfg.get("use_cuda", None)
-        self.cfg_use_dml = config.engine_cfg.get("use_dml", None)
+        self.cfg_use_cuda = cfg.engine_cfg.get("use_cuda", None)
+        self.cfg_use_dml = cfg.engine_cfg.get("use_dml", None)
 
         self.had_providers: List[str] = get_available_providers()
         EP_list = self._get_ep_list()
 
-        sess_opt = self._init_sess_opts(config.engine_cfg)
+        sess_opt = self._init_sess_opts(cfg.engine_cfg)
         self.session = InferenceSession(
             model_path,
             sess_options=sess_opt,

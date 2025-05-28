@@ -14,29 +14,35 @@ from paddle import inference
 from ..utils.download_file import DownloadFile, DownloadFileInput
 from ..utils.logger import Logger
 from ..utils.typings import LangRec
-from .base import InferSession
+from .base import FileInfo, InferSession
 
 
 class PaddleInferSession(InferSession):
-    def __init__(self, config, mode: Optional[str] = None) -> None:
+    def __init__(self, cfg, mode: Optional[str] = None) -> None:
         self.logger = Logger(logger_name=__name__).get_log()
         self.mode = mode
 
-        pdmodel_path, pdiparams_path = self._setup_model(config)
-        if LangRec.CH_DOC.value in config.lang:
-            self._init_predictor_v2(config, pdmodel_path, pdiparams_path)
+        pdmodel_path, pdiparams_path = self._setup_model(cfg)
+        if LangRec.CH_DOC.value in cfg.lang_type:
+            self._init_predictor_v2(cfg, pdmodel_path, pdiparams_path)
         else:
-            self._init_predictor_v1(config, pdmodel_path, pdiparams_path)
+            self._init_predictor_v1(cfg, pdmodel_path, pdiparams_path)
 
-    def _setup_model(self, config) -> Tuple[Path, Path]:
+    def _setup_model(self, cfg) -> Tuple[Path, Path]:
         pdmodel_name = "inference.json"
         pdmodel_name_v2 = "inference.pdmodel"
         pdiparams_name = "inference.pdiparams"
 
-        model_dir = config.get("model_dir", None)
+        model_dir = cfg.get("model_dir", None)
         if model_dir is None:
             model_info = self.get_model_url(
-                config.engine_name, config.task_type, config.lang, config.ocr_version
+                FileInfo(
+                    engine_name=cfg.engine_name,
+                    ocr_version=cfg.ocr_version,
+                    task_type=cfg.task_type,
+                    lang_type=cfg.lang_type,
+                    model_type=cfg.model_type,
+                )
             )
             default_model_dir = model_info["model_dir"]
 
@@ -80,23 +86,21 @@ class PaddleInferSession(InferSession):
         )
         return model_file_path
 
-    def _init_predictor_v1(self, config, pdmodel_path, pdiparams_path):
+    def _init_predictor_v1(self, cfg, pdmodel_path, pdiparams_path):
         infer_opts = inference.Config(str(pdmodel_path), str(pdiparams_path))
 
-        if config.engine_cfg.use_cuda:
+        if cfg.engine_cfg.use_cuda:
             gpu_id = self.get_infer_gpuid()
             if gpu_id is None:
                 self.logger.warning(
                     "GPU is not found in current device by nvidia-smi. Please check your device or ignore it if run on jetson."
                 )
-            infer_opts.enable_use_gpu(
-                config.engine_cfg.gpu_mem, config.engine_cfg.gpu_id
-            )
+            infer_opts.enable_use_gpu(cfg.engine_cfg.gpu_mem, cfg.engine_cfg.gpu_id)
         else:
             infer_opts.disable_gpu()
 
         cpu_nums = os.cpu_count()
-        infer_num_threads = config.engine_cfg.get("cpu_math_library_num_threads", -1)
+        infer_num_threads = cfg.engine_cfg.get("cpu_math_library_num_threads", -1)
         if infer_num_threads != -1 and 1 <= infer_num_threads <= cpu_nums:
             infer_opts.set_cpu_math_library_num_threads(infer_num_threads)
 
@@ -110,27 +114,23 @@ class PaddleInferSession(InferSession):
 
         self.predictor = inference.create_predictor(infer_opts)
 
-    def _init_predictor_v2(self, config, pdmodel_path, pdiparams_path):
+    def _init_predictor_v2(self, cfg, pdmodel_path, pdiparams_path):
         infer_opts = inference.Config(str(pdmodel_path), str(pdiparams_path))
 
-        if config.engine_cfg.use_cuda:
+        if cfg.engine_cfg.use_cuda:
             gpu_id = self.get_infer_gpuid()
             if gpu_id is None:
                 self.logger.warning(
                     "GPU is not found in current device by nvidia-smi. Please check your device or ignore it if run on jetson."
                 )
-            infer_opts.enable_use_gpu(
-                config.engine_cfg.gpu_mem, config.engine_cfg.gpu_id
-            )
+            infer_opts.enable_use_gpu(cfg.engine_cfg.gpu_mem, cfg.engine_cfg.gpu_id)
         else:
             infer_opts.disable_gpu()
             if hasattr(infer_opts, "disable_mkldnn"):
                 infer_opts.disable_mkldnn()
 
             cpu_nums = os.cpu_count()
-            infer_num_threads = config.engine_cfg.get(
-                "cpu_math_library_num_threads", -1
-            )
+            infer_num_threads = cfg.engine_cfg.get("cpu_math_library_num_threads", -1)
             if infer_num_threads != -1 and 1 <= infer_num_threads <= cpu_nums:
                 infer_opts.set_cpu_math_library_num_threads(infer_num_threads)
 

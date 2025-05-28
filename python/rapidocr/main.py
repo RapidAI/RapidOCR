@@ -14,10 +14,8 @@ from .ch_ppocr_cls import TextClassifier, TextClsOutput
 from .ch_ppocr_det import TextDetector, TextDetOutput
 from .ch_ppocr_rec import TextRecInput, TextRecognizer, TextRecOutput
 from .cli import check_install, generate_cfg
-from .inference_engine.base import get_engine_name
 from .utils import (
     LoadImage,
-    ParseLang,
     RapidOCROutput,
     VisRes,
     add_round_letterbox,
@@ -25,7 +23,6 @@ from .utils import (
     reduce_max_side,
 )
 from .utils.parse_parameters import ParseParams
-from .utils.typings import OCRVersion
 
 root_dir = Path(__file__).resolve().parent
 DEFAULT_CFG_PATH = root_dir / "config.yaml"
@@ -43,38 +40,22 @@ class RapidOCR:
         if params:
             config = ParseParams.update_batch(config, params)
 
-        engine_name = get_engine_name(config)
-
-        lang_det, lang_rec = ParseLang()(config.Global.lang_det, config.Global.lang_rec)
-
-        self.lang_rec = lang_rec
+        # lang_det, lang_rec = ParseLang()(config.Global.lang_det, config.Global.lang_rec)
 
         self.text_score = config.Global.text_score
         self.min_height = config.Global.min_height
         self.width_height_ratio = config.Global.width_height_ratio
 
         self.use_det = config.Global.use_det
-        config.Det.ocr_version = OCRVersion(config.Global.ocr_version_det)
-        config.Det.lang = lang_det
-        config.Det.engine_name = engine_name
-        config.Det.engine_cfg = config.EngineConfig[engine_name]
-        config.Det.task_type = "det"
+        config.Det.engine_cfg = config.EngineConfig[config.Det.engine_name]
         self.text_det = TextDetector(config.Det)
 
         self.use_cls = config.Global.use_cls
-        config.Cls.ocr_version = OCRVersion(config.Global.ocr_version_cls)
-        config.Cls.lang = "ch_mobile"
-        config.Cls.engine_name = engine_name
-        config.Cls.engine_cfg = config.EngineConfig[engine_name]
-        config.Cls.task_type = "cls"
+        config.Cls.engine_cfg = config.EngineConfig[config.Cls.engine_name]
         self.text_cls = TextClassifier(config.Cls)
 
         self.use_rec = config.Global.use_rec
-        config.Rec.ocr_version = OCRVersion(config.Global.ocr_version_rec)
-        config.Rec.lang = lang_rec
-        config.Rec.engine_name = engine_name
-        config.Rec.engine_cfg = config.EngineConfig[engine_name]
-        config.Rec.task_type = "rec"
+        config.Rec.engine_cfg = config.EngineConfig[config.Rec.engine_name]
         self.text_rec = TextRecognizer(config.Rec)
 
         self.load_img = LoadImage()
@@ -157,7 +138,6 @@ class RapidOCR:
                 det_res.boxes, op_record, raw_h, raw_w
             )
 
-        rec_res.lang_rec = self.lang_rec
         ocr_res = self.get_final_res(ori_img, det_res, cls_res, rec_res)
         return ocr_res
 
@@ -300,7 +280,7 @@ class RapidOCR:
             scores=rec_res.scores,
             word_results=rec_res.word_results,
             elapse_list=[det_res.elapse, cls_res.elapse, rec_res.elapse],
-            lang_rec=self.lang_rec,
+            lang_type=self.config.Rec.lang_type,
         )
         ocr_res = self.filter_by_text_score(ocr_res)
         if len(ocr_res) <= 0:

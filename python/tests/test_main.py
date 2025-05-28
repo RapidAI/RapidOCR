@@ -14,6 +14,7 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
 from rapidocr import LoadImageError, RapidOCR
+from rapidocr.inference_engine.base import EngineType
 from rapidocr.main import main
 from rapidocr.utils.logger import Logger
 
@@ -38,8 +39,9 @@ def get_engine(params: Optional[Dict[str, Any]] = None):
 
 
 def test_ch_doc_server():
+    engine = RapidOCR(params={"Rec.lang_type": "ch_doc", "Rec.model_type": "server"})
+
     img_path = tests_dir / "ch_doc_server.png"
-    engine = RapidOCR(params={"Global.lang_rec": "ch_doc_server"})
     result = engine(img_path)
     assert result.txts is not None
     assert result.txts[0] == "嫖娼"
@@ -88,7 +90,7 @@ def test_img_url_input(engine):
 
 
 def test_server_rec():
-    engine = RapidOCR(params={"Global.lang_rec": "ch_server"})
+    engine = RapidOCR(params={"Rec.lang_type": "ch", "Rec.model_type": "server"})
     result = engine(img_path)
     assert result.txts is not None
     assert result.txts[0] == "正品促销"
@@ -148,7 +150,7 @@ def test_error_lang():
 
 
 def test_korean_lang():
-    engine = get_engine(params={"Global.lang_rec": "korean_mobile"})
+    engine = get_engine(params={"Rec.lang_type": "korean", "Rec.model_type": "mobile"})
     img_path = tests_dir / "korean.jpg"
     result = engine(img_path)
     assert result.txts is not None
@@ -156,7 +158,7 @@ def test_korean_lang():
 
 
 def test_en_lang():
-    engine = get_engine(params={"Global.lang_rec": "en_mobile"})
+    engine = get_engine(params={"Rec.lang_type": "en", "Rec.model_type": "mobile"})
     img_path = tests_dir / "en.jpg"
     result = engine(img_path)
     assert result.txts is not None
@@ -164,21 +166,45 @@ def test_en_lang():
 
 
 def test_engine_openvino():
-    engine = get_engine(params={"Global.with_openvino": True})
+    engine_name = EngineType.OPENVINO.value
+    engine = get_engine(
+        params={
+            "Det.engine_name": engine_name,
+            "Cls.engine_name": engine_name,
+            "Rec.engine_name": engine_name,
+        }
+    )
+
     result = engine(img_path)
     assert result.txts is not None
     assert result.txts[0] == "正品促销"
 
 
 def test_engine_paddle():
-    engine = RapidOCR(params={"Global.with_paddle": True})
+    engine_name = EngineType.PADDLE.value
+    engine = get_engine(
+        params={
+            "Det.engine_name": engine_name,
+            "Cls.engine_name": engine_name,
+            "Rec.engine_name": engine_name,
+        }
+    )
+
     result = engine(img_path)
     assert result.txts is not None
     assert result.txts[0] == "正品促销"
 
 
 def test_engine_torch():
-    engine = RapidOCR(params={"Global.with_torch": True})
+    engine_name = EngineType.TORCH.value
+    engine = get_engine(
+        params={
+            "Det.engine_name": engine_name,
+            "Cls.engine_name": engine_name,
+            "Rec.engine_name": engine_name,
+        }
+    )
+
     result = engine(img_path)
     assert result.txts is not None
     assert result.txts[0] == "正品促销"

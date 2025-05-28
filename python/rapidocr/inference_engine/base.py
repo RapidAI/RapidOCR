@@ -7,12 +7,10 @@ from pathlib import Path
 from typing import Dict, List, Union
 
 import numpy as np
+from attr import dataclass
 from omegaconf import DictConfig, OmegaConf
 
-from rapidocr.utils.typings import OCRVersion
-
 from ..utils.logger import Logger
-from ..utils.typings import OCRVersion
 from ..utils.utils import import_package
 
 cur_dir = Path(__file__).resolve().parent.parent
@@ -27,6 +25,11 @@ class EngineType(Enum):
     OPENVINO = "openvino"
     PADDLE = "paddle"
     TORCH = "torch"
+
+
+class ModelType(Enum):
+    MOBILE = "mobile"
+    SERVER = "server"
 
 
 def get_installed_engine() -> List[str]:
@@ -100,9 +103,13 @@ def get_engine_name(config: DictConfig) -> str:
     return EngineType.ONNXRUNTIME.value
 
 
-class ModelType(Enum):
-    MOBILE = "mobile"
-    SERVER = "server"
+@dataclass
+class FileInfo:
+    engine_name: str
+    ocr_version: str
+    task_type: str
+    lang_type: str
+    model_type: str
 
 
 class InferSession(abc.ABC):
@@ -135,39 +142,25 @@ class InferSession(abc.ABC):
         pass
 
     @classmethod
-    def get_model_url(
-        cls, engine_name: str, task_type: str, lang: str, ocr_version: OCRVersion
-    ) -> Dict[str, str]:
-        lang, model_type = lang.rsplit("_", 1)
-        model_dict = cls.model_info[engine_name][ocr_version.value][task_type]
+    def get_model_url(cls, file_info: FileInfo) -> Dict[str, str]:
+        model_dict = OmegaConf.select(
+            cls.model_info,
+            f"{file_info.engine_name}.{file_info.ocr_version}.{file_info.task_type}",
+        )
 
         # 优先查找 server 模型
-        if model_type == ModelType.SERVER.value:
+        if file_info.model_type == ModelType.SERVER.value:
             for k in model_dict:
-                if k.startswith(lang) and model_type in k:
+                if k.startswith(file_info.lang_type) and file_info.model_type in k:
                     return model_dict[k]
 
         for k in model_dict:
-            if k.startswith(lang):
+            if k.startswith(file_info.lang_type):
                 return model_dict[k]
 
         raise KeyError("Model not found")
 
     @classmethod
-    def get_dict_key_url(
-        cls, engine_name: str, task_type: str, lang: str, ocr_version: OCRVersion
-    ) -> str:
-        lang, model_type = lang.rsplit("_", 1)
-        model_dict = cls.model_info[engine_name][ocr_version.value][task_type]
-
-        # 优先查找 server 模型
-        if model_type == ModelType.SERVER.value:
-            for k in model_dict:
-                if k.startswith(lang) and model_type in k:
-                    return model_dict[k]["dict_url"]
-
-        for k in model_dict:
-            if k.startswith(lang):
-                return model_dict[k]["dict_url"]
-
-        raise KeyError("Rec Model dict not found")
+    def get_dict_key_url(cls, file_info: FileInfo) -> str:
+        model_dict = cls.get_model_url(file_info)
+        return model_dict["dict_url"]
