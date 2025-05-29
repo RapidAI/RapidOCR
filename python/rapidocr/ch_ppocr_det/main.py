@@ -25,24 +25,24 @@ from .utils import DBPostProcess, DetPreProcess, TextDetOutput
 
 
 class TextDetector:
-    def __init__(self, config: Dict[str, Any]):
-        self.limit_side_len = config.get("limit_side_len")
-        self.limit_type = config.get("limit_type")
-        self.mean = config.get("mean")
-        self.std = config.get("std")
+    def __init__(self, cfg: Dict[str, Any]):
+        self.limit_side_len = cfg.get("limit_side_len")
+        self.limit_type = cfg.get("limit_type")
+        self.mean = cfg.get("mean")
+        self.std = cfg.get("std")
         self.preprocess_op = None
 
         post_process = {
-            "thresh": config.get("thresh", 0.3),
-            "box_thresh": config.get("box_thresh", 0.5),
-            "max_candidates": config.get("max_candidates", 1000),
-            "unclip_ratio": config.get("unclip_ratio", 1.6),
-            "use_dilation": config.get("use_dilation", True),
-            "score_mode": config.get("score_mode", "fast"),
+            "thresh": cfg.get("thresh", 0.3),
+            "box_thresh": cfg.get("box_thresh", 0.5),
+            "max_candidates": cfg.get("max_candidates", 1000),
+            "unclip_ratio": cfg.get("unclip_ratio", 1.6),
+            "use_dilation": cfg.get("use_dilation", True),
+            "score_mode": cfg.get("score_mode", "fast"),
         }
         self.postprocess_op = DBPostProcess(**post_process)
 
-        self.session = get_engine(config.engine_name)(config)
+        self.session = get_engine(cfg.engine_type)(cfg)
 
     def __call__(self, img: np.ndarray) -> TextDetOutput:
         start_time = time.perf_counter()

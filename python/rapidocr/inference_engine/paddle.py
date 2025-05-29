@@ -23,7 +23,7 @@ class PaddleInferSession(InferSession):
         self.mode = mode
 
         pdmodel_path, pdiparams_path = self._setup_model(cfg)
-        if cfg.ocr_version == OCRVersion.PPOCRV5.value:
+        if cfg.ocr_version == OCRVersion.PPOCRV5:
             self._init_predictor_v2(cfg, pdmodel_path, pdiparams_path)
         else:
             self._init_predictor_v1(cfg, pdmodel_path, pdiparams_path)
@@ -37,7 +37,7 @@ class PaddleInferSession(InferSession):
         if model_dir is None:
             model_info = self.get_model_url(
                 FileInfo(
-                    engine_name=cfg.engine_name,
+                    engine_type=cfg.engine_type,
                     ocr_version=cfg.ocr_version,
                     task_type=cfg.task_type,
                     lang_type=cfg.lang_type,

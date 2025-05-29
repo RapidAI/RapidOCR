@@ -25,13 +25,13 @@ from .utils import ClsPostProcess, TextClsOutput
 
 
 class TextClassifier:
-    def __init__(self, config: Dict[str, Any]):
-        self.cls_image_shape = config["cls_image_shape"]
-        self.cls_batch_num = config["cls_batch_num"]
-        self.cls_thresh = config["cls_thresh"]
-        self.postprocess_op = ClsPostProcess(config["label_list"])
+    def __init__(self, cfg: Dict[str, Any]):
+        self.cls_image_shape = cfg["cls_image_shape"]
+        self.cls_batch_num = cfg["cls_batch_num"]
+        self.cls_thresh = cfg["cls_thresh"]
+        self.postprocess_op = ClsPostProcess(cfg["label_list"])
 
-        self.session = get_engine(config.engine_name)(config)
+        self.session = get_engine(cfg.engine_type)(cfg)
 
     def __call__(self, img_list: Union[np.ndarray, List[np.ndarray]]) -> TextClsOutput:
         if isinstance(img_list, np.ndarray):

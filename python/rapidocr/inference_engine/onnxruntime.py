@@ -37,7 +37,7 @@ class OrtInferSession(InferSession):
             # 说明用户没有指定自己模型，使用默认模型
             model_info = self.get_model_url(
                 FileInfo(
-                    engine_name=cfg.engine_name,
+                    engine_type=cfg.engine_type,
                     ocr_version=cfg.ocr_version,
                     task_type=cfg.task_type,
                     lang_type=cfg.lang_type,

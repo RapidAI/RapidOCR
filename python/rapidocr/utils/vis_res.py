@@ -14,6 +14,7 @@ from PIL import Image, ImageDraw, ImageFont
 from .download_file import DownloadFile, DownloadFileInput
 from .load_image import LoadImage
 from .logger import Logger
+from .typings import LangRec
 
 root_dir = Path(__file__).resolve().parent.parent
 InputType = Union[str, np.ndarray, bytes, Path, Image.Image]
@@ -39,7 +40,7 @@ class VisRes:
         txts: Optional[Union[List[str], Tuple[str]]] = None,
         scores: Optional[Tuple[float]] = None,
         font_path: Optional[str] = None,
-        lang_type: Optional[str] = None,
+        lang_type: Optional[LangRec] = None,
     ) -> np.ndarray:
         if txts is None:
             return self.draw_dt_boxes(img_content, dt_boxes, scores)
@@ -78,7 +79,7 @@ class VisRes:
     def get_font_path(
         self,
         font_path: Optional[Union[str, Path]] = None,
-        lang_type: Optional[str] = None,
+        lang_type: Optional[LangRec] = None,
     ) -> str:
         default_info = self.font_cfg["ch"]
         default_input_params = DownloadFileInput(
@@ -92,6 +93,8 @@ class VisRes:
             # 没有指定语种，用默认字体文件
             DownloadFile.run(default_input_params)
             return str(DEFAULT_FONT_PATH)
+
+        lang_type = lang_type.value
 
         if font_path is None:
             # 指定了语种，但是没有指定字体文件，根据语种选择字体文件

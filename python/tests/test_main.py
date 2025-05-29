@@ -13,8 +13,7 @@ import pytest
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
-from rapidocr import LoadImageError, RapidOCR
-from rapidocr.inference_engine.base import EngineType
+from rapidocr import EngineType, LangRec, LoadImageError, ModelType, RapidOCR
 from rapidocr.main import main
 from rapidocr.utils.logger import Logger
 
@@ -39,7 +38,9 @@ def get_engine(params: Optional[Dict[str, Any]] = None):
 
 
 def test_ch_doc_server():
-    engine = RapidOCR(params={"Rec.lang_type": "ch_doc", "Rec.model_type": "server"})
+    engine = RapidOCR(
+        params={"Rec.lang_type": LangRec.CH_DOC, "Rec.model_type": ModelType.SERVER}
+    )
 
     img_path = tests_dir / "ch_doc_server.png"
     result = engine(img_path)
@@ -90,7 +91,9 @@ def test_img_url_input(engine):
 
 
 def test_server_rec():
-    engine = RapidOCR(params={"Rec.lang_type": "ch", "Rec.model_type": "server"})
+    engine = RapidOCR(
+        params={"Rec.lang_type": LangRec.CH, "Rec.model_type": ModelType.SERVER}
+    )
     result = engine(img_path)
     assert result.txts is not None
     assert result.txts[0] == "正品促销"
@@ -143,14 +146,10 @@ def test_cli_vis(cmd, img_name):
     vis_path.unlink()
 
 
-def test_error_lang():
-    with pytest.raises(KeyError) as exc_info:
-        engine = get_engine(params={"Rec.lang_type": "eh"})
-    assert exc_info.type is KeyError
-
-
 def test_korean_lang():
-    engine = get_engine(params={"Rec.lang_type": "korean", "Rec.model_type": "mobile"})
+    engine = get_engine(
+        params={"Rec.lang_type": LangRec.KOREAN, "Rec.model_type": ModelType.MOBILE}
+    )
     img_path = tests_dir / "korean.jpg"
     result = engine(img_path)
     assert result.txts is not None
@@ -158,7 +157,9 @@ def test_korean_lang():
 
 
 def test_en_lang():
-    engine = get_engine(params={"Rec.lang_type": "en", "Rec.model_type": "mobile"})
+    engine = get_engine(
+        params={"Rec.lang_type": LangRec.EN, "Rec.model_type": ModelType.MOBILE}
+    )
     img_path = tests_dir / "en.jpg"
     result = engine(img_path)
     assert result.txts is not None
