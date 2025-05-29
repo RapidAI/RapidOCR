@@ -39,6 +39,7 @@ Det:
     lang_type: 'ch'
     model_type: 'mobile'
     ocr_version: 'PP-OCRv4'
+
     task_type: 'det'
 
     model_path: null
@@ -61,6 +62,7 @@ Cls:
     lang_type: 'ch'
     model_type: 'mobile'
     ocr_version: 'PP-OCRv4'
+
     task_type: 'cls'
 
     model_path: null
@@ -76,6 +78,7 @@ Rec:
     lang_type: 'ch'
     model_type: 'mobile'
     ocr_version: 'PP-OCRv4'
+
     task_type: 'rec'
 
     model_path: null
