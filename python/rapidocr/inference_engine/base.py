@@ -4,7 +4,7 @@
 import abc
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, Union
 
 import numpy as np
 from attr import dataclass
@@ -20,53 +20,42 @@ MODEL_URL_PATH = cur_dir / "default_models.yaml"
 logger = Logger(logger_name=__name__).get_log()
 
 
-def get_installed_engine() -> List[str]:
-    installed_engine = []
-    for v in EngineType:
-        engine_name = v.value
-        if import_package(engine_name) is None:
-            continue
-
-        installed_engine.append(engine_name)
-    return installed_engine
-
-
 def get_engine(engine_type: EngineType):
     logger.info("Using engine_name: %s", engine_type.value)
 
     if engine_type == EngineType.ONNXRUNTIME:
-        if not import_package("onnxruntime"):
-            raise ImportError("onnxruntime is not installed.")
+        if not import_package(engine_type.value):
+            raise ImportError(f"{engine_type.value} is not installed.")
 
         from .onnxruntime import OrtInferSession
 
         return OrtInferSession
 
     if engine_type == EngineType.OPENVINO:
-        if not import_package("openvino"):
-            raise ImportError("openvino is not installed")
+        if not import_package(engine_type.value):
+            raise ImportError(f"{engine_type.value} is not installed")
 
         from .openvino import OpenVINOInferSession
 
         return OpenVINOInferSession
 
     if engine_type == EngineType.PADDLE:
-        if not import_package("paddle"):
-            raise ImportError("paddleopaddle is not installed")
+        if not import_package(engine_type.value):
+            raise ImportError(f"{engine_type.value} is not installed")
 
         from .paddle import PaddleInferSession
 
         return PaddleInferSession
 
     if engine_type == EngineType.TORCH:
-        if not import_package("torch"):
-            raise ImportError("torch is not installed")
+        if not import_package(engine_type.value):
+            raise ImportError(f"{engine_type.value} is not installed")
 
         from .torch import TorchInferSession
 
         return TorchInferSession
 
-    raise ValueError(f"Unsupported engine: {engine_name}")
+    raise ValueError(f"Unsupported engine: {engine_type.value}")
 
 
 @dataclass

@@ -10,6 +10,8 @@ import cv2
 import numpy as np
 import pytest
 
+from rapidocr.utils.typings import OCRVersion
+
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
@@ -35,6 +37,20 @@ def get_engine(params: Optional[Dict[str, Any]] = None):
 
     engine = RapidOCR()
     return engine
+
+
+def test_ppocrv5_det_mobile():
+    engine = RapidOCR(
+        params={
+            "Det.ocr_version": OCRVersion.PPOCRV5,
+            "Det.model_type": ModelType.MOBILE,
+        }
+    )
+    img_path = tests_dir / "ch_en_num.jpg"
+    result = engine(img_path, use_det=True, use_cls=False, use_rec=False)
+
+    assert result.boxes is not None
+    assert len(result.boxes) == 17
 
 
 def test_ch_doc_server():
