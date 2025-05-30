@@ -69,6 +69,14 @@ onnxruntime:
       ch_PP-OCRv5_server_det.onnx:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv5/det/ch_PP-OCRv5_server_det.onnx
         SHA256: 0f8846b1d4bba223a2a2f9d9b44022fbc22cc019051a602b41a7fda9667e4cad
+    rec:
+      ch_PP-OCRv5_rec_mobile_infer:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv5/rec/ch_PP-OCRv5_rec_mobile_infer.onnx
+        SHA256: 5825fc7ebf84ae7a412be049820b4d86d77620f204a041697b0494669b1742c5
+      ch_PP-OCRv5_rec_server_infer.onnx:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv5/rec/ch_PP-OCRv5_rec_server_infer.onnx
+        SHA256: e09385400eaaaef34ceff54aeb7c4f0f1fe014c27fa8b9905d4709b65746562a
+
 
 openvino:
   PP-OCRv4:
@@ -154,6 +162,13 @@ openvino:
       ch_PP-OCRv5_server_det.onnx:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv5/det/ch_PP-OCRv5_server_det.onnx
         SHA256: 0f8846b1d4bba223a2a2f9d9b44022fbc22cc019051a602b41a7fda9667e4cad
+    rec:
+      ch_PP-OCRv5_rec_mobile_infer:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv5/rec/ch_PP-OCRv5_rec_mobile_infer.onnx
+        SHA256: 5825fc7ebf84ae7a412be049820b4d86d77620f204a041697b0494669b1742c5
+      ch_PP-OCRv5_rec_server_infer.onnx:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv5/rec/ch_PP-OCRv5_rec_server_infer.onnx
+        SHA256: e09385400eaaaef34ceff54aeb7c4f0f1fe014c27fa8b9905d4709b65746562a
 
 paddle:
   PP-OCRv4:
@@ -282,7 +297,19 @@ paddle:
         inference.pdiparams: 183146fe9d9910352f68482f623bcbbb9fa7b9e8fa1463b9ad288cef00524d2d
         inference.json: af5876933d8806a1b50d895867e0781e135cd92ff37381992828fc8d1b842d28
         inference.yml: 28fb721efc3634fc8aa677e474b9602cb815a91cf569ef357a7a553d7b3ce685
-
+    rec:
+      ch_PP-OCRv5_rec_mobile_infer:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv5/rec/ch_PP-OCRv5_rec_mobile_infer
+        dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv5/rec/ch_PP-OCRv5_rec_mobile_infer/ppocrv5_dict.txt
+        inference.pdiparams: 2460da90875937c94db97eba74ae3d9e5d4c4c57c42f1f41531c09a26bcc771a
+        inference.json: 24587345250c7332d0fc6f9a44e794d078cdaeb64c302fef906f325619de2569
+        inference.yml: 5dfeb2777f6d0db8177d8128a8acfcf6e6276dc4ac73ea3bf0dc06d6a5e85d8e
+      ch_PP-OCRv5_rec_server_infer:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv5/rec/ch_PP-OCRv5_rec_server_infer
+        dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv5/rec/ch_PP-OCRv5_rec_server_infer/ppocrv5_dict.txt
+        inference.pdiparams: 63853f062a5f4089befc16f565a68277618e0da5cb45468b49d11079de0ada77
+        inference.json: 8e6e12e5d42531840310977fffb58165bf889fc5061408c5a8afdb6985f47fcb
+        inference.yml: 2c719dba044c4e2228aef8ff92f5f575394d75d24c16de096a33b7cfd902f66d
 
 torch:
   PP-OCRv4:
