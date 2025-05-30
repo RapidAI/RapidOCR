@@ -39,6 +39,25 @@ def get_engine(params: Optional[Dict[str, Any]] = None):
     return engine
 
 
+@pytest.mark.parametrize(
+    "engine_type",
+    [EngineType.ONNXRUNTIME, EngineType.PADDLE, EngineType.OPENVINO],
+)
+def test_ppocrv5_rec_mobile(engine_type):
+    engine = RapidOCR(
+        params={
+            "Rec.ocr_version": OCRVersion.PPOCRV5,
+            "Rec.model_type": ModelType.MOBILE,
+            "Rec.engine_type": engine_type,
+        }
+    )
+    img_path = tests_dir / "text_rec.jpg"
+    result = engine(img_path, use_det=False, use_cls=False, use_rec=True)
+
+    assert result.txts is not None
+    assert result.txts[0] == "韩国小馆"
+
+
 def test_ppocrv5_det_mobile():
     engine = RapidOCR(
         params={
@@ -183,12 +202,11 @@ def test_en_lang():
 
 
 def test_engine_openvino():
-    engine_name = EngineType.OPENVINO.value
     engine = get_engine(
         params={
-            "Det.engine_name": engine_name,
-            "Cls.engine_name": engine_name,
-            "Rec.engine_name": engine_name,
+            "Det.engine_type": EngineType.OPENVINO,
+            "Cls.engine_type": EngineType.OPENVINO,
+            "Rec.engine_type": EngineType.OPENVINO,
         }
     )
 
@@ -198,12 +216,11 @@ def test_engine_openvino():
 
 
 def test_engine_paddle():
-    engine_name = EngineType.PADDLE.value
     engine = get_engine(
         params={
-            "Det.engine_name": engine_name,
-            "Cls.engine_name": engine_name,
-            "Rec.engine_name": engine_name,
+            "Det.engine_type": EngineType.PADDLE,
+            "Cls.engine_type": EngineType.PADDLE,
+            "Rec.engine_type": EngineType.PADDLE,
         }
     )
 
@@ -213,12 +230,11 @@ def test_engine_paddle():
 
 
 def test_engine_torch():
-    engine_name = EngineType.TORCH.value
     engine = get_engine(
         params={
-            "Det.engine_name": engine_name,
-            "Cls.engine_name": engine_name,
-            "Rec.engine_name": engine_name,
+            "Det.engine_type": EngineType.TORCH,
+            "Cls.engine_type": EngineType.TORCH,
+            "Rec.engine_type": EngineType.TORCH,
         }
     )
 
