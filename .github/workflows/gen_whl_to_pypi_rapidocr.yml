@@ -6,7 +6,7 @@ on:
       - v*
 
 env:
-  RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v2.0.7.zip
+  RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v3.0.0.zip
 
 jobs:
   UnitTesting:

@@ -19,12 +19,12 @@ from typing import Any, Dict
 import cv2
 import numpy as np
 
-from rapidocr.inference_engine.base import get_engine
+from rapidocr.inference_engine.base import FileInfo, get_engine
 
 from ..utils import Logger
 from ..utils.download_file import DownloadFile, DownloadFileInput
-from .utils import CTCLabelDecode
 from .typings import TextRecInput, TextRecOutput
+from .utils import CTCLabelDecode
 
 DEFAULT_DICT_PATH = Path(__file__).parent.parent / "models" / "ppocr_keys_v1.txt"
 DEFAULT_DICT_URL = "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v2.0.7/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer/ppocr_keys_v1.txt"
@@ -32,23 +32,23 @@ DEFAULT_MODEL_PATH = Path(__file__).parent.parent / "models"
 
 
 class TextRecognizer:
-    def __init__(self, config: Dict[str, Any]):
-        self.session = get_engine(config.engine_name)(config)
+    def __init__(self, cfg: Dict[str, Any]):
+        self.session = get_engine(cfg.engine_type)(cfg)
         self.logger = Logger(logger_name=__name__).get_log()
 
         # onnx has inner character, other engine get or download character_dict_path
-        character, character_dict_path = self.get_character_dict(config)
+        character, character_dict_path = self.get_character_dict(cfg)
 
         self.postprocess_op = CTCLabelDecode(
             character=character, character_path=character_dict_path
         )
 
-        self.rec_batch_num = config["rec_batch_num"]
-        self.rec_image_shape = config["rec_img_shape"]
+        self.rec_batch_num = cfg["rec_batch_num"]
+        self.rec_image_shape = cfg["rec_img_shape"]
 
-    def get_character_dict(self, config):
+    def get_character_dict(self, cfg):
         character = None
-        dict_path = config.get("rec_keys_path", None)
+        dict_path = cfg.get("rec_keys_path", None)
         if self.session.have_key():
             character = self.session.get_character_list()
             return character, dict_path
@@ -56,9 +56,13 @@ class TextRecognizer:
         # onnx has character, other engine need dict_path
         if (not dict_path and not character) or (not Path(dict_path).exists()):
             dict_download_url = self.session.get_dict_key_url(
-                config.engine_name,
-                config.task_type,
-                config.lang,
+                FileInfo(
+                    engine_type=cfg.engine_type,
+                    ocr_version=cfg.ocr_version,
+                    task_type=cfg.task_type,
+                    lang_type=cfg.lang_type,
+                    model_type=cfg.model_type,
+                )
             )
             dict_download_url = (
                 dict_download_url if dict_download_url is not None else DEFAULT_DICT_URL

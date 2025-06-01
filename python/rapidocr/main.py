@@ -14,10 +14,8 @@ from .ch_ppocr_cls import TextClassifier, TextClsOutput
 from .ch_ppocr_det import TextDetector, TextDetOutput
 from .ch_ppocr_rec import TextRecInput, TextRecognizer, TextRecOutput
 from .cli import check_install, generate_cfg
-from .inference_engine.base import get_engine_name
 from .utils import (
     LoadImage,
-    ParseLang,
     RapidOCROutput,
     VisRes,
     add_round_letterbox,
@@ -35,54 +33,38 @@ class RapidOCR:
         self, config_path: Optional[str] = None, params: Optional[Dict[str, Any]] = None
     ):
         if config_path is not None and Path(config_path).exists():
-            config = ParseParams.load(config_path)
+            cfg = ParseParams.load(config_path)
         else:
-            config = ParseParams.load(DEFAULT_CFG_PATH)
+            cfg = ParseParams.load(DEFAULT_CFG_PATH)
 
         if params:
-            config = ParseParams.update_batch(config, params)
+            cfg = ParseParams.update_batch(cfg, params)
 
-        engine_name = get_engine_name(config)
+        self.text_score = cfg.Global.text_score
+        self.min_height = cfg.Global.min_height
+        self.width_height_ratio = cfg.Global.width_height_ratio
 
-        lang_det, lang_rec = ParseLang()(config.Global.lang_det, config.Global.lang_rec)
+        self.use_det = cfg.Global.use_det
+        cfg.Det.engine_cfg = cfg.EngineConfig[cfg.Det.engine_type.value]
+        self.text_det = TextDetector(cfg.Det)
 
-        self.lang_rec = lang_rec
+        self.use_cls = cfg.Global.use_cls
+        cfg.Cls.engine_cfg = cfg.EngineConfig[cfg.Cls.engine_type.value]
+        self.text_cls = TextClassifier(cfg.Cls)
 
-        self.text_score = config.Global.text_score
-        self.min_height = config.Global.min_height
-        self.width_height_ratio = config.Global.width_height_ratio
-
-        self.use_det = config.Global.use_det
-        config.Det.lang = lang_det
-        config.Det.engine_name = engine_name
-        config.Det.engine_cfg = config.EngineConfig[engine_name]
-        config.Det.task_type = "det"
-        self.text_det = TextDetector(config.Det)
-
-        self.use_cls = config.Global.use_cls
-        config.Cls.lang = "ch_mobile"
-        config.Cls.engine_name = engine_name
-        config.Cls.engine_cfg = config.EngineConfig[engine_name]
-        config.Cls.task_type = "cls"
-        self.text_cls = TextClassifier(config.Cls)
-
-        self.use_rec = config.Global.use_rec
-        config.Rec.lang = lang_rec
-        config.Rec.engine_name = engine_name
-        config.Rec.engine_cfg = config.EngineConfig[engine_name]
-        config.Rec.task_type = "rec"
-        self.text_rec = TextRecognizer(config.Rec)
+        self.use_rec = cfg.Global.use_rec
+        cfg.Rec.engine_cfg = cfg.EngineConfig[cfg.Rec.engine_type.value]
+        self.text_rec = TextRecognizer(cfg.Rec)
 
         self.load_img = LoadImage()
-        self.max_side_len = config.Global.max_side_len
-        self.min_side_len = config.Global.min_side_len
+        self.max_side_len = cfg.Global.max_side_len
+        self.min_side_len = cfg.Global.min_side_len
 
         self.cal_rec_boxes = CalRecBoxes()
 
-        self.return_paddleocr_format = False
         self.return_word_box = False
 
-        self.config = config
+        self.cfg = cfg
 
     def __call__(
         self,
@@ -153,7 +135,6 @@ class RapidOCR:
                 det_res.boxes, op_record, raw_h, raw_w
             )
 
-        rec_res.lang_rec = self.lang_rec
         ocr_res = self.get_final_res(ori_img, det_res, cls_res, rec_res)
         return ocr_res
 
@@ -296,14 +277,11 @@ class RapidOCR:
             scores=rec_res.scores,
             word_results=rec_res.word_results,
             elapse_list=[det_res.elapse, cls_res.elapse, rec_res.elapse],
-            lang_rec=self.lang_rec,
+            lang_type=self.cfg.Rec.lang_type,
         )
         ocr_res = self.filter_by_text_score(ocr_res)
         if len(ocr_res) <= 0:
             return RapidOCROutput()
-
-        if self.return_paddleocr_format:
-            return ocr_res.to_paddleocr_format()
 
         return ocr_res
 

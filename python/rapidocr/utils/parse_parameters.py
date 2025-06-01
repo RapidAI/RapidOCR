@@ -1,51 +1,21 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+from enum import Enum
 from pathlib import Path
-from typing import Dict, Tuple, Union
+from typing import Any, Dict, Union
 
-import numpy as np
 from omegaconf import DictConfig, OmegaConf
-from PIL import Image
 
-from .typings import LangDet, LangRec
-
-root_dir = Path(__file__).resolve().parent.parent
-InputType = Union[str, np.ndarray, bytes, Path, Image.Image]
-
-
-class ParseLang:
-    def __init__(self):
-        self.lang_det_list = [v.value for v in LangDet]
-        self.lang_rec_list = [v.value for v in LangRec]
-
-    def __call__(self, lang_det: str, lang_rec: str) -> Tuple[str, str]:
-        lang_det, det_model_type = lang_det.rsplit("_", 1)
-        lang_det = self.parse_det_lang(lang_det)
-
-        lang_rec, rec_model_type = lang_rec.rsplit("_", 1)
-        lang_rec = self.parse_rec_lang(lang_rec)
-
-        return f"{lang_det}_{det_model_type}", f"{lang_rec}_{rec_model_type}"
-
-    def parse_det_lang(self, lang: str) -> str:
-        lang = lang.strip().lower()
-
-        if lang in self.lang_det_list:
-            return lang
-        raise ValueError(
-            f"lang: {lang} is not in the supported list: {self.lang_det_list}"
-        )
-
-    def parse_rec_lang(self, lang: str) -> str:
-        lang = lang.strip().lower()
-
-        if lang in self.lang_rec_list:
-            return lang
-
-        raise ValueError(
-            f"lang: {lang} is not in the supported list: {self.lang_rec_list}"
-        )
+from .typings import (
+    EngineType,
+    LangCls,
+    LangDet,
+    LangRec,
+    ModelType,
+    OCRVersion,
+    TaskType,
+)
 
 
 class ParseParams(OmegaConf):
@@ -53,10 +23,52 @@ class ParseParams(OmegaConf):
         pass
 
     @classmethod
-    def update_batch(cls, cfg: DictConfig, params: Dict[str, str]) -> DictConfig:
+    def load(cls, file_path: Union[str, Path]):
+        cfg = OmegaConf.load(file_path)
+
+        cfg.Det = cls._convert_value_to_enum(cfg.Det)
+        cfg.Cls = cls._convert_value_to_enum(cfg.Cls)
+        cfg.Rec = cls._convert_value_to_enum(cfg.Rec)
+        return cfg
+
+    @classmethod
+    def update_batch(cls, cfg: DictConfig, params: Dict[str, Any]) -> DictConfig:
         global_keys = list(OmegaConf.to_container(cfg.Global).keys())
+        enum_params = [
+            "engine_type",
+            "model_type",
+            "ocr_version",
+            "lang_type",
+            "task_type",
+        ]
         for k, v in params.items():
             if k.startswith("Global") and k.split(".")[1] not in global_keys:
                 raise ValueError(f"{k} is not a valid key.")
+
+            if k.split(".")[1] in enum_params and not isinstance(v, Enum):
+                raise TypeError(f"The value of {k} must be Enum Type.")
+
             cls.update(cfg, k, v)
         return cfg
+
+    @classmethod
+    def _convert_value_to_enum(cls, cfg: DictConfig):
+        cfg.engine_type = EngineType(cfg.engine_type)
+        cfg.model_type = ModelType(cfg.model_type)
+        cfg.ocr_version = OCRVersion(cfg.ocr_version)
+        cfg.task_type = TaskType(cfg.task_type)
+        cfg.lang_type = cls.LangType(cfg.task_type, cfg.lang_type)
+        return cfg
+
+    @staticmethod
+    def LangType(task_type: TaskType, lang_type: str):
+        if task_type == TaskType.DET:
+            return LangDet(lang_type)
+
+        if task_type == TaskType.CLS:
+            return LangCls(lang_type)
+
+        if task_type == TaskType.REC:
+            return LangRec(lang_type)
+
+        raise ValueError(f"task_type {task_type.value} is not in [Det, Cls, Rec]")

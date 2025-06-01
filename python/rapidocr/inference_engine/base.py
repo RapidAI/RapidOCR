@@ -4,102 +4,67 @@
 import abc
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, Union
 
 import numpy as np
-from omegaconf import DictConfig, OmegaConf
+from attr import dataclass
+from omegaconf import OmegaConf
 
 from ..utils.logger import Logger
+from ..utils.typings import EngineType, ModelType, OCRVersion, TaskType
 from ..utils.utils import import_package
 
 cur_dir = Path(__file__).resolve().parent.parent
 MODEL_URL_PATH = cur_dir / "default_models.yaml"
 
-
 logger = Logger(logger_name=__name__).get_log()
 
 
-class EngineType(Enum):
-    ONNXRUNTIME = "onnxruntime"
-    OPENVINO = "openvino"
-    PADDLE = "paddle"
-    TORCH = "torch"
+def get_engine(engine_type: EngineType):
+    logger.info("Using engine_name: %s", engine_type.value)
 
-
-def get_installed_engine() -> List[str]:
-    installed_engine = []
-    for v in EngineType:
-        engine_name = v.value
-        if import_package(engine_name) is None:
-            continue
-
-        installed_engine.append(engine_name)
-    return installed_engine
-
-
-def get_engine(engine_name: str):
-    logger.info("Using engine_name: %s", engine_name)
-
-    engine_type = EngineType(engine_name)
     if engine_type == EngineType.ONNXRUNTIME:
-        if not import_package("onnxruntime"):
-            raise ImportError("onnxruntime is not installed.")
+        if not import_package(engine_type.value):
+            raise ImportError(f"{engine_type.value} is not installed.")
 
         from .onnxruntime import OrtInferSession
 
         return OrtInferSession
 
     if engine_type == EngineType.OPENVINO:
-        if not import_package("openvino"):
-            raise ImportError("openvino is not installed")
+        if not import_package(engine_type.value):
+            raise ImportError(f"{engine_type.value} is not installed")
 
         from .openvino import OpenVINOInferSession
 
         return OpenVINOInferSession
 
     if engine_type == EngineType.PADDLE:
-        if not import_package("paddle"):
-            raise ImportError("paddleopaddle is not installed")
+        if not import_package(engine_type.value):
+            raise ImportError(f"{engine_type.value} is not installed")
 
         from .paddle import PaddleInferSession
 
         return PaddleInferSession
 
     if engine_type == EngineType.TORCH:
-        if not import_package("torch"):
-            raise ImportError("torch is not installed")
+        if not import_package(engine_type.value):
+            raise ImportError(f"{engine_type.value} is not installed")
 
         from .torch import TorchInferSession
 
         return TorchInferSession
 
-    raise ValueError(f"Unsupported engine: {engine_name}")
+    raise ValueError(f"Unsupported engine: {engine_type.value}")
 
 
-def get_engine_name(config: DictConfig) -> str:
-    with_onnx = config.Global.with_onnx
-    with_openvino = config.Global.with_openvino
-    with_paddle = config.Global.with_paddle
-    with_torch = config.Global.with_torch
-
-    if with_onnx:
-        return EngineType.ONNXRUNTIME.value
-
-    if with_openvino:
-        return EngineType.OPENVINO.value
-
-    if with_paddle:
-        return EngineType.PADDLE.value
-
-    if with_torch:
-        return EngineType.TORCH.value
-
-    return EngineType.ONNXRUNTIME.value
-
-
-class ModelType(Enum):
-    MOBILE = "mobile"
-    SERVER = "server"
+@dataclass
+class FileInfo:
+    engine_type: EngineType
+    ocr_version: OCRVersion
+    task_type: TaskType
+    lang_type: Enum
+    model_type: ModelType
 
 
 class InferSession(abc.ABC):
@@ -132,37 +97,28 @@ class InferSession(abc.ABC):
         pass
 
     @classmethod
-    def get_model_url(
-        cls, engine_name: str, task_type: str, lang: str
-    ) -> Dict[str, str]:
-        lang, model_type = lang.rsplit("_", 1)
-        model_dict = cls.model_info[engine_name]["PP-OCRv4"][task_type]
+    def get_model_url(cls, file_info: FileInfo) -> Dict[str, str]:
+        model_dict = OmegaConf.select(
+            cls.model_info,
+            f"{file_info.engine_type.value}.{file_info.ocr_version.value}.{file_info.task_type.value}",
+        )
 
         # 优先查找 server 模型
-        if model_type == ModelType.SERVER.value:
+        if file_info.model_type == ModelType.SERVER:
             for k in model_dict:
-                if k.startswith(lang) and model_type in k:
+                if (
+                    k.startswith(file_info.lang_type.value)
+                    and file_info.model_type.value in k
+                ):
                     return model_dict[k]
 
         for k in model_dict:
-            if k.startswith(lang):
+            if k.startswith(file_info.lang_type.value):
                 return model_dict[k]
 
-        raise KeyError("Model not found")
+        raise KeyError("File not found")
 
     @classmethod
-    def get_dict_key_url(cls, engine_name: str, task_type: str, lang: str) -> str:
-        lang, model_type = lang.rsplit("_", 1)
-        model_dict = cls.model_info[engine_name]["PP-OCRv4"][task_type]
-
-        # 优先查找 server 模型
-        if model_type == ModelType.SERVER.value:
-            for k in model_dict:
-                if k.startswith(lang) and model_type in k:
-                    return model_dict[k]["dict_url"]
-
-        for k in model_dict:
-            if k.startswith(lang):
-                return model_dict[k]["dict_url"]
-
-        raise KeyError("Rec Model dict not found")
+    def get_dict_key_url(cls, file_info: FileInfo) -> str:
+        model_dict = cls.get_model_url(file_info)
+        return model_dict["dict_url"]
