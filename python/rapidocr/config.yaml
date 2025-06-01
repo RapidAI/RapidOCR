@@ -18,6 +18,7 @@ EngineConfig:
     onnxruntime:
         intra_op_num_threads: -1
         inter_op_num_threads: -1
+        enable_cpu_mem_arena: false
         use_cuda: false
         use_dml: false
 

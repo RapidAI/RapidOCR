@@ -72,18 +72,18 @@ class OrtInferSession(InferSession):
         self._verify_providers()
 
     @staticmethod
-    def _init_sess_opts(config: Dict[str, Any]) -> SessionOptions:
+    def _init_sess_opts(cfg: Dict[str, Any]) -> SessionOptions:
         sess_opt = SessionOptions()
         sess_opt.log_severity_level = 4
-        sess_opt.enable_cpu_mem_arena = False
+        sess_opt.enable_cpu_mem_arena = cfg.enable_cpu_mem_arena
         sess_opt.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
 
         cpu_nums = os.cpu_count()
-        intra_op_num_threads = config.get("intra_op_num_threads", -1)
+        intra_op_num_threads = cfg.get("intra_op_num_threads", -1)
         if intra_op_num_threads != -1 and 1 <= intra_op_num_threads <= cpu_nums:
             sess_opt.intra_op_num_threads = intra_op_num_threads
 
-        inter_op_num_threads = config.get("inter_op_num_threads", -1)
+        inter_op_num_threads = cfg.get("inter_op_num_threads", -1)
         if inter_op_num_threads != -1 and 1 <= inter_op_num_threads <= cpu_nums:
             sess_opt.inter_op_num_threads = inter_op_num_threads
 
