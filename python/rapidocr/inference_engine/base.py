@@ -2,12 +2,12 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import abc
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Dict, Union
 
 import numpy as np
-from attr import dataclass
 from omegaconf import OmegaConf
 
 from ..utils.logger import Logger
