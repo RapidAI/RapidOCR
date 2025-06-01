@@ -70,7 +70,7 @@ onnxruntime:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.0.0/onnx/PP-OCRv5/det/ch_PP-OCRv5_server_det.onnx
         SHA256: 0f8846b1d4bba223a2a2f9d9b44022fbc22cc019051a602b41a7fda9667e4cad
     rec:
-      ch_PP-OCRv5_rec_mobile_infer:
+      ch_PP-OCRv5_rec_mobile_infer.onnx:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.0.0/onnx/PP-OCRv5/rec/ch_PP-OCRv5_rec_mobile_infer.onnx
         SHA256: 5825fc7ebf84ae7a412be049820b4d86d77620f204a041697b0494669b1742c5
       ch_PP-OCRv5_rec_server_infer.onnx:
