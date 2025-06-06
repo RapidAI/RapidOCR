@@ -448,7 +448,7 @@ def test_cn_word_ocr(engine, img_name: str, words: List[str]):
 
 @pytest.mark.parametrize(
     "img_name,words",
-    [("issue_170.png", "TEST")],
+    [("issue_170.png", "TEST"), ("return_word_debug.jpg", "3F1")],
 )
 def test_en_word_ocr(engine, img_name: str, words: str):
     img_path = tests_dir / img_name
