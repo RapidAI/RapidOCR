@@ -77,6 +77,8 @@ class CalRecBoxes:
         2. 全是英文
         3. 中英混合
         """
+        if not rec_txt or word_info.line_txt_len == 0:
+            return [], [], []
         bbox_points = quads_to_rect_bbox(bbox[None, ...])
         avg_col_width = (bbox_points[2] - bbox_points[0]) / word_info.line_txt_len
 
@@ -162,6 +164,8 @@ class CalRecBoxes:
     def calc_all_char_avg_width(
         width_list: List[float], bbox_x0: float, bbox_x1: float, txt_len: int
     ) -> float:
+        if txt_len == 0:
+            return 0.0
         if len(width_list) > 0:
             return sum(width_list) / len(width_list)
         return (bbox_x1 - bbox_x0) / txt_len
