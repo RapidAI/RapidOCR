@@ -89,7 +89,7 @@ class ProviderConfig:
         for ep, check_func in providers_to_check.items():
             if check_func() and first_provider != ep.value:
                 self.logger.warning(
-                    f"{ep.value} is not avaiable for current env, the inference part is automatically shifted to be executed under {first_provider}. "
+                    f"{ep.value} is not available for current env, the inference part is automatically shifted to be executed under {first_provider}. "
                 )
                 self.logger.warning(f"The available lists are {session_providers}")
 
@@ -109,7 +109,7 @@ class ProviderConfig:
             "(For reference only) If you want to use GPU acceleration, you must do:"
         )
         self.logger.info(
-            "First, uninstall all onnxruntime pakcages in current environment."
+            "First, uninstall all onnxruntime packages in current environment."
         )
         self.logger.info(
             "Second, install onnxruntime-gpu by `pip install onnxruntime-gpu`."
@@ -159,7 +159,7 @@ class ProviderConfig:
         )
         self.logger.info("If you want to use DirectML acceleration, you must do:")
         self.logger.info(
-            "First, uninstall all onnxruntime pakcages in current environment."
+            "First, uninstall all onnxruntime packages in current environment."
         )
         self.logger.info(
             "Second, install onnxruntime-directml by `pip install onnxruntime-directml`"
