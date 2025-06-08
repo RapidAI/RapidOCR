@@ -21,6 +21,7 @@ EngineConfig:
         enable_cpu_mem_arena: false
         use_cuda: false
         use_dml: false
+        use_cann: false
 
     openvino:
         inference_num_threads: -1
