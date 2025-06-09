@@ -29,6 +29,12 @@ class EP(Enum):
 class OrtInferSession:
     def __init__(self, config: Dict[str, Any]):
         self.logger = get_logger("OrtInferSession")
+        if (session := config.get("session")) is not None:
+            if not isinstance(session, InferenceSession):
+                raise TypeError(f"Expected session to be an InferenceSession, got {type(session)}")
+            self.logger.debug("Using the provided InferenceSession for inference.")
+            self.session = session
+            return
 
         model_path = config.get("model_path", None)
         self._verify_model(model_path)
