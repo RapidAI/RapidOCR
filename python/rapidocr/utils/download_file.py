@@ -77,18 +77,16 @@ class DownloadFile:
         total_size = int(response.headers.get("content-length", 0))
         logger.info("Download size: %.2fMB", total_size / 1024 / 1024)
 
-        with (
-            tqdm(
-                total=total_size,
-                unit="iB",
-                unit_scale=True,
-                disable=not cls.check_is_atty(),
-            ) as progress_bar,
-            open(save_path, "wb") as output_file,
-        ):
-            for chunk in response.iter_content(chunk_size=cls.BLOCK_SIZE):
-                progress_bar.update(len(chunk))
-                output_file.write(chunk)
+        with tqdm(
+            total=total_size,
+            unit="iB",
+            unit_scale=True,
+            disable=not cls.check_is_atty(),
+        ) as progress_bar:
+            with open(save_path, "wb") as output_file:
+                for chunk in response.iter_content(chunk_size=cls.BLOCK_SIZE):
+                    progress_bar.update(len(chunk))
+                    output_file.write(chunk)
 
         logger.info("Successfully saved to: %s", save_path)
 
