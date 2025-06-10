@@ -95,7 +95,6 @@ class ProviderConfig:
         self.logger.warning(
             f"{CUDA_EP} is not in available providers ({self.had_providers}). Use {self.default_provider} inference by default."
         )
-
         install_instructions = [
             f"If you want to use {CUDA_EP} acceleration, you must do:"
             "(For reference only) If you want to use GPU acceleration, you must do:",
@@ -136,7 +135,6 @@ class ProviderConfig:
         self.logger.warning(
             f"{DML_EP} is not in available providers ({self.had_providers}). Use {self.default_provider} inference by default."
         )
-
         install_instructions = [
             f"{DML_EP} is not in available providers ({self.had_providers}). Use {self.default_provider} inference by default.",
             "If you want to use DirectML acceleration, you must do:",

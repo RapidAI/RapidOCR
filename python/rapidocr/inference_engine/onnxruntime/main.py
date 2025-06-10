@@ -57,6 +57,7 @@ class OrtInferSession(InferSession):
         self._verify_model(model_path)
 
         sess_opt = self._init_sess_opts(cfg.engine_cfg)
+
         provider_cfg = ProviderConfig(engine_cfg=cfg.engine_cfg)
         self.session = InferenceSession(
             model_path,
