@@ -31,7 +31,7 @@
 
 ### Introduction
 
-💖 Introducing the foremost multi-platform, multi-lingual OCR tool that boasts unparalleled speed, expansive support, and complete openness. This exceptional software is entirely free and renowned for facilitating swift offline deployments. Core to its efficiency is the ONNXRuntime inference engine, offering 4 to 5 times the speed of PaddlePaddle's engine while ensuring no memory leaks.
+💖 Introducing the foremost multi-platform, multi-lingual OCR tool that boasts unparalleled speed, expansive support, and complete openness. This exceptional software is entirely free and renowned for facilitating swift offline deployments.
 
 🦜 **Supported Languages**: It inherently supports Chinese and English, with self-service conversion required for additional languages. Please refer [here](https://rapidai.github.io/RapidOCRDocs/blog/2022/09/28/%E6%94%AF%E6%8C%81%E8%AF%86%E5%88%AB%E8%AF%AD%E8%A8%80/) for specific language support details.
 
