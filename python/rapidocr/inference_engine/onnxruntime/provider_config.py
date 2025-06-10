@@ -18,15 +18,17 @@ class EP(Enum):
 
 
 class ProviderConfig:
-    def __init__(self, cfg_use_cuda: bool, cfg_use_dml: bool, cfg_use_cann: bool):
+    def __init__(self, engine_cfg: Dict[str, Any]):
         self.logger = Logger(logger_name=__name__).get_log()
 
         self.had_providers: List[str] = get_available_providers()
         self.default_provider = self.had_providers[0]
 
-        self.cfg_use_cuda = cfg_use_cuda
-        self.cfg_use_dml = cfg_use_dml
-        self.cfg_use_cann = cfg_use_cann
+        self.cfg_use_cuda = engine_cfg.get("use_cuda", False)
+        self.cfg_use_dml = engine_cfg.get("use_dml", False)
+        self.cfg_use_cann = engine_cfg.get("use_cann", False)
+
+        self.cfg = engine_cfg
 
     def get_ep_list(self):
         results = [(EP.CPU_EP.value, self.cpu_ep_cfg())]
@@ -47,32 +49,21 @@ class ProviderConfig:
         return results
 
     def cpu_ep_cfg(self) -> Dict[str, Any]:
-        return {
-            "arena_extend_strategy": "kSameAsRequested",
-        }
+        return self.cfg.cpu_ep_cfg
 
     def cuda_ep_cfg(self) -> Dict[str, Any]:
-        return {
-            "device_id": 0,
-            "arena_extend_strategy": "kNextPowerOfTwo",
-            "cudnn_conv_algo_search": "EXHAUSTIVE",
-            "do_copy_in_default_stream": True,
-        }
+        return self.cfg.cuda_ep_cfg
 
     def dml_ep_cfg(self) -> Dict[str, Any]:
+        if self.cfg.dm_ep_cfg is not None:
+            return self.cfg.dm_ep_cfg
+
         if self.use_cuda:
             return self.cuda_ep_cfg()
         return self.cpu_ep_cfg()
 
     def cann_ep_cfg(self) -> Dict[str, Any]:
-        return {
-            "device_id": 0,
-            "arena_extend_strategy": "kNextPowerOfTwo",
-            "npu_mem_limit": 20 * 1024 * 1024 * 1024,
-            "op_select_impl_mode": "high_performance",
-            "optypelist_for_implmode": "Gelu",
-            "enable_cann_graph": True,
-        }
+        return self.cfg.cann_ep_cfg
 
     def verify_providers(self, session_providers: Sequence[str]):
         if not session_providers:
@@ -111,7 +102,7 @@ class ProviderConfig:
             "First, uninstall all onnxruntime packages in current environment.",
             "Second, install onnxruntime-gpu by `pip install onnxruntime-gpu`.",
             "Note the onnxruntime-gpu version must match your cuda and cudnn version.",
-            "You can refer this link: https://onnxruntime.ai/docs/execution-providers/CUDA-EP.html",
+            "You can refer this link: https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html",
             f"Third, ensure {CUDA_EP} is in available providers list. e.g. ['CUDAExecutionProvider', 'CPUExecutionProvider']",
         ]
         self.print_log(install_instructions)
@@ -171,7 +162,7 @@ class ProviderConfig:
             "If you want to use CANN acceleration, you must do:",
             "First, ensure you have installed Huawei Ascend software stack.",
             "Second, install onnxruntime with CANN support by following the instructions at:",
-            "\thttps://onnxruntime.ai/docs/execution-providers/CANN-ExecutionProvider.html",
+            "\thttps://onnxruntime.ai/docs/execution-providers/community-maintained/CANN-ExecutionProvider.html",
             f"Third, ensure {CANN_EP} is in available providers list. e.g. ['CANNExecutionProvider', 'CPUExecutionProvider']",
         ]
         self.print_log(install_instructions)
