@@ -456,3 +456,10 @@ def test_en_word_ocr(engine, img_name: str, words: str):
     result = engine(img_path, return_word_box=True)
     txts, _, _ = list(zip(*result.word_results))
     assert txts[0] == words
+
+
+def test_en_return_single_char_box(engine):
+    img_path = tests_dir / "en.jpg"
+    result = engine(img_path, return_word_box=True, return_single_char_box=True)
+    txts, _, _ = list(zip(*result.word_results))
+    assert txts[:3] == ("3", "M", "o")

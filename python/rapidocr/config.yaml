@@ -11,6 +11,7 @@ Global:
     min_side_len: 30
 
     return_word_box: false
+    return_single_char_box: false
 
     font_path: null
 
