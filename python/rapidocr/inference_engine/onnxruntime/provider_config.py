@@ -3,7 +3,7 @@
 # @Contact: liekkaskono@163.com
 import platform
 from enum import Enum
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Sequence, Tuple
 
 from onnxruntime import get_available_providers, get_device
 
@@ -30,7 +30,7 @@ class ProviderConfig:
 
         self.cfg = engine_cfg
 
-    def get_ep_list(self):
+    def get_ep_list(self) -> List[Tuple[str, Dict[str, Any]]]:
         results = [(EP.CPU_EP.value, self.cpu_ep_cfg())]
 
         if self.is_cuda_available():
@@ -49,10 +49,10 @@ class ProviderConfig:
         return results
 
     def cpu_ep_cfg(self) -> Dict[str, Any]:
-        return self.cfg.cpu_ep_cfg
+        return dict(self.cfg.cpu_ep_cfg)
 
     def cuda_ep_cfg(self) -> Dict[str, Any]:
-        return self.cfg.cuda_ep_cfg
+        return dict(self.cfg.cuda_ep_cfg)
 
     def dml_ep_cfg(self) -> Dict[str, Any]:
         if self.cfg.dm_ep_cfg is not None:
@@ -63,7 +63,7 @@ class ProviderConfig:
         return self.cpu_ep_cfg()
 
     def cann_ep_cfg(self) -> Dict[str, Any]:
-        return self.cfg.cann_ep_cfg
+        return dict(self.cfg.cann_ep_cfg)
 
     def verify_providers(self, session_providers: Sequence[str]):
         if not session_providers:

@@ -62,7 +62,8 @@ class RapidOCR:
 
         self.cal_rec_boxes = CalRecBoxes()
 
-        self.return_word_box = False
+        self.return_word_box = cfg.Global.return_word_box
+        self.return_single_char_box = cfg.Global.return_single_char_box
 
         self.cfg = cfg
 
@@ -73,6 +74,7 @@ class RapidOCR:
         use_cls: Optional[bool] = None,
         use_rec: Optional[bool] = None,
         return_word_box: bool = False,
+        return_single_char_box: bool = False,
         text_score: float = 0.5,
         box_thresh: float = 0.5,
         unclip_ratio: float = 1.6,
@@ -82,6 +84,7 @@ class RapidOCR:
         use_rec = self.use_rec if use_rec is None else use_rec
 
         self.return_word_box = return_word_box
+        self.return_single_char_box = return_single_char_box
         self.text_score = text_score
         self.text_det.postprocess_op.box_thresh = box_thresh
         self.text_det.postprocess_op.unclip_ratio = unclip_ratio
@@ -116,7 +119,9 @@ class RapidOCR:
             and det_res.boxes is not None
             and all(v for v in rec_res.word_results)
         ):
-            rec_res = self.cal_rec_boxes(img, det_res.boxes, rec_res)
+            rec_res = self.cal_rec_boxes(
+                img, det_res.boxes, rec_res, self.return_single_char_box
+            )
             origin_words = []
             for one_word in rec_res.word_results:
                 one_word_points = one_word[2]
