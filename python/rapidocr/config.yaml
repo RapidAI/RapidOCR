@@ -19,9 +19,28 @@ EngineConfig:
         intra_op_num_threads: -1
         inter_op_num_threads: -1
         enable_cpu_mem_arena: false
+
+        cpu_ep_cfg:
+            arena_extend_strategy: "kSameAsRequested"
+
         use_cuda: false
+        cuda_ep_cfg:
+            device_id: 0
+            arena_extend_strategy: "kNextPowerOfTwo"
+            cudnn_conv_algo_search: "EXHAUSTIVE"
+            do_copy_in_default_stream: true
+
         use_dml: false
+        dm_ep_cfg: null
+
         use_cann: false
+        cann_ep_cfg:
+            device_id: 0
+            arena_extend_strategy: "kNextPowerOfTwo"
+            npu_mem_limit: 20 * 1024 * 1024 * 1024
+            op_select_impl_mode: "high_performance"
+            optypelist_for_implmode: "Gelu"
+            enable_cann_graph: true
 
     openvino:
         inference_num_threads: -1
