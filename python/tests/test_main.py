@@ -201,6 +201,7 @@ def test_en_lang():
     assert result.txts[0] == "3"
 
 
+@pytest.mark.skipif(sys.platform.startswith("darwin"), reason="does not run on macOS")
 def test_engine_openvino():
     engine = get_engine(
         params={

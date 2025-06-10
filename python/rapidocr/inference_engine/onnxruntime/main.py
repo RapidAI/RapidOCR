@@ -19,6 +19,18 @@ class OrtInferSession(InferSession):
     def __init__(self, cfg: Dict[str, Any]):
         self.logger = Logger(logger_name=__name__).get_log()
 
+        # support custom session (PR #451)
+        session = cfg.get("session", None)
+        if session is not None:
+            if not isinstance(session, InferenceSession):
+                raise TypeError(
+                    f"Expected session to be an InferenceSession, got {type(session)}"
+                )
+
+            self.logger.debug("Using the provided InferenceSession for inference.")
+            self.session = session
+            return
+
         model_path = cfg.get("model_path", None)
         if model_path is None:
             # 说明用户没有指定自己模型，使用默认模型
@@ -45,11 +57,8 @@ class OrtInferSession(InferSession):
         self._verify_model(model_path)
 
         sess_opt = self._init_sess_opts(cfg.engine_cfg)
-        provider_cfg = ProviderConfig(
-            cfg_use_cuda=cfg.engine_cfg.get("use_cuda", False),
-            cfg_use_dml=cfg.engine_cfg.get("use_dml", False),
-            cfg_use_cann=cfg.engine_cfg.get("use_cann", False),
-        )
+
+        provider_cfg = ProviderConfig(engine_cfg=cfg.engine_cfg)
         self.session = InferenceSession(
             model_path,
             sess_options=sess_opt,
