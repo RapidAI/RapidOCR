@@ -58,7 +58,7 @@ class ProviderConfig:
         if self.cfg.dm_ep_cfg is not None:
             return self.cfg.dm_ep_cfg
 
-        if self.use_cuda:
+        if self.is_cuda_available():
             return self.cuda_ep_cfg()
         return self.cpu_ep_cfg()
 
@@ -136,7 +136,6 @@ class ProviderConfig:
             f"{DML_EP} is not in available providers ({self.had_providers}). Use {self.default_provider} inference by default."
         )
         install_instructions = [
-            f"{DML_EP} is not in available providers ({self.had_providers}). Use {self.default_provider} inference by default.",
             "If you want to use DirectML acceleration, you must do:",
             "First, uninstall all onnxruntime packages in current environment.",
             "Second, install onnxruntime-directml by `pip install onnxruntime-directml`",
