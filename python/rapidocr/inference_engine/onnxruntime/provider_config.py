@@ -58,7 +58,7 @@ class ProviderConfig:
         if self.cfg.dm_ep_cfg is not None:
             return self.cfg.dm_ep_cfg
 
-        if self.use_cuda:
+        if self.cfg_use_cuda:
             return self.cuda_ep_cfg()
         return self.cpu_ep_cfg()
 
