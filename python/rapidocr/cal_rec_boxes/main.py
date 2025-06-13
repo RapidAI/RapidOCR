@@ -47,7 +47,7 @@ class CalRecBoxes:
             word_box_list = self.reverse_rotate_crop_image(
                 copy.deepcopy(box), word_box_list, direction
             )
-            word_results.extend(
+            word_results.append(
                 list(zip(word_box_content_list, conf_list, word_box_list))
             )
 
