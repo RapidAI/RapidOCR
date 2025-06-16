@@ -130,7 +130,7 @@ class RapidOCR:
                     if one_word_points is None:
                         continue
 
-                    origin_words_points = self.get_origin_points(
+                    origin_words_points = self._get_origin_points(
                         [one_word_points], op_record, raw_h, raw_w
                     )
                     origin_words_points = origin_words_points.astype(np.int32).tolist()[0]
