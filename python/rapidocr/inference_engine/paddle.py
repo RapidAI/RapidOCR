@@ -68,6 +68,8 @@ class PaddleInferSession(InferSession):
         model_dir = Path(model_dir)
         pdmodel_path = model_dir / pdmodel_name
         pdiparams_path = model_dir / pdiparams_name
+        if not pdmodel_path.exists():
+            pdmodel_path = model_dir / pdmodel_name_v2
         self._verify_model(pdmodel_path)
         self._verify_model(pdiparams_path)
 
