@@ -123,16 +123,23 @@ class RapidOCR:
                 img, det_res.boxes, rec_res, self.return_single_char_box
             )
             origin_words = []
-            for one_word in rec_res.word_results:
-                one_word_points = one_word[2]
-                if one_word_points is None:
-                    continue
+            for one_word_list in rec_res.word_results:
+                origin_words_item = []
+                for one_word in one_word_list:
+                    one_word_points = one_word[2]
+                    if one_word_points is None:
+                        continue
 
-                origin_words_points = self._get_origin_points(
-                    [one_word_points], op_record, raw_h, raw_w
-                )
-                origin_words_points = origin_words_points.astype(np.int32).tolist()[0]
-                origin_words.append((one_word[0], one_word[1], origin_words_points))
+                    origin_words_points = self._get_origin_points(
+                        [one_word_points], op_record, raw_h, raw_w
+                    )
+                    origin_words_points = origin_words_points.astype(np.int32).tolist()[0]
+                    origin_words_item.append(
+                        (one_word[0], one_word[1], origin_words_points)
+                    )
+                
+                if origin_words_item:
+                    origin_words.append(tuple(origin_words_item))
             rec_res.word_results = tuple(origin_words)
 
         if det_res.boxes is not None:
