@@ -133,11 +133,13 @@ class RapidOCR:
                     origin_words_points = self._get_origin_points(
                         [one_word_points], op_record, raw_h, raw_w
                     )
-                    origin_words_points = origin_words_points.astype(np.int32).tolist()[0]
+                    origin_words_points = origin_words_points.astype(np.int32).tolist()[
+                        0
+                    ]
                     origin_words_item.append(
                         (one_word[0], one_word[1], origin_words_points)
                     )
-                
+
                 if origin_words_item:
                     origin_words.append(tuple(origin_words_item))
             rec_res.word_results = tuple(origin_words)
@@ -367,7 +369,7 @@ def main(arg_list: Optional[List[str]] = None):
         cur_dir = args.vis_save_dir
 
         if args.return_word_box:
-            words_results = result.word_results
+            words_results = sum(result.word_results, ())
             words, words_scores, words_boxes = list(zip(*words_results))
             vis_img = vis(args.img_path, words_boxes, words, words_scores)
             save_path = cur_dir / f"{Path(args.img_path).stem}_vis_single.png"

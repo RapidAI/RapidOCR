@@ -59,7 +59,7 @@ class RapidOCROutput:
             return vis_img
 
         # single word vis
-        words_results = self.word_results
+        words_results = sum(self.word_results, ())
         words, words_scores, words_boxes = list(zip(*words_results))
         vis_img = vis(
             self.img,

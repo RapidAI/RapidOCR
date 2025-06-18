@@ -406,44 +406,14 @@ def test_input_three_ndim_one_channel(engine):
         ),
         (
             "text_vertical_words.png",
-            (
-                "已",
-                "取",
-                "之",
-                "時",
-                "不",
-                "參",
-                "一",
-                "人",
-                "見",
-                "而",
-                "是",
-                "非",
-                "不",
-                "得",
-                "問",
-                "之",
-                "人",
-                "要",
-                "取",
-                "之",
-                "有",
-                "是",
-                "是",
-                "非",
-                "非",
-                "之",
-                "士",
-                "師",
-                "也",
-            ),
+            ("已", "取", "之", "時", "不", "參", "一", "人", "見", "而"),
         ),
     ],
 )
 def test_cn_word_ocr(engine, img_name: str, words: List[str]):
     img_path = tests_dir / img_name
     result = engine(img_path, return_word_box=True)
-    txts, _, _ = list(zip(*result.word_results))
+    txts, _, _ = list(zip(*result.word_results[0]))
     assert txts == words
 
 
@@ -454,12 +424,12 @@ def test_cn_word_ocr(engine, img_name: str, words: List[str]):
 def test_en_word_ocr(engine, img_name: str, words: str):
     img_path = tests_dir / img_name
     result = engine(img_path, return_word_box=True)
-    txts, _, _ = list(zip(*result.word_results))
+    txts, _, _ = list(zip(*result.word_results[0]))
     assert txts[0] == words
 
 
 def test_en_return_single_char_box(engine):
     img_path = tests_dir / "en.jpg"
     result = engine(img_path, return_word_box=True, return_single_char_box=True)
-    txts, _, _ = list(zip(*result.word_results))
-    assert txts[:3] == ("3", "M", "o")
+    txts, _, _ = list(zip(*result.word_results[0]))
+    assert txts[:3] == ("3",)
