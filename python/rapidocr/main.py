@@ -104,7 +104,6 @@ class RapidOCR:
         )
 
         ori_img = self.load_img(img_content)
-        raw_h, raw_w = ori_img.shape[:2]
         img, op_record = self.preprocess_img(ori_img)
 
         det_res, cls_res, rec_res = TextDetOutput(), TextClsOutput(), TextRecOutput()
@@ -125,48 +124,59 @@ class RapidOCR:
         if self.use_rec:
             rec_res = self.get_rec_res(img)
 
-        return self.finalize_results(
-            ori_img, det_res, cls_res, rec_res, img, op_record, raw_h, raw_w
-        )
+        return self.finalize_results(ori_img, det_res, cls_res, rec_res, img, op_record)
 
     def finalize_results(
-        self, ori_img, det_res, cls_res, rec_res, img, op_record, raw_h, raw_w
-    ):
+        self,
+        ori_img: np.ndarray,
+        det_res: TextDetOutput,
+        cls_res: TextClsOutput,
+        rec_res: TextRecOutput,
+        img: List[np.ndarray],
+        op_record: Dict[str, Any],
+    ) -> Union[TextDetOutput, TextClsOutput, TextRecOutput, RapidOCROutput]:
+        raw_h, raw_w = ori_img.shape[:2]
+
         if (
             self.return_word_box
             and det_res.boxes is not None
             and all(v for v in rec_res.word_results)
         ):
             rec_res.word_results = self.calc_word_boxes(
-                raw_h, raw_w, img, op_record, det_res, rec_res
+                img, det_res, rec_res, op_record, raw_h, raw_w
             )
 
         if det_res.boxes is not None:
             det_res.boxes = self._get_origin_points(
                 det_res.boxes, op_record, raw_h, raw_w
             )
-
         return self.get_final_res(ori_img, det_res, cls_res, rec_res)
 
-    def calc_word_boxes(self, raw_h, raw_w, img, op_record, det_res, rec_res):
-        origin_words = []
+    def calc_word_boxes(
+        self,
+        img: List[np.ndarray],
+        det_res: TextDetOutput,
+        rec_res: TextRecOutput,
+        op_record: Dict[str, Any],
+        raw_h: int,
+        raw_w: int,
+    ) -> Any:
         rec_res = self.cal_rec_boxes(
             img, det_res.boxes, rec_res, self.return_single_char_box
         )
-        for one_word_list in rec_res.word_results:
+
+        origin_words = []
+        for word_line in rec_res.word_results:
             origin_words_item = []
-            for one_word in one_word_list:
-                one_word_points = one_word[2]
-                if one_word_points is None:
+            for txt, score, bbox in word_line:
+                if bbox is None:
                     continue
 
                 origin_words_points = self._get_origin_points(
-                    [one_word_points], op_record, raw_h, raw_w
+                    [bbox], op_record, raw_h, raw_w
                 )
                 origin_words_points = origin_words_points.astype(np.int32).tolist()[0]
-                origin_words_item.append(
-                    (one_word[0], one_word[1], origin_words_points)
-                )
+                origin_words_item.append((txt, score, origin_words_points))
 
             if origin_words_item:
                 origin_words.append(tuple(origin_words_item))
@@ -204,32 +214,13 @@ class RapidOCR:
     def get_det_res(
         self, img: np.ndarray, op_record: Dict[str, Any]
     ) -> Tuple[List[np.ndarray], TextDetOutput]:
-        img, op_record = self.maybe_add_letterbox(img, op_record)
+        img, op_record = self._add_letterbox(img, op_record)
         det_res = self.text_det(img)
         if det_res.boxes is None:
             raise RapidOCRError("The text detection result is empty")
 
         img_list = self.get_crop_img_list(img, det_res)
         return img_list, det_res
-
-    def maybe_add_letterbox(
-        self, img: np.ndarray, op_record: Dict[str, Any]
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
-        h, w = img.shape[:2]
-
-        if self.width_height_ratio == -1:
-            use_limit_ratio = False
-        else:
-            use_limit_ratio = w / h > self.width_height_ratio
-
-        if h <= self.min_height or use_limit_ratio:
-            padding_h = get_padding_h(h, w, self.width_height_ratio, self.min_height)
-            block_img = add_round_letterbox(img, (padding_h, padding_h, 0, 0))
-            op_record["padding_1"] = {"top": padding_h, "left": 0}
-            return block_img, op_record
-
-        op_record["padding_1"] = {"top": 0, "left": 0}
-        return img, op_record
 
     def get_crop_img_list(
         self, img: np.ndarray, det_res: TextDetOutput
@@ -252,35 +243,6 @@ class RapidOCR:
     def get_rec_res(self, img: List[np.ndarray]) -> TextRecOutput:
         rec_input = TextRecInput(img=img, return_word_box=self.return_word_box)
         return self.text_rec(rec_input)
-
-    def _get_origin_points(
-        self,
-        dt_boxes: List[np.ndarray],
-        op_record: Dict[str, Any],
-        raw_h: int,
-        raw_w: int,
-    ) -> np.ndarray:
-        dt_boxes_array = np.array(dt_boxes).astype(np.float32)
-        for op in reversed(list(op_record.keys())):
-            v = op_record[op]
-            if "padding" in op:
-                top, left = v.get("top"), v.get("left")
-                dt_boxes_array[:, :, 0] -= left
-                dt_boxes_array[:, :, 1] -= top
-            elif "preprocess" in op:
-                ratio_h = v.get("ratio_h")
-                ratio_w = v.get("ratio_w")
-                dt_boxes_array[:, :, 0] *= ratio_w
-                dt_boxes_array[:, :, 1] *= ratio_h
-
-        dt_boxes_array = np.where(dt_boxes_array < 0, 0, dt_boxes_array)
-        dt_boxes_array[..., 0] = np.where(
-            dt_boxes_array[..., 0] > raw_w, raw_w, dt_boxes_array[..., 0]
-        )
-        dt_boxes_array[..., 1] = np.where(
-            dt_boxes_array[..., 1] > raw_h, raw_h, dt_boxes_array[..., 1]
-        )
-        return dt_boxes_array
 
     def get_final_res(
         self,
@@ -331,6 +293,54 @@ class RapidOCR:
         ocr_res.txts = tuple(filter_txts)
         ocr_res.scores = tuple(filter_scores)
         return ocr_res
+
+    def _add_letterbox(
+        self, img: np.ndarray, op_record: Dict[str, Any]
+    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+        h, w = img.shape[:2]
+
+        if self.width_height_ratio == -1:
+            use_limit_ratio = False
+        else:
+            use_limit_ratio = w / h > self.width_height_ratio
+
+        if h <= self.min_height or use_limit_ratio:
+            padding_h = get_padding_h(h, w, self.width_height_ratio, self.min_height)
+            block_img = add_round_letterbox(img, (padding_h, padding_h, 0, 0))
+            op_record["padding_1"] = {"top": padding_h, "left": 0}
+            return block_img, op_record
+
+        op_record["padding_1"] = {"top": 0, "left": 0}
+        return img, op_record
+
+    def _get_origin_points(
+        self,
+        dt_boxes: List[np.ndarray],
+        op_record: Dict[str, Any],
+        raw_h: int,
+        raw_w: int,
+    ) -> np.ndarray:
+        dt_boxes_array = np.array(dt_boxes).astype(np.float32)
+        for op in reversed(list(op_record.keys())):
+            v = op_record[op]
+            if "padding" in op:
+                top, left = v.get("top"), v.get("left")
+                dt_boxes_array[:, :, 0] -= left
+                dt_boxes_array[:, :, 1] -= top
+            elif "preprocess" in op:
+                ratio_h = v.get("ratio_h")
+                ratio_w = v.get("ratio_w")
+                dt_boxes_array[:, :, 0] *= ratio_w
+                dt_boxes_array[:, :, 1] *= ratio_h
+
+        dt_boxes_array = np.where(dt_boxes_array < 0, 0, dt_boxes_array)
+        dt_boxes_array[..., 0] = np.where(
+            dt_boxes_array[..., 0] > raw_w, raw_w, dt_boxes_array[..., 0]
+        )
+        dt_boxes_array[..., 1] = np.where(
+            dt_boxes_array[..., 1] > raw_h, raw_h, dt_boxes_array[..., 1]
+        )
+        return dt_boxes_array
 
 
 class RapidOCRError(Exception):
