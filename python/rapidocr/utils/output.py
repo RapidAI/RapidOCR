@@ -7,6 +7,7 @@ from typing import List, Optional, Tuple, Union
 import numpy as np
 
 from .logger import Logger
+from .to_markdown import ToMarkdown
 from .utils import save_img
 from .vis_res import VisRes
 
@@ -36,6 +37,9 @@ class RapidOCROutput:
 
     def to_json(self):
         pass
+
+    def to_markdown(self) -> str:
+        return ToMarkdown.to(self.boxes, self.txts)
 
     def vis(self, save_path: Optional[str] = None, font_path: Optional[str] = None):
         if self.img is None or self.boxes is None:
