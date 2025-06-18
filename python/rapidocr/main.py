@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import cv2
 import numpy as np
+from omegaconf import DictConfig
 
 from .cal_rec_boxes import CalRecBoxes
 from .ch_ppocr_cls import TextClassifier, TextClsOutput
@@ -16,11 +17,13 @@ from .ch_ppocr_rec import TextRecInput, TextRecognizer, TextRecOutput
 from .cli import check_install, generate_cfg
 from .utils import (
     LoadImage,
+    Logger,
     RapidOCROutput,
     VisRes,
     add_round_letterbox,
-    increase_min_side,
-    reduce_max_side,
+    get_padding_h,
+    get_rotate_crop_image,
+    resize_image_within_bounds,
 )
 from .utils.parse_parameters import ParseParams
 
@@ -32,6 +35,14 @@ class RapidOCR:
     def __init__(
         self, config_path: Optional[str] = None, params: Optional[Dict[str, Any]] = None
     ):
+        cfg = self.load_config(config_path, params)
+        self.initialize(cfg)
+
+        self.logger = Logger(logger_name=__name__).get_log()
+
+    def load_config(
+        self, config_path: Optional[str], params: Optional[Dict[str, Any]]
+    ) -> DictConfig:
         if config_path is not None and Path(config_path).exists():
             cfg = ParseParams.load(config_path)
         else:
@@ -39,7 +50,9 @@ class RapidOCR:
 
         if params:
             cfg = ParseParams.update_batch(cfg, params)
+        return cfg
 
+    def initialize(self, cfg: DictConfig):
         self.text_score = cfg.Global.text_score
         self.min_height = cfg.Global.min_height
         self.width_height_ratio = cfg.Global.width_height_ratio
@@ -79,9 +92,100 @@ class RapidOCR:
         box_thresh: float = 0.5,
         unclip_ratio: float = 1.6,
     ) -> Union[TextDetOutput, TextClsOutput, TextRecOutput, RapidOCROutput]:
-        use_det = self.use_det if use_det is None else use_det
-        use_cls = self.use_cls if use_cls is None else use_cls
-        use_rec = self.use_rec if use_rec is None else use_rec
+        self.update_params(
+            use_det,
+            use_cls,
+            use_rec,
+            return_word_box,
+            return_single_char_box,
+            text_score,
+            box_thresh,
+            unclip_ratio,
+        )
+
+        ori_img = self.load_img(img_content)
+        raw_h, raw_w = ori_img.shape[:2]
+        img, op_record = self.preprocess_img(ori_img)
+
+        det_res, cls_res, rec_res = TextDetOutput(), TextClsOutput(), TextRecOutput()
+        if self.use_det:
+            try:
+                img, det_res = self.get_det_res(img, op_record)
+            except RapidOCRError as e:
+                self.logger.warning(e)
+                return RapidOCROutput()
+
+        if self.use_cls:
+            try:
+                img, cls_res = self.get_cls_res(img)
+            except RapidOCRError as e:
+                self.logger.warning(e)
+                return RapidOCROutput()
+
+        if self.use_rec:
+            rec_res = self.get_rec_res(img)
+
+        return self.finalize_results(
+            ori_img, det_res, cls_res, rec_res, img, op_record, raw_h, raw_w
+        )
+
+    def finalize_results(
+        self, ori_img, det_res, cls_res, rec_res, img, op_record, raw_h, raw_w
+    ):
+        if (
+            self.return_word_box
+            and det_res.boxes is not None
+            and all(v for v in rec_res.word_results)
+        ):
+            rec_res.word_results = self.calc_word_boxes(
+                raw_h, raw_w, img, op_record, det_res, rec_res
+            )
+
+        if det_res.boxes is not None:
+            det_res.boxes = self._get_origin_points(
+                det_res.boxes, op_record, raw_h, raw_w
+            )
+
+        return self.get_final_res(ori_img, det_res, cls_res, rec_res)
+
+    def calc_word_boxes(self, raw_h, raw_w, img, op_record, det_res, rec_res):
+        origin_words = []
+        rec_res = self.cal_rec_boxes(
+            img, det_res.boxes, rec_res, self.return_single_char_box
+        )
+        for one_word_list in rec_res.word_results:
+            origin_words_item = []
+            for one_word in one_word_list:
+                one_word_points = one_word[2]
+                if one_word_points is None:
+                    continue
+
+                origin_words_points = self._get_origin_points(
+                    [one_word_points], op_record, raw_h, raw_w
+                )
+                origin_words_points = origin_words_points.astype(np.int32).tolist()[0]
+                origin_words_item.append(
+                    (one_word[0], one_word[1], origin_words_points)
+                )
+
+            if origin_words_item:
+                origin_words.append(tuple(origin_words_item))
+        return tuple(origin_words)
+
+    def update_params(
+        self,
+        use_det,
+        use_cls,
+        use_rec,
+        return_word_box,
+        return_single_char_box,
+        text_score,
+        box_thresh,
+        unclip_ratio,
+    ):
+        self.use_det = self.use_det if use_det is None else use_det
+        self.use_cls = self.use_cls if use_cls is None else use_cls
+        self.use_rec = self.use_rec if use_rec is None else use_rec
 
         self.return_word_box = return_word_box
         self.return_single_char_box = return_single_char_box
@@ -89,81 +193,24 @@ class RapidOCR:
         self.text_det.postprocess_op.box_thresh = box_thresh
         self.text_det.postprocess_op.unclip_ratio = unclip_ratio
 
-        ori_img = self.load_img(img_content)
-
-        raw_h, raw_w = ori_img.shape[:2]
+    def preprocess_img(self, ori_img: np.ndarray) -> Tuple[np.ndarray, Dict[str, Any]]:
         op_record = {}
-        img, ratio_h, ratio_w = self.preprocess(ori_img)
+        img, ratio_h, ratio_w = resize_image_within_bounds(
+            ori_img, self.min_side_len, self.max_side_len
+        )
         op_record["preprocess"] = {"ratio_h": ratio_h, "ratio_w": ratio_w}
+        return img, op_record
 
-        det_res, cls_res, rec_res = TextDetOutput(), TextClsOutput(), TextRecOutput()
+    def get_det_res(
+        self, img: np.ndarray, op_record: Dict[str, Any]
+    ) -> Tuple[List[np.ndarray], TextDetOutput]:
+        img, op_record = self.maybe_add_letterbox(img, op_record)
+        det_res = self.text_det(img)
+        if det_res.boxes is None:
+            raise RapidOCRError("The text detection result is empty")
 
-        if use_det:
-            img, op_record = self.maybe_add_letterbox(img, op_record)
-            det_res = self.text_det(img)
-            if det_res.boxes is None:
-                return RapidOCROutput()
-
-            img = self.get_crop_img_list(img, det_res)
-
-        if use_cls:
-            cls_res = self.text_cls(img)
-            img = cls_res.img_list
-
-        if use_rec:
-            rec_input = TextRecInput(img=img, return_word_box=self.return_word_box)
-            rec_res = self.text_rec(rec_input)
-
-        if (
-            self.return_word_box
-            and det_res.boxes is not None
-            and all(v for v in rec_res.word_results)
-        ):
-            rec_res = self.cal_rec_boxes(
-                img, det_res.boxes, rec_res, self.return_single_char_box
-            )
-            origin_words = []
-            for one_word_list in rec_res.word_results:
-                origin_words_item = []
-                for one_word in one_word_list:
-                    one_word_points = one_word[2]
-                    if one_word_points is None:
-                        continue
-
-                    origin_words_points = self._get_origin_points(
-                        [one_word_points], op_record, raw_h, raw_w
-                    )
-                    origin_words_points = origin_words_points.astype(np.int32).tolist()[
-                        0
-                    ]
-                    origin_words_item.append(
-                        (one_word[0], one_word[1], origin_words_points)
-                    )
-
-                if origin_words_item:
-                    origin_words.append(tuple(origin_words_item))
-            rec_res.word_results = tuple(origin_words)
-
-        if det_res.boxes is not None:
-            det_res.boxes = self._get_origin_points(
-                det_res.boxes, op_record, raw_h, raw_w
-            )
-
-        ocr_res = self.get_final_res(ori_img, det_res, cls_res, rec_res)
-        return ocr_res
-
-    def preprocess(self, img: np.ndarray) -> Tuple[np.ndarray, float, float]:
-        h, w = img.shape[:2]
-        max_value = max(h, w)
-        ratio_h = ratio_w = 1.0
-        if max_value > self.max_side_len:
-            img, ratio_h, ratio_w = reduce_max_side(img, self.max_side_len)
-
-        h, w = img.shape[:2]
-        min_value = min(h, w)
-        if min_value < self.min_side_len:
-            img, ratio_h, ratio_w = increase_min_side(img, self.min_side_len)
-        return img, ratio_h, ratio_w
+        img_list = self.get_crop_img_list(img, det_res)
+        return img_list, det_res
 
     def maybe_add_letterbox(
         self, img: np.ndarray, op_record: Dict[str, Any]
@@ -176,7 +223,7 @@ class RapidOCR:
             use_limit_ratio = w / h > self.width_height_ratio
 
         if h <= self.min_height or use_limit_ratio:
-            padding_h = self._get_padding_h(h, w)
+            padding_h = get_padding_h(h, w, self.width_height_ratio, self.min_height)
             block_img = add_round_letterbox(img, (padding_h, padding_h, 0, 0))
             op_record["padding_1"] = {"top": padding_h, "left": 0}
             return block_img, op_record
@@ -184,54 +231,27 @@ class RapidOCR:
         op_record["padding_1"] = {"top": 0, "left": 0}
         return img, op_record
 
-    def _get_padding_h(self, h: int, w: int) -> int:
-        new_h = max(int(w / self.width_height_ratio), self.min_height) * 2
-        padding_h = int(abs(new_h - h) / 2)
-        return padding_h
-
     def get_crop_img_list(
         self, img: np.ndarray, det_res: TextDetOutput
     ) -> List[np.ndarray]:
-        def get_rotate_crop_image(img: np.ndarray, points: np.ndarray) -> np.ndarray:
-            img_crop_width = int(
-                max(
-                    np.linalg.norm(points[0] - points[1]),
-                    np.linalg.norm(points[2] - points[3]),
-                )
-            )
-            img_crop_height = int(
-                max(
-                    np.linalg.norm(points[0] - points[3]),
-                    np.linalg.norm(points[1] - points[2]),
-                )
-            )
-            pts_std = np.array(
-                [
-                    [0, 0],
-                    [img_crop_width, 0],
-                    [img_crop_width, img_crop_height],
-                    [0, img_crop_height],
-                ]
-            ).astype(np.float32)
-            M = cv2.getPerspectiveTransform(points, pts_std)
-            dst_img = cv2.warpPerspective(
-                img,
-                M,
-                (img_crop_width, img_crop_height),
-                borderMode=cv2.BORDER_REPLICATE,
-                flags=cv2.INTER_CUBIC,
-            )
-            dst_img_height, dst_img_width = dst_img.shape[0:2]
-            if dst_img_height * 1.0 / dst_img_width >= 1.5:
-                dst_img = np.rot90(dst_img)
-            return dst_img
-
         img_crop_list = []
         for box in det_res.boxes:
             tmp_box = copy.deepcopy(box)
             img_crop = get_rotate_crop_image(img, tmp_box)
             img_crop_list.append(img_crop)
         return img_crop_list
+
+    def get_cls_res(
+        self, img: List[np.ndarray]
+    ) -> Tuple[List[np.ndarray], TextClsOutput]:
+        cls_res = self.text_cls(img)
+        if cls_res.img_list is None:
+            raise RapidOCRError("The text classifier is empty")
+        return cls_res.img_list, cls_res
+
+    def get_rec_res(self, img: List[np.ndarray]) -> TextRecOutput:
+        rec_input = TextRecInput(img=img, return_word_box=self.return_word_box)
+        return self.text_rec(rec_input)
 
     def _get_origin_points(
         self,
@@ -311,6 +331,10 @@ class RapidOCR:
         ocr_res.txts = tuple(filter_txts)
         ocr_res.scores = tuple(filter_scores)
         return ocr_res
+
+
+class RapidOCRError(Exception):
+    pass
 
 
 def parse_args(arg_list: Optional[List[str]] = None):

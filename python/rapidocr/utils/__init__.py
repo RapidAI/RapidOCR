@@ -6,5 +6,10 @@ from .load_image import LoadImage, LoadImageError
 from .logger import Logger
 from .output import RapidOCROutput
 from .parse_parameters import ParseParams
-from .process_img import add_round_letterbox, increase_min_side, reduce_max_side
+from .process_img import (
+    add_round_letterbox,
+    get_padding_h,
+    get_rotate_crop_image,
+    resize_image_within_bounds,
+)
 from .vis_res import VisRes

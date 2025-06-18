@@ -23,7 +23,7 @@ class ParseParams(OmegaConf):
         pass
 
     @classmethod
-    def load(cls, file_path: Union[str, Path]):
+    def load(cls, file_path: Union[str, Path]) -> DictConfig:
         cfg = OmegaConf.load(file_path)
 
         cfg.Det = cls._convert_value_to_enum(cfg.Det)
