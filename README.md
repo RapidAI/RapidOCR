@@ -11,8 +11,8 @@
 </div>
 <div>&nbsp;</div>
 
-<a href="https://huggingface.co/spaces/RapidAI/RapidOCRv2" target="_blank"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Hugging Face Demo-blue"></a>
-<a href="https://www.modelscope.cn/studios/RapidAI/RapidOCRv2/summary" target="_blank"><img src="https://img.shields.io/badge/魔搭-Demo-blue"></a>
+<a href="https://huggingface.co/spaces/RapidAI/RapidOCRv3" target="_blank"><img src="https://img.shields.io/badge/%F0%9F%A4%97-Hugging Face Demo-blue"></a>
+<a href="https://www.modelscope.cn/studios/RapidAI/RapidOCRv3.0.0/summary" target="_blank"><img src="https://img.shields.io/badge/魔搭-Demo-blue"></a>
 <a href="https://colab.research.google.com/github/RapidAI/RapidOCR/blob/main/assets/RapidOCRDemo.ipynb" target="_blank"><img src="https://raw.githubusercontent.com/RapidAI/RapidOCR/main/assets/colab-badge.svg" alt="Open in Colab"></a>
 <a href=""><img src="https://img.shields.io/badge/Python->=3.6-aff.svg"></a>
 <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
@@ -33,7 +33,7 @@
 
 💖 Introducing the foremost multi-platform, multi-lingual OCR tool that boasts unparalleled speed, expansive support, and complete openness. This exceptional software is entirely free and renowned for facilitating swift offline deployments.
 
-🦜 **Supported Languages**: It inherently supports Chinese and English, with self-service conversion required for additional languages. Please refer [here](https://rapidai.github.io/RapidOCRDocs/blog/2022/09/28/%E6%94%AF%E6%8C%81%E8%AF%86%E5%88%AB%E8%AF%AD%E8%A8%80/) for specific language support details.
+🦜 **Supported Languages**: It inherently supports Chinese and English, with self-service conversion required for additional languages. Please refer [here](https://rapidai.github.io/RapidOCRDocs/main/blog/2022/09/28/%E6%94%AF%E6%8C%81%E8%AF%86%E5%88%AB%E8%AF%AD%E8%A8%80/) for specific language support details.
 
 🔎 **Rationale**: Acknowledging the limitations in [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)'s architecture, we embarked on a mission to simplify OCR inference across diverse platforms. This endeavor culminated in converting PaddleOCR's model to the versatile ONNX format and seamlessly integrating it into Python, C++, Java, and C# environments.
 
@@ -46,7 +46,7 @@
 
 If our repository proves beneficial to your endeavors, kindly consider leaving a star ⭐ on GitHub to show your appreciation. It means the world to us!
 
-### Visualization ([more](https://rapidai.github.io/RapidOCRDocs/visualization/))
+### Visualization
 
 <div align="center">
     <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/demo.gif" alt="Demo" width="100%" height="100%">
@@ -87,7 +87,7 @@ Used by [link](https://github.com/RapidAI/RapidOCR/discussions/286)
 - Many thanks to [zhsunlight](https://github.com/zhsunlight) for the suggestion about parameterized call GPU reasoning and the careful and thoughtful testing.
 - Many thanks to [lzh111222334](https://github.com/lzh111222334) for fixing some bugs of rec preprocessing under python version.
 - Many thanks to [AutumnSun1996](https://github.com/AutumnSun1996) for the suggestion in the [#42](https://github.com/RapidAI/RapidOCR/issues/42).
-- Many thanks to [DeadWood8](https://github.com/DeadWood8) for providing the [document](https://rapidai.github.io/RapidOCRDocs/install_usage/rapidocr_web/nuitka_package) which packages rapidocr_web to exe by Nuitka.
+- Many thanks to [DeadWood8](https://github.com/DeadWood8) for providing the [document](https://rapidai.github.io/RapidOCRDocs/main/install_usage/rapidocr_web/nuitka_package/) which packages rapidocr_web to exe by Nuitka.
 - Many thanks to [Loovelj](https://github.com/Loovelj) for fixing the bug of sorting the text boxes. For details see [issue 75](https://github.com/RapidAI/RapidOCR/issues/75).
 
 ### 🎖 Code Contributors
@@ -98,7 +98,7 @@ Used by [link](https://github.com/RapidAI/RapidOCR/discussions/286)
   </a>
 </p>
 
-### [Sponsor](https://rapidai.github.io/RapidOCRDocs/sponsor/)
+### [Sponsor](https://rapidai.github.io/RapidOCRDocs/main/sponsor/)
 
 > [!IMPORTANT]
 >
