@@ -1,0 +1,8 @@
+FROM python:3.10.11-slim-buster
+ENV DEBIAN_FRONTEND=noninteractive
+WORKDIR /app
+RUN pip install --no-cache-dir onnxruntime rapidocr_api -i https://mirrors.aliyun.com/pypi/simple
+RUN pip uninstall -y opencv-python && \
+    pip install --no-cache-dir opencv-python-headless -i https://mirrors.aliyun.com/pypi/simple
+EXPOSE 9005
+CMD ["bash", "-c", "rapidocr_api -ip 0.0.0.0 -p 9005 -workers 2"]
