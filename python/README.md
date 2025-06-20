@@ -1,1 +1,1 @@
-### See [Documentation](https://rapidai.github.io/RapidOCRDocs/install_usage/rapidocr/install/)
+### See [Documentation](https://rapidai.github.io/RapidOCRDocs/main/install_usage/rapidocr/install/)

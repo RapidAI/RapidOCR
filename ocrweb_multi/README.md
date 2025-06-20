@@ -1,1 +1,1 @@
-### See [Documentation](https://rapidai.github.io/RapidOCRDocs/install_usage/rapidocr_web/ocrweb_multi/)
+### See [Documentation](https://rapidai.github.io/RapidOCRDocs/main/install_usage/rapidocr_web/ocrweb_multi/)
