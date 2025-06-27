@@ -5,4 +5,4 @@
 
 class JsonMixin:
     def _to_json(self, boxes, txts, scores):
-        pass
+        print("ok")
