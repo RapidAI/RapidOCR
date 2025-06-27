@@ -7,7 +7,7 @@ from typing import List, Optional, Tuple, Union
 import numpy as np
 
 from .logger import Logger
-from .to_markdown import ToMarkdown
+from .mixin import JsonMixin, MarkdownMixin
 from .utils import save_img
 from .vis_res import VisRes
 
@@ -15,7 +15,7 @@ logger = Logger(logger_name=__name__).get_log()
 
 
 @dataclass
-class RapidOCROutput:
+class RapidOCROutput(MarkdownMixin, JsonMixin):
     img: Optional[np.ndarray] = None
     boxes: Optional[np.ndarray] = None
     txts: Optional[Tuple[str]] = None
@@ -36,10 +36,10 @@ class RapidOCROutput:
         return len(self.txts)
 
     def to_json(self):
-        pass
+        return self._to_json(self.boxes, self.txts, self.scores)
 
     def to_markdown(self) -> str:
-        return ToMarkdown.to(self.boxes, self.txts)
+        return self._to_markdown(self.boxes, self.txts)
 
     def vis(self, save_path: Optional[str] = None, font_path: Optional[str] = None):
         if self.img is None or self.boxes is None:

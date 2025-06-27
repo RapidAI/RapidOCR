@@ -2,10 +2,8 @@
 import numpy as np
 
 
-class ToMarkdown:
-    @classmethod
-    def to(cls, boxes, txts) -> str:
-        # def to(cls, result: RapidOCROutput) -> str:
+class MarkdownMixin:
+    def _to_markdown(self, boxes, txts) -> str:
         """
         根据 OCR 结果的坐标信息，将文本还原为近似原始排版的 Markdown。
 
@@ -23,8 +21,8 @@ class ToMarkdown:
         combined_data = sorted(
             zip(boxes, txts),
             key=lambda item: (
-                cls.get_box_properties(item[0])["top"],
-                cls.get_box_properties(item[0])["left"],
+                self._get_box_properties(item[0])["top"],
+                self._get_box_properties(item[0])["left"],
             ),
         )
 
@@ -34,11 +32,11 @@ class ToMarkdown:
 
         # 初始化当前行和前一个框的属性
         current_line_parts = [combined_data[0][1]]
-        prev_props = cls.get_box_properties(combined_data[0][0])
+        prev_props = self._get_box_properties(combined_data[0][0])
 
         # 从第二个框开始遍历
         for box, text in combined_data[1:]:
-            current_props = cls.get_box_properties(box)
+            current_props = self._get_box_properties(box)
 
             # 启发式规则来决定如何布局
             # 条件1：中心线距离是否足够近
@@ -83,7 +81,7 @@ class ToMarkdown:
         return "\n".join(output_lines)
 
     @staticmethod
-    def get_box_properties(box: np.ndarray) -> dict:
+    def _get_box_properties(box: np.ndarray) -> dict:
         """从坐标数组中计算框的几何属性"""
         # box shape is (4, 2) -> [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
         ys = box[:, 1]
