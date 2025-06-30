@@ -41,7 +41,7 @@ class OrtInferSession:
 
         sess_opt = self._init_sess_opts(config)
         self.session = InferenceSession(
-            model_path,
+            str(model_path),
             sess_options=sess_opt,
             providers=EP_list,
         )
