@@ -22,11 +22,42 @@ class PaddleInferSession(InferSession):
         self.logger = Logger(logger_name=__name__).get_log()
         self.mode = mode
 
+        # 设置设备特定的环境变量
+        self._set_device_envs(cfg.engine_cfg)
+
         pdmodel_path, pdiparams_path = self._setup_model(cfg)
         if cfg.ocr_version == OCRVersion.PPOCRV5:
             self._init_predictor_v2(cfg, pdmodel_path, pdiparams_path)
         else:
             self._init_predictor_v1(cfg, pdmodel_path, pdiparams_path)
+
+    def _set_device_envs(self, engine_cfg):
+        """设置设备特定的环境变量"""
+
+        def _set_envs(envs):
+            for key, val in envs.items():
+                os.environ[key] = val
+                self.logger.debug(f"{key} has been set to {val}.")
+
+        if engine_cfg.get("use_cuda", False):
+            envs = {}
+            _set_envs(envs)
+
+        elif not any([engine_cfg.get(f"use_{dev}", False) for dev in ["cuda", "npu", "xpu", "mlu", "dcu", "gcu"]]):
+            envs = {}
+            _set_envs(envs)
+
+        # NPU 环境变量
+        elif engine_cfg.get("use_npu", False):
+            envs = {
+                "FLAGS_npu_jit_compile": "0",
+                "FLAGS_use_stride_kernel": "0",
+                "FLAGS_allocator_strategy": "auto_growth",
+                "CUSTOM_DEVICE_BLACK_LIST": "pad3d,pad3d_grad,set_value,set_value_with_tensor",
+                "FLAGS_npu_scale_aclnn": "True",
+                "FLAGS_npu_split_aclnn": "True",
+            }
+            _set_envs(envs)
 
     def _setup_model(self, cfg) -> Tuple[Path, Path]:
         pdmodel_name = "inference.json"
@@ -78,11 +109,11 @@ class PaddleInferSession(InferSession):
         return pdmodel_path, pdiparams_path
 
     def download_model(
-        self, model_info, default_model_dir: str, model_file_name: str
+            self, model_info, default_model_dir: str, model_file_name: str
     ) -> Path:
         model_file_url = f"{default_model_dir}/{model_file_name}"
         model_file_path = (
-            self.DEFAULT_MODEL_PATH / Path(default_model_dir).name / model_file_name
+                self.DEFAULT_MODEL_PATH / Path(default_model_dir).name / model_file_name
         )
         DownloadFile.run(
             DownloadFileInput(
@@ -103,14 +134,24 @@ class PaddleInferSession(InferSession):
                 self.logger.warning(
                     "GPU is not found in current device by nvidia-smi. Please check your device or ignore it if run on jetson."
                 )
-            infer_opts.enable_use_gpu(cfg.engine_cfg.gpu_mem, cfg.engine_cfg.gpu_id)
-        else:
+            device_id = cfg.engine_cfg.gpu_id
+            infer_opts.enable_use_gpu(cfg.engine_cfg.gpu_mem, device_id)
+            self.logger.info(f"Using GPU device with ID: {device_id}")
+
+        elif cfg.engine_cfg.use_npu:
+            npu_id = cfg.engine_cfg.get("npu_id", 0)
+            infer_opts.enable_custom_device("npu", npu_id)
+            self.logger.info(f"Using NPU device with ID: {npu_id}")
+
+        else:  # CPU
             infer_opts.disable_gpu()
+            self.logger.info("Using CPU device")
 
         cpu_nums = os.cpu_count()
         infer_num_threads = cfg.engine_cfg.get("cpu_math_library_num_threads", -1)
         if infer_num_threads != -1 and 1 <= infer_num_threads <= cpu_nums:
             infer_opts.set_cpu_math_library_num_threads(infer_num_threads)
+            self.logger.info(f"Set CPU math library threads to: {infer_num_threads}")
 
         # enable memory optim
         infer_opts.enable_memory_optim()
@@ -131,16 +172,26 @@ class PaddleInferSession(InferSession):
                 self.logger.warning(
                     "GPU is not found in current device by nvidia-smi. Please check your device or ignore it if run on jetson."
                 )
-            infer_opts.enable_use_gpu(cfg.engine_cfg.gpu_mem, cfg.engine_cfg.gpu_id)
-        else:
+            device_id = cfg.engine_cfg.gpu_id
+            infer_opts.enable_use_gpu(cfg.engine_cfg.gpu_mem, device_id)
+            self.logger.info(f"Using GPU device with ID: {device_id}")
+
+        elif cfg.engine_cfg.use_npu:
+            npu_id = cfg.engine_cfg.get("npu_id", 0)
+            infer_opts.enable_custom_device("npu", npu_id)
+            self.logger.info(f"Using NPU device with ID: {npu_id}")
+
+        else:  # CPU
             infer_opts.disable_gpu()
             if hasattr(infer_opts, "disable_mkldnn"):
                 infer_opts.disable_mkldnn()
+            self.logger.info("Using CPU device")
 
             cpu_nums = os.cpu_count()
             infer_num_threads = cfg.engine_cfg.get("cpu_math_library_num_threads", -1)
             if infer_num_threads != -1 and 1 <= infer_num_threads <= cpu_nums:
                 infer_opts.set_cpu_math_library_num_threads(infer_num_threads)
+                self.logger.info(f"Set CPU math library threads to: {infer_num_threads}")
 
             if hasattr(infer_opts, "enable_new_ir"):
                 infer_opts.enable_new_ir(True)
