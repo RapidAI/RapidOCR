@@ -45,6 +45,12 @@ EngineConfig:
 
     openvino:
         inference_num_threads: -1
+        performance_hint: null
+        performance_num_requests: -1
+        enable_cpu_pinning: null
+        num_streams: -1
+        enable_hyper_threading: null
+        scheduling_core_type: null
 
     paddle:
         cpu_math_library_num_threads: -1
