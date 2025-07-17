@@ -55,8 +55,7 @@ If our repository proves beneficial to your endeavors, kindly consider leaving a
 ### Installation
 
 ```bash
-pip install onnxruntime
-pip install rapidocr
+pip install rapidocr onnxruntime
 ```
 
 ### Usage
@@ -128,7 +127,7 @@ If you find this project useful in your research, please consider cite:
 
 ### ⭐️ Stargazers over time
 
-[![Stargazers over time](https://starchart.cc/RapidAI/RapidOCR.svg)](https://starchart.cc/RapidAI/RapidOCR)
+[![Stargazers over time](https://starchart.cc/RapidAI/RapidOCR.svg?variant=adaptive)](https://starchart.cc/RapidAI/RapidOCR)
 
 ### License
 

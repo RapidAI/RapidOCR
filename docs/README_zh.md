@@ -56,8 +56,7 @@
 ### 安装
 
 ```bash
-pip install onnxruntime
-pip install rapidocr
+pip install rapidocr onnxruntime
 ```
 
 ### 使用
@@ -137,7 +136,7 @@ Used by [link](https://github.com/RapidAI/RapidOCR/discussions/286)
 
 ### Star history
 
-[![Stargazers over time](https://starchart.cc/RapidAI/RapidOCR.svg)](https://starchart.cc/RapidAI/RapidOCR)
+[![Stargazers over time](https://starchart.cc/RapidAI/RapidOCR.svg?variant=adaptive)](https://starchart.cc/RapidAI/RapidOCR)
 
 ### 开源许可证
 
