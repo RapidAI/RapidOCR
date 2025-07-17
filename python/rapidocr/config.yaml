@@ -54,6 +54,8 @@ EngineConfig:
 
     paddle:
         cpu_math_library_num_threads: -1
+        use_npu: false
+        npu_id: 0
         use_cuda: false
         gpu_id: 0
         gpu_mem: 500
