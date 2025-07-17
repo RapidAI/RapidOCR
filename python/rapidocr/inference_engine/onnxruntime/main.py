@@ -60,7 +60,7 @@ class OrtInferSession(InferSession):
 
         provider_cfg = ProviderConfig(engine_cfg=cfg.engine_cfg)
         self.session = InferenceSession(
-            model_path,
+            str(model_path),
             sess_options=sess_opt,
             providers=provider_cfg.get_ep_list(),
         )
