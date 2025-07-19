@@ -112,7 +112,7 @@ Used by [link](https://github.com/RapidAI/RapidOCR/discussions/286)
 
 ### 赞助商 & 支持者
 
-RapidOCR 是一个基于 Apache2.0 许可的开源项目，其持续开发之所以能够实现，完全得益于这些出色支持者的助力。如果您也想加入他们的行列，不妨考虑[赞助 RapidOCR]((<https://rapidai.github.io/RapidOCRDocs/main/sponsor/>) 的开发。
+RapidOCR 是一个基于 Apache2.0 许可的开源项目，其持续开发之所以能够实现，完全得益于这些出色支持者的助力。如果您也想加入他们的行列，不妨考虑[赞助 RapidOCR](<https://rapidai.github.io/RapidOCRDocs/main/sponsor/>) 的开发。
 
 #### 赞助商
 
