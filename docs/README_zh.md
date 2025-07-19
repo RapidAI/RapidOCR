@@ -94,7 +94,7 @@ Used by [link](https://github.com/RapidAI/RapidOCR/discussions/286)
 
 <p align="left">
   <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=RapidAI/RapidOCR&max=400&columns=20" width="70%"/>
+    <img src="https://contrib.rocks/image?repo=RapidAI/RapidOCR&max=400&columns=10" width="60%"/>
   </a>
 </p>
 
@@ -110,16 +110,20 @@ Used by [link](https://github.com/RapidAI/RapidOCR/discussions/286)
         <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/qq_group6.jpg" width="25%" height="25%" align="center">
     </div>
 
-### [赞助](https://rapidai.github.io/RapidOCRDocs/main/sponsor/)
+### 赞助商 & 支持者
 
-> [!IMPORTANT]
->
-> 如果您想要赞助该项目，可直接点击当前页最上面的Sponsor按钮，请写好备注(**您的Github账号名称**)，方便添加到下面赞助列表中。
+RapidOCR 是一个基于 Apache2.0 许可的开源项目，其持续开发之所以能够实现，完全得益于这些出色支持者的助力。如果您也想加入他们的行列，不妨考虑[赞助 RapidOCR]((https://rapidai.github.io/RapidOCRDocs/main/sponsor/)) 的开发。
 
-|                                                                     赞助者                                                                     |                                                                               应用的产品                                                                                |
-| :--------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| <a href="https://github.com/cuiliang" title="cuiliang"><img src="https://avatars.githubusercontent.com/u/1972649?v=4" width=65 height=65></a>  | <a href="https://getquicker.net/" title="Quicker指尖工具箱"><img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Quicker.jpg" width=65 height=65></a> |
-| <a href="https://github.com/Eunsolfs" title="Eunsolfs"><img src="https://avatars.githubusercontent.com/u/53815751?v=4" width=65 height=65></a> |                                                                                    -                                                                                    |
+#### 赞助商
+
+|Sponsors|Application|Introduction|
+|:---:|:---:|:---|
+|<img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Quicker.jpg" width=65 height=65>|[Quicker](https://getquicker.net/)|您的指尖工作箱|
+|<img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Comshare.png" width=65 height=65>|[优云智算](https://www.compshare.cn/?ytag=GPU_YY-gh_rapidOCR)|万卡RTX40系GPU+海内外主流模型API服务，秒级响应，按量计费，新客免费用|
+
+#### 支持者
+
+<a href="https://github.com/Eunsolfs" title="Eunsolfs"><img src="https://avatars.githubusercontent.com/u/53815751?v=4" width=65 height=65></a>
 
 ### 引用
 

@@ -93,24 +93,24 @@ Used by [link](https://github.com/RapidAI/RapidOCR/discussions/286)
 
 <p align="left">
   <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=RapidAI/RapidOCR&max=400&columns=20" width="70%"/>
+    <img src="https://contrib.rocks/image?repo=RapidAI/RapidOCR&max=400&columns=10" width="60%"/>
   </a>
 </p>
 
-### [Sponsor](https://rapidai.github.io/RapidOCRDocs/main/sponsor/)
+### Sponsors & Backers
 
-> [!IMPORTANT]
->
-> If you want to sponsor the project, you can directly click the **Buy me a coffee** image, please write a note (e.g. your github account name) to facilitate adding to the sponsorship list below.
->
-> <div align="left">
-> <a href="https://www.buymeacoffee.com/SWHL"><img src="https://raw.githubusercontent.com/RapidAI/.github/main/assets/buymeacoffe.png" width="30%" height="30%"></a>
-> </div>
+RapidOCR is an Apache2.0-licensed open source project with its ongoing development made possible entirely by the support of these awesome backers. If you'd like to join them, please consider [sponsoring RapidOCR's development](https://rapidai.github.io/RapidOCRDocs/main/sponsor/).
 
-|                                                                    Sponsor                                                                     |                                                                       Applied Products                                                                        |
-| :-------: | :----------: |
-| <a href="https://github.com/cuiliang" title="cuiliang"><img src="https://avatars.githubusercontent.com/u/1972649?v=4" width=65 height=65></a>  | <a href="https://getquicker.net/" title="Quicker"><img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Quicker.jpg" width=65 height=65></a> |
-| <a href="https://github.com/Eunsolfs" title="Eunsolfs"><img src="https://avatars.githubusercontent.com/u/53815751?v=4" width=65 height=65></a> |                                                                               -                                                                               |
+#### Sponsors
+
+|Sponsors|Application|Introduction|
+|:---:|:---:|:---|
+|<img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Quicker.jpg" width=65 height=65>|[Quicker](https://getquicker.net/)|Your fingertip toolbox|
+|<img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Comshare.png" width=65 height=65>|[Compshare](https://www.compshare.cn/?ytag=GPU_YY-gh_rapidOCR)|10,000+ RTX 40 Series GPUs, Global AI Model APIs. Instant response. Pay-as-you-go. Free trial for new users.|
+
+#### Backers
+
+<a href="https://github.com/Eunsolfs" title="Eunsolfs"><img src="https://avatars.githubusercontent.com/u/53815751?v=4" width=65 height=65></a>
 
 ### Citation
 
