@@ -44,8 +44,7 @@ ch_PP-OCRv5_rec_server_infer:
             fc_decay: 0.00001
       - NRTRHead:
           nrtr_dim: 384
-          max_text_length: *max_text_length
-
+          max_text_length: 25
 
 ch_PP-OCRv5_det_mobile_infer:
   model_type: det
