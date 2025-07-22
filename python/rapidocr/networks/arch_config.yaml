@@ -1,3 +1,36 @@
+ch_PP-OCRv5_det_infer:
+  model_type: det
+  algorithm: DB
+  Transform: null
+  Backbone:
+    name: PPLCNetV3
+    scale: 0.75
+    det: True
+  Neck:
+    name: RSEFPN
+    out_channels: 96
+    shortcut: True
+  Head:
+    name: DBHead
+    k: 50
+    fix_nan: True
+
+ch_PP-OCRv5_det_server_infer:
+  model_type: det
+  algorithm: DB
+  Transform: null
+  Backbone:
+    name: PPHGNetV2_B4
+    det: True
+  Neck:
+    name: LKPAN
+    out_channels: 256
+    intracl: true
+  Head:
+    name: PFHeadLocal
+    k: 50
+    mode: "large"
+
 ch_ptocr_mobile_v2.0_cls_infer:
   model_type: cls
   algorithm: CLS
