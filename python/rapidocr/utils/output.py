@@ -25,7 +25,7 @@ class RapidOCROutput:
     )
     elapse_list: List[Union[float, None]] = field(default_factory=list)
     elapse: float = field(init=False)
-    lang_type: Optional[str] = None
+    viser: Optional[VisRes] = None
 
     def __post_init__(self):
         self.elapse = sum(v for v in self.elapse_list if isinstance(v, float))
@@ -41,21 +41,17 @@ class RapidOCROutput:
     def to_markdown(self) -> str:
         return ToMarkdown.to(self.boxes, self.txts)
 
-    def vis(self, save_path: Optional[str] = None, font_path: Optional[str] = None):
+    def vis(self, save_path: Optional[str] = None):
         if self.img is None or self.boxes is None:
             logger.warning("No image or boxes to visualize.")
             return
 
-        vis = VisRes()
+        if self.viser is None:
+            logger.error("vis instance is None")
+            return
+
         if all(v is None for v in self.word_results):
-            vis_img = vis(
-                self.img,
-                self.boxes,
-                self.txts,
-                self.scores,
-                font_path=font_path,
-                lang_type=self.lang_type,
-            )
+            vis_img = self.viser(self.img, self.boxes, self.txts, self.scores)
 
             if save_path is not None:
                 save_img(save_path, vis_img)
@@ -65,14 +61,7 @@ class RapidOCROutput:
         # single word vis
         words_results = sum(self.word_results, ())
         words, words_scores, words_boxes = list(zip(*words_results))
-        vis_img = vis(
-            self.img,
-            words_boxes,
-            words,
-            words_scores,
-            font_path=font_path,
-            lang_type=self.lang_type,
-        )
+        vis_img = self.viser(self.img, words_boxes, words, words_scores)
 
         if save_path is not None:
             save_img(save_path, vis_img)

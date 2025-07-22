@@ -35,12 +35,12 @@ class RapidOCR:
     def __init__(
         self, config_path: Optional[str] = None, params: Optional[Dict[str, Any]] = None
     ):
-        cfg = self.load_config(config_path, params)
-        self.initialize(cfg)
+        cfg = self._load_config(config_path, params)
+        self._initialize(cfg)
 
         self.logger = Logger(logger_name=__name__).get_log()
 
-    def load_config(
+    def _load_config(
         self, config_path: Optional[str], params: Optional[Dict[str, Any]]
     ) -> DictConfig:
         if config_path is not None and Path(config_path).exists():
@@ -52,7 +52,7 @@ class RapidOCR:
             cfg = ParseParams.update_batch(cfg, params)
         return cfg
 
-    def initialize(self, cfg: DictConfig):
+    def _initialize(self, cfg: DictConfig):
         self.text_score = cfg.Global.text_score
         self.min_height = cfg.Global.min_height
         self.width_height_ratio = cfg.Global.width_height_ratio
@@ -273,7 +273,11 @@ class RapidOCR:
             scores=rec_res.scores,
             word_results=rec_res.word_results,
             elapse_list=[det_res.elapse, cls_res.elapse, rec_res.elapse],
-            lang_type=self.cfg.Rec.lang_type,
+            viser=VisRes(
+                text_score=self.cfg.Global.text_score,
+                lang_type=self.cfg.Rec.lang_type,
+                font_path=self.cfg.Global.font_path,
+            ),
         )
         ocr_res = self.filter_by_text_score(ocr_res)
         if len(ocr_res) <= 0:
@@ -409,11 +413,12 @@ def main(arg_list: Optional[List[str]] = None):
             save_path = cur_dir / f"{Path(args.img_path).stem}_vis_single.png"
             cv2.imwrite(str(save_path), vis_img)
             print(f"The vis single result has saved in {save_path}")
-        else:
-            save_path = cur_dir / f"{Path(args.img_path).stem}_vis.png"
-            vis_img = vis(args.img_path, result.boxes, result.txts, result.scores)
-            cv2.imwrite(str(save_path), vis_img)
-            print(f"The vis result has saved in {save_path}")
+            return
+
+        save_path = cur_dir / f"{Path(args.img_path).stem}_vis.png"
+        vis_img = vis(args.img_path, result.boxes, result.txts, result.scores)
+        cv2.imwrite(str(save_path), vis_img)
+        print(f"The vis result has saved in {save_path}")
 
 
 if __name__ == "__main__":

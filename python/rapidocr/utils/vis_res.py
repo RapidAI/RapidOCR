@@ -25,7 +25,12 @@ FONT_YAML_PATH = root_dir / "default_models.yaml"
 
 
 class VisRes:
-    def __init__(self, text_score: float = 0.5):
+    def __init__(
+        self,
+        text_score: float = 0.5,
+        lang_type: Optional[LangRec] = None,
+        font_path: Optional[str] = None,
+    ):
         self.logger = Logger(logger_name=__name__).get_log()
 
         self.text_score = text_score
@@ -33,20 +38,19 @@ class VisRes:
 
         self.font_cfg = OmegaConf.load(FONT_YAML_PATH).fonts
 
+        self.font_path = self.get_font_path(font_path, lang_type)
+        self.logger.info(f"Using {self.font_path} to visualize results.")
+
     def __call__(
         self,
         img_content: InputType,
         dt_boxes: np.ndarray,
         txts: Optional[Union[List[str], Tuple[str]]] = None,
         scores: Optional[Tuple[float]] = None,
-        font_path: Optional[str] = None,
-        lang_type: Optional[LangRec] = None,
     ) -> np.ndarray:
         if txts is None:
             return self.draw_dt_boxes(img_content, dt_boxes, scores)
-
-        font_path = self.get_font_path(font_path, lang_type)
-        return self.draw_ocr_box_txt(img_content, dt_boxes, txts, font_path, scores)
+        return self.draw_ocr_box_txt(img_content, dt_boxes, txts, scores)
 
     def draw_dt_boxes(
         self,
@@ -180,7 +184,6 @@ class VisRes:
         img_content: InputType,
         dt_boxes: np.ndarray,
         txts: Union[List[str], Tuple[str]],
-        font_path: str,
         scores: Optional[Tuple[float]] = None,
     ) -> np.ndarray:
         image = Image.fromarray(self.load_img(img_content))
@@ -208,7 +211,7 @@ class VisRes:
             box_width = self.get_box_width(box)
             if box_height > 2 * box_width:
                 font_size = max(int(box_width * 0.9), 10)
-                font = ImageFont.truetype(font_path, font_size, encoding="utf-8")
+                font = ImageFont.truetype(self.font_path, font_size, encoding="utf-8")
                 cur_y = box[0][1]
 
                 for c in txt:
@@ -218,7 +221,7 @@ class VisRes:
                     cur_y += self.get_char_size(font, c)
             else:
                 font_size = max(int(box_height * 0.8), 10)
-                font = ImageFont.truetype(font_path, font_size, encoding="utf-8")
+                font = ImageFont.truetype(self.font_path, font_size, encoding="utf-8")
                 draw_right.text([box[0][0], box[0][1]], txt, fill=(0, 0, 0), font=font)
 
         img_left = Image.blend(image, img_left, 0.5)
