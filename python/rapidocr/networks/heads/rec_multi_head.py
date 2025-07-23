@@ -14,8 +14,7 @@ class FCTranspose(nn.Module):
     def forward(self, x):
         if self.only_transpose:
             return x.permute([0, 2, 1])
-        else:
-            return self.fc(x.permute([0, 2, 1]))
+        return self.fc(x.permute([0, 2, 1]))
 
 
 class MultiHead(nn.Module):
@@ -29,7 +28,6 @@ class MultiHead(nn.Module):
             name = list(head_name)[0]
             if name == "SARHead":
                 pass
-
             elif name == "NRTRHead":
                 pass
             elif name == "CTCHead":
@@ -55,4 +53,20 @@ class MultiHead(nn.Module):
 
     def forward(self, x, data=None):
         ctc_encoder = self.ctc_encoder(x)
-        return self.ctc_head(ctc_encoder)
+        ctc_out = self.ctc_head(ctc_encoder)
+
+        head_out = {}
+        head_out["ctc"] = ctc_out
+        head_out["res"] = ctc_out
+        head_out["ctc_neck"] = ctc_encoder
+
+        # eval mode
+        if not self.training:
+            return ctc_out
+        if self.gtc_head == "sar":
+            sar_out = self.sar_head(x, data[1:])["res"]
+            head_out["sar"] = sar_out
+        else:
+            gtc_out = self.gtc_head(self.before_gtc(x), data[1:])["res"]
+            head_out["nrtr"] = gtc_out
+        return head_out
