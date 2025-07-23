@@ -41,7 +41,7 @@ def get_engine(params: Optional[Dict[str, Any]] = None):
 
 @pytest.mark.parametrize(
     "engine_type",
-    [EngineType.ONNXRUNTIME, EngineType.PADDLE, EngineType.OPENVINO],
+    [EngineType.ONNXRUNTIME, EngineType.PADDLE, EngineType.OPENVINO, EngineType.TORCH],
 )
 def test_ppocrv5_rec_mobile(engine_type):
     engine = RapidOCR(
@@ -58,11 +58,16 @@ def test_ppocrv5_rec_mobile(engine_type):
     assert result.txts[0] == "韩国小馆"
 
 
-def test_ppocrv5_det_mobile():
+@pytest.mark.parametrize(
+    "engine_type",
+    [EngineType.ONNXRUNTIME, EngineType.PADDLE, EngineType.OPENVINO, EngineType.TORCH],
+)
+def test_ppocrv5_det_mobile(engine_type):
     engine = RapidOCR(
         params={
             "Det.ocr_version": OCRVersion.PPOCRV5,
             "Det.model_type": ModelType.MOBILE,
+            "Det.engine_type": engine_type,
         }
     )
     img_path = tests_dir / "ch_en_num.jpg"
