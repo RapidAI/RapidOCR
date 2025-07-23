@@ -7,6 +7,8 @@ ch_PP-OCRv5_rec_mobile_infer:
     scale: 0.95
   Head:
     name: MultiHead
+    out_channels_list:
+      CTCLabelDecode: 18385 #'blank' + ...(18384) + ' '
     head_list:
       - CTCHead:
           Neck:
@@ -31,6 +33,8 @@ ch_PP-OCRv5_rec_server_infer:
     text_rec: True
   Head:
     name: MultiHead
+    out_channels_list:
+      CTCLabelDecode: 18385 #'blank' + ...(18384) + ' '
     head_list:
       - CTCHead:
           Neck:
