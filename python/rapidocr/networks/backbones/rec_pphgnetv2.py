@@ -150,7 +150,7 @@ def conv_bn(
         bias_attr=False,
         padding_mode=padding_mode,
     )
-    bn_layer = nn.BatchNorm2D(num_features=out_channels)
+    bn_layer = nn.BatchNorm2d(num_features=out_channels)
     se = nn.Sequential()
     se.add_sublayer("conv", conv_layer)
     se.add_sublayer("bn", bn_layer)
@@ -503,8 +503,6 @@ class TheseusLayer(nn.Module):
         # init the output of net
         if return_patterns or return_stages:
             if return_patterns and return_stages:
-                msg = f"The 'return_patterns' would be ignored when 'return_stages' is set."
-
                 return_stages = None
 
             if return_stages is True:
@@ -513,10 +511,9 @@ class TheseusLayer(nn.Module):
             # return_stages is int or bool
             if type(return_stages) is int:
                 return_stages = [return_stages]
+
             if isinstance(return_stages, list):
                 if max(return_stages) > len(stages_pattern) or min(return_stages) < 0:
-                    msg = f"The 'return_stages' set error. Illegal value(s) have been ignored. The stages' pattern list is {stages_pattern}."
-
                     return_stages = [
                         val
                         for val in return_stages
@@ -545,9 +542,10 @@ class TheseusLayer(nn.Module):
 
         if return_stages is True:
             return_patterns = stages_pattern
-        # return_stages is int or bool
-        if type(return_stages) is int:
+
+        if isinstance(return_stages, int):
             return_stages = [return_stages]
+
         if isinstance(return_stages, list):
             if max(return_stages) > len(stages_pattern) or min(return_stages) < 0:
                 return_stages = [
