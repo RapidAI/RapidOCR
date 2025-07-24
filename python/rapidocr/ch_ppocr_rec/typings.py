@@ -43,7 +43,7 @@ class TextRecOutput:
         ("", 1.0, None),
     )
     elapse: Optional[float] = None
-    lang_type: Optional[str] = None
+    viser: Optional[VisRes] = None
 
     def __len__(self):
         if self.txts is None:
@@ -55,10 +55,7 @@ class TextRecOutput:
             logger.warning("No image or txts to visualize.")
             return None
 
-        vis = VisRes()
-        vis_img = vis.draw_rec_res(
-            self.imgs, self.txts, self.scores, lang_type=self.lang_type
-        )
+        vis_img = self.viser.draw_rec_res(self.imgs, self.txts, self.scores)
 
         if save_path is not None:
             save_img(save_path, vis_img)

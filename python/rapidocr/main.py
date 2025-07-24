@@ -67,6 +67,7 @@ class RapidOCR:
 
         self.use_rec = cfg.Global.use_rec
         cfg.Rec.engine_cfg = cfg.EngineConfig[cfg.Rec.engine_type.value]
+        cfg.Rec.font_path = cfg.Global.font_path
         self.text_rec = TextRecognizer(cfg.Rec)
 
         self.load_img = LoadImage()

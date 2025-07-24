@@ -23,6 +23,7 @@ from rapidocr.inference_engine.base import FileInfo, get_engine
 
 from ..utils import Logger
 from ..utils.download_file import DownloadFile, DownloadFileInput
+from ..utils.vis_res import VisRes
 from .typings import TextRecInput, TextRecOutput
 from .utils import CTCLabelDecode
 
@@ -45,6 +46,8 @@ class TextRecognizer:
 
         self.rec_batch_num = cfg["rec_batch_num"]
         self.rec_image_shape = cfg["rec_img_shape"]
+
+        self.cfg = cfg
 
     def get_character_dict(self, cfg):
         character = None
@@ -132,7 +135,14 @@ class TextRecognizer:
 
         all_line_results, all_word_results = list(zip(*rec_res))
         txts, scores = list(zip(*all_line_results))
-        return TextRecOutput(img_list, txts, scores, all_word_results, elapse)
+        return TextRecOutput(
+            img_list,
+            txts,
+            scores,
+            all_word_results,
+            elapse,
+            viser=VisRes(lang_type=self.cfg.lang_type, font_path=self.cfg.font_path),
+        )
 
     def resize_norm_img(self, img: np.ndarray, max_wh_ratio: float) -> np.ndarray:
         img_channel, img_height, img_width = self.rec_image_shape
