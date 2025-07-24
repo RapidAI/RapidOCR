@@ -4,7 +4,7 @@
 import math
 import random
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 import cv2
 import numpy as np
@@ -128,26 +128,19 @@ class VisRes:
 
     def draw_rec_res(
         self,
-        imgs: List[InputType],
+        imgs: Sequence[InputType],
         txts: Union[List[str], Tuple[str]],
         scores: Tuple[float],
-        lang_type: Optional[str] = None,
     ) -> np.ndarray:
         result_imgs = []
         for img, txt, score in zip(imgs, txts, scores):
-            vis_img = self.draw_one_rec_res(img, txt, score, lang_type)
+            vis_img = self.draw_one_rec_res(img, txt, score)
             result_imgs.append(vis_img)
         return self.concat_imgs(result_imgs, direction="vertical")
 
     def draw_one_rec_res(
-        self,
-        img_content: InputType,
-        txt: str,
-        score: float,
-        lang_type: Optional[str] = None,
+        self, img_content: InputType, txt: str, score: float
     ) -> np.ndarray:
-        font_path = self.get_font_path(None, lang_type)
-
         image = Image.fromarray(self.load_img(img_content))
         h, w = image.height, image.width
         if image.mode == "L":
@@ -162,7 +155,7 @@ class VisRes:
         box_width = self.get_box_width(box)
         if box_height > 2 * box_width:
             font_size = max(int(box_width * 0.9), 10)
-            font = ImageFont.truetype(font_path, font_size, encoding="utf-8")
+            font = ImageFont.truetype(self.font_path, font_size, encoding="utf-8")
             cur_y = box[0][1]
 
             for c in txt:
@@ -170,7 +163,7 @@ class VisRes:
                 cur_y += self.get_char_size(font, c)
         else:
             font_size = max(int(box_height * 0.8), 10)
-            font = ImageFont.truetype(font_path, font_size, encoding="utf-8")
+            font = ImageFont.truetype(self.font_path, font_size, encoding="utf-8")
             draw_right.text([box[0][0], box[0][1]], txt, fill=(0, 0, 0), font=font)
 
         img_left = Image.blend(image, img_left, 0.5)
