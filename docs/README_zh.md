@@ -30,36 +30,36 @@
 
 </div>
 
-### 简介
+### 📝 简介
 
-💖目前，我们自豪地推出了运行速度最为迅猛、兼容性最为广泛的多平台多语言OCR工具，它完全开源免费，并支持离线环境下的快速部署。
+目前，我们自豪地推出了运行速度最为迅猛、兼容性最为广泛的多平台多语言OCR工具，它完全开源免费，并支持离线环境下的快速部署。
 
-🦜 **支持语言概览：** 默认支持中文与英文识别，对于其他语言的识别需求，我们提供了便捷的自助转换方案。具体转换指南，请参见[这里](https://rapidai.github.io/RapidOCRDocs/main/blog/2022/09/28/%E6%94%AF%E6%8C%81%E8%AF%86%E5%88%AB%E8%AF%AD%E8%A8%80/)。
+**支持语言概览：** 默认支持中文与英文识别，对于其他语言的识别需求，我们提供了便捷的自助转换方案。具体转换指南，请参见[这里](https://rapidai.github.io/RapidOCRDocs/main/blog/2022/09/28/%E6%94%AF%E6%8C%81%E8%AF%86%E5%88%AB%E8%AF%AD%E8%A8%80/)。
 
-🔎 **项目缘起：** 鉴于[PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)在工程化方面仍有进一步优化的空间，为了简化并加速在各种终端设备上进行OCR推理的过程，我们创新地将PaddleOCR中的模型转换为了高度兼容的ONNX格式，并利用Python、C++、Java、C#等多种编程语言，实现了跨平台的无缝移植，让广大开发者能够轻松上手，高效应用。
+**项目缘起：** 鉴于[PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)在工程化方面仍有进一步优化的空间，为了简化并加速在各种终端设备上进行OCR推理的过程，我们创新地将PaddleOCR中的模型转换为了高度兼容的ONNX格式，并利用Python、C++、Java、C#等多种编程语言，实现了跨平台的无缝移植，让广大开发者能够轻松上手，高效应用。
 
-🎓 **名称寓意：** RapidOCR，这一名称蕴含着我们对产品的深刻期待——轻快（操作简便，响应迅速）、好省（资源占用低，成本效益高）并智能（基于深度学习的强大技术，精准高效）。我们专注于发挥人工智能的优势，打造小巧而强大的模型，将速度视为不懈追求，同时确保识别效果的卓越。
+**名称寓意：** RapidOCR，这一名称蕴含着我们对产品的深刻期待——轻快（操作简便，响应迅速）、好省（资源占用低，成本效益高）并智能（基于深度学习的强大技术，精准高效）。我们专注于发挥人工智能的优势，打造小巧而强大的模型，将速度视为不懈追求，同时确保识别效果的卓越。
 
-😉 **使用指南：**
+**使用指南：**
 
 - 直接部署：若本仓库中已提供的模型能满足您的需求，那么您只需参考[官方文档](https://rapidai.github.io/RapidOCRDocs/main/quickstart/)进行RapidOCR的部署与使用即可。
 - 定制化微调：若现有模型无法满足您的特定需求，您可以在PaddleOCR的基础上，利用自己的数据进行微调，随后再将其应用于RapidOCR的部署中，实现个性化定制。
 
 如果您发现本仓库对您的项目或学习有所助益，恳请您慷慨地给个小星星⭐，给予我们支持与鼓励！
 
-### 效果展示
+### 🎥 效果展示
 
 <div align="center">
     <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/demo.gif" alt="Demo" width="100%" height="100%">
 </div>
 
-### 安装
+### 🛠️ 安装
 
 ```bash
 pip install rapidocr onnxruntime
 ```
 
-### 使用
+### 📋 使用
 
 ```python
 from rapidocr import RapidOCR
@@ -73,16 +73,34 @@ print(result)
 result.vis("vis_result.jpg")
 ```
 
-### 文档
+### 📚 文档
 
 完整文档请移步：[docs](https://rapidai.github.io/RapidOCRDocs)
 
-### 谁在使用？
+### 👥 谁在使用？([更多](https://github.com/RapidAI/RapidOCR/discussions/286))
 
-Used by [link](https://github.com/RapidAI/RapidOCR/discussions/286)
+- [Docling](https://github.com/DS4SD/docling)
+- [CnOCR](https://github.com/breezedeus/CnOCR)
+- [api-for-open-llm](https://github.com/xusenlinzy/api-for-open-llm)
+- [arknights-mower](https://github.com/ArkMowers/arknights-mower)
+- [pensieve](https://github.com/arkohut/pensieve)
+- [genshin_artifact_auxiliary](https://github.com/SkeathyTomas/genshin_artifact_auxiliary)
+- [ChatLLM](https://github.com/yuanjie-ai/ChatLLM)
+- [langchain](https://github.com/langchain-ai/langchain)
+- [Langchain-Chatchat](https://github.com/chatchat-space/Langchain-Chatchat)
+- [JamAIBase](https://github.com/EmbeddedLLM/JamAIBase)
+- [PAI-RAG](https://github.com/aigc-apps/PAI-RAG)
+- [ChatAgent_RAG](https://github.com/junyuyang7/ChatAgent_RAG)
+- [OpenAdapt](https://github.com/OpenAdaptAI/OpenAdapt)
+- [Umi-OCR](https://github.com/hiroi-sora/Umi-OCR)
 
-### 致谢
+> 更多使用RapidOCR的项目，欢迎在[登记地址](https://github.com/RapidAI/RapidOCR/discussions/286)登记，登记仅仅为了产品推广。
 
+### 🙏 致谢
+
+- 非常感谢[PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)的一切。
+- 非常感谢[PaddleOCR2Pytorch](https://github.com/frotms/PaddleOCR2Pytorch)提供转换后的PyTorch格式模型。
+- 非常感谢[PaddleX](https://github.com/PaddlePaddle/PaddleX)提供文档模型。
 - 非常感谢[DeliciaLaniD](https://github.com/DeliciaLaniD)修复ocrweb中扫描动画起始位置错位问题。
 - 非常感谢[zhsunlight](https://github.com/zhsunlight)关于参数化调用GPU推理的建议以及细致周到的测试。
 - 非常感谢[lzh111222334](https://github.com/lzh111222334)修复python版本下rec前处理部分bug。
@@ -90,7 +108,7 @@ Used by [link](https://github.com/RapidAI/RapidOCR/discussions/286)
 - 非常感谢[DeadWood8](https://github.com/DeadWood8)提供了[Nuitka打包rapidocr_web的操作文档和可执行exe](https://rapidai.github.io/RapidOCRDocs/main/install_usage/rapidocr_web/nuitka_package/)。
 - 非常感谢[Loovelj](https://github.com/Loovelj)指出对文本检测框排序时顺序问题，详情参见[issue 75](https://github.com/RapidAI/RapidOCR/issues/75)。
 
-### 贡献者
+### 🎖 贡献者
 
 <p align="left">
   <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors">
@@ -98,7 +116,7 @@ Used by [link](https://github.com/RapidAI/RapidOCR/discussions/286)
   </a>
 </p>
 
-### 加入我们
+### 🤝 加入我们
 
 - 微信扫描以下二维码，关注**RapidAI公众号**，回复**OCR**即可加入RapidOCR微信交流群：
     <div align="left">
@@ -110,7 +128,7 @@ Used by [link](https://github.com/RapidAI/RapidOCR/discussions/286)
         <img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/qq_group6.jpg" width="25%" height="25%" align="center">
     </div>
 
-### 赞助商 & 支持者
+### 🌟 赞助商 & 支持者
 
 RapidOCR 是一个基于 Apache2.0 许可的开源项目，其持续开发之所以能够实现，完全得益于这些出色支持者的助力。如果您也想加入他们的行列，不妨考虑[赞助 RapidOCR](<https://rapidai.github.io/RapidOCRDocs/main/sponsor/>) 的开发。
 
@@ -125,7 +143,7 @@ RapidOCR 是一个基于 Apache2.0 许可的开源项目，其持续开发之所
 
 <a href="https://github.com/Eunsolfs" title="Eunsolfs"><img src="https://avatars.githubusercontent.com/u/53815751?v=4" width=65 height=65></a>
 
-### 引用
+### 📜 引用
 
 如果您发现该项目对您的研究有用，请考虑引用：
 
@@ -138,11 +156,11 @@ RapidOCR 是一个基于 Apache2.0 许可的开源项目，其持续开发之所
 }
 ```
 
-### Star history
+### ⭐️ Star history
 
 [![Stargazers over time](https://starchart.cc/RapidAI/RapidOCR.svg?variant=adaptive)](https://starchart.cc/RapidAI/RapidOCR)
 
-### 开源许可证
+### ⚖️ 开源许可证
 
 OCR模型版权归百度所有，其他工程代码版权归本仓库所有者所有。
 
