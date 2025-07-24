@@ -15,7 +15,7 @@
     <div class='area'>
         <span class="btn-gen" onclick="javascript:$('#rapid_ocr').click();">试试你的图片?（可拖拽、粘贴、点击）</span>
         <input type="file" style="display: none;" name="pic" id="rapid_ocr"/>
-        <span class="uplodNote">支持PNG、JPG、JPEG、BMP，图片大小不超过3M。</span>
+        <span class="uplodNote">支持PNG、JPG、JPEG、BMP、WEBP，图片大小不超过3M。</span>
     </div>
     <br/>
     <div class="area">
@@ -100,7 +100,7 @@
             let imageName = targetFile.name;
             let index = imageName.lastIndexOf('.');
             let extName = imageName.substr(index + 1);
-            let imgArr = ['jpg', 'bmp', 'png', 'jpeg'];
+            let imgArr = ['webp', 'jpg', 'bmp', 'png', 'jpeg'];
             if (!(imgArr.includes(extName.toLocaleLowerCase()))){
                 alert("图像文件格式不支持！");
                 return;
