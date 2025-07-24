@@ -97,9 +97,9 @@ Full documentation can be found on [docs](https://rapidai.github.io/RapidOCRDocs
 
 ### 🙏 Acknowledgements
 
-- Many thanks to PaddleOCR for everything.
-- Many thanks to PaddleOCR2Pytorch for providing the converted PyTorch format models.
-- Many thanks to PaddleX for providing the document models.
+- Many thanks to [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) for everything.
+- Many thanks to [PaddleOCR2Pytorch](https://github.com/frotms/PaddleOCR2Pytorch) for providing the converted PyTorch format models.
+- Many thanks to [PaddleX](https://github.com/PaddlePaddle/PaddleX) for providing the document models.
 - Many thanks to [DeliciaLaniD](https://github.com/DeliciaLaniD) for fixing the misplaced start position of scan animation in ocrweb.
 - Many thanks to [zhsunlight](https://github.com/zhsunlight) for the suggestion about parameterized call GPU reasoning and the careful and thoughtful testing.
 - Many thanks to [lzh111222334](https://github.com/lzh111222334) for fixing some bugs of rec preprocessing under python version.
