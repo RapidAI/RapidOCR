@@ -5,7 +5,6 @@ import numpy as np
 class ToMarkdown:
     @classmethod
     def to(cls, boxes, txts) -> str:
-        # def to(cls, result: RapidOCROutput) -> str:
         """
         根据 OCR 结果的坐标信息，将文本还原为近似原始排版的 Markdown。
 
