@@ -20,7 +20,7 @@ MODULE_NAME = "rapidocr_web"
 
 obtainer = GetPyPiLatestVersion()
 latest_version = obtainer(MODULE_NAME)
-VERSION_NUM = obtainer.version_add_one(latest_version)
+VERSION_NUM = obtainer.version_add_one(latest_version, add_patch=True)
 
 # 优先提取commit message中的语义化版本号，如无，则自动加1
 if len(sys.argv) > 2:
@@ -62,8 +62,9 @@ setuptools.setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
-    python_requires=">=3.6,<3.13",
+    python_requires=">=3.6",
     entry_points={
         "console_scripts": [
             f"{MODULE_NAME}={MODULE_NAME}.ocrweb:main",
