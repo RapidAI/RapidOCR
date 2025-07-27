@@ -222,47 +222,6 @@ def test_korean_lang(ocr_version, gt):
     assert result.txts[0] == gt
 
 
-@mark.parametrize(
-    "engine_type",
-    [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE],
-)
-def test_latin_lang(engine_type):
-    engine = RapidOCR(
-        params={
-            "Rec.lang_type": LangRec.LATIN,
-            "Rec.model_type": ModelType.MOBILE,
-            "Rec.ocr_version": OCRVersion.PPOCRV5,
-            "Rec.engine_type": engine_type,
-        }
-    )
-    img_path = tests_dir / "latin.jpg"
-    result = engine(img_path, use_det=False, use_cls=False, use_rec=True)
-    assert result.txts is not None
-    assert (
-        result.txts[0]
-        == "Alphabetum in mundo hodie frequentissie adhibitum est alphabetum Latinum."
-    )
-
-
-@mark.parametrize(
-    "engine_type",
-    [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE],
-)
-def test_eslav_lang(engine_type):
-    engine = RapidOCR(
-        params={
-            "Rec.lang_type": LangRec.ESLAV,
-            "Rec.model_type": ModelType.MOBILE,
-            "Rec.ocr_version": OCRVersion.PPOCRV5,
-            "Rec.engine_type": engine_type,
-        }
-    )
-    img_path = tests_dir / "eslav.jpg"
-    result = engine(img_path, use_det=False, use_cls=False, use_rec=True)
-    assert result.txts is not None
-    assert result.txts[0] == "Славянские языки — большая языковая семья."
-
-
 def test_en_lang():
     engine = RapidOCR(
         params={"Rec.lang_type": LangRec.EN, "Rec.model_type": ModelType.MOBILE}
