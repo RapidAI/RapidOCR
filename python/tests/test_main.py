@@ -9,8 +9,7 @@ from typing import List
 import cv2
 import numpy as np
 import pytest
-
-from rapidocr.utils.typings import OCRVersion
+from pytest import mark
 
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
@@ -18,6 +17,7 @@ sys.path.append(str(root_dir))
 from rapidocr import EngineType, LangRec, LoadImageError, ModelType, RapidOCR
 from rapidocr.main import main
 from rapidocr.utils.logger import Logger
+from rapidocr.utils.typings import OCRVersion
 
 tests_dir = root_dir / "tests" / "test_files"
 img_path = tests_dir / "ch_en_num.jpg"
@@ -47,7 +47,7 @@ def test_to_markdown(engine):
     assert len(result_markdown.split("\n")) == 11
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "engine_type",
     [EngineType.ONNXRUNTIME, EngineType.PADDLE, EngineType.OPENVINO, EngineType.TORCH],
 )
@@ -66,7 +66,7 @@ def test_ppocrv5_rec_mobile(engine_type):
     assert result.txts[0] == "韩国小馆"
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "engine_type",
     [EngineType.ONNXRUNTIME, EngineType.PADDLE, EngineType.OPENVINO, EngineType.TORCH],
 )
@@ -147,14 +147,14 @@ def test_server_rec():
     assert result.txts[0] == "正品促销"
 
 
-@pytest.mark.parametrize("cmd,gt", [(f"--img_path {img_path}", "正品促销")])
+@mark.parametrize("cmd,gt", [(f"--img_path {img_path}", "正品促销")])
 def test_cli(capsys, cmd, gt):
     main(shlex.split(cmd))
     output = capsys.readouterr().out.strip()
     assert gt in output
 
 
-@pytest.mark.parametrize("cmd", [f"config --save_cfg_file {tests_dir}/config.yaml"])
+@mark.parametrize("cmd", [f"config --save_cfg_file {tests_dir}/config.yaml"])
 def test_cli_config(capsys, cmd):
     main(shlex.split(cmd))
     output = capsys.readouterr().out.strip()
@@ -166,7 +166,7 @@ def test_cli_config(capsys, cmd):
     cfg_yaml_path.unlink()
 
 
-@pytest.mark.parametrize("cmd", ["check"])
+@mark.parametrize("cmd", ["check"])
 def test_cli_check(capsys, cmd):
     main(shlex.split(cmd))
     output = capsys.readouterr().out.strip()
@@ -174,7 +174,7 @@ def test_cli_check(capsys, cmd):
     assert "Success! rapidocr is installed correctly!" in output
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "cmd,img_name",
     [
         (
@@ -190,6 +190,16 @@ def test_cli_check(capsys, cmd):
 def test_cli_vis(cmd, img_name):
     main(shlex.split(cmd))
     vis_path = tests_dir / img_name
+    assert vis_path.exists()
+    vis_path.unlink()
+
+
+def test_cli_lang_type():
+    img_path = tests_dir / "japan.jpg"
+    cmd = f"--img_path {img_path} --lang_type japan -vis --vis_save_dir {tests_dir}"
+    vis_path = tests_dir / f"{img_path.stem}_vis.png"
+
+    main(shlex.split(cmd))
     assert vis_path.exists()
     vis_path.unlink()
 
@@ -214,7 +224,7 @@ def test_en_lang():
     assert result.txts[0] == "3"
 
 
-@pytest.mark.skipif(sys.platform.startswith("darwin"), reason="does not run on macOS")
+@mark.skipif(sys.platform.startswith("darwin"), reason="does not run on macOS")
 def test_engine_openvino():
     engine = RapidOCR(
         params={
@@ -271,7 +281,7 @@ def test_mode_one_img(engine):
     assert result.txts[0] == "TEST"
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "img_name,gt",
     [
         (
@@ -290,7 +300,7 @@ def test_transparent_img(engine, img_name: str, gt: str):
     assert result.txts[0] == gt
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "img_name,gt_len,gt_first_len",
     [
         (
@@ -410,7 +420,7 @@ def test_input_three_ndim_one_channel(engine):
     assert len(result) >= 17
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "img_name,words",
     [
         (
@@ -430,7 +440,7 @@ def test_cn_word_ocr(engine, img_name: str, words: List[str]):
     assert txts == words
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "img_name,words",
     [("issue_170.png", "TEST"), ("return_word_debug.jpg", "3F1")],
 )

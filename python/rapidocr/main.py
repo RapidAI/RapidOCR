@@ -26,6 +26,7 @@ from .utils import (
     resize_image_within_bounds,
 )
 from .utils.parse_parameters import ParseParams
+from .utils.typings import LangRec
 
 root_dir = Path(__file__).resolve().parent
 DEFAULT_CFG_PATH = root_dir / "config.yaml"
@@ -356,8 +357,15 @@ def parse_args(arg_list: Optional[List[str]] = None):
     parser = argparse.ArgumentParser()
     parser.add_argument("-img", "--img_path", type=str, default=None)
     parser.add_argument("--text_score", type=float, default=0.5)
+    parser.add_argument(
+        "--lang_type",
+        type=str,
+        default="ch",
+        choices=list(v.value for v in LangRec),
+    )
     parser.add_argument("-vis", "--vis_res", action="store_true", default=False)
     parser.add_argument("--vis_save_dir", type=Path, default=".")
+    parser.add_argument("--font_path", type=str, default=None)
     parser.add_argument(
         "-word", "--return_word_box", action="store_true", default=False
     )
@@ -404,7 +412,11 @@ def main(arg_list: Optional[List[str]] = None):
     print(result)
 
     if args.vis_res:
-        vis = VisRes()
+        vis = VisRes(
+            text_score=args.text_score,
+            font_path=args.font_path,
+            lang_type=LangRec(args.lang_type),
+        )
         cur_dir = args.vis_save_dir
 
         if args.return_word_box:
