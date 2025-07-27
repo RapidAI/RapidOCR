@@ -222,6 +222,28 @@ def test_korean_lang(ocr_version, gt):
     assert result.txts[0] == gt
 
 
+@mark.parametrize(
+    "engine_type",
+    [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE],
+)
+def test_latin_lang(engine_type):
+    engine = RapidOCR(
+        params={
+            "Rec.lang_type": LangRec.LATIN,
+            "Rec.model_type": ModelType.MOBILE,
+            "Rec.ocr_version": OCRVersion.PPOCRV5,
+            "Rec.engine_type": engine_type,
+        }
+    )
+    img_path = tests_dir / "latin.jpg"
+    result = engine(img_path)
+    assert result.txts is not None
+    assert (
+        result.txts[0]
+        == "Alphabetum in mundo hodie frequentissime adhibitum est alphabetum Latinum."
+    )
+
+
 def test_en_lang():
     engine = RapidOCR(
         params={"Rec.lang_type": LangRec.EN, "Rec.model_type": ModelType.MOBILE}
