@@ -204,14 +204,22 @@ def test_cli_lang_type():
     vis_path.unlink()
 
 
-def test_korean_lang():
+@mark.parametrize(
+    "ocr_version,gt",
+    [(OCRVersion.PPOCRV4, "베이징차오양"), (OCRVersion.PPOCRV5, "베이징 차오양,")],
+)
+def test_korean_lang(ocr_version, gt):
     engine = RapidOCR(
-        params={"Rec.lang_type": LangRec.KOREAN, "Rec.model_type": ModelType.MOBILE}
+        params={
+            "Rec.lang_type": LangRec.KOREAN,
+            "Rec.model_type": ModelType.MOBILE,
+            "Rec.ocr_version": ocr_version,
+        }
     )
     img_path = tests_dir / "korean.jpg"
     result = engine(img_path)
     assert result.txts is not None
-    assert result.txts[0] == "베이징차오양"
+    assert result.txts[0] == gt
 
 
 def test_en_lang():

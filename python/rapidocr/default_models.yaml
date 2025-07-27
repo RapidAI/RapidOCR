@@ -76,7 +76,9 @@ onnxruntime:
       ch_PP-OCRv5_rec_server_infer.onnx:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.1.0/onnx/PP-OCRv5/rec/ch_PP-OCRv5_rec_server_infer.onnx
         SHA256: e09385400eaaaef34ceff54aeb7c4f0f1fe014c27fa8b9905d4709b65746562a
-
+      korean_PP-OCRv5_rec_mobile_infer.onnx:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv5/rec/korean_PP-OCRv5_rec_mobile_infer.onnx
+        SHA256: cd6e2ea50f6943ca7271eb8c56a877a5a90720b7047fe9c41a2e541a25773c9b
 
 openvino:
   PP-OCRv4:
@@ -171,6 +173,10 @@ openvino:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.1.0/onnx/PP-OCRv5/rec/ch_PP-OCRv5_rec_server_infer.onnx
         dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.1.0/paddle/PP-OCRv5/rec/ch_PP-OCRv5_rec_server_infer/ppocrv5_dict.txt
         SHA256: e09385400eaaaef34ceff54aeb7c4f0f1fe014c27fa8b9905d4709b65746562a
+      korean_PP-OCRv5_rec_mobile_infer.onnx:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv5/rec/korean_PP-OCRv5_rec_mobile_infer.onnx
+        dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv5/rec/korean_PP-OCRv5_rec_mobile_infer/ppocrv5_korean_dict.txt
+        SHA256: cd6e2ea50f6943ca7271eb8c56a877a5a90720b7047fe9c41a2e541a25773c9b
 
 paddle:
   PP-OCRv4:
@@ -312,6 +318,12 @@ paddle:
         inference.pdiparams: 63853f062a5f4089befc16f565a68277618e0da5cb45468b49d11079de0ada77
         inference.json: 8e6e12e5d42531840310977fffb58165bf889fc5061408c5a8afdb6985f47fcb
         inference.yml: 2c719dba044c4e2228aef8ff92f5f575394d75d24c16de096a33b7cfd902f66d
+      korean_PP-OCRv5_rec_mobile_infer:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv5/rec/korean_PP-OCRv5_rec_mobile_infer
+        dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv5/rec/korean_PP-OCRv5_rec_mobile_infer/ppocrv5_korean_dict.txt
+        inference.pdiparams: cac3e5f12cf04aaa77f6a5bc704e4e736ef2908476551891d84b41b4e9090462
+        inference.json: 562404e3c590c50c93778d5f0a94df21b47b5ab8f3ea6d47c7f8a7930c3bc844
+        inference.yml: f757fa1c40e99edcf27e9cce879b93eb2a51fa46f5ef39095689b8c37dd75998
 
 torch:
   PP-OCRv4:
