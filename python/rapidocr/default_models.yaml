@@ -82,6 +82,9 @@ onnxruntime:
       latin_PP-OCRv5_rec_mobile_infer.onnx:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv5/rec/latin_PP-OCRv5_rec_mobile_infer.onnx
         SHA256: b20bd37c168a570f583afbc8cd7925603890efbcdc000a59e22c269d160b5f5a
+      eslav_PP-OCRv5_rec_mobile_infer.onnx:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv5/rec/eslav_PP-OCRv5_rec_mobile_infer.onnx
+        SHA256: 08705d6721849b1347d26187f15a5e362c431963a2a62bfff4feac578c489aab
 
 openvino:
   PP-OCRv4:
@@ -184,6 +187,10 @@ openvino:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv5/rec/latin_PP-OCRv5_rec_mobile_infer.onnx
         dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv5/rec/latin_PP-OCRv5_rec_mobile_infer/ppocrv5_latin_dict.txt
         SHA256: b20bd37c168a570f583afbc8cd7925603890efbcdc000a59e22c269d160b5f5a
+      eslav_PP-OCRv5_rec_mobile_infer.onnx:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv5/rec/eslav_PP-OCRv5_rec_mobile_infer.onnx
+        dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv5/rec/eslav_PP-OCRv5_rec_mobile_infer/ppocrv5_eslav_dict.txt
+        SHA256: 08705d6721849b1347d26187f15a5e362c431963a2a62bfff4feac578c489aab
 
 paddle:
   PP-OCRv4:
@@ -337,6 +344,13 @@ paddle:
         inference.pdiparams: ecebeaac46267ecaa9f21025ac3ba8972a93c4a906c505ceb8a525299e466e0a
         inference.json: ea8f315e69b96e33a1339dde868651eadb4aaa62ce92e70c546f4b25e43134e7
         inference.yml: 13cfe9c251d13aaabc619c135ff1724444d0a9e247bd8e0b2f4a76298c87eba0
+      eslav_PP-OCRv5_rec_mobile_infer:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv5/rec/eslav_PP-OCRv5_rec_mobile_infer
+        dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv5/rec/eslav_PP-OCRv5_rec_mobile_infer/ppocrv5_eslav_dict.txt
+        inference.pdiparams: f11057b05d8517868bca505271278973d706600d9dcc184cbcf5c4512091c32b
+        inference.json: 3fb6e2e658f5139ff16e35260de8f0577f106a9505c902e1dfc1f4f1d03cc9cb
+        inference.yml: 025039bac23eb4a308efcefa4d58eab3af440767815c6ba6938468bf6353ee5a
+
 
 torch:
   PP-OCRv4:
@@ -452,6 +466,9 @@ fonts:
     path: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.1.0/resources/fonts/chinese_cht.ttf
     SHA256: 5ce814960d0cdea1dd647180636babc1cf6a0acf0a9a9019424f4689acedd9ea
   cyrillic:
+    path: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.1.0/resources/fonts/cyrillic.ttf
+    SHA256: 084768d29859a62b735387fb5946dfe61fb3d844031c7c51c1668d8afbe3b802
+  eslav:
     path: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.1.0/resources/fonts/cyrillic.ttf
     SHA256: 084768d29859a62b735387fb5946dfe61fb3d844031c7c51c1668d8afbe3b802
   devanagari:
