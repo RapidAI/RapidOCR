@@ -4,7 +4,7 @@
 import shlex
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List
 
 import cv2
 import numpy as np
@@ -30,13 +30,21 @@ def engine():
     return engine
 
 
-def get_engine(params: Optional[Dict[str, Any]] = None):
-    if params:
-        engine = RapidOCR(params=params)
-        return engine
+def test_to_json(engine):
+    result = engine(img_path)
 
-    engine = RapidOCR()
-    return engine
+    assert result.txts is not None
+    result_json = result.to_json()
+    assert result_json[0]["txt"] == "正品促销"
+
+
+def test_to_markdown(engine):
+    result = engine(img_path)
+
+    assert result.txts is not None
+
+    result_markdown = result.to_markdown()
+    assert len(result_markdown.split("\n")) == 11
 
 
 @pytest.mark.parametrize(
@@ -187,7 +195,7 @@ def test_cli_vis(cmd, img_name):
 
 
 def test_korean_lang():
-    engine = get_engine(
+    engine = RapidOCR(
         params={"Rec.lang_type": LangRec.KOREAN, "Rec.model_type": ModelType.MOBILE}
     )
     img_path = tests_dir / "korean.jpg"
@@ -197,7 +205,7 @@ def test_korean_lang():
 
 
 def test_en_lang():
-    engine = get_engine(
+    engine = RapidOCR(
         params={"Rec.lang_type": LangRec.EN, "Rec.model_type": ModelType.MOBILE}
     )
     img_path = tests_dir / "en.jpg"
@@ -208,7 +216,7 @@ def test_en_lang():
 
 @pytest.mark.skipif(sys.platform.startswith("darwin"), reason="does not run on macOS")
 def test_engine_openvino():
-    engine = get_engine(
+    engine = RapidOCR(
         params={
             "Det.engine_type": EngineType.OPENVINO,
             "Cls.engine_type": EngineType.OPENVINO,
@@ -222,7 +230,7 @@ def test_engine_openvino():
 
 
 def test_engine_paddle():
-    engine = get_engine(
+    engine = RapidOCR(
         params={
             "Det.engine_type": EngineType.PADDLE,
             "Cls.engine_type": EngineType.PADDLE,
@@ -236,7 +244,7 @@ def test_engine_paddle():
 
 
 def test_engine_torch():
-    engine = get_engine(
+    engine = RapidOCR(
         params={
             "Det.engine_type": EngineType.TORCH,
             "Cls.engine_type": EngineType.TORCH,
