@@ -204,14 +204,63 @@ def test_cli_lang_type():
     vis_path.unlink()
 
 
-def test_korean_lang():
+@mark.parametrize(
+    "ocr_version,gt",
+    [(OCRVersion.PPOCRV4, "베이징차오양"), (OCRVersion.PPOCRV5, "베이징 차오양,")],
+)
+def test_korean_lang(ocr_version, gt):
     engine = RapidOCR(
-        params={"Rec.lang_type": LangRec.KOREAN, "Rec.model_type": ModelType.MOBILE}
+        params={
+            "Rec.lang_type": LangRec.KOREAN,
+            "Rec.model_type": ModelType.MOBILE,
+            "Rec.ocr_version": ocr_version,
+        }
     )
     img_path = tests_dir / "korean.jpg"
     result = engine(img_path)
     assert result.txts is not None
-    assert result.txts[0] == "베이징차오양"
+    assert result.txts[0] == gt
+
+
+@mark.parametrize(
+    "engine_type",
+    [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE],
+)
+def test_latin_lang(engine_type):
+    engine = RapidOCR(
+        params={
+            "Rec.lang_type": LangRec.LATIN,
+            "Rec.model_type": ModelType.MOBILE,
+            "Rec.ocr_version": OCRVersion.PPOCRV5,
+            "Rec.engine_type": engine_type,
+        }
+    )
+    img_path = tests_dir / "latin.jpg"
+    result = engine(img_path, use_det=False, use_cls=False, use_rec=True)
+    assert result.txts is not None
+    assert (
+        result.txts[0]
+        == "Alphabetum in mundo hodie frequentissie adhibitum est alphabetum Latinum."
+    )
+
+
+@mark.parametrize(
+    "engine_type",
+    [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE],
+)
+def test_eslav_lang(engine_type):
+    engine = RapidOCR(
+        params={
+            "Rec.lang_type": LangRec.ESLAV,
+            "Rec.model_type": ModelType.MOBILE,
+            "Rec.ocr_version": OCRVersion.PPOCRV5,
+            "Rec.engine_type": engine_type,
+        }
+    )
+    img_path = tests_dir / "eslav.jpg"
+    result = engine(img_path, use_det=False, use_cls=False, use_rec=True)
+    assert result.txts is not None
+    assert result.txts[0] == "Славянские языки — большая языковая семья."
 
 
 def test_en_lang():
