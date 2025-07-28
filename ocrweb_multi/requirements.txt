@@ -1,9 +1,0 @@
-onnxruntime>=1.7.0
-opencv-python-headless==4.5.4.60
-six>=1.15.0
-pyclipper>=1.2.1
-numpy>=1.19.1
-Shapely>=1.7.1
-Flask>=2.1.2
-PyYAML
-waitress

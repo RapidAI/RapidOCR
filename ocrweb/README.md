@@ -1,1 +1,1 @@
-### See [Documentation](https://rapidai.github.io/RapidOCRDocs/main/install_usage/rapidocr_web/usage/)
+See [RapidOCRWeb](https://github.com/RapidAI/RapidOCRWeb) for details.
