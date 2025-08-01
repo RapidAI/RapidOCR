@@ -19,6 +19,7 @@ class DownloadFileInput:
     save_path: Union[str, Path]
     logger: logging.Logger
     sha256: Optional[str] = None
+    verbose: bool = True
 
 
 class DownloadFile:
@@ -27,6 +28,8 @@ class DownloadFile:
 
     @classmethod
     def run(cls, input_params: DownloadFileInput):
+        cls.verbose = input_params.verbose
+
         save_path = Path(input_params.save_path)
 
         logger = input_params.logger
@@ -53,7 +56,8 @@ class DownloadFile:
             return True
 
         if cls.check_file_sha256(path, expected_sha256):
-            logger.info("File exists and is valid: %s", path)
+            if cls.verbose:
+                logger.info("File exists and is valid: %s", path)
             return True
 
         logger.warning("File exists but is invalid, redownloading: %s", path)

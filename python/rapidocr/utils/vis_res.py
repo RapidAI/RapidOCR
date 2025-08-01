@@ -37,9 +37,7 @@ class VisRes:
         self.load_img = LoadImage()
 
         self.font_cfg = OmegaConf.load(FONT_YAML_PATH).fonts
-
         self.font_path = self.get_font_path(font_path, lang_type)
-        self.logger.info(f"Using {self.font_path} to visualize results.")
 
     def __call__(
         self,
@@ -48,6 +46,8 @@ class VisRes:
         txts: Optional[Union[List[str], Tuple[str]]] = None,
         scores: Optional[Tuple[float]] = None,
     ) -> np.ndarray:
+        self.logger.info(f"Using {self.font_path} to visualize results.")
+
         if txts is None:
             return self.draw_dt_boxes(img_content, dt_boxes, scores)
         return self.draw_ocr_box_txt(img_content, dt_boxes, txts, scores)
@@ -120,6 +120,7 @@ class VisRes:
                 sha256=font_sha256,
                 save_path=save_font_path,
                 logger=self.logger,
+                verbose=False,
             )
             DownloadFile.run(input_param)
             return str(save_font_path)
