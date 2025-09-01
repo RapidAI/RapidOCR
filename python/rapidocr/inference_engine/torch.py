@@ -53,7 +53,7 @@ class TorchInferSession(InferSession):
 
         arch_config = all_arch_config.get(file_name)
         self.predictor = BaseModel(arch_config)
-        self.predictor.load_state_dict(torch.load(model_path, weights_only=True))
+        self.predictor.load_state_dict(torch.load(model_path, weights_only=False))
         self.predictor.eval()
 
         self.use_gpu = False
