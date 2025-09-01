@@ -4,6 +4,7 @@
 import hashlib
 import importlib
 from pathlib import Path
+from sys import platform
 from typing import Tuple, Union
 from urllib.parse import urlparse
 
@@ -43,6 +44,10 @@ def get_file_sha256(file_path: Union[str, Path], chunk_size: int = 65536) -> str
 def save_img(save_path: Union[str, Path], img: np.ndarray):
     if not Path(save_path).parent.exists():
         Path(save_path).parent.mkdir(parents=True, exist_ok=True)
+
+    if platform.startswith("win32"):
+        cv2.imencode(Path(save_path).suffix, img)[1].tofile(str(save_path))
+        return
 
     cv2.imwrite(str(save_path), img)
 
