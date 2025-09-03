@@ -16,12 +16,10 @@ sys.path.append(str(root_dir))
 
 from rapidocr import EngineType, LangRec, LoadImageError, ModelType, RapidOCR
 from rapidocr.main import main
-from rapidocr.utils.logger import Logger
 from rapidocr.utils.typings import OCRVersion
 
 tests_dir = root_dir / "tests" / "test_files"
 img_path = tests_dir / "ch_en_num.jpg"
-logger = Logger(logger_name=__name__).get_log()
 
 
 @pytest.fixture()

@@ -9,7 +9,7 @@ from omegaconf import OmegaConf
 
 from ..networks.architectures.base_model import BaseModel
 from ..utils.download_file import DownloadFile, DownloadFileInput
-from ..utils.logger import Logger
+from ..utils.log import logger
 from .base import FileInfo, InferSession
 
 root_dir = Path(__file__).resolve().parent.parent
@@ -18,7 +18,7 @@ DEFAULT_CFG_PATH = root_dir / "networks" / "arch_config.yaml"
 
 class TorchInferSession(InferSession):
     def __init__(self, cfg) -> None:
-        self.logger = Logger(logger_name=__name__).get_log()
+        self.logger = logger
 
         model_path = cfg.get("model_path", None)
         if model_path is None:

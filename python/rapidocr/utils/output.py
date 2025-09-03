@@ -6,13 +6,11 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
-from .logger import Logger
+from .log import logger
 from .to_json import ToJSON
 from .to_markdown import ToMarkdown
 from .utils import save_img
 from .vis_res import VisRes
-
-logger = Logger(logger_name=__name__).get_log()
 
 
 @dataclass

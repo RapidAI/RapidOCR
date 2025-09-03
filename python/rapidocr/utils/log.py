@@ -7,7 +7,7 @@ import colorlog
 
 
 class Logger:
-    def __init__(self, log_level=logging.DEBUG, logger_name=None):
+    def __init__(self, log_level=logging.INFO, logger_name=None):
         self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(log_level)
         self.logger.propagate = False
@@ -35,3 +35,6 @@ class Logger:
 
     def get_log(self):
         return self.logger
+
+
+logger = Logger(log_level=logging.INFO).get_log()

@@ -3,7 +3,6 @@
 # @Contact: liekkaskono@163.com
 from .download_file import DownloadFile, DownloadFileException, DownloadFileInput
 from .load_image import LoadImage, LoadImageError
-from .logger import Logger
 from .output import RapidOCROutput
 from .parse_parameters import ParseParams
 from .process_img import (

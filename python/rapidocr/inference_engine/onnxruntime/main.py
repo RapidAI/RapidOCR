@@ -10,14 +10,14 @@ import numpy as np
 from onnxruntime import GraphOptimizationLevel, InferenceSession, SessionOptions
 
 from ...utils import DownloadFile, DownloadFileInput
-from ...utils.logger import Logger
+from ...utils.log import logger
 from ..base import FileInfo, InferSession
 from .provider_config import ProviderConfig
 
 
 class OrtInferSession(InferSession):
     def __init__(self, cfg: Dict[str, Any]):
-        self.logger = Logger(logger_name=__name__).get_log()
+        self.logger = logger
 
         # support custom session (PR #451)
         session = cfg.get("session", None)

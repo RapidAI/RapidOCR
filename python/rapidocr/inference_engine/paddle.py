@@ -12,14 +12,14 @@ from omegaconf.errors import ConfigKeyError
 from paddle import inference
 
 from ..utils.download_file import DownloadFile, DownloadFileInput
-from ..utils.logger import Logger
+from ..utils.log import logger
 from ..utils.typings import OCRVersion
 from .base import FileInfo, InferSession
 
 
 class PaddleInferSession(InferSession):
     def __init__(self, cfg, mode: Optional[str] = None) -> None:
-        self.logger = Logger(logger_name=__name__).get_log()
+        self.logger = logger
         self.mode = mode
 
         # 设置设备特定的环境变量
@@ -43,7 +43,12 @@ class PaddleInferSession(InferSession):
             envs = {}
             _set_envs(envs)
 
-        elif not any([engine_cfg.get(f"use_{dev}", False) for dev in ["cuda", "npu", "xpu", "mlu", "dcu", "gcu"]]):
+        elif not any(
+            [
+                engine_cfg.get(f"use_{dev}", False)
+                for dev in ["cuda", "npu", "xpu", "mlu", "dcu", "gcu"]
+            ]
+        ):
             envs = {}
             _set_envs(envs)
 
@@ -109,11 +114,11 @@ class PaddleInferSession(InferSession):
         return pdmodel_path, pdiparams_path
 
     def download_model(
-            self, model_info, default_model_dir: str, model_file_name: str
+        self, model_info, default_model_dir: str, model_file_name: str
     ) -> Path:
         model_file_url = f"{default_model_dir}/{model_file_name}"
         model_file_path = (
-                self.DEFAULT_MODEL_PATH / Path(default_model_dir).name / model_file_name
+            self.DEFAULT_MODEL_PATH / Path(default_model_dir).name / model_file_name
         )
         DownloadFile.run(
             DownloadFileInput(
@@ -191,7 +196,9 @@ class PaddleInferSession(InferSession):
             infer_num_threads = cfg.engine_cfg.get("cpu_math_library_num_threads", -1)
             if infer_num_threads != -1 and 1 <= infer_num_threads <= cpu_nums:
                 infer_opts.set_cpu_math_library_num_threads(infer_num_threads)
-                self.logger.info(f"Set CPU math library threads to: {infer_num_threads}")
+                self.logger.info(
+                    f"Set CPU math library threads to: {infer_num_threads}"
+                )
 
             if hasattr(infer_opts, "enable_new_ir"):
                 infer_opts.enable_new_ir(True)

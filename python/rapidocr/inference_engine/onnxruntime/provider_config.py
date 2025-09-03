@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Sequence, Tuple
 
 from onnxruntime import get_available_providers, get_device
 
-from ...utils.logger import Logger
+from ...utils.log import logger
 
 
 class EP(Enum):
@@ -19,7 +19,7 @@ class EP(Enum):
 
 class ProviderConfig:
     def __init__(self, engine_cfg: Dict[str, Any]):
-        self.logger = Logger(logger_name=__name__).get_log()
+        self.logger = logger
 
         self.had_providers: List[str] = get_available_providers()
         self.default_provider = self.had_providers[0]

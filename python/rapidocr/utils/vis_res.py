@@ -13,7 +13,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from .download_file import DownloadFile, DownloadFileInput
 from .load_image import LoadImage
-from .logger import Logger
+from .log import logger
 from .typings import LangRec
 
 root_dir = Path(__file__).resolve().parent.parent
@@ -31,7 +31,7 @@ class VisRes:
         lang_type: Optional[LangRec] = None,
         font_path: Optional[str] = None,
     ):
-        self.logger = Logger(logger_name=__name__).get_log()
+        self.logger = logger
 
         self.text_score = text_score
         self.load_img = LoadImage()

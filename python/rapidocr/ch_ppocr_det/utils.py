@@ -9,11 +9,9 @@ import numpy as np
 import pyclipper
 from shapely.geometry import Polygon
 
-from ..utils.logger import Logger
+from ..utils.log import logger
 from ..utils.utils import save_img
 from ..utils.vis_res import VisRes
-
-logger = Logger(logger_name=__name__).get_log()
 
 
 @dataclass

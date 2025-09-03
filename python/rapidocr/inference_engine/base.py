@@ -10,14 +10,12 @@ from typing import Dict, Union
 import numpy as np
 from omegaconf import OmegaConf
 
-from ..utils.logger import Logger
+from ..utils.log import logger
 from ..utils.typings import EngineType, ModelType, OCRVersion, TaskType
 from ..utils.utils import import_package
 
 cur_dir = Path(__file__).resolve().parent.parent
 MODEL_URL_PATH = cur_dir / "default_models.yaml"
-
-logger = Logger(logger_name=__name__).get_log()
 
 
 def get_engine(engine_type: EngineType):
@@ -70,7 +68,6 @@ class FileInfo:
 class InferSession(abc.ABC):
     model_info = OmegaConf.load(MODEL_URL_PATH)
     DEFAULT_MODEL_PATH = cur_dir / "models"
-    logger = Logger(logger_name=__name__).get_log()
 
     @abc.abstractmethod
     def __init__(self, config):

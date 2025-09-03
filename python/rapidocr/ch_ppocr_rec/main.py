@@ -21,8 +21,8 @@ import numpy as np
 
 from rapidocr.inference_engine.base import FileInfo, get_engine
 
-from ..utils import Logger
 from ..utils.download_file import DownloadFile, DownloadFileInput
+from ..utils.log import logger
 from ..utils.vis_res import VisRes
 from .typings import TextRecInput, TextRecOutput
 from .utils import CTCLabelDecode
@@ -35,7 +35,7 @@ DEFAULT_MODEL_PATH = Path(__file__).parent.parent / "models"
 class TextRecognizer:
     def __init__(self, cfg: Dict[str, Any]):
         self.session = get_engine(cfg.engine_type)(cfg)
-        self.logger = Logger(logger_name=__name__).get_log()
+        self.logger = logger
 
         # onnx has inner character, other engine get or download character_dict_path
         character, character_dict_path = self.get_character_dict(cfg)

@@ -14,6 +14,7 @@ Global:
     return_single_char_box: false
 
     font_path: null
+    log_level: "info" # debug / info / warning / error / critical
 
 EngineConfig:
     onnxruntime:

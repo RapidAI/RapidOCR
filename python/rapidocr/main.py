@@ -3,6 +3,7 @@
 # @Contact: liekkaskono@163.com
 import argparse
 import copy
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -17,7 +18,6 @@ from .ch_ppocr_rec import TextRecInput, TextRecognizer, TextRecOutput
 from .cli import check_install, generate_cfg
 from .utils import (
     LoadImage,
-    Logger,
     RapidOCROutput,
     VisRes,
     add_round_letterbox,
@@ -25,6 +25,7 @@ from .utils import (
     get_rotate_crop_image,
     resize_image_within_bounds,
 )
+from .utils.log import logger
 from .utils.parse_parameters import ParseParams
 from .utils.typings import LangRec
 
@@ -37,9 +38,11 @@ class RapidOCR:
         self, config_path: Optional[str] = None, params: Optional[Dict[str, Any]] = None
     ):
         cfg = self._load_config(config_path, params)
-        self._initialize(cfg)
 
-        self.logger = Logger(logger_name=__name__).get_log()
+        logger.setLevel(logging.getLevelName(cfg.Global.log_level.upper()))
+        self.logger = logger
+
+        self._initialize(cfg)
 
     def _load_config(
         self, config_path: Optional[str], params: Optional[Dict[str, Any]]

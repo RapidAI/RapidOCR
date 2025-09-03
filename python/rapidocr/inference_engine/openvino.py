@@ -10,15 +10,15 @@ import numpy as np
 from omegaconf import DictConfig
 from openvino.runtime import Core
 
-from ..utils import Logger
 from ..utils.download_file import DownloadFile, DownloadFileInput
+from ..utils.log import logger
 from .base import FileInfo, InferSession
 
 
 class OpenVINOInferSession(InferSession):
     def __init__(self, cfg: DictConfig):
         super().__init__(cfg)
-        self.logger = Logger(logger_name=__name__).get_log()
+        self.logger = logger
 
         core = Core()
 
