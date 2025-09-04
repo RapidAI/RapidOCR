@@ -34,6 +34,8 @@ class TextClassifier:
         self.session = get_engine(cfg.engine_type)(cfg)
 
     def __call__(self, img_list: Union[np.ndarray, List[np.ndarray]]) -> TextClsOutput:
+        start_time = time.perf_counter()
+
         if isinstance(img_list, np.ndarray):
             img_list = [img_list]
 
@@ -59,10 +61,8 @@ class TextClassifier:
                 norm_img_batch.append(norm_img)
             norm_img_batch = np.concatenate(norm_img_batch).astype(np.float32)
 
-            starttime = time.time()
             prob_out = self.session(norm_img_batch)
             cls_result = self.postprocess_op(prob_out)
-            elapse += time.time() - starttime
 
             for rno, (label, score) in enumerate(cls_result):
                 cls_res[indices[beg_img_no + rno]] = (label, score)
@@ -70,6 +70,8 @@ class TextClassifier:
                     img_list[indices[beg_img_no + rno]] = cv2.rotate(
                         img_list[indices[beg_img_no + rno]], 1
                     )
+
+        elapse = time.perf_counter() - start_time
         return TextClsOutput(img_list=img_list, cls_res=cls_res, elapse=elapse)
 
     def resize_norm_img(self, img: np.ndarray) -> np.ndarray:
