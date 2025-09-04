@@ -3,7 +3,6 @@
 # @Contact: liekkaskono@163.com
 import argparse
 import copy
-import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -39,7 +38,7 @@ class RapidOCR:
     ):
         cfg = self._load_config(config_path, params)
 
-        logger.setLevel(logging.getLevelName(cfg.Global.log_level.upper()))
+        logger.setLevel(cfg.Global.log_level.upper())
         self.logger = logger
 
         self._initialize(cfg)
