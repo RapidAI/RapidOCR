@@ -84,6 +84,8 @@ class TextRecognizer:
         return character, dict_path
 
     def __call__(self, args: TextRecInput) -> TextRecOutput:
+        start_time = time.perf_counter()
+
         img_list = [args.img] if isinstance(args.img, np.ndarray) else args.img
         return_word_box = args.return_word_box
 
@@ -116,7 +118,6 @@ class TextRecognizer:
                 norm_img_batch.append(norm_img[np.newaxis, :])
             norm_img_batch = np.concatenate(norm_img_batch).astype(np.float32)
 
-            start_time = time.perf_counter()
             preds = self.session(norm_img_batch)
             line_results, word_results = self.postprocess_op(
                 preds,
@@ -131,10 +132,11 @@ class TextRecognizer:
                     continue
 
                 rec_res[indices[beg_img_no + rno]] = (one_res, None)
-            elapse += time.perf_counter() - start_time
 
         all_line_results, all_word_results = list(zip(*rec_res))
         txts, scores = list(zip(*all_line_results))
+
+        elapse = time.perf_counter() - start_time
         return TextRecOutput(
             img_list,
             txts,
