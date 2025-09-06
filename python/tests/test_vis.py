@@ -44,6 +44,6 @@ def test_vis_only_cls(engine):
 
 def test_vis_det_cls_rec(engine):
     img_path = tests_dir / "ch_en_num.jpg"
-    result = engine(img_path, use_det=False, use_cls=True, use_rec=False)
+    result = engine(img_path, use_det=True, use_cls=True, use_rec=True)
     vis_img = result.vis()
     assert vis_img.shape[2] == 3

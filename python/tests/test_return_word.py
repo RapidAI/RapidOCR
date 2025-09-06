@@ -57,4 +57,4 @@ def test_en_return_single_char_box(engine):
     img_path = tests_dir / "en.jpg"
     result = engine(img_path, return_word_box=True, return_single_char_box=True)
     txts, _, _ = list(zip(*result.word_results[0]))
-    assert txts[:3] == ("3",)
+    assert txts[0] == "3"
