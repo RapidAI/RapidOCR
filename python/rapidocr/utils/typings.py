@@ -29,6 +29,8 @@ class LangRec(Enum):
     TA = "ta"
     TE = "te"
     ESLAV = "eslav"
+    TH = "th"
+    EL = "el"
 
 
 class OCRVersion(Enum):
