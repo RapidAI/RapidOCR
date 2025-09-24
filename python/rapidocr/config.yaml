@@ -64,6 +64,8 @@ EngineConfig:
     torch:
         use_cuda: false
         gpu_id: 0
+        use_npu: false
+        npu_id: 0
 
 Det:
     engine_type: "onnxruntime"
