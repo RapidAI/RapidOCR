@@ -10,4 +10,4 @@ result = engine(img_url)
 print(result)
 
 result.vis("vis_result.jpg")
-print(result.to_markdown())
+print(result)

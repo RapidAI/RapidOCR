@@ -12,6 +12,10 @@ import cv2
 import numpy as np
 
 
+def mkdir(dir_path):
+    Path(dir_path).mkdir(parents=True, exist_ok=True)
+
+
 def quads_to_rect_bbox(bbox: np.ndarray) -> Tuple[float, float, float, float]:
     if bbox.ndim != 3:
         raise ValueError("bbox shape must be 3")

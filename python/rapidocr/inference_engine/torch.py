@@ -10,6 +10,7 @@ from omegaconf import OmegaConf
 from ..networks.architectures.base_model import BaseModel
 from ..utils.download_file import DownloadFile, DownloadFileInput
 from ..utils.log import logger
+from ..utils.utils import mkdir
 from .base import FileInfo, InferSession
 
 root_dir = Path(__file__).resolve().parent.parent
@@ -18,8 +19,16 @@ DEFAULT_CFG_PATH = root_dir / "networks" / "arch_config.yaml"
 
 class TorchInferSession(InferSession):
     def __init__(self, cfg) -> None:
-        self.logger = logger
+        model_path = self._init_model_path(cfg)
+        arch_config = self._load_arch_config(model_path)
 
+        self.predictor = self._build_and_load_model(arch_config, model_path)
+
+        self._setup_device(cfg)
+
+        self.predictor.eval()
+
+    def _init_model_path(self, cfg) -> Path:
         model_path = cfg.get("model_path", None)
         if model_path is None:
             model_info = self.get_model_url(
@@ -38,44 +47,69 @@ class TorchInferSession(InferSession):
                     file_url=default_model_url,
                     sha256=model_info["SHA256"],
                     save_path=model_path,
-                    logger=self.logger,
+                    logger=logger,
                 )
             )
 
-        self.logger.info(f"Using {model_path}")
-        model_path = Path(model_path)
+        logger.info(f"Using {model_path}")
         self._verify_model(model_path)
+        return Path(model_path)
 
+    def _load_arch_config(self, model_path: Path):
         all_arch_config = OmegaConf.load(DEFAULT_CFG_PATH)
+
         file_name = model_path.stem
         if file_name not in all_arch_config:
             raise ValueError(f"architecture {file_name} is not in arch_config.yaml")
 
-        arch_config = all_arch_config.get(file_name)
-        self.predictor = BaseModel(arch_config)
-        self.predictor.load_state_dict(torch.load(model_path, map_location="cpu", weights_only=False))
-        self.predictor.eval()
-        self.use_gpu = False
-        self.use_npu = False
+        return all_arch_config.get(file_name)
+
+    def _build_and_load_model(self, arch_config, model_path: Path):
+        model = BaseModel(arch_config)
+        state_dict = torch.load(model_path, map_location="cpu", weights_only=False)
+        model.load_state_dict(state_dict)
+        return model
+
+    def _setup_device(self, cfg):
+        self.device, self.use_gpu, self.use_npu = self._resolve_device_config(cfg)
+
+        if self.use_npu:
+            self._config_npu()
+
+        self._move_model_to_device()
+
+    def _resolve_device_config(self, cfg):
         if cfg.engine_cfg.use_cuda:
-            self.device = torch.device(f"cuda:{cfg.engine_cfg.gpu_id}")
-            self.predictor.to(self.device)
-            self.use_gpu = True
-        elif cfg.engine_cfg.use_npu:
-            try:
-                import torch_npu
-                options = {
-                    # 设定算子编译的磁盘缓存模式，非必要每次重新编译
-                    "ACL_OP_COMPILER_CACHE_MODE": "enable",
-                    # 指定缓存目录，确保路径已存在
-                    "ACL_OP_COMPILER_CACHE_DIR": "./kernel_meta",
-                }
-                torch_npu.npu.set_option(options)
-            except ImportError:
-                self.logger.warning("torch_npu is not installed, options with ACL setting failed.")
-            self.device = torch.device(f"npu:{cfg.engine_cfg.npu_id}")
-            self.predictor.to(self.device)
-            self.use_npu = True
+            return torch.device(f"cuda:{cfg.engine_cfg.gpu_id}"), True, False
+
+        if cfg.engine_cfg.use_npu:
+            return torch.device(f"npu:{cfg.engine_cfg.npu_id}"), False, True
+
+        return torch.device("cpu"), False, False
+
+    def _config_npu(self):
+        try:
+            import torch_npu
+
+            kernel_meta_dir = (root_dir / "kernel_meta").resolve()
+            mkdir(kernel_meta_dir)
+
+            options = {
+                "ACL_OP_COMPILER_CACHE_MODE": "enable",
+                "ACL_OP_COMPILER_CACHE_DIR": str(kernel_meta_dir),
+            }
+            torch_npu.npu.set_option(options)
+        except ImportError:
+            logger.warning(
+                "torch_npu is not installed, options with ACL setting failed. \n"
+                "Please refer to https://github.com/Ascend/pytorch to see how to install."
+            )
+
+            self.device = torch.device("cpu")
+            self.use_npu = False
+
+    def _move_model_to_device(self):
+        self.predictor.to(self.device)
 
     def __call__(self, img: np.ndarray):
         with torch.no_grad():
