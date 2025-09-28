@@ -146,7 +146,6 @@ RapidOCR 是一个基于 Apache2.0 许可的开源项目，其持续开发之所
 |Sponsors|Application|Introduction|
 |:---:|:---:|:---|
 |<img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Quicker.jpg" width=65 height=65>|[Quicker](https://getquicker.net/)|您的指尖工作箱|
-|<img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Comshare.png" width=65 height=65>|[优云智算](https://www.compshare.cn/images/vzDrOcdaK3m7?ytag=GPU_YY-gh_rapidOCR)|万卡RTX40系GPU+海内外主流模型API服务，秒级响应，按量计费，新客免费用|
 
 #### 支持者
 

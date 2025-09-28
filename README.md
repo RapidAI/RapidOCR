@@ -124,7 +124,6 @@ RapidOCR is an Apache2.0-licensed open source project with its ongoing developme
 |Sponsors|Application|Introduction|
 |:---:|:---:|:---|
 |<img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Quicker.jpg" width=65 height=65>|[Quicker](https://getquicker.net/)|Your fingertip toolbox|
-|<img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Comshare.png" width=65 height=65>|[Compshare](https://www.compshare.cn/images/vzDrOcdaK3m7?ytag=GPU_YY-gh_rapidOCR)|10,000+ RTX 40 Series GPUs, Global AI Model APIs. Instant response. Pay-as-you-go. Free trial for new users.|
 
 #### Backers
 
