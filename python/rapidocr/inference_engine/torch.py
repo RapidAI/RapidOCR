@@ -53,19 +53,34 @@ class TorchInferSession(InferSession):
 
         arch_config = all_arch_config.get(file_name)
         self.predictor = BaseModel(arch_config)
-        self.predictor.load_state_dict(torch.load(model_path, weights_only=False))
+        self.predictor.load_state_dict(torch.load(model_path, map_location="cpu", weights_only=False))
         self.predictor.eval()
-
         self.use_gpu = False
+        self.use_npu = False
         if cfg.engine_cfg.use_cuda:
             self.device = torch.device(f"cuda:{cfg.engine_cfg.gpu_id}")
             self.predictor.to(self.device)
             self.use_gpu = True
+        elif cfg.engine_cfg.use_npu:
+            try:
+                import torch_npu
+                options = {
+                    # 设定算子编译的磁盘缓存模式，非必要每次重新编译
+                    "ACL_OP_COMPILER_CACHE_MODE": "enable",
+                    # 指定缓存目录，确保路径已存在
+                    "ACL_OP_COMPILER_CACHE_DIR": "./kernel_meta",
+                }
+                torch_npu.npu.set_option(options)
+            except ImportError:
+                self.logger.warning("torch_npu is not installed, options with ACL setting failed.")
+            self.device = torch.device(f"npu:{cfg.engine_cfg.npu_id}")
+            self.predictor.to(self.device)
+            self.use_npu = True
 
     def __call__(self, img: np.ndarray):
         with torch.no_grad():
             inp = torch.from_numpy(img)
-            if self.use_gpu:
+            if self.use_gpu or self.use_npu:
                 inp = inp.to(self.device)
 
             # 适配跟onnx对齐取值逻辑
