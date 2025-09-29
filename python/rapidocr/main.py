@@ -141,6 +141,22 @@ class RapidOCR:
     ) -> Union[TextDetOutput, TextClsOutput, TextRecOutput, RapidOCROutput]:
         raw_h, raw_w = ori_img.shape[:2]
 
+        # filter empty value
+        if rec_res.txts and det_res.boxes:
+            empty_idx = [i for i, v in enumerate(rec_res.txts) if not v.strip()]
+
+            det_res.boxes = [
+                v for i, v in enumerate(det_res.boxes) if i not in empty_idx
+            ]
+            det_res.scores = [
+                v for i, v in enumerate(det_res.scores) if i not in empty_idx
+            ]
+
+            rec_res.txts = [v for i, v in enumerate(rec_res.txts) if i not in empty_idx]
+            rec_res.word_results = [
+                v for i, v in enumerate(rec_res.word_results) if i not in empty_idx
+            ]
+
         if (
             self.return_word_box
             and det_res.boxes is not None
@@ -290,16 +306,24 @@ class RapidOCR:
         return ocr_res
 
     def filter_by_text_score(self, ocr_res: RapidOCROutput) -> RapidOCROutput:
-        filter_boxes, filter_txts, filter_scores = [], [], []
-        for box, txt, score in zip(ocr_res.boxes, ocr_res.txts, ocr_res.scores):
-            if float(score) >= self.text_score:
-                filter_boxes.append(box)
-                filter_txts.append(txt)
-                filter_scores.append(score)
+        filter_boxes, filter_txts, filter_scores, filter_words = [], [], [], []
+        for i, (box, txt, score) in enumerate(
+            zip(ocr_res.boxes, ocr_res.txts, ocr_res.scores)
+        ):
+            if score < self.text_score:
+                continue
+
+            if ocr_res.word_results[i]:
+                filter_words.append(ocr_res.word_results[i])
+
+            filter_boxes.append(box)
+            filter_txts.append(txt)
+            filter_scores.append(score)
 
         ocr_res.boxes = np.array(filter_boxes)
         ocr_res.txts = tuple(filter_txts)
         ocr_res.scores = tuple(filter_scores)
+        ocr_res.word_results = tuple(filter_words)
         return ocr_res
 
     def _add_letterbox(

@@ -13,13 +13,20 @@ sys.path.append(str(root_dir))
 
 from rapidocr import RapidOCR
 
-tests_dir = root_dir / "tests" / "test_files"
+test_dir = root_dir / "tests" / "test_files"
 
 
 @pytest.fixture()
 def engine():
     engine = RapidOCR()
     return engine
+
+
+def test_txts_equal_words(engine):
+    img_path = test_dir / "check_return_word_len.jpeg"
+    result = engine(img_path, return_word_box=True)
+
+    assert len(result.txts) == len(result.word_results)
 
 
 @mark.parametrize(
@@ -36,7 +43,7 @@ def engine():
     ],
 )
 def test_cn_word_ocr(engine, img_name: str, words: List[str]):
-    img_path = tests_dir / img_name
+    img_path = test_dir / img_name
     result = engine(img_path, return_word_box=True)
     txts, _, _ = list(zip(*result.word_results[0]))
     assert txts == words
@@ -47,14 +54,14 @@ def test_cn_word_ocr(engine, img_name: str, words: List[str]):
     [("issue_170.png", "TEST"), ("return_word_debug.jpg", "3F1")],
 )
 def test_en_word_ocr(engine, img_name: str, words: str):
-    img_path = tests_dir / img_name
+    img_path = test_dir / img_name
     result = engine(img_path, return_word_box=True)
     txts, _, _ = list(zip(*result.word_results[0]))
     assert txts[0] == words
 
 
 def test_en_return_single_char_box(engine):
-    img_path = tests_dir / "en.jpg"
+    img_path = test_dir / "en.jpg"
     result = engine(img_path, return_word_box=True, return_single_char_box=True)
     txts, _, _ = list(zip(*result.word_results[0]))
     assert txts[0] == "3"
