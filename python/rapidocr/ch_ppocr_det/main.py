@@ -15,7 +15,7 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import numpy as np
 
@@ -77,7 +77,7 @@ class TextDetector:
         return DetPreProcess(limit_side_len, self.limit_type, self.mean, self.std)
 
     @staticmethod
-    def sorted_boxes(dt_boxes: np.ndarray) -> List[np.ndarray]:
+    def sorted_boxes(dt_boxes: np.ndarray) -> np.ndarray:
         """
         Sort text boxes in order from top to bottom, left to right
         args:
@@ -100,4 +100,4 @@ class TextDetector:
                     _boxes[j + 1] = tmp
                 else:
                     break
-        return _boxes
+        return np.array(_boxes)

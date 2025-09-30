@@ -109,80 +109,135 @@ class RapidOCR:
 
         ori_img = self.load_img(img_content)
         img, op_record = self.preprocess_img(ori_img)
+        det_res, cls_res, rec_res, cropped_img_list = self.run_ocr_steps(img, op_record)
+        return self.build_final_output(
+            ori_img, det_res, cls_res, rec_res, cropped_img_list, op_record
+        )
 
+    def run_ocr_steps(self, img: np.ndarray, op_record: Dict[str, Any]):
         det_res, cls_res, rec_res = TextDetOutput(), TextClsOutput(), TextRecOutput()
+
         if self.use_det:
             try:
-                img, det_res = self.get_det_res(img, op_record)
+                cropped_img_list, det_res = self.detect_and_crop(img, op_record)
             except RapidOCRError as e:
                 self.logger.warning(e)
-                return RapidOCROutput()
+                return TextDetOutput(), TextClsOutput(), TextRecOutput(), []
+        else:
+            cropped_img_list = [img]
 
         if self.use_cls:
             try:
-                img, cls_res = self.get_cls_res(img)
+                cls_img_list, cls_res = self.cls_and_rotate(cropped_img_list)
             except RapidOCRError as e:
                 self.logger.warning(e)
-                return RapidOCROutput()
+                return det_res, TextClsOutput(), TextRecOutput(), []
+        else:
+            cls_img_list = cropped_img_list
 
         if self.use_rec:
-            rec_res = self.get_rec_res(img)
+            try:
+                rec_res = self.recognize_txt(cls_img_list)
+            except RapidOCRError as e:
+                self.logger.warning(e)
+                return det_res, cls_res, TextRecOutput(), []
 
-        return self.finalize_results(ori_img, det_res, cls_res, rec_res, img, op_record)
+        return det_res, cls_res, rec_res, cropped_img_list
 
-    def finalize_results(
+    def build_final_output(
         self,
         ori_img: np.ndarray,
         det_res: TextDetOutput,
         cls_res: TextClsOutput,
         rec_res: TextRecOutput,
-        img: List[np.ndarray],
+        cropped_img_list: List[np.ndarray],
         op_record: Dict[str, Any],
     ) -> Union[TextDetOutput, TextClsOutput, TextRecOutput, RapidOCROutput]:
-        raw_h, raw_w = ori_img.shape[:2]
+        ori_h, ori_w = ori_img.shape[:2]
 
-        # filter empty value
-        if rec_res.txts and det_res.boxes:
-            empty_idx = [i for i, v in enumerate(rec_res.txts) if not v.strip()]
+        if det_res.boxes is not None:
+            det_res.boxes = self.get_origin_points(
+                det_res.boxes, op_record, ori_h, ori_w
+            )
 
-            det_res.boxes = [
-                v for i, v in enumerate(det_res.boxes) if i not in empty_idx
-            ]
+        # 过滤识别结果为空的值
+        if (
+            rec_res.txts is not None
+            and det_res.boxes is not None
+            and det_res.scores is not None
+        ):
+            empty_ids = set([i for i, v in enumerate(rec_res.txts) if not v.strip()])
+
+            det_res.boxes = np.array(
+                [v for i, v in enumerate(det_res.boxes) if i not in empty_ids]
+            )
             det_res.scores = [
-                v for i, v in enumerate(det_res.scores) if i not in empty_idx
+                v for i, v in enumerate(det_res.scores) if i not in empty_ids
             ]
 
-            rec_res.txts = [v for i, v in enumerate(rec_res.txts) if i not in empty_idx]
+            rec_res.txts = [v for i, v in enumerate(rec_res.txts) if i not in empty_ids]
             rec_res.word_results = [
-                v for i, v in enumerate(rec_res.word_results) if i not in empty_idx
+                v for i, v in enumerate(rec_res.word_results) if i not in empty_ids
             ]
+
+        # 仅分类结果
+        if (
+            det_res.boxes is None
+            and rec_res.txts is None
+            and cls_res.cls_res is not None
+        ):
+            return cls_res
+
+        # 无有效输出
+        if det_res.boxes is None and rec_res.txts is None:
+            return RapidOCROutput()
+
+        # 仅识别结果（无检测）
+        if det_res.boxes is None and rec_res.txts is not None:
+            return rec_res
+
+        # 仅检测结果（无识别）
+        if det_res.boxes is not None and rec_res.txts is None:
+            return det_res
 
         if (
             self.return_word_box
             and det_res.boxes is not None
-            and all(v for v in rec_res.word_results)
+            and all(rec_res.word_results)
         ):
             rec_res.word_results = self.calc_word_boxes(
-                img, det_res, rec_res, op_record, raw_h, raw_w
+                cropped_img_list, det_res.boxes, rec_res, op_record, ori_h, ori_w
             )
 
-        if det_res.boxes is not None:
-            det_res.boxes = self._get_origin_points(
-                det_res.boxes, op_record, raw_h, raw_w
-            )
-        return self.get_final_res(ori_img, det_res, cls_res, rec_res)
+        ocr_res = RapidOCROutput(
+            img=ori_img,
+            boxes=det_res.boxes,
+            txts=rec_res.txts,
+            scores=rec_res.scores,
+            word_results=rec_res.word_results,
+            elapse_list=[det_res.elapse, cls_res.elapse, rec_res.elapse],
+            viser=VisRes(
+                text_score=self.cfg.Global.text_score,
+                lang_type=self.cfg.Rec.lang_type,
+                font_path=self.cfg.Global.font_path,
+            ),
+        )
+
+        # 根据文本置信度过滤最终结果
+        ocr_res = self.filter_by_text_score(ocr_res)
+        return ocr_res if len(ocr_res) > 0 else RapidOCROutput()
 
     def calc_word_boxes(
         self,
         img: List[np.ndarray],
-        det_res: TextDetOutput,
+        dt_boxes: np.ndarray,
         rec_res: TextRecOutput,
         op_record: Dict[str, Any],
         raw_h: int,
         raw_w: int,
     ) -> Any:
         rec_res = self.cal_rec_boxes(
-            img, det_res.boxes, rec_res, self.return_single_char_box
+            img, dt_boxes, rec_res, self.return_single_char_box
         )
 
         origin_words = []
@@ -192,8 +247,8 @@ class RapidOCR:
                 if bbox is None:
                     continue
 
-                origin_words_points = self._get_origin_points(
-                    [bbox], op_record, raw_h, raw_w
+                origin_words_points = self.get_origin_points(
+                    np.array([bbox]).astype(np.float64), op_record, raw_h, raw_w
                 )
                 origin_words_points = origin_words_points.astype(np.int32).tolist()[0]
                 origin_words_item.append((txt, score, origin_words_points))
@@ -204,14 +259,14 @@ class RapidOCR:
 
     def update_params(
         self,
-        use_det,
-        use_cls,
-        use_rec,
-        return_word_box,
-        return_single_char_box,
-        text_score,
-        box_thresh,
-        unclip_ratio,
+        use_det: Optional[bool] = None,
+        use_cls: Optional[bool] = None,
+        use_rec: Optional[bool] = None,
+        return_word_box: bool = False,
+        return_single_char_box: bool = False,
+        text_score: float = 0.5,
+        box_thresh: float = 0.5,
+        unclip_ratio: float = 1.6,
     ):
         self.use_det = self.use_det if use_det is None else use_det
         self.use_cls = self.use_cls if use_cls is None else use_cls
@@ -231,28 +286,28 @@ class RapidOCR:
         op_record["preprocess"] = {"ratio_h": ratio_h, "ratio_w": ratio_w}
         return img, op_record
 
-    def get_det_res(
+    def detect_and_crop(
         self, img: np.ndarray, op_record: Dict[str, Any]
     ) -> Tuple[List[np.ndarray], TextDetOutput]:
         img, op_record = self._add_letterbox(img, op_record)
         det_res = self.text_det(img)
+
         if det_res.boxes is None:
             raise RapidOCRError("The text detection result is empty")
 
-        img_list = self.get_crop_img_list(img, det_res)
-        return img_list, det_res
+        img_crop_list = self.crop_text_regions(img, det_res.boxes)
+        return img_crop_list, det_res
 
-    def get_crop_img_list(
-        self, img: np.ndarray, det_res: TextDetOutput
+    def crop_text_regions(
+        self, img: np.ndarray, det_boxes: np.ndarray
     ) -> List[np.ndarray]:
         img_crop_list = []
-        for box in det_res.boxes:
-            tmp_box = copy.deepcopy(box)
-            img_crop = get_rotate_crop_image(img, tmp_box)
+        for box in det_boxes:
+            img_crop = get_rotate_crop_image(img, copy.deepcopy(box))
             img_crop_list.append(img_crop)
         return img_crop_list
 
-    def get_cls_res(
+    def cls_and_rotate(
         self, img: List[np.ndarray]
     ) -> Tuple[List[np.ndarray], TextClsOutput]:
         cls_res = self.text_cls(img)
@@ -260,50 +315,14 @@ class RapidOCR:
             raise RapidOCRError("The text classifier is empty")
         return cls_res.img_list, cls_res
 
-    def get_rec_res(self, img: List[np.ndarray]) -> TextRecOutput:
+    def recognize_txt(self, img: List[np.ndarray]) -> TextRecOutput:
         rec_input = TextRecInput(img=img, return_word_box=self.return_word_box)
-        return self.text_rec(rec_input)
 
-    def get_final_res(
-        self,
-        ori_img: np.ndarray,
-        det_res: TextDetOutput,
-        cls_res: TextClsOutput,
-        rec_res: TextRecOutput,
-    ) -> Union[TextDetOutput, TextClsOutput, TextRecOutput, RapidOCROutput]:
-        dt_boxes = det_res.boxes
-        txt_res = rec_res.txts
+        rec_res = self.text_rec(rec_input)
+        if rec_res.txts is None:
+            raise RapidOCRError("The text recognize result is empty")
 
-        if dt_boxes is None and txt_res is None and cls_res.cls_res is not None:
-            return cls_res
-
-        if dt_boxes is None and txt_res is None:
-            return RapidOCROutput()
-
-        if dt_boxes is None and txt_res is not None:
-            return rec_res
-
-        if dt_boxes is not None and txt_res is None:
-            return det_res
-
-        ocr_res = RapidOCROutput(
-            img=ori_img,
-            boxes=det_res.boxes,
-            txts=rec_res.txts,
-            scores=rec_res.scores,
-            word_results=rec_res.word_results,
-            elapse_list=[det_res.elapse, cls_res.elapse, rec_res.elapse],
-            viser=VisRes(
-                text_score=self.cfg.Global.text_score,
-                lang_type=self.cfg.Rec.lang_type,
-                font_path=self.cfg.Global.font_path,
-            ),
-        )
-        ocr_res = self.filter_by_text_score(ocr_res)
-        if len(ocr_res) <= 0:
-            return RapidOCROutput()
-
-        return ocr_res
+        return rec_res
 
     def filter_by_text_score(self, ocr_res: RapidOCROutput) -> RapidOCROutput:
         filter_boxes, filter_txts, filter_scores, filter_words = [], [], [], []
@@ -345,34 +364,25 @@ class RapidOCR:
         op_record["padding_1"] = {"top": 0, "left": 0}
         return img, op_record
 
-    def _get_origin_points(
-        self,
-        dt_boxes: List[np.ndarray],
-        op_record: Dict[str, Any],
-        raw_h: int,
-        raw_w: int,
+    def get_origin_points(
+        self, dt_boxes: np.ndarray, op_record: Dict[str, Any], ori_h: int, ori_w: int
     ) -> np.ndarray:
-        dt_boxes_array = np.array(dt_boxes).astype(np.float32)
         for op in reversed(list(op_record.keys())):
             v = op_record[op]
             if "padding" in op:
                 top, left = v.get("top"), v.get("left")
-                dt_boxes_array[:, :, 0] -= left
-                dt_boxes_array[:, :, 1] -= top
+                dt_boxes[:, :, 0] -= left
+                dt_boxes[:, :, 1] -= top
             elif "preprocess" in op:
                 ratio_h = v.get("ratio_h")
                 ratio_w = v.get("ratio_w")
-                dt_boxes_array[:, :, 0] *= ratio_w
-                dt_boxes_array[:, :, 1] *= ratio_h
+                dt_boxes[:, :, 0] *= ratio_w
+                dt_boxes[:, :, 1] *= ratio_h
 
-        dt_boxes_array = np.where(dt_boxes_array < 0, 0, dt_boxes_array)
-        dt_boxes_array[..., 0] = np.where(
-            dt_boxes_array[..., 0] > raw_w, raw_w, dt_boxes_array[..., 0]
-        )
-        dt_boxes_array[..., 1] = np.where(
-            dt_boxes_array[..., 1] > raw_h, raw_h, dt_boxes_array[..., 1]
-        )
-        return dt_boxes_array
+        dt_boxes = np.where(dt_boxes < 0, 0, dt_boxes)
+        dt_boxes[..., 0] = np.where(dt_boxes[..., 0] > ori_w, ori_w, dt_boxes[..., 0])
+        dt_boxes[..., 1] = np.where(dt_boxes[..., 1] > ori_h, ori_h, dt_boxes[..., 1])
+        return dt_boxes
 
 
 class RapidOCRError(Exception):

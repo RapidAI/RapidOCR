@@ -44,7 +44,7 @@ class VisRes:
         img_content: InputType,
         dt_boxes: np.ndarray,
         txts: Optional[Union[List[str], Tuple[str]]] = None,
-        scores: Optional[Tuple[float]] = None,
+        scores: Optional[List[float]] = None,
     ) -> np.ndarray:
         self.logger.info(f"Using {self.font_path} to visualize results.")
 
@@ -56,7 +56,7 @@ class VisRes:
         self,
         img_content: InputType,
         dt_boxes: np.ndarray,
-        scores: Optional[Tuple[float]] = None,
+        scores: Optional[List[float]] = None,
     ) -> np.ndarray:
         img = self.load_img(img_content)
         if scores is None:
@@ -131,7 +131,7 @@ class VisRes:
         self,
         imgs: Sequence[InputType],
         txts: Union[List[str], Tuple[str]],
-        scores: Tuple[float],
+        scores: List[float],
     ) -> np.ndarray:
         result_imgs = []
         for img, txt, score in zip(imgs, txts, scores):
@@ -178,7 +178,7 @@ class VisRes:
         img_content: InputType,
         dt_boxes: np.ndarray,
         txts: Union[List[str], Tuple[str]],
-        scores: Optional[Tuple[float]] = None,
+        scores: Optional[List[float]] = None,
     ) -> np.ndarray:
         image = Image.fromarray(self.load_img(img_content))
         h, w = image.height, image.width

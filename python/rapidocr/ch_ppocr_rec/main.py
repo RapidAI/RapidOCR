@@ -35,7 +35,6 @@ DEFAULT_MODEL_PATH = Path(__file__).parent.parent / "models"
 class TextRecognizer:
     def __init__(self, cfg: Dict[str, Any]):
         self.session = get_engine(cfg.engine_type)(cfg)
-        self.logger = logger
 
         # onnx has inner character, other engine get or download character_dict_path
         character, character_dict_path = self.get_character_dict(cfg)
@@ -77,7 +76,7 @@ class TextRecognizer:
                         file_url=dict_download_url,
                         sha256=None,
                         save_path=dict_path,
-                        logger=self.logger,
+                        logger=logger,
                     )
                 )
 

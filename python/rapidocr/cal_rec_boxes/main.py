@@ -25,13 +25,13 @@ class CalRecBoxes:
     def __call__(
         self,
         imgs: List[np.ndarray],
-        dt_boxes: List[np.ndarray],
+        dt_boxes: np.ndarray,
         rec_res: TextRecOutput,
         return_single_char_box: bool = False,
     ) -> TextRecOutput:
         word_results = []
         for idx, (img, box) in enumerate(zip(imgs, dt_boxes)):
-            if rec_res.txts is None:
+            if rec_res.txts is None or img.size <= 0 or rec_res.word_results is None:
                 continue
 
             h, w = img.shape[:2]
