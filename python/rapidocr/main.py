@@ -165,7 +165,7 @@ class RapidOCR:
             and det_res.boxes is not None
             and det_res.scores is not None
         ):
-            empty_ids = set([i for i, v in enumerate(rec_res.txts) if not v.strip()])
+            empty_ids = {i for i, v in enumerate(rec_res.txts) if not v.strip()}
 
             det_res.boxes = np.array(
                 [v for i, v in enumerate(det_res.boxes) if i not in empty_ids]

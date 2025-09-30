@@ -31,7 +31,7 @@ class CalRecBoxes:
     ) -> TextRecOutput:
         word_results = []
         for idx, (img, box) in enumerate(zip(imgs, dt_boxes)):
-            if rec_res.txts is None or img.size <= 0 or rec_res.word_results is None:
+            if rec_res.txts is None or img.size == 0 or rec_res.word_results is None:
                 continue
 
             h, w = img.shape[:2]
