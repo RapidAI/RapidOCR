@@ -19,8 +19,6 @@ class EP(Enum):
 
 class ProviderConfig:
     def __init__(self, engine_cfg: Dict[str, Any]):
-        self.logger = logger
-
         self.had_providers: List[str] = get_available_providers()
         self.default_provider = self.had_providers[0]
 
@@ -37,13 +35,13 @@ class ProviderConfig:
             results.insert(0, (EP.CUDA_EP.value, self.cuda_ep_cfg()))
 
         if self.is_dml_available():
-            self.logger.info(
+            logger.info(
                 "Windows 10 or above detected, try to use DirectML as primary provider"
             )
             results.insert(0, (EP.DIRECTML_EP.value, self.dml_ep_cfg()))
 
         if self.is_cann_available():
-            self.logger.info("Try to use CANNExecutionProvider to infer")
+            logger.info("Try to use CANNExecutionProvider to infer")
             results.insert(0, (EP.CANN_EP.value, self.cann_ep_cfg()))
 
         return results
@@ -79,10 +77,10 @@ class ProviderConfig:
 
         for ep, check_func in providers_to_check.items():
             if check_func() and first_provider != ep.value:
-                self.logger.warning(
+                logger.warning(
                     f"{ep.value} is available, but the inference part is automatically shifted to be executed under {first_provider}. "
                 )
-                self.logger.warning(f"The available lists are {session_providers}")
+                logger.warning(f"The available lists are {session_providers}")
 
     def is_cuda_available(self) -> bool:
         if not self.cfg_use_cuda:
@@ -92,7 +90,7 @@ class ProviderConfig:
         if get_device() == "GPU" and CUDA_EP in self.had_providers:
             return True
 
-        self.logger.warning(
+        logger.warning(
             f"{CUDA_EP} is not in available providers ({self.had_providers}). Use {self.default_provider} inference by default."
         )
         install_instructions = [
@@ -113,7 +111,7 @@ class ProviderConfig:
 
         cur_os = platform.system()
         if cur_os != "Windows":
-            self.logger.warning(
+            logger.warning(
                 f"DirectML is only supported in Windows OS. The current OS is {cur_os}. Use {self.default_provider} inference by default.",
             )
             return False
@@ -123,7 +121,7 @@ class ProviderConfig:
             int(window_build_number_str) if window_build_number_str.isdigit() else 0
         )
         if window_build_number < 18362:
-            self.logger.warning(
+            logger.warning(
                 f"DirectML is only supported in Windows 10 Build 18362 and above OS. The current Windows Build is {window_build_number}. Use {self.default_provider} inference by default.",
             )
             return False
@@ -132,7 +130,7 @@ class ProviderConfig:
         if DML_EP in self.had_providers:
             return True
 
-        self.logger.warning(
+        logger.warning(
             f"{DML_EP} is not in available providers ({self.had_providers}). Use {self.default_provider} inference by default."
         )
         install_instructions = [
@@ -152,7 +150,7 @@ class ProviderConfig:
         if CANN_EP in self.had_providers:
             return True
 
-        self.logger.warning(
+        logger.warning(
             f"{CANN_EP} is not in available providers ({self.had_providers}). Use {self.default_provider} inference by default."
         )
         install_instructions = [
@@ -167,4 +165,4 @@ class ProviderConfig:
 
     def print_log(self, log_list: List[str]):
         for log_info in log_list:
-            self.logger.info(log_info)
+            logger.info(log_info)

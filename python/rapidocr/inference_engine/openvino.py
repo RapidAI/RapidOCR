@@ -18,7 +18,6 @@ from .base import FileInfo, InferSession
 class OpenVINOInferSession(InferSession):
     def __init__(self, cfg: DictConfig):
         super().__init__(cfg)
-        self.logger = logger
 
         core = Core()
 
@@ -38,11 +37,11 @@ class OpenVINOInferSession(InferSession):
                 file_url=model_info["model_dir"],
                 sha256=model_info["SHA256"],
                 save_path=model_path,
-                logger=self.logger,
+                logger=logger,
             )
             DownloadFile.run(download_params)
 
-        self.logger.info(f"Using {model_path}")
+        logger.info(f"Using {model_path}")
         model_path = Path(model_path)
         self._verify_model(model_path)
 
@@ -85,7 +84,7 @@ class OpenVINOInferSession(InferSession):
         if scheduling_core_type is not None:
             config["SCHEDULING_CORE_TYPE"] = str(scheduling_core_type)
 
-        self.logger.info(f"Using OpenVINO config: {config}")
+        logger.info(f"Using OpenVINO config: {config}")
         return config
 
     def __call__(self, input_content: np.ndarray) -> np.ndarray:

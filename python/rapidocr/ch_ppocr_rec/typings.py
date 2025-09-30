@@ -36,7 +36,7 @@ class TextRecInput:
 class TextRecOutput:
     imgs: Optional[List[np.ndarray]] = None
     txts: Optional[Tuple[str]] = None
-    scores: Tuple[float] = (1.0,)
+    scores: List[float] = field(default_factory=lambda: [1.0])
     word_results: Tuple[Tuple[str, float, Optional[List[List[int]]]]] = (
         ("", 1.0, None),
     )

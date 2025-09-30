@@ -31,8 +31,6 @@ class VisRes:
         lang_type: Optional[LangRec] = None,
         font_path: Optional[str] = None,
     ):
-        self.logger = logger
-
         self.text_score = text_score
         self.load_img = LoadImage()
 
@@ -44,9 +42,9 @@ class VisRes:
         img_content: InputType,
         dt_boxes: np.ndarray,
         txts: Optional[Union[List[str], Tuple[str]]] = None,
-        scores: Optional[Tuple[float]] = None,
+        scores: Optional[List[float]] = None,
     ) -> np.ndarray:
-        self.logger.info(f"Using {self.font_path} to visualize results.")
+        logger.info(f"Using {self.font_path} to visualize results.")
 
         if txts is None:
             return self.draw_dt_boxes(img_content, dt_boxes, scores)
@@ -56,7 +54,7 @@ class VisRes:
         self,
         img_content: InputType,
         dt_boxes: np.ndarray,
-        scores: Optional[Tuple[float]] = None,
+        scores: Optional[List[float]] = None,
     ) -> np.ndarray:
         img = self.load_img(img_content)
         if scores is None:
@@ -90,7 +88,7 @@ class VisRes:
             file_url=default_info["path"],
             sha256=default_info["SHA256"],
             save_path=DEFAULT_FONT_PATH,
-            logger=self.logger,
+            logger=logger,
         )
 
         if lang_type is None:
@@ -106,7 +104,7 @@ class VisRes:
             font_url, font_sha256 = font_info["path"], font_info["SHA256"]
 
             if font_url is None:
-                self.logger.warning(
+                logger.warning(
                     "Font file for %s is not found in the supported font list. Default font file will be used.",
                     lang_type,
                 )
@@ -119,7 +117,7 @@ class VisRes:
                 file_url=font_url,
                 sha256=font_sha256,
                 save_path=save_font_path,
-                logger=self.logger,
+                logger=logger,
                 verbose=False,
             )
             DownloadFile.run(input_param)
@@ -131,7 +129,7 @@ class VisRes:
         self,
         imgs: Sequence[InputType],
         txts: Union[List[str], Tuple[str]],
-        scores: Tuple[float],
+        scores: List[float],
     ) -> np.ndarray:
         result_imgs = []
         for img, txt, score in zip(imgs, txts, scores):
@@ -178,7 +176,7 @@ class VisRes:
         img_content: InputType,
         dt_boxes: np.ndarray,
         txts: Union[List[str], Tuple[str]],
-        scores: Optional[Tuple[float]] = None,
+        scores: Optional[List[float]] = None,
     ) -> np.ndarray:
         image = Image.fromarray(self.load_img(img_content))
         h, w = image.height, image.width

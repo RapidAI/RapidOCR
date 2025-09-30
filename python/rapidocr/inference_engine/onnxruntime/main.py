@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 import numpy as np
 from onnxruntime import GraphOptimizationLevel, InferenceSession, SessionOptions
 
-from ...utils import DownloadFile, DownloadFileInput
+from ...utils.download_file import DownloadFile, DownloadFileInput
 from ...utils.log import logger
 from ..base import FileInfo, InferSession
 from .provider_config import ProviderConfig
@@ -17,8 +17,6 @@ from .provider_config import ProviderConfig
 
 class OrtInferSession(InferSession):
     def __init__(self, cfg: Dict[str, Any]):
-        self.logger = logger
-
         # support custom session (PR #451)
         session = cfg.get("session", None)
         if session is not None:
@@ -27,7 +25,7 @@ class OrtInferSession(InferSession):
                     f"Expected session to be an InferenceSession, got {type(session)}"
                 )
 
-            self.logger.debug("Using the provided InferenceSession for inference.")
+            logger.debug("Using the provided InferenceSession for inference.")
             self.session = session
             return
 
@@ -48,11 +46,11 @@ class OrtInferSession(InferSession):
                 file_url=model_info["model_dir"],
                 sha256=model_info["SHA256"],
                 save_path=model_path,
-                logger=self.logger,
+                logger=logger,
             )
             DownloadFile.run(download_params)
 
-        self.logger.info(f"Using {model_path}")
+        logger.info(f"Using {model_path}")
         model_path = Path(model_path)
         self._verify_model(model_path)
 

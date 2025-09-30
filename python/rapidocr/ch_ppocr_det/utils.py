@@ -18,7 +18,7 @@ from ..utils.vis_res import VisRes
 class TextDetOutput:
     img: Optional[np.ndarray] = None
     boxes: Optional[np.ndarray] = None
-    scores: Optional[Tuple[float]] = None
+    scores: Optional[List[float]] = None
     elapse: float = 0.0
 
     def __len__(self):

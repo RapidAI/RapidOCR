@@ -1,10 +1,54 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-from typing import Tuple
+from typing import Any, Dict, Tuple
 
 import cv2
 import numpy as np
+
+
+def map_boxes_to_original(
+    dt_boxes: np.ndarray, op_record: Dict[str, Any], ori_h: int, ori_w: int
+) -> np.ndarray:
+    for op in reversed(list(op_record.keys())):
+        v = op_record[op]
+        if "padding" in op:
+            top, left = v.get("top"), v.get("left")
+            dt_boxes[:, :, 0] -= left
+            dt_boxes[:, :, 1] -= top
+        elif "preprocess" in op:
+            ratio_h = v.get("ratio_h")
+            ratio_w = v.get("ratio_w")
+            dt_boxes[:, :, 0] *= ratio_w
+            dt_boxes[:, :, 1] *= ratio_h
+
+    dt_boxes = np.where(dt_boxes < 0, 0, dt_boxes)
+    dt_boxes[..., 0] = np.where(dt_boxes[..., 0] > ori_w, ori_w, dt_boxes[..., 0])
+    dt_boxes[..., 1] = np.where(dt_boxes[..., 1] > ori_h, ori_h, dt_boxes[..., 1])
+    return dt_boxes
+
+
+def apply_vertical_padding(
+    img: np.ndarray,
+    op_record: Dict[str, Any],
+    width_height_ratio: float,
+    min_height: float,
+) -> Tuple[np.ndarray, Dict[str, Any]]:
+    h, w = img.shape[:2]
+
+    if width_height_ratio == -1:
+        use_limit_ratio = False
+    else:
+        use_limit_ratio = w / h > width_height_ratio
+
+    if h <= min_height or use_limit_ratio:
+        padding_h = get_padding_h(h, w, width_height_ratio, min_height)
+        block_img = add_round_letterbox(img, (padding_h, padding_h, 0, 0))
+        op_record["padding_1"] = {"top": padding_h, "left": 0}
+        return block_img, op_record
+
+    op_record["padding_1"] = {"top": 0, "left": 0}
+    return img, op_record
 
 
 def get_padding_h(h: int, w: int, width_height_ratio: float, min_height: float) -> int:
