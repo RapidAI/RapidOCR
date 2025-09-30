@@ -15,18 +15,18 @@ from .ch_ppocr_cls import TextClassifier, TextClsOutput
 from .ch_ppocr_det import TextDetector, TextDetOutput
 from .ch_ppocr_rec import TextRecInput, TextRecognizer, TextRecOutput
 from .cli import check_install, generate_cfg
-from .utils import (
-    LoadImage,
-    RapidOCROutput,
-    VisRes,
-    add_round_letterbox,
-    get_padding_h,
+from .utils.load_image import LoadImage
+from .utils.log import logger
+from .utils.output import RapidOCROutput
+from .utils.parse_parameters import ParseParams
+from .utils.process_img import (
+    apply_vertical_padding,
     get_rotate_crop_image,
+    map_boxes_to_original,
     resize_image_within_bounds,
 )
-from .utils.log import logger
-from .utils.parse_parameters import ParseParams
 from .utils.typings import LangRec
+from .utils.vis_res import VisRes
 
 root_dir = Path(__file__).resolve().parent
 DEFAULT_CFG_PATH = root_dir / "config.yaml"
@@ -39,7 +39,6 @@ class RapidOCR:
         cfg = self._load_config(config_path, params)
 
         logger.setLevel(cfg.Global.log_level.upper())
-        self.logger = logger
 
         self._initialize(cfg)
 
@@ -121,7 +120,7 @@ class RapidOCR:
             try:
                 cropped_img_list, det_res = self.detect_and_crop(img, op_record)
             except RapidOCRError as e:
-                self.logger.warning(e)
+                logger.warning(e)
                 return TextDetOutput(), TextClsOutput(), TextRecOutput(), []
         else:
             cropped_img_list = [img]
@@ -130,7 +129,7 @@ class RapidOCR:
             try:
                 cls_img_list, cls_res = self.cls_and_rotate(cropped_img_list)
             except RapidOCRError as e:
-                self.logger.warning(e)
+                logger.warning(e)
                 return det_res, TextClsOutput(), TextRecOutput(), []
         else:
             cls_img_list = cropped_img_list
@@ -139,7 +138,7 @@ class RapidOCR:
             try:
                 rec_res = self.recognize_txt(cls_img_list)
             except RapidOCRError as e:
-                self.logger.warning(e)
+                logger.warning(e)
                 return det_res, cls_res, TextRecOutput(), []
 
         return det_res, cls_res, rec_res, cropped_img_list
@@ -156,7 +155,7 @@ class RapidOCR:
         ori_h, ori_w = ori_img.shape[:2]
 
         if det_res.boxes is not None:
-            det_res.boxes = self.get_origin_points(
+            det_res.boxes = map_boxes_to_original(
                 det_res.boxes, op_record, ori_h, ori_w
             )
 
@@ -223,7 +222,6 @@ class RapidOCR:
             ),
         )
 
-        # 根据文本置信度过滤最终结果
         ocr_res = self.filter_by_text_score(ocr_res)
         return ocr_res if len(ocr_res) > 0 else RapidOCROutput()
 
@@ -247,7 +245,7 @@ class RapidOCR:
                 if bbox is None:
                     continue
 
-                origin_words_points = self.get_origin_points(
+                origin_words_points = map_boxes_to_original(
                     np.array([bbox]).astype(np.float64), op_record, raw_h, raw_w
                 )
                 origin_words_points = origin_words_points.astype(np.int32).tolist()[0]
@@ -289,7 +287,9 @@ class RapidOCR:
     def detect_and_crop(
         self, img: np.ndarray, op_record: Dict[str, Any]
     ) -> Tuple[List[np.ndarray], TextDetOutput]:
-        img, op_record = self._add_letterbox(img, op_record)
+        img, op_record = apply_vertical_padding(
+            img, op_record, self.width_height_ratio, self.min_height
+        )
         det_res = self.text_det(img)
 
         if det_res.boxes is None:
@@ -344,45 +344,6 @@ class RapidOCR:
         ocr_res.scores = tuple(filter_scores)
         ocr_res.word_results = tuple(filter_words)
         return ocr_res
-
-    def _add_letterbox(
-        self, img: np.ndarray, op_record: Dict[str, Any]
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
-        h, w = img.shape[:2]
-
-        if self.width_height_ratio == -1:
-            use_limit_ratio = False
-        else:
-            use_limit_ratio = w / h > self.width_height_ratio
-
-        if h <= self.min_height or use_limit_ratio:
-            padding_h = get_padding_h(h, w, self.width_height_ratio, self.min_height)
-            block_img = add_round_letterbox(img, (padding_h, padding_h, 0, 0))
-            op_record["padding_1"] = {"top": padding_h, "left": 0}
-            return block_img, op_record
-
-        op_record["padding_1"] = {"top": 0, "left": 0}
-        return img, op_record
-
-    def get_origin_points(
-        self, dt_boxes: np.ndarray, op_record: Dict[str, Any], ori_h: int, ori_w: int
-    ) -> np.ndarray:
-        for op in reversed(list(op_record.keys())):
-            v = op_record[op]
-            if "padding" in op:
-                top, left = v.get("top"), v.get("left")
-                dt_boxes[:, :, 0] -= left
-                dt_boxes[:, :, 1] -= top
-            elif "preprocess" in op:
-                ratio_h = v.get("ratio_h")
-                ratio_w = v.get("ratio_w")
-                dt_boxes[:, :, 0] *= ratio_w
-                dt_boxes[:, :, 1] *= ratio_h
-
-        dt_boxes = np.where(dt_boxes < 0, 0, dt_boxes)
-        dt_boxes[..., 0] = np.where(dt_boxes[..., 0] > ori_w, ori_w, dt_boxes[..., 0])
-        dt_boxes[..., 1] = np.where(dt_boxes[..., 1] > ori_h, ori_h, dt_boxes[..., 1])
-        return dt_boxes
 
 
 class RapidOCRError(Exception):

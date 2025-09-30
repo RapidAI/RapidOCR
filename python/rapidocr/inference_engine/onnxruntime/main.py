@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 import numpy as np
 from onnxruntime import GraphOptimizationLevel, InferenceSession, SessionOptions
 
-from ...utils import DownloadFile, DownloadFileInput
+from ...utils.download_file import DownloadFile, DownloadFileInput
 from ...utils.log import logger
 from ..base import FileInfo, InferSession
 from .provider_config import ProviderConfig
