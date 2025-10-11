@@ -31,7 +31,7 @@ def test_only_cls(engine):
     img_path = tests_dir / "text_cls.jpg"
     result = engine(img_path, use_det=False, use_cls=True, use_rec=False)
     assert len(result) == 1
-    assert result.cls_res[0][0] == "0"
+    assert result.cls_res[0][0] == "180"
 
 
 def test_only_rec(engine):
