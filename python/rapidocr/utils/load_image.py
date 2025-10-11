@@ -8,7 +8,7 @@ from typing import Any, Union
 import cv2
 import numpy as np
 import requests
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 from .utils import is_url
 
@@ -33,11 +33,13 @@ class LoadImage:
 
     def load_img(self, img: InputType) -> np.ndarray:
         if isinstance(img, (str, Path)):
-            if is_url(img):
+            if is_url(str(img)):
                 img = Image.open(requests.get(img, stream=True, timeout=60).raw)
             else:
                 self.verify_exist(img)
                 img = Image.open(img)
+
+            img = self.exif_transpose(img)
 
             try:
                 img = self.img_to_ndarray(img)
@@ -56,6 +58,21 @@ class LoadImage:
             return self.img_to_ndarray(img)
 
         raise LoadImageError(f"{type(img)} is not supported!")
+
+    @staticmethod
+    def verify_exist(file_path: Union[str, Path]):
+        if not Path(file_path).exists():
+            raise LoadImageError(f"{file_path} does not exist.")
+
+    @staticmethod
+    def exif_transpose(img: Image.Image) -> Image.Image:
+        try:
+            img_corrected = ImageOps.exif_transpose(img)
+            if img_corrected is None:
+                return img
+            return img_corrected
+        except Exception as e:
+            return img
 
     def img_to_ndarray(self, img: Image.Image) -> np.ndarray:
         if img.mode == "1":
@@ -120,11 +137,6 @@ class LoadImage:
         else:
             new_img = cv2.bitwise_not(new_img)
         return new_img
-
-    @staticmethod
-    def verify_exist(file_path: Union[str, Path]):
-        if not Path(file_path).exists():
-            raise LoadImageError(f"{file_path} does not exist.")
 
 
 class LoadImageError(Exception):

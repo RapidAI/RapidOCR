@@ -14,14 +14,20 @@ sys.path.append(str(root_dir))
 
 from rapidocr import LoadImageError, RapidOCR
 
-tests_dir = root_dir / "tests" / "test_files"
-img_path = tests_dir / "ch_en_num.jpg"
+test_dir = root_dir / "tests" / "test_files"
+img_path = test_dir / "ch_en_num.jpg"
 
 
 @pytest.fixture()
 def engine():
     engine = RapidOCR()
     return engine
+
+
+def test_exif_transpose(engine):
+    img_path = test_dir / "img_exif_orientation.jpg"
+    result = engine(img_path, use_cls=False)
+    assert result.txts[0] == "我是中国人"
 
 
 @mark.parametrize(
@@ -38,7 +44,7 @@ def engine():
     ],
 )
 def test_transparent_img(engine, img_name: str, gt: str):
-    img_path = tests_dir / img_name
+    img_path = test_dir / img_name
     result = engine(img_path)
     assert result.txts[0] == gt
 
@@ -52,7 +58,7 @@ def test_long_img(engine):
 
 
 def test_full_black_img(engine):
-    img_path = tests_dir / "empty_black.jpg"
+    img_path = test_dir / "empty_black.jpg"
     result = engine(img_path)
     assert result.img is None
     assert result.boxes is None
@@ -104,7 +110,7 @@ def test_input_parameters(engine):
 
 
 def test_input_three_ndim_two_channel(engine):
-    img_npy = tests_dir / "two_dim_image.npy"
+    img_npy = test_dir / "two_dim_image.npy"
     image_array = np.load(str(img_npy))
     result = engine(image_array)
 
@@ -124,7 +130,7 @@ def test_input_three_ndim_one_channel(engine):
 
 
 def test_mode_one_img(engine):
-    img_path = tests_dir / "issue_170.png"
+    img_path = test_dir / "issue_170.png"
     result = engine(img_path)
     assert result.txts[0] == "TEST"
 
@@ -141,7 +147,7 @@ def test_mode_one_img(engine):
     ],
 )
 def test_letterbox_like(engine, img_name, gt_len, gt_first_len):
-    img_path = tests_dir / img_name
+    img_path = test_dir / img_name
     result = engine(img_path)
 
     assert len(result) == gt_len
