@@ -53,7 +53,7 @@ def test_cls_rec(engine):
 
     assert result is not None
     assert len(result) == 1
-    assert result.txts[0] == "韩国小馆"
+    assert result.txts[0] == "怪我咯"
 
 
 def test_det_cls_rec(engine):
