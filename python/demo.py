@@ -1,14 +1,20 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-from rapidocr import RapidOCR
+from rapidocr import EngineType, RapidOCR
 
-engine = RapidOCR()
+engine = RapidOCR(
+    params={
+        "Det.engine_type": EngineType.TORCH,
+        "Cls.engine_type": EngineType.TORCH,
+        "Rec.engine_type": EngineType.TORCH,
+        "EngineConfig.torch.use_cuda": True,  # 使用torch GPU版推理
+        "EngineConfig.torch.gpu_id": 0,  # 指定GPU id
+    }
+)
 
-img_url = "https://img1.baidu.com/it/u=3619974146,1266987475&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=516"
-img_url = "tests/test_files/return_word_debug.jpg"
-result = engine(img_url, return_word_box=True)
+img_url = "https://github.com/RapidAI/RapidOCR/blob/main/python/tests/test_files/ch_en_num.jpg?raw=true"
+result = engine(img_url)
 print(result)
 
 result.vis("vis_result.jpg")
-print(result)

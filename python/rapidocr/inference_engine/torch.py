@@ -71,6 +71,14 @@ class TorchInferSession(InferSession):
         return model
 
     def _setup_device(self, cfg):
+        if cfg.engine_cfg.use_cuda:
+            self._config_cuda(cfg.engine_cfg.gpu_id)
+        elif cfg.engine_cfg.use_npu:
+            return torch.device(f"npu:{cfg.engine_cfg.npu_id}"), False, True
+
+        logger.info("Using CPU device")
+        return torch.device("cpu"), False, False
+
         self.device, self.use_gpu, self.use_npu = self._resolve_device_config(cfg)
 
         if self.use_npu:
@@ -80,16 +88,26 @@ class TorchInferSession(InferSession):
 
     def _resolve_device_config(self, cfg):
         if cfg.engine_cfg.use_cuda:
+            logger.info(f"Using GPU device with ID: {cfg.engine_cfg.gpu_id}")
             return torch.device(f"cuda:{cfg.engine_cfg.gpu_id}"), True, False
 
         if cfg.engine_cfg.use_npu:
+            logger.info(f"Using NPU device with ID: {cfg.engine_cfg.npu_id}")
             return torch.device(f"npu:{cfg.engine_cfg.npu_id}"), False, True
 
+        logger.info("Using CPU device")
         return torch.device("cpu"), False, False
 
-    def _config_npu(self):
+    def _config_cuda(self, gpu_id: int):
+        logger.info(f"Using GPU device with ID: {gpu_id}")
+        self.device = torch.device(f"cuda:{gpu_id}")
+
+    def _config_npu(self, npu_id: int):
         try:
             import torch_npu
+
+            logger.info(f"Using NPU device with ID: {npu_id}")
+            torch.device(f"npu:{npu_id}")
 
             kernel_meta_dir = (root_dir / "kernel_meta").resolve()
             mkdir(kernel_meta_dir)
@@ -104,7 +122,7 @@ class TorchInferSession(InferSession):
                 "torch_npu is not installed, options with ACL setting failed. \n"
                 "Please refer to https://github.com/Ascend/pytorch to see how to install."
             )
-
+            logger.warning("Roll back to CPU device")
             self.device = torch.device("cpu")
             self.use_npu = False
 
