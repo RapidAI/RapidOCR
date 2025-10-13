@@ -6,7 +6,7 @@ from enum import Enum
 
 class DeviceType(Enum):
     CPU = "cpu"
-    GPU = "gpu"
+    CUDA = "cuda"
     NPU = "npu"
 
 

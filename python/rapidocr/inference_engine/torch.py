@@ -21,11 +21,11 @@ class TorchInferSession(InferSession):
     def __init__(self, cfg) -> None:
         model_path = self._init_model_path(cfg)
         arch_config = self._load_arch_config(model_path)
-
         self.predictor = self._build_and_load_model(arch_config, model_path)
 
-        self._setup_device(cfg)
+        self.device = self._setup_device(cfg)
 
+        self.predictor.to(self.device)
         self.predictor.eval()
 
     def _init_model_path(self, cfg) -> Path:
@@ -70,72 +70,69 @@ class TorchInferSession(InferSession):
         model.load_state_dict(state_dict)
         return model
 
-    def _setup_device(self, cfg):
-        if cfg.engine_cfg.use_cuda:
-            self._config_cuda(cfg.engine_cfg.gpu_id)
-        elif cfg.engine_cfg.use_npu:
-            return torch.device(f"npu:{cfg.engine_cfg.npu_id}"), False, True
+    def _setup_device(self, cfg) -> torch.device:
+        self.use_cuda = cfg.engine_cfg.use_cuda
+        self.use_npu = cfg.engine_cfg.use_npu
 
-        logger.info("Using CPU device")
-        return torch.device("cpu"), False, False
-
-        self.device, self.use_gpu, self.use_npu = self._resolve_device_config(cfg)
+        if self.use_cuda:
+            return self._config_cuda(cfg.engine_cfg.cuda_ep_cfg.device_id)
 
         if self.use_npu:
-            self._config_npu()
+            return self._config_npu(cfg.engine_cfg.npu_ep_cfg.device_id)
 
-        self._move_model_to_device()
+        return self._config_cpu()
 
-    def _resolve_device_config(self, cfg):
-        if cfg.engine_cfg.use_cuda:
-            logger.info(f"Using GPU device with ID: {cfg.engine_cfg.gpu_id}")
-            return torch.device(f"cuda:{cfg.engine_cfg.gpu_id}"), True, False
-
-        if cfg.engine_cfg.use_npu:
-            logger.info(f"Using NPU device with ID: {cfg.engine_cfg.npu_id}")
-            return torch.device(f"npu:{cfg.engine_cfg.npu_id}"), False, True
-
+    def _config_cpu(self) -> torch.device:
         logger.info("Using CPU device")
-        return torch.device("cpu"), False, False
+        return torch.device("cpu")
 
-    def _config_cuda(self, gpu_id: int):
-        logger.info(f"Using GPU device with ID: {gpu_id}")
-        self.device = torch.device(f"cuda:{gpu_id}")
+    def _config_cuda(self, device_id: int) -> torch.device:
+        if not torch.cuda.is_available():
+            raise TorchInferError("CUDA is not available.")
 
-    def _config_npu(self, npu_id: int):
+        logger.info(f"Using GPU device with ID: {device_id}")
+        return torch.device(f"cuda:{device_id}")
+
+    def _config_npu(self, device_id: int) -> torch.device:
         try:
             import torch_npu
-
-            logger.info(f"Using NPU device with ID: {npu_id}")
-            torch.device(f"npu:{npu_id}")
-
-            kernel_meta_dir = (root_dir / "kernel_meta").resolve()
-            mkdir(kernel_meta_dir)
-
-            options = {
-                "ACL_OP_COMPILER_CACHE_MODE": "enable",
-                "ACL_OP_COMPILER_CACHE_DIR": str(kernel_meta_dir),
-            }
-            torch_npu.npu.set_option(options)
-        except ImportError:
+        except ImportError as e:
             logger.warning(
-                "torch_npu is not installed, options with ACL setting failed. \n"
+                "torch_npu is not installed. \n"
                 "Please refer to https://github.com/Ascend/pytorch to see how to install."
             )
-            logger.warning("Roll back to CPU device")
-            self.device = torch.device("cpu")
             self.use_npu = False
+            logger.warning("Roll back to CPU device")
+            return torch.device("cpu")
 
-    def _move_model_to_device(self):
-        self.predictor.to(self.device)
+        try:
+            if not torch_npu.npu.is_available():
+                raise TorchInferError("NPU is not available.")
+        except TorchInferError as e:
+            logger.warning(e)
+            self.use_npu = False
+            logger.warning("Roll back to CPU device")
+            return torch.device("cpu")
+
+        kernel_meta_dir = (root_dir / "kernel_meta").resolve()
+        mkdir(kernel_meta_dir)
+
+        options = {
+            "ACL_OP_COMPILER_CACHE_MODE": "enable",
+            "ACL_OP_COMPILER_CACHE_DIR": str(kernel_meta_dir),
+        }
+        torch_npu.npu.set_option(options)
+
+        logger.info(f"Using NPU device with ID: {device_id}")
+        return torch.device(f"npu:{device_id}")
 
     def __call__(self, img: np.ndarray):
         with torch.no_grad():
             inp = torch.from_numpy(img)
-            if self.use_gpu or self.use_npu:
+            if self.use_cuda or self.use_npu:
                 inp = inp.to(self.device)
 
-            # 适配跟onnx对齐取值逻辑
+            # 适配onnx对齐取值逻辑
             outputs = self.predictor(inp).cpu().numpy()
             return outputs
 
