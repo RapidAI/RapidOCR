@@ -7,13 +7,13 @@ import numpy as np
 import torch
 from omegaconf import OmegaConf
 
-from ..networks.architectures.base_model import BaseModel
-from ..utils.download_file import DownloadFile, DownloadFileInput
-from ..utils.log import logger
-from ..utils.utils import mkdir
-from .base import FileInfo, InferSession
+from ...utils.download_file import DownloadFile, DownloadFileInput
+from ...utils.log import logger
+from ...utils.utils import mkdir
+from ..base import FileInfo, InferSession
+from .networks.architectures.base_model import BaseModel
 
-root_dir = Path(__file__).resolve().parent.parent
+root_dir = Path(__file__).resolve().parent
 DEFAULT_CFG_PATH = root_dir / "networks" / "arch_config.yaml"
 
 
@@ -102,8 +102,7 @@ class TorchInferSession(InferSession):
                 "Please refer to https://github.com/Ascend/pytorch to see how to install."
             )
             self.use_npu = False
-            logger.warning("Roll back to CPU device")
-            return torch.device("cpu")
+            return self._config_cpu()
 
         try:
             if not torch_npu.npu.is_available():
@@ -111,8 +110,7 @@ class TorchInferSession(InferSession):
         except TorchInferError as e:
             logger.warning(e)
             self.use_npu = False
-            logger.warning("Roll back to CPU device")
-            return torch.device("cpu")
+            return self._config_cpu()
 
         kernel_meta_dir = (root_dir / "kernel_meta").resolve()
         mkdir(kernel_meta_dir)

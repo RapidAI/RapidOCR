@@ -49,7 +49,7 @@ def get_engine(engine_type: EngineType):
         if not import_package(engine_type.value):
             raise ImportError(f"{engine_type.value} is not installed")
 
-        from .torch import TorchInferSession
+        from .pytorch import TorchInferSession
 
         return TorchInferSession
 
