@@ -18,8 +18,6 @@ class TorchInferSession(InferSession):
         with torch.no_grad():
             inp = torch.from_numpy(img)
             inp = inp.to(self.device)
-
-            # 适配onnx对齐取值逻辑
             outputs = self.predictor(inp).cpu().numpy()
             return outputs
 
