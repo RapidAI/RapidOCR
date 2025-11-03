@@ -52,9 +52,7 @@ def get_font_path(
     if font_path is None:
         # 指定了语种，但是没有指定字体文件，根据语种选择字体文件
         font_info = font_cfg().get(lang_type, None)
-        font_url, font_sha256 = font_info["path"], font_info["SHA256"]
-
-        if font_url is None:
+        if font_info is None:
             logger.warning(
                 "Font file for %s is not found in the supported font list. Default font file will be used.",
                 lang_type,
@@ -62,7 +60,8 @@ def get_font_path(
 
             DownloadFile.run(default_input_params)
             return str(DEFAULT_FONT_PATH)
-
+        
+        font_url, font_sha256 = font_info["path"], font_info["SHA256"]
         save_font_path = DEFAULT_FONT_DIR / f"{Path(font_url).name}"
         input_param = DownloadFileInput(
             file_url=font_url,
