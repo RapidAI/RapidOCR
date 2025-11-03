@@ -23,6 +23,9 @@ from rapidocr.inference_engine.base import get_engine
 
 from .utils import DBPostProcess, DetPreProcess, TextDetOutput
 
+_BOX_SORT_Y_THRESHOLD = 10
+_BOX_SORT_LINE_SEPARATION_FACTOR = 1e6
+
 
 class TextDetector:
     def __init__(self, cfg: Dict[str, Any]):
@@ -94,10 +97,10 @@ class TextDetector:
 
         line_ids = np.empty(len(dt_boxes), dtype=np.int32)
         line_ids[0] = 0
-        np.cumsum(np.abs(np.diff(sorted_y)) >= 10, out=line_ids[1:])
+        np.cumsum(np.abs(np.diff(sorted_y)) >= _BOX_SORT_Y_THRESHOLD, out=line_ids[1:])
 
         # Create composite sort key for final ordering
         # Shift line_ids by large factor, add x for tie-breaking
-        sort_key = line_ids[y_order] * 1e6 + dt_boxes[y_order, 0, 0]
+        sort_key = line_ids[y_order] * _BOX_SORT_LINE_SEPARATION_FACTOR + dt_boxes[y_order, 0, 0]
         final_order = np.argsort(sort_key, kind="stable")
         return dt_boxes[y_order[final_order]]
