@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import List, Optional, Sequence, Tuple, Union
 
 import cv2
+from functools import lru_cache
 import numpy as np
 from omegaconf import OmegaConf
 from PIL import Image, ImageDraw, ImageFont
@@ -24,7 +25,61 @@ DEFAULT_FONT_PATH = DEFAULT_FONT_DIR / "FZYTK.TTF"
 FONT_YAML_PATH = root_dir / "default_models.yaml"
 
 
+@lru_cache()
+def font_cfg():
+    return OmegaConf.load(FONT_YAML_PATH).fonts
+
+
+@lru_cache()
+def get_font_path(
+    font_path: Optional[Union[str, Path]] = None, lang_type: Optional[LangRec] = None
+) -> str:
+    default_info = font_cfg()["ch"]
+    default_input_params = DownloadFileInput(
+        file_url=default_info["path"],
+        sha256=default_info["SHA256"],
+        save_path=DEFAULT_FONT_PATH,
+        logger=logger,
+    )
+
+    if lang_type is None:
+        # 没有指定语种，用默认字体文件
+        DownloadFile.run(default_input_params)
+        return str(DEFAULT_FONT_PATH)
+
+    lang_type = lang_type.value
+
+    if font_path is None:
+        # 指定了语种，但是没有指定字体文件，根据语种选择字体文件
+        font_info = font_cfg().get(lang_type, None)
+        font_url, font_sha256 = font_info["path"], font_info["SHA256"]
+
+        if font_url is None:
+            logger.warning(
+                "Font file for %s is not found in the supported font list. Default font file will be used.",
+                lang_type,
+            )
+
+            DownloadFile.run(default_input_params)
+            return str(DEFAULT_FONT_PATH)
+
+        save_font_path = DEFAULT_FONT_DIR / f"{Path(font_url).name}"
+        input_param = DownloadFileInput(
+            file_url=font_url,
+            sha256=font_sha256,
+            save_path=save_font_path,
+            logger=logger,
+            verbose=False,
+        )
+        DownloadFile.run(input_param)
+        return str(save_font_path)
+
+    return str(font_path)
+
+
 class VisRes:
+    load_img = LoadImage()
+
     def __init__(
         self,
         text_score: float = 0.5,
@@ -32,10 +87,12 @@ class VisRes:
         font_path: Optional[str] = None,
     ):
         self.text_score = text_score
-        self.load_img = LoadImage()
+        self._font_path = font_path
+        self._lang_type = lang_type
 
-        self.font_cfg = OmegaConf.load(FONT_YAML_PATH).fonts
-        self.font_path = self.get_font_path(font_path, lang_type)
+    @property
+    def font_path(self):
+        return get_font_path(self._font_path, self._lang_type)
 
     def __call__(
         self,
@@ -77,53 +134,6 @@ class VisRes:
                 3,
             )
         return img
-
-    def get_font_path(
-        self,
-        font_path: Optional[Union[str, Path]] = None,
-        lang_type: Optional[LangRec] = None,
-    ) -> str:
-        default_info = self.font_cfg["ch"]
-        default_input_params = DownloadFileInput(
-            file_url=default_info["path"],
-            sha256=default_info["SHA256"],
-            save_path=DEFAULT_FONT_PATH,
-            logger=logger,
-        )
-
-        if lang_type is None:
-            # 没有指定语种，用默认字体文件
-            DownloadFile.run(default_input_params)
-            return str(DEFAULT_FONT_PATH)
-
-        lang_type = lang_type.value
-
-        if font_path is None:
-            # 指定了语种，但是没有指定字体文件，根据语种选择字体文件
-            font_info = self.font_cfg.get(lang_type, None)
-            font_url, font_sha256 = font_info["path"], font_info["SHA256"]
-
-            if font_url is None:
-                logger.warning(
-                    "Font file for %s is not found in the supported font list. Default font file will be used.",
-                    lang_type,
-                )
-
-                DownloadFile.run(default_input_params)
-                return str(DEFAULT_FONT_PATH)
-
-            save_font_path = DEFAULT_FONT_DIR / f"{Path(font_url).name}"
-            input_param = DownloadFileInput(
-                file_url=font_url,
-                sha256=font_sha256,
-                save_path=save_font_path,
-                logger=logger,
-                verbose=False,
-            )
-            DownloadFile.run(input_param)
-            return str(save_font_path)
-
-        return str(font_path)
 
     def draw_rec_res(
         self,
