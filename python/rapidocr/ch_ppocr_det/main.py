@@ -85,19 +85,19 @@ class TextDetector:
         return:
             sorted boxes(array) with shape [4, 2]
         """
-        num_boxes = dt_boxes.shape[0]
-        sorted_boxes = sorted(dt_boxes, key=lambda x: (x[0][1], x[0][0]))
-        _boxes = list(sorted_boxes)
+        if len(dt_boxes) == 0:
+            return dt_boxes
 
-        for i in range(num_boxes - 1):
-            for j in range(i, -1, -1):
-                if (
-                    abs(_boxes[j + 1][0][1] - _boxes[j][0][1]) < 10
-                    and _boxes[j + 1][0][0] < _boxes[j][0][0]
-                ):
-                    tmp = _boxes[j]
-                    _boxes[j] = _boxes[j + 1]
-                    _boxes[j + 1] = tmp
-                else:
-                    break
-        return np.array(_boxes)
+        # Sort by y, then identify lines, then sort by (line, x)
+        y_order = np.argsort(dt_boxes[:, 0, 1], kind="stable")
+        sorted_y = dt_boxes[y_order, 0, 1]
+
+        line_ids = np.empty(len(dt_boxes), dtype=np.int32)
+        line_ids[0] = 0
+        np.cumsum(np.abs(np.diff(sorted_y)) >= 10, out=line_ids[1:])
+
+        # Create composite sort key for final ordering
+        # Shift line_ids by large factor, add x for tie-breaking
+        sort_key = line_ids[y_order] * 1e6 + dt_boxes[y_order, 0, 0]
+        final_order = np.argsort(sort_key, kind="stable")
+        return dt_boxes[y_order[final_order]]
