@@ -50,7 +50,7 @@ def test_transparent_img(engine, img_name: str, gt: str):
 
 
 def test_long_img(engine):
-    img_url = "https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/long.jpeg"
+    img_url = "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/resources/test_files/long.jpeg"
     result = engine(img_url)
 
     assert result is not None
@@ -65,7 +65,7 @@ def test_full_black_img(engine):
 
 
 def test_img_url_input(engine):
-    img_url = "https://github.com/RapidAI/RapidOCR/blob/a9bb7c1f44b6e00556ada90ac588f020d7637c4b/python/tests/test_files/ch_en_num.jpg?raw=true"
+    img_url = "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/resources/test_files/ch_en_num.jpg"
     result = engine(img_url)
     assert result.txts is not None
     assert result.txts[0] == "正品促销"
