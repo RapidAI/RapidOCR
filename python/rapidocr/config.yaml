@@ -55,17 +55,24 @@ EngineConfig:
 
     paddle:
         cpu_math_library_num_threads: -1
+
         use_npu: false
-        npu_id: 0
+        npu_ep_cfg:
+            device_id: 0
+
         use_cuda: false
-        gpu_id: 0
-        gpu_mem: 500
+        cuda_ep_cfg:
+            device_id: 0
+            gpu_mem: 500
 
     torch:
         use_cuda: false
-        gpu_id: 0
+        cuda_ep_cfg:
+            device_id: 0
+
         use_npu: false
-        npu_id: 0
+        npu_ep_cfg:
+            device_id: 0
 
 Det:
     engine_type: "onnxruntime"

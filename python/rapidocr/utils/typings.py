@@ -4,6 +4,12 @@
 from enum import Enum
 
 
+class DeviceType(Enum):
+    CPU = "cpu"
+    CUDA = "cuda"
+    NPU = "npu"
+
+
 class LangDet(Enum):
     CH = "ch"
     EN = "en"
