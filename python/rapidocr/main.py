@@ -96,14 +96,14 @@ class RapidOCR:
         unclip_ratio: Optional[float] = None,
     ) -> Union[TextDetOutput, TextClsOutput, TextRecOutput, RapidOCROutput]:
         self.update_params(
-            use_det,
-            use_cls,
-            use_rec,
-            return_word_box,
-            return_single_char_box,
-            text_score,
-            box_thresh,
-            unclip_ratio,
+            use_det=use_det,
+            use_cls=use_cls,
+            use_rec=use_rec,
+            return_word_box=return_word_box,
+            return_single_char_box=return_single_char_box,
+            text_score=text_score,
+            box_thresh=box_thresh,
+            unclip_ratio=unclip_ratio,
         )
 
         ori_img = self.load_img(img_content)
@@ -255,34 +255,31 @@ class RapidOCR:
                 origin_words.append(tuple(origin_words_item))
         return tuple(origin_words)
 
-    def update_params(
-        self,
-        use_det: Optional[bool] = None,
-        use_cls: Optional[bool] = None,
-        use_rec: Optional[bool] = None,
-        return_word_box: Optional[bool] = None,
-        return_single_char_box: Optional[bool] = None,
-        text_score: Optional[float] = None,
-        box_thresh: Optional[float] = None,
-        unclip_ratio: Optional[float] = None,
-    ):
-        if use_det is not None:
-            self.use_det =  use_det
-        if use_cls is not None:
-            self.use_cls = use_cls
-        if use_rec is not None:
-            self.use_rec = use_rec
+    def update_params(self, **kwargs):
+        param_map = {
+            "use_det": ("use_det",),
+            "use_cls": ("use_cls",),
+            "use_rec": ("use_rec",),
+            "return_word_box": ("return_word_box",),
+            "return_single_char_box": ("return_single_char_box",),
+            "text_score": ("text_score",),
+            "box_thresh": ("text_det", "postprocess_op", "box_thresh"),
+            "unclip_ratio": ("text_det", "postprocess_op", "unclip_ratio"),
+        }
 
-        if return_word_box is not None:
-            self.return_word_box = return_word_box
-        if return_single_char_box is not None:
-            self.return_single_char_box = return_single_char_box
-        if text_score is not None:
-            self.text_score = text_score
-        if box_thresh is not None:
-            self.text_det.postprocess_op.box_thresh = box_thresh
-        if unclip_ratio is not None:
-            self.text_det.postprocess_op.unclip_ratio = unclip_ratio
+        for key, value in kwargs.items():
+            if value is None:
+                continue
+
+            path = param_map.get(key)
+            if not path:
+                raise ValueError(f"Unknown parameter: {key}")
+
+            obj = self
+            for attr in path[:-1]:
+                obj = getattr(obj, attr)
+
+            setattr(obj, path[-1], value)
 
     def preprocess_img(self, ori_img: np.ndarray) -> Tuple[np.ndarray, Dict[str, Any]]:
         op_record = {}
