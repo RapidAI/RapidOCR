@@ -89,11 +89,11 @@ class RapidOCR:
         use_det: Optional[bool] = None,
         use_cls: Optional[bool] = None,
         use_rec: Optional[bool] = None,
-        return_word_box: bool = False,
-        return_single_char_box: bool = False,
-        text_score: float = 0.5,
-        box_thresh: float = 0.5,
-        unclip_ratio: float = 1.6,
+        return_word_box: Optional[bool] = None,
+        return_single_char_box: Optional[bool] = None,
+        text_score: Optional[float] = None,
+        box_thresh: Optional[float] = None,
+        unclip_ratio: Optional[float] = None,
     ) -> Union[TextDetOutput, TextClsOutput, TextRecOutput, RapidOCROutput]:
         self.update_params(
             use_det,
@@ -260,21 +260,29 @@ class RapidOCR:
         use_det: Optional[bool] = None,
         use_cls: Optional[bool] = None,
         use_rec: Optional[bool] = None,
-        return_word_box: bool = False,
-        return_single_char_box: bool = False,
-        text_score: float = 0.5,
-        box_thresh: float = 0.5,
-        unclip_ratio: float = 1.6,
+        return_word_box: Optional[bool] = None,
+        return_single_char_box: Optional[bool] = None,
+        text_score: Optional[float] = None,
+        box_thresh: Optional[float] = None,
+        unclip_ratio: Optional[float] = None,
     ):
-        self.use_det = self.use_det if use_det is None else use_det
-        self.use_cls = self.use_cls if use_cls is None else use_cls
-        self.use_rec = self.use_rec if use_rec is None else use_rec
+        if use_det is not None:
+            self.use_det =  use_det
+        if use_cls is not None:
+            self.use_cls = use_cls
+        if use_rec is not None:
+            self.use_rec = use_rec
 
-        self.return_word_box = return_word_box
-        self.return_single_char_box = return_single_char_box
-        self.text_score = text_score
-        self.text_det.postprocess_op.box_thresh = box_thresh
-        self.text_det.postprocess_op.unclip_ratio = unclip_ratio
+        if return_word_box is not None:
+            self.return_word_box = return_word_box
+        if return_single_char_box is not None:
+            self.return_single_char_box = return_single_char_box
+        if text_score is not None:
+            self.text_score = text_score
+        if box_thresh is not None:
+            self.text_det.postprocess_op.box_thresh = box_thresh
+        if unclip_ratio is not None:
+            self.text_det.postprocess_op.unclip_ratio = unclip_ratio
 
     def preprocess_img(self, ori_img: np.ndarray) -> Tuple[np.ndarray, Dict[str, Any]]:
         op_record = {}
