@@ -24,7 +24,6 @@ from rapidocr.inference_engine.base import get_engine
 from .utils import DBPostProcess, DetPreProcess, TextDetOutput
 
 _BOX_SORT_Y_THRESHOLD = 10
-_BOX_SORT_LINE_SEPARATION_FACTOR = 1e6
 
 
 class TextDetector:
@@ -82,25 +81,24 @@ class TextDetector:
     @staticmethod
     def sorted_boxes(dt_boxes: np.ndarray) -> np.ndarray:
         """
-        Sort text boxes in order from top to bottom, left to right
-        args:
-            dt_boxes(array):detected text boxes with shape [4, 2]
-        return:
-            sorted boxes(array) with shape [4, 2]
+        Equivalent NumPy implementation of the original bubble-adjusted sort.
         """
         if len(dt_boxes) == 0:
             return dt_boxes
 
-        # Sort by y, then identify lines, then sort by (line, x)
-        y_order = np.argsort(dt_boxes[:, 0, 1], kind="stable")
-        sorted_y = dt_boxes[y_order, 0, 1]
+        # Step 1: Stable sort by y (top to bottom)
+        y_coords = dt_boxes[:, 0, 1]
+        y_order = np.argsort(y_coords, kind="stable")
+        boxes_y_sorted = dt_boxes[y_order]
+        y_sorted = y_coords[y_order]
 
-        line_ids = np.empty(len(dt_boxes), dtype=np.int32)
-        line_ids[0] = 0
-        np.cumsum(np.abs(np.diff(sorted_y)) >= _BOX_SORT_Y_THRESHOLD, out=line_ids[1:])
+        # Step 2: Assign line IDs based on adjacent y differences
+        dy = np.diff(y_sorted)
+        line_increments = (dy >= _BOX_SORT_Y_THRESHOLD).astype(np.int32)
+        line_ids = np.concatenate([[0], np.cumsum(line_increments)])
 
-        # Create composite sort key for final ordering
-        # Shift line_ids by large factor, add x for tie-breaking
-        sort_key = line_ids[y_order] * _BOX_SORT_LINE_SEPARATION_FACTOR + dt_boxes[y_order, 0, 0]
-        final_order = np.argsort(sort_key, kind="stable")
-        return dt_boxes[y_order[final_order]]
+        # Now, within each line_id group, sort by x (left to right)
+        x_coords = boxes_y_sorted[:, 0, 0]
+        final_order_in_y_sorted = np.lexsort((x_coords, line_ids))
+
+        return boxes_y_sorted[final_order_in_y_sorted]
