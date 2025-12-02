@@ -61,20 +61,13 @@ class DeviceConfig:
         try:
             import torch_npu
         except ImportError as e:
-            logger.warning(
+            raise ImportError(
                 "torch_npu is not installed. \n"
                 "Please refer to https://github.com/Ascend/pytorch to see how to install."
             )
-            self.use_npu = False
-            return self.config_cpu()
 
-        try:
-            if not torch_npu.npu.is_available():
-                raise DeviceConfigError("NPU is not available.")
-        except DeviceConfigError as e:
-            logger.warning(e)
-            self.use_npu = False
-            return self.config_cpu()
+        if not torch_npu.npu.is_available():
+            raise DeviceConfigError("NPU is not available.")
 
         kernel_meta_dir = (model_dir / "kernel_meta").resolve()
         mkdir(kernel_meta_dir)
