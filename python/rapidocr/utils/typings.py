@@ -4,23 +4,23 @@
 from enum import Enum
 
 
-class DeviceType(Enum):
+class DeviceType(str, Enum):
     CPU = "cpu"
     CUDA = "cuda"
     NPU = "npu"
 
 
-class LangDet(Enum):
+class LangDet(str, Enum):
     CH = "ch"
     EN = "en"
     MULTI = "multi"
 
 
-class LangCls(Enum):
+class LangCls(str, Enum):
     CH = "ch"
 
 
-class LangRec(Enum):
+class LangRec(str, Enum):
     CH = "ch"
     CH_DOC = "ch_doc"
     EN = "en"
@@ -39,24 +39,24 @@ class LangRec(Enum):
     EL = "el"
 
 
-class OCRVersion(Enum):
+class OCRVersion(str, Enum):
     PPOCRV4 = "PP-OCRv4"
     PPOCRV5 = "PP-OCRv5"
 
 
-class EngineType(Enum):
+class EngineType(str, Enum):
     ONNXRUNTIME = "onnxruntime"
     OPENVINO = "openvino"
     PADDLE = "paddle"
     TORCH = "torch"
 
 
-class ModelType(Enum):
+class ModelType(str, Enum):
     MOBILE = "mobile"
     SERVER = "server"
 
 
-class TaskType(Enum):
+class TaskType(str, Enum):
     DET = "det"
     CLS = "cls"
     REC = "rec"
