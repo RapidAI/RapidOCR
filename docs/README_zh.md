@@ -26,6 +26,8 @@
 <a href="https://semver.org/"><img alt="SemVer2.0" src="https://img.shields.io/badge/SemVer-2.0-brightgreen"></a>
 <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
+<a href="https://trendshift.io/repositories/14258" target="_blank"><img src="https://trendshift.io/api/badge/repositories/14258" alt="opendatalab%2FMinerU | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+
 简体中文 | [English](../README.md)
 
 </div>
