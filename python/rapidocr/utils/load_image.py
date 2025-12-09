@@ -122,21 +122,42 @@ class LoadImage:
 
     @staticmethod
     def cvt_four_to_three(img: np.ndarray) -> np.ndarray:
-        """RGBA → BGR"""
-        r, g, b, a = cv2.split(img)
-        new_img = cv2.merge((b, g, r))
+        """自动调整背景颜色，以增强文字对比度"""
 
-        not_a = cv2.bitwise_not(a)
-        not_a = cv2.cvtColor(not_a, cv2.COLOR_GRAY2BGR)
+        rgb = img[:, :, :3]  # shape (H, W, 3)
+        alpha = img[:, :, 3]  # shape (H, W)
 
-        new_img = cv2.bitwise_and(new_img, new_img, mask=a)
-
-        mean_color = np.mean(new_img)
-        if mean_color <= 0.0:
-            new_img = cv2.add(new_img, not_a)
+        # 获取非透明区域的 RGB 像素
+        mask = alpha > 0
+        non_transparent_rgb = rgb[mask]  # shape (N, 3)
+        if non_transparent_rgb.size == 0:
+            # 全透明图像：默认用白色背景
+            bg_color = (255, 255, 255)
         else:
-            new_img = cv2.bitwise_not(new_img)
-        return new_img
+            # 使用加权灰度公式计算亮度均值
+            # luminance = 0.299*R + 0.587*G + 0.114*B
+            r, g, b = (
+                non_transparent_rgb[:, 0],
+                non_transparent_rgb[:, 1],
+                non_transparent_rgb[:, 2],
+            )
+            luminance = 0.299 * r + 0.587 * g + 0.114 * b
+            avg_luminance = np.mean(luminance)
+
+            # 根据平均亮度选择高对比度背景
+            bg_color = (255, 255, 255) if avg_luminance < 128 else (0, 0, 0)
+
+        # 构建背景图像
+        background = np.full_like(rgb, bg_color, dtype=np.uint8)
+
+        # 合成：前景 = rgb * (alpha/255), 背景 = bg * (1 - alpha/255)
+        alpha_norm = alpha.astype(np.float32) / 255.0
+        foreground_blend = rgb.astype(np.float32) * alpha_norm[..., None]
+        background_blend = background.astype(np.float32) * (1.0 - alpha_norm)[..., None]
+
+        blended = (foreground_blend + background_blend).astype(np.uint8)
+
+        return cv2.cvtColor(blended, cv2.COLOR_RGB2BGR)
 
 
 class LoadImageError(Exception):
