@@ -178,6 +178,9 @@ class RapidOCR:
             rec_res.word_results = [
                 v for i, v in enumerate(rec_res.word_results) if i not in empty_ids
             ]
+            rec_res.scores = [
+                v for i, v in enumerate(rec_res.scores) if i not in empty_ids
+            ]
 
         # 仅分类结果
         if (
