@@ -49,6 +49,7 @@ class EngineType(Enum):
     OPENVINO = "openvino"
     PADDLE = "paddle"
     TORCH = "torch"
+    MNN = "mnn"
 
 
 class ModelType(Enum):
