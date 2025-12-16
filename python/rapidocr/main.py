@@ -26,6 +26,7 @@ from .utils.process_img import (
     resize_image_within_bounds,
 )
 from .utils.typings import LangRec
+from .utils.utils import filter_by_indices
 from .utils.vis_res import VisRes
 
 root_dir = Path(__file__).resolve().parent
@@ -165,22 +166,16 @@ class RapidOCR:
             and det_res.boxes is not None
             and det_res.scores is not None
         ):
-            empty_ids = {i for i, v in enumerate(rec_res.txts) if not v.strip()}
+            valid_ids = [i for i, v in enumerate(rec_res.txts) if v.strip()]
 
-            det_res.boxes = np.array(
-                [v for i, v in enumerate(det_res.boxes) if i not in empty_ids]
-            )
-            det_res.scores = [
-                v for i, v in enumerate(det_res.scores) if i not in empty_ids
-            ]
+            det_res.boxes = filter_by_indices(det_res.boxes, valid_ids)
+            det_res.scores = filter_by_indices(det_res.scores, valid_ids)
 
-            rec_res.txts = [v for i, v in enumerate(rec_res.txts) if i not in empty_ids]
-            rec_res.word_results = [
-                v for i, v in enumerate(rec_res.word_results) if i not in empty_ids
-            ]
-            rec_res.scores = [
-                v for i, v in enumerate(rec_res.scores) if i not in empty_ids
-            ]
+            rec_res.txts = filter_by_indices(rec_res.txts, valid_ids)
+            rec_res.word_results = filter_by_indices(rec_res.word_results, valid_ids)
+            rec_res.scores = filter_by_indices(rec_res.scores, valid_ids)
+
+            cropped_img_list = filter_by_indices(cropped_img_list, valid_ids)
 
         # 仅分类结果
         if (
@@ -248,11 +243,12 @@ class RapidOCR:
                 if bbox is None:
                     continue
 
-                origin_words_points = map_boxes_to_original(
-                    np.array([bbox]).astype(np.float64), op_record, raw_h, raw_w
-                )
-                origin_words_points = origin_words_points.astype(np.int32).tolist()[0]
-                origin_words_item.append((txt, score, origin_words_points))
+                origin_words_item.append((txt, score, bbox))
+                # origin_words_points = map_boxes_to_original(
+                #     np.array([bbox]).astype(np.float64), op_record, raw_h, raw_w
+                # )
+                # origin_words_points = origin_words_points.astype(np.int32).tolist()[0]
+                # origin_words_item.append((txt, score, origin_words_points))
 
             if origin_words_item:
                 origin_words.append(tuple(origin_words_item))
