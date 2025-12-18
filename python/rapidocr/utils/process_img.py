@@ -1,10 +1,22 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 import cv2
 import numpy as np
+
+
+def map_img_to_original(
+    imgs: List[np.ndarray], ratio_h: float, ratio_w: float
+) -> List[np.ndarray]:
+    results = []
+    for img in imgs:
+        img_h, img_w = img.shape[:2]
+        ori_img_h, ori_img_w = round(img_h * ratio_h), round(img_w * ratio_w)
+        resize_img = cv2.resize(img, (ori_img_w, ori_img_h))
+        results.append(resize_img)
+    return results
 
 
 def map_boxes_to_original(

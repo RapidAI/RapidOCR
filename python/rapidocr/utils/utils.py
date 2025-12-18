@@ -5,11 +5,24 @@ import hashlib
 import importlib
 from pathlib import Path
 from sys import platform
-from typing import Tuple, Union
+from typing import Any, List, Tuple, Union
 from urllib.parse import urlparse
 
 import cv2
 import numpy as np
+
+
+def filter_by_indices(
+    data: Union[np.ndarray, List[Any], Tuple[Any]],
+    indices: Union[np.ndarray, List[int], Tuple[int, ...]],
+) -> Union[np.ndarray, List[Any], Tuple[Any]]:
+    if isinstance(data, np.ndarray):
+        return data[indices]
+
+    if isinstance(data, (list, tuple)):
+        return [data[i] for i in indices]
+
+    raise TypeError(f"Unsupported data type: {type(data)}")
 
 
 def mkdir(dir_path):
@@ -29,8 +42,16 @@ def quads_to_rect_bbox(bbox: np.ndarray) -> Tuple[float, float, float, float]:
     return float(x_min), float(y_min), float(x_max), float(y_max)
 
 
+def is_chinese_char(ch: str) -> bool:
+    return (
+        "\u4e00" <= ch <= "\u9fff"  # 汉字
+        or "\u3000" <= ch <= "\u303f"  # CJK 标点（如 。 、 “” 《》 ……）
+        or "\uff00" <= ch <= "\uffef"  # 全角符号（如 ，．！？【】）
+    )
+
+
 def has_chinese_char(text: str) -> bool:
-    return any("\u4e00" <= ch <= "\u9fff" for ch in text)
+    return any(is_chinese_char(ch) for ch in text)
 
 
 def get_file_sha256(file_path: Union[str, Path], chunk_size: int = 65536) -> str:
