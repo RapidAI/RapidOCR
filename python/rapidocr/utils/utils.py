@@ -12,7 +12,10 @@ import cv2
 import numpy as np
 
 
-def filter_by_indices(data: Union[np.ndarray, List[Any], Tuple[Any]], indices):
+def filter_by_indices(
+    data: Union[np.ndarray, List[Any], Tuple[Any]],
+    indices: Union[np.ndarray, List[int], Tuple[int, ...]],
+) -> Union[np.ndarray, List[Any], Tuple[Any]]:
     if isinstance(data, np.ndarray):
         return data[indices]
 
@@ -39,7 +42,7 @@ def quads_to_rect_bbox(bbox: np.ndarray) -> Tuple[float, float, float, float]:
     return float(x_min), float(y_min), float(x_max), float(y_max)
 
 
-def is_chinese_char(ch):
+def is_chinese_char(ch: str) -> bool:
     return (
         "\u4e00" <= ch <= "\u9fff"  # 汉字
         or "\u3000" <= ch <= "\u303f"  # CJK 标点（如 。 、 “” 《》 ……）
