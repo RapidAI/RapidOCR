@@ -77,7 +77,7 @@ result.vis("vis_result.jpg")
 
 完整文档请移步：[docs](https://rapidai.github.io/RapidOCRDocs)
 
-### 👥 谁在使用？([更多](https://github.com/RapidAI/RapidOCR/discussions/286))
+### 👥 谁在使用？([更多](https://github.com/RapidAI/RapidOCR/network/dependents))
 
 - [Docling](https://github.com/DS4SD/docling)
 - [CnOCR](https://github.com/breezedeus/CnOCR)

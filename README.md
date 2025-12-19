@@ -76,7 +76,7 @@ result.vis("vis_result.jpg")
 
 Full documentation can be found on [docs](https://rapidai.github.io/RapidOCRDocs/), in Chinese.
 
-### 👥 Who use? ([more](https://github.com/RapidAI/RapidOCR/discussions/286))
+### 👥 Who use? ([more](https://github.com/RapidAI/RapidOCR/network/dependents))
 
 - [Docling](https://github.com/DS4SD/docling)
 - [CnOCR](https://github.com/breezedeus/CnOCR)
