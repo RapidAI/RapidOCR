@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
+import cv2
 import numpy as np
 
 from ..utils.log import logger
@@ -38,16 +39,31 @@ class TextClsOutput:
             logger.warning("No image or txts to visualize.")
             return None
 
-        txts = [f"{txt} {score:.2f}" for txt, score in self.cls_res]
-        scores = [score for _, score in self.cls_res]
-
         vis = VisRes()
-        vis_img = vis.draw_rec_res(self.img_list, txts, scores)
+
+        txts = [f"{txt} {score:.2f}" for txt, score in self.cls_res]
+        img_degrees, scores = list(zip(*self.cls_res))
+
+        raw_img_list = self.restore_image_orientation(self.img_list, img_degrees)
+        vis_img = vis.draw_rec_res(raw_img_list, txts, list(scores))
 
         if save_path is not None:
             save_img(save_path, vis_img)
             logger.info("Visualization saved as %s", save_path)
         return vis_img
+
+    def restore_image_orientation(
+        self, img_list: List[np.ndarray], img_degrees: Tuple[str]
+    ) -> List[np.ndarray]:
+        results = []
+        for img, rotate_degree in zip(img_list, img_degrees):
+            if rotate_degree != "180":
+                results.append(img)
+                continue
+
+            rotate_img = cv2.rotate(img, cv2.ROTATE_180)
+            results.append(rotate_img)
+        return results
 
 
 class ClsPostProcess:
