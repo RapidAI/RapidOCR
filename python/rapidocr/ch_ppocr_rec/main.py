@@ -23,6 +23,8 @@ from rapidocr.inference_engine.base import FileInfo, get_engine
 
 from ..utils.download_file import DownloadFile, DownloadFileInput
 from ..utils.log import logger
+from ..utils.typings import LangRec
+from ..utils.utils import reorder_bidi_for_display
 from ..utils.vis_res import VisRes
 from .typings import TextRecInput, TextRecOutput
 from .utils import CTCLabelDecode
@@ -134,6 +136,9 @@ class TextRecognizer:
 
         all_line_results, all_word_results = list(zip(*rec_res))
         txts, scores = list(zip(*all_line_results))
+
+        if self.cfg.lang_type == LangRec.ARABIC:
+            txts = reorder_bidi_for_display(txts)
 
         elapse = time.perf_counter() - start_time
         return TextRecOutput(

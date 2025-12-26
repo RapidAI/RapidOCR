@@ -12,6 +12,20 @@ import cv2
 import numpy as np
 
 
+def reorder_bidi_for_display(
+    texts: Tuple[Union[str, bytes], ...],
+) -> Tuple[Union[str, bytes], ...]:
+    try:
+        from bidi.algorithm import get_display
+    except ImportError as e:
+        raise ModuleNotFoundError(
+            "Required dependency 'python-bidi' is not installed. "
+            "Install it with: pip install python-bidi"
+        ) from e
+
+    return tuple([get_display(text) for text in texts])
+
+
 def filter_by_indices(
     data: Union[np.ndarray, List[Any], Tuple[Any]],
     indices: Union[np.ndarray, List[int], Tuple[int, ...]],
