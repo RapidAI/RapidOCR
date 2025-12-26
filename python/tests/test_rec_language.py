@@ -29,6 +29,67 @@ def engine():
 
 
 @mark.parametrize(
+    "lang_type, img_path, gt",
+    [
+        (LangRec.CYRILLIC, "cyrillic.png", "Време је лепо данас."),
+        (LangRec.DEVANAGARI, "devanagari_rec.png", "आज मौसम अच्छा है।"),
+        (LangRec.TA, "ta.png", "இன்னைக்கு வானிலை ராம்ப நல்லா இருக்கு."),
+        (LangRec.TE, "te.png", "ఈరోజ వాతావరణం చాలా బాగుంది."),
+    ],
+)
+def test_multi_lang(lang_type, img_path, gt):
+    engine = RapidOCR(
+        params={
+            "Rec.lang_type": lang_type,
+            "Rec.model_type": ModelType.MOBILE,
+            "Rec.ocr_version": OCRVersion.PPOCRV5,
+            "Rec.engine_type": EngineType.ONNXRUNTIME,
+        }
+    )
+    img_path = tests_dir / img_path
+    result = engine(img_path, use_det=False, use_cls=False, use_rec=True)
+
+    assert result.txts is not None
+    assert result.txts[0] == gt
+
+
+def test_cyrillic_lang():
+    engine = RapidOCR(
+        params={
+            "Rec.lang_type": LangRec.CYRILLIC,
+            "Rec.model_type": ModelType.MOBILE,
+            "Rec.ocr_version": OCRVersion.PPOCRV5,
+            "Rec.engine_type": EngineType.ONNXRUNTIME,
+        }
+    )
+    img_path = tests_dir / "cyrillic.png"
+    result = engine(img_path, use_det=False, use_cls=False, use_rec=True)
+
+    assert result.txts is not None
+    assert result.txts[0] == "Време је лепо данас."
+
+
+@mark.parametrize(
+    "engine_type",
+    [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE],
+)
+def test_arabic_lang(engine_type):
+    engine = RapidOCR(
+        params={
+            "Rec.lang_type": LangRec.ARABIC,
+            "Rec.model_type": ModelType.MOBILE,
+            "Rec.ocr_version": OCRVersion.PPOCRV5,
+            "Rec.engine_type": engine_type,
+        }
+    )
+    img_path = tests_dir / "arabic.png"
+    result = engine(img_path, use_det=False, use_cls=False, use_rec=True)
+
+    assert result.txts is not None
+    assert result.txts[0] == "امروز هوا خوبه"
+
+
+@mark.parametrize(
     "engine_type",
     [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE],
 )
