@@ -209,7 +209,7 @@ class RapidOCR:
             and all(rec_res.word_results)
         ):
             rec_res.word_results = self.calc_word_boxes(
-                cropped_img_list, det_res.boxes, rec_res, op_record, ori_h, ori_w
+                cropped_img_list, det_res.boxes, rec_res
             )
 
         ocr_res = RapidOCROutput(
@@ -230,13 +230,7 @@ class RapidOCR:
         return ocr_res if len(ocr_res) > 0 else RapidOCROutput()
 
     def calc_word_boxes(
-        self,
-        img: List[np.ndarray],
-        dt_boxes: np.ndarray,
-        rec_res: TextRecOutput,
-        op_record: Dict[str, Any],
-        raw_h: int,
-        raw_w: int,
+        self, img: List[np.ndarray], dt_boxes: np.ndarray, rec_res: TextRecOutput
     ) -> Any:
         rec_res = self.cal_rec_boxes(
             img, dt_boxes, rec_res, self.return_single_char_box
