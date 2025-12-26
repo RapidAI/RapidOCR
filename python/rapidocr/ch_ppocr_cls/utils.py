@@ -54,14 +54,14 @@ class TextClsOutput:
 
     def restore_image_orientation(
         self, img_list: List[np.ndarray], img_degrees: Tuple[str]
-    ):
+    ) -> List[np.ndarray]:
         results = []
         for img, rotate_degree in zip(img_list, img_degrees):
             if rotate_degree != "180":
                 results.append(img)
                 continue
 
-            rotate_img = cv2.rotate(img, 1)
+            rotate_img = cv2.rotate(img, cv2.ROTATE_180)
             results.append(rotate_img)
         return results
 
