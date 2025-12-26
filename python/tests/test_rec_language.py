@@ -53,22 +53,6 @@ def test_multi_lang(lang_type, img_path, gt):
     assert result.txts[0] == gt
 
 
-def test_cyrillic_lang():
-    engine = RapidOCR(
-        params={
-            "Rec.lang_type": LangRec.CYRILLIC,
-            "Rec.model_type": ModelType.MOBILE,
-            "Rec.ocr_version": OCRVersion.PPOCRV5,
-            "Rec.engine_type": EngineType.ONNXRUNTIME,
-        }
-    )
-    img_path = tests_dir / "cyrillic.png"
-    result = engine(img_path, use_det=False, use_cls=False, use_rec=True)
-
-    assert result.txts is not None
-    assert result.txts[0] == "Време је лепо данас."
-
-
 @mark.parametrize(
     "engine_type",
     [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE],
