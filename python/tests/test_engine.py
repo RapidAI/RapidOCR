@@ -68,10 +68,15 @@ def test_engine_openvino():
     assert result.txts[0] == "正品促销"
 
 
-def test_engine_paddle():
+@mark.parametrize(
+    "ocr_version,gt",
+    [(OCRVersion.PPOCRV4, "正品促销"), (OCRVersion.PPOCRV5, "大桶装更划算")],
+)
+def test_engine_paddle(ocr_version, gt):
     engine = RapidOCR(
         params={
             "Det.engine_type": EngineType.PADDLE,
+            "Det.ocr_version": ocr_version,
             "Cls.engine_type": EngineType.PADDLE,
             "Rec.engine_type": EngineType.PADDLE,
         }
@@ -79,7 +84,7 @@ def test_engine_paddle():
 
     result = engine(img_path)
     assert result.txts is not None
-    assert result.txts[0] == "正品促销"
+    assert result.txts[0] == gt
 
 
 def test_engine_torch():
