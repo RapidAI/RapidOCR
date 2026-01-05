@@ -3,16 +3,11 @@
 # @Contact: liekkaskono@163.com
 import os
 import platform
-from pathlib import Path
 
 import paddle
 
 from ...utils.log import logger
 from ...utils.typings import OCRVersion
-
-cur_dir = Path(__file__).resolve().parent
-root_dir = cur_dir.parent.parent
-model_dir = root_dir / "models"
 
 
 class DeviceConfig:
@@ -50,7 +45,7 @@ class DeviceConfig:
         logger.info(f"Using CUDA device with ID: {ep_cfg.device_id}")
 
     def config_npu(self, ep_cfg):
-        self.setup_deivce_envs(ep_cfg.envs)
+        self.setup_device_envs(ep_cfg.envs)
 
         npu_id = ep_cfg.device_id
         self.infer_opts.enable_custom_device("npu", npu_id)
@@ -78,10 +73,10 @@ class DeviceConfig:
             self.infer_opts.set_optimization_level(3)
 
     @staticmethod
-    def setup_deivce_envs(envs):
+    def setup_device_envs(envs):
         for key, val in envs.items():
-            os.environ[key] = val
-            logger.debug(f"{key} has been set to {val}.")
+            os.environ[key] = str(val)
+            logger.info(f"{key} has been set to {val}.")
 
     @staticmethod
     def check_cuda() -> bool:
