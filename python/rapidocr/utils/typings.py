@@ -8,6 +8,10 @@ class DeviceType(Enum):
     CPU = "cpu"
     CUDA = "cuda"
     NPU = "npu"
+    XPU = "xpu"
+    MLU = "mlu"
+    DCU = "dcu"
+    GCU = "gcu"
 
 
 class LangDet(Enum):
