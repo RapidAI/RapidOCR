@@ -95,25 +95,41 @@ class InferSession(abc.ABC):
 
     @classmethod
     def get_model_url(cls, file_info: FileInfo) -> Dict[str, str]:
+        engine_type = file_info.engine_type.value
+        ocr_version = file_info.ocr_version.value
+        task_type = file_info.task_type.value
+        lang_type = file_info.lang_type.value
+        model_type = file_info.model_type.value
+
         model_dict = OmegaConf.select(
-            cls.model_info,
-            f"{file_info.engine_type.value}.{file_info.ocr_version.value}.{file_info.task_type.value}",
+            cls.model_info, f"{engine_type}.{ocr_version}.{task_type}"
         )
 
         # 优先查找 server 模型
-        if file_info.model_type == ModelType.SERVER:
+        if model_type == ModelType.SERVER.value:
             for k in model_dict:
-                if (
-                    k.startswith(file_info.lang_type.value)
-                    and file_info.model_type.value in k
-                ):
+                if k.startswith(lang_type) and model_type in k:
                     return model_dict[k]
 
         for k in model_dict:
-            if k.startswith(file_info.lang_type.value):
+            if k.startswith(lang_type):
                 return model_dict[k]
 
-        raise KeyError("File not found")
+        logger.error(
+            "Unsupported configuration:\n"
+            f"  engine_type   = {engine_type}\n"
+            f"  ocr_version   = {ocr_version}\n"
+            f"  task_type     = {task_type}\n"
+            f"  lang_type     = {lang_type}\n"
+            "\n"
+            "Please refer to the official model list for supported combinations:\n"
+            "https://rapidai.github.io/RapidOCRDocs/main/model_list/\n"
+            "\n"
+            "Example valid usage:\n"
+            "  from rapidocr import LangRec, OCRVersion, RapidOCR\n"
+            "  engine = RapidOCR(params={'Rec.ocr_version': OCRVersion.PPOCRV5, 'Rec.lang_type': LangRec.CH})",
+        )
+        raise ValueError("Invalid OCR configuration.")
 
     @classmethod
     def get_dict_key_url(cls, file_info: FileInfo) -> str:
