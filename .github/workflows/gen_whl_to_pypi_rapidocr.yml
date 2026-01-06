@@ -28,7 +28,7 @@ jobs:
         run: |
           cd python
           pip install -r requirements.txt
-          pip install pytest wheel get_pypi_latest_version openvino==2023.3.0 onnxruntime
+          pip install pytest wheel get_pypi_latest_version openvino==2023.3.0 onnxruntime python-bidi
           pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
           python -m pip install paddlepaddle==3.1.1 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
 
