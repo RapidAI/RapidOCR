@@ -26,6 +26,8 @@
 <a href="https://semver.org/"><img alt="SemVer2.0" src="https://img.shields.io/badge/SemVer-2.0-brightgreen"></a>
 <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
+Join our [Discord](https://discord.gg/Q9MXJ2ua)
+
 [简体中文](./README-CN.md) | English
 </div>
 
