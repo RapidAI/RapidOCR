@@ -53,6 +53,14 @@ def get_engine(engine_type: EngineType):
 
         return TorchInferSession
 
+    if engine_type == EngineType.TENSORRT:
+        if not import_package("tensorrt"):
+            raise ImportError("tensorrt is not installed")
+
+        from .tensorrt import TRTInferSession
+
+        return TRTInferSession
+
     raise ValueError(f"Unsupported engine: {engine_type.value}")
 
 
