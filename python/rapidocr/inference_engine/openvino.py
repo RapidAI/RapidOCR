@@ -8,7 +8,10 @@ from typing import Any, Dict
 
 import numpy as np
 from omegaconf import DictConfig
-from openvino.runtime import Core
+try:
+    from openvino import Core
+except ImportError:  # fallback for older OpenVINO versions
+    from openvino.runtime import Core
 
 from ..utils.download_file import DownloadFile, DownloadFileInput
 from ..utils.log import logger
