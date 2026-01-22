@@ -81,6 +81,8 @@ EngineConfig:
         npu_ep_cfg:
             device_id: 0
 
+    mnn: {}
+
 Det:
     engine_type: "onnxruntime"
     lang_type: "ch"
