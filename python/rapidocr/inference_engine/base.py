@@ -1,4 +1,4 @@
-# -*- encoding: utf-8 -*-
+    # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import abc
@@ -60,6 +60,14 @@ def get_engine(engine_type: EngineType):
         from .tensorrt import TRTInferSession
 
         return TRTInferSession
+
+    if engine_type == EngineType.MNN:
+        if not import_package("MNN"):
+            raise ImportError("MNN is not installed")
+
+        from .mnn import MNNInferSession
+
+        return MNNInferSession
 
     raise ValueError(f"Unsupported engine: {engine_type.value}")
 

@@ -141,7 +141,7 @@ RapidOCR is an Apache2.0-licensed open source project with its ongoing developme
       <a href="https://github.com/youzzhang">
         <img src="https://avatars.githubusercontent.com/u/49047676?v=4" width="60" />
       </a><br />
-      <sub><a href="https://github.com/youzzhang">@your-sponsor2</a></sub>
+      <sub><a href="https://github.com/youzzhang">@youzzhang</a></sub>
     </td>
   </tr>
 </table>

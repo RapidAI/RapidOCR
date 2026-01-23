@@ -107,6 +107,8 @@ EngineConfig:
             opt_shape: [6, 3, 48, 192]
             max_shape: [6, 3, 48, 192]
 
+    mnn: {}
+
 Det:
     engine_type: "onnxruntime"
     lang_type: "ch"

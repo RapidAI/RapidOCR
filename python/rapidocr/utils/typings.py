@@ -54,6 +54,7 @@ class EngineType(Enum):
     PADDLE = "paddle"
     TORCH = "torch"
     TENSORRT = "tensorrt"
+    MNN = "mnn"
 
 
 class ModelType(Enum):
