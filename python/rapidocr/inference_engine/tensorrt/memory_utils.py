@@ -124,7 +124,7 @@ def allocate_buffers(
         tensor_mode = engine.get_tensor_mode(tensor_name)
 
         # Get max shape from optimization profile
-        shape = _get_max_shape(engine, tensor_name, tensor_mode)
+        shape = _get_max_shape(engine, context, tensor_name, tensor_mode)
 
         # Calculate buffer size
         size = trt.volume(shape)
@@ -202,6 +202,7 @@ def free_buffers(
 
 def _get_max_shape(
     engine: trt.ICudaEngine,
+    context: trt.IExecutionContext,
     tensor_name: str,
     tensor_mode: trt.TensorIOMode,
 ) -> Tuple[int, ...]:
@@ -211,24 +212,53 @@ def _get_max_shape(
     min/opt/max shapes. This function returns the max shape to ensure
     allocated buffers can handle any valid input size.
 
+    For INPUT tensors, the max shape is retrieved directly from the profile.
+    For OUTPUT tensors, the max shape is computed by setting all inputs
+    to their max profile shapes and querying the resulting output shape.
+
     Args:
         engine: TensorRT engine.
+        context: TensorRT execution context for shape queries.
         tensor_name: Name of the tensor.
         tensor_mode: Whether tensor is input or output.
 
     Returns:
-        Tuple of shape dimensions (max shape from profile or default).
+        Tuple of shape dimensions (max shape from profile or computed).
     """
+    if tensor_mode == trt.TensorIOMode.INPUT:
+        # For input tensors, get max shape directly from profile
+        try:
+            profile_shape = engine.get_tensor_profile_shape(tensor_name, 0)
+            if profile_shape is not None and len(profile_shape) >= 3:
+                return tuple(profile_shape[2])  # Index 2 = max shape
+        except Exception:
+            pass
+        return DEFAULT_MAX_INPUT_SHAPE
+
+    # For OUTPUT tensors, compute by setting max input shapes and querying output
     try:
-        profile_shape = engine.get_tensor_profile_shape(tensor_name, 0)
-        if profile_shape is not None and len(profile_shape) >= 3:
-            return tuple(profile_shape[2])  # Index 2 = max shape
+        # First, set all INPUT tensors to their max profile shapes
+        for i in range(engine.num_io_tensors):
+            name = engine.get_tensor_name(i)
+            mode = engine.get_tensor_mode(name)
+            if mode == trt.TensorIOMode.INPUT:
+                try:
+                    profile_shape = engine.get_tensor_profile_shape(name, 0)
+                    if profile_shape and len(profile_shape) >= 3:
+                        max_input_shape = tuple(profile_shape[2])
+                        context.set_input_shape(name, max_input_shape)
+                except Exception:
+                    # If we can't get profile, use default
+                    context.set_input_shape(name, DEFAULT_MAX_INPUT_SHAPE)
+
+        # Now query the output shape with max inputs set
+        output_shape = context.get_tensor_shape(tensor_name)
+        if output_shape is not None and all(d > 0 for d in output_shape):
+            return tuple(output_shape)
     except Exception:
         pass
 
-    # Fallback to defaults if profile info unavailable
-    if tensor_mode == trt.TensorIOMode.INPUT:
-        return DEFAULT_MAX_INPUT_SHAPE
+    # Fallback to default if computation fails
     return DEFAULT_MAX_OUTPUT_SHAPE
 
 
