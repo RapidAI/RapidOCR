@@ -17,7 +17,13 @@ img_path = tests_dir / "ch_en_num.jpg"
 
 @mark.parametrize(
     "engine_type",
-    [EngineType.ONNXRUNTIME, EngineType.PADDLE, EngineType.OPENVINO, EngineType.TORCH],
+    [
+        EngineType.ONNXRUNTIME,
+        EngineType.PADDLE,
+        EngineType.OPENVINO,
+        EngineType.TORCH,
+        EngineType.TENSORRT,
+    ],
 )
 def test_ppocrv5_rec_mobile(engine_type):
     engine = RapidOCR(
@@ -36,7 +42,13 @@ def test_ppocrv5_rec_mobile(engine_type):
 
 @mark.parametrize(
     "engine_type",
-    [EngineType.ONNXRUNTIME, EngineType.PADDLE, EngineType.OPENVINO, EngineType.TORCH],
+    [
+        EngineType.ONNXRUNTIME,
+        EngineType.PADDLE,
+        EngineType.OPENVINO,
+        EngineType.TORCH,
+        EngineType.TENSORRT,
+    ],
 )
 def test_ppocrv5_det_mobile(engine_type):
     engine = RapidOCR(
@@ -101,26 +113,6 @@ def test_engine_torch():
     assert result.txts[0] == "正品促销"
 
 
-# ============================================================================
-# TensorRT Engine Tests
-# ============================================================================
-
-
-def _has_tensorrt():
-    """Check if TensorRT and CUDA are available."""
-    try:
-        import tensorrt
-        from cuda.bindings import runtime as cudart
-
-        status, count = cudart.cudaGetDeviceCount()
-        return status.value == 0 and count > 0
-    except ImportError:
-        return False
-    except Exception:
-        return False
-
-
-@mark.skipif(not _has_tensorrt(), reason="TensorRT or CUDA not available")
 def test_engine_tensorrt():
     """Test TensorRT engine with full OCR pipeline."""
     engine = RapidOCR(
@@ -132,39 +124,5 @@ def test_engine_tensorrt():
     )
 
     result = engine(img_path)
-    assert result.txts is not None
-    assert len(result.txts) > 0
-
-
-@mark.skipif(not _has_tensorrt(), reason="TensorRT or CUDA not available")
-def test_ppocrv5_det_tensorrt():
-    """Test TensorRT detection module with PPOCRv5."""
-    engine = RapidOCR(
-        params={
-            "Det.ocr_version": OCRVersion.PPOCRV5,
-            "Det.model_type": ModelType.MOBILE,
-            "Det.engine_type": EngineType.TENSORRT,
-        }
-    )
-    test_img = tests_dir / "ch_en_num.jpg"
-    result = engine(test_img, use_det=True, use_cls=False, use_rec=False)
-
-    assert result.boxes is not None
-    assert len(result.boxes) > 0
-
-
-@mark.skipif(not _has_tensorrt(), reason="TensorRT or CUDA not available")
-def test_ppocrv5_rec_tensorrt():
-    """Test TensorRT recognition module with PPOCRv5."""
-    engine = RapidOCR(
-        params={
-            "Rec.ocr_version": OCRVersion.PPOCRV5,
-            "Rec.model_type": ModelType.MOBILE,
-            "Rec.engine_type": EngineType.TENSORRT,
-        }
-    )
-    test_img = tests_dir / "text_rec.jpg"
-    result = engine(test_img, use_det=False, use_cls=False, use_rec=True)
-
     assert result.txts is not None
     assert len(result.txts) > 0
