@@ -17,7 +17,13 @@ img_path = tests_dir / "ch_en_num.jpg"
 
 @mark.parametrize(
     "engine_type",
-    [EngineType.ONNXRUNTIME, EngineType.PADDLE, EngineType.OPENVINO, EngineType.TORCH],
+    [
+        EngineType.ONNXRUNTIME,
+        EngineType.PADDLE,
+        EngineType.OPENVINO,
+        EngineType.TORCH,
+        EngineType.TENSORRT,
+    ],
 )
 def test_ppocrv5_rec_mobile(engine_type):
     engine = RapidOCR(
@@ -36,7 +42,13 @@ def test_ppocrv5_rec_mobile(engine_type):
 
 @mark.parametrize(
     "engine_type",
-    [EngineType.ONNXRUNTIME, EngineType.PADDLE, EngineType.OPENVINO, EngineType.TORCH],
+    [
+        EngineType.ONNXRUNTIME,
+        EngineType.PADDLE,
+        EngineType.OPENVINO,
+        EngineType.TORCH,
+        EngineType.TENSORRT,
+    ],
 )
 def test_ppocrv5_det_mobile(engine_type):
     engine = RapidOCR(
@@ -99,3 +111,18 @@ def test_engine_torch():
     result = engine(img_path)
     assert result.txts is not None
     assert result.txts[0] == "正品促销"
+
+
+def test_engine_tensorrt():
+    """Test TensorRT engine with full OCR pipeline."""
+    engine = RapidOCR(
+        params={
+            "Det.engine_type": EngineType.TENSORRT,
+            "Cls.engine_type": EngineType.TENSORRT,
+            "Rec.engine_type": EngineType.TENSORRT,
+        }
+    )
+
+    result = engine(img_path)
+    assert result.txts is not None
+    assert len(result.txts) > 0
