@@ -337,7 +337,8 @@ class TRTInferSession(InferSession):
         task_type = cfg.task_type.value
         lang_type = cfg.lang_type.value
         ocr_version = cfg.ocr_version.value
-        return f"{lang_type}_{ocr_version}_{task_type}"
+        model_type = cfg.model_type.value
+        return f"{lang_type}_{ocr_version}_{task_type}_{model_type}"
 
     def _get_gpu_arch(self) -> str:
         """Get GPU architecture string for cache key (e.g., 'sm87')."""
