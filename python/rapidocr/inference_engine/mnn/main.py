@@ -1,4 +1,6 @@
 # -*- encoding: utf-8 -*-
+# @Author: SWHL
+# @Contact: liekkaskono@163.com
 import traceback
 from pathlib import Path
 
@@ -6,9 +8,9 @@ import MNN
 import numpy as np
 from omegaconf import DictConfig
 
-from ..utils.download_file import DownloadFile, DownloadFileInput
-from ..utils.log import logger
-from .base import FileInfo, InferSession
+from ...utils.download_file import DownloadFile, DownloadFileInput
+from ...utils.log import logger
+from ..base import FileInfo, InferSession
 
 
 class MNNInferSession(InferSession):
@@ -59,9 +61,7 @@ class MNNInferSession(InferSession):
             output = self.interpreter.getSessionOutput(self.session)
             out_shape = output.getShape()
             out_tensor = MNN.Tensor(
-                out_shape,
-                MNN.Halide_Type_Float,
-                MNN.Tensor_DimensionType_Caffe
+                out_shape, MNN.Halide_Type_Float, MNN.Tensor_DimensionType_Caffe
             )
             output.copyToHostTensor(out_tensor)
 
