@@ -1,4 +1,4 @@
-    # -*- encoding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import abc
@@ -112,6 +112,11 @@ class InferSession(abc.ABC):
         model_dict = OmegaConf.select(
             cls.model_info, f"{engine_type}.{ocr_version}.{task_type}"
         )
+
+        if not model_dict:
+            raise ValueError(
+                f"Unsupported configuration: {engine_type}.{ocr_version}.{task_type}.{model_type}"
+            )
 
         # 优先查找 server 模型
         if model_type == ModelType.SERVER.value:
