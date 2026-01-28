@@ -62,11 +62,11 @@ class OpenVINOInferSession(InferSession):
             return self.session.get_output_tensor().data
         except Exception as e:
             error_info = traceback.format_exc()
-            raise OpenVIONError(error_info) from e
+            raise OpenVINOError(error_info) from e
 
     def have_key(self, key: str = "character") -> bool:
         return False
 
 
-class OpenVIONError(Exception):
+class OpenVINOError(Exception):
     pass
