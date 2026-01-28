@@ -17,7 +17,13 @@ img_path = tests_dir / "ch_en_num.jpg"
 
 @mark.parametrize(
     "engine_type",
-    [EngineType.ONNXRUNTIME, EngineType.PADDLE, EngineType.OPENVINO, EngineType.TORCH],
+    [
+        EngineType.ONNXRUNTIME,
+        EngineType.PADDLE,
+        EngineType.OPENVINO,
+        EngineType.TORCH,
+        EngineType.MNN,
+    ],
 )
 def test_ppocrv5_rec_mobile(engine_type):
     engine = RapidOCR(
@@ -36,7 +42,13 @@ def test_ppocrv5_rec_mobile(engine_type):
 
 @mark.parametrize(
     "engine_type",
-    [EngineType.ONNXRUNTIME, EngineType.PADDLE, EngineType.OPENVINO, EngineType.TORCH],
+    [
+        EngineType.ONNXRUNTIME,
+        EngineType.PADDLE,
+        EngineType.OPENVINO,
+        EngineType.TORCH,
+        EngineType.MNN,
+    ],
 )
 def test_ppocrv5_det_mobile(engine_type):
     engine = RapidOCR(
