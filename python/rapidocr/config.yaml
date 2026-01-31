@@ -44,6 +44,10 @@ EngineConfig:
             optypelist_for_implmode: "Gelu"
             enable_cann_graph: true
 
+        use_coreml: false
+        coreml_ep_cfg: 
+            MLComputeUnits: "ALL"
+
     openvino:
         inference_num_threads: -1
         performance_hint: null
