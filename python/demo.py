@@ -5,7 +5,7 @@ from rapidocr import RapidOCR
 
 engine = RapidOCR()
 
-img_url = "https://github.com/RapidAI/RapidOCR/blob/main/python/tests/test_files/ch_en_num.jpg?raw=true"
+img_url = "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/resources/test_files/ch_en_num.jpg"
 result = engine(img_url)
 print(result)
 
