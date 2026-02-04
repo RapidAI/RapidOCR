@@ -97,6 +97,15 @@ class TRTInferSession(InferSession):
 
         logger.info(f"TensorRT engine loaded: {engine_path}")
 
+        # Detect MULTI model for square input requirement
+        self._requires_square_input = self._check_multi_model(cfg)
+        if self._requires_square_input:
+            self._max_square_size = self._get_max_profile_size()
+            logger.debug(f"MULTI det model: requires square input, max_size={self._max_square_size}")
+        else:
+            self._requires_square_input = False
+            self._max_square_size = 2048
+
     # =========================================================================
     # Context Manager Protocol
     # =========================================================================
@@ -196,17 +205,28 @@ class TRTInferSession(InferSession):
             >>> output = session(input_data)
         """
         try:
-            # Step 1: Set input shape for dynamic dimensions
+            # Step 1: Handle square input for MULTI model
+            original_hw = None
+            if self._requires_square_input:
+                input_content, original_hw = self._pad_to_square(input_content)
+
+            # Step 2: Set input shape for dynamic dimensions
             output_shape = self._set_input_shape(input_content)
 
-            # Step 2: Copy input data to GPU
+            # Step 3: Copy input data to GPU
             self._copy_input_to_device(input_content)
 
-            # Step 3: Execute inference
+            # Step 4: Execute inference
             self._execute_inference()
 
-            # Step 4: Copy output back to CPU and return
-            return self._copy_output_to_host(output_shape)
+            # Step 5: Copy output back to CPU
+            output = self._copy_output_to_host(output_shape)
+
+            # Step 6: Crop output back to original shape
+            if original_hw is not None:
+                output = self._crop_output(output, original_hw)
+
+            return output
 
         except Exception as e:
             error_info = traceback.format_exc()
@@ -281,6 +301,120 @@ class TRTInferSession(InferSession):
         cudart.cudaStreamSynchronize(self.stream)
 
         return self.outputs[0].host[:output_size].reshape(output_shape)
+
+    # =========================================================================
+    # MULTI Model Square Input Handling
+    # =========================================================================
+
+    def _check_multi_model(self, cfg: Dict[str, Any]) -> bool:
+        """Check if this is MULTI detection model requiring square input.
+
+        Args:
+            cfg: Configuration dictionary.
+
+        Returns:
+            True if this is MULTI detection model, False otherwise.
+        """
+        try:
+            from ...utils.typings import LangDet, TaskType
+            is_det = getattr(cfg, 'task_type', None) == TaskType.DET
+            is_multi = getattr(cfg, 'lang_type', None) == LangDet.MULTI
+            return is_det and is_multi
+        except Exception:
+            return False
+
+    def _get_max_profile_size(self) -> int:
+        """Get maximum dimension from TensorRT optimization profile.
+
+        Returns:
+            Maximum height/width allowed by the optimization profile.
+        """
+        try:
+            # Try to get from config first
+            profile_cfg = self.engine_cfg.get("det_profile", {})
+            max_shape = profile_cfg.get("max_shape")
+            if max_shape and len(max_shape) >= 4:
+                return max(max_shape[2], max_shape[3])  # max(H, W)
+
+            # Fallback: query from engine
+            input_name = self.engine.get_tensor_name(0)
+            profile_shape = self.engine.get_tensor_profile_shape(input_name, 0)
+            if profile_shape and len(profile_shape) >= 3:
+                max_shape = profile_shape[2]  # Index 2 = max shape
+                return max(max_shape[2], max_shape[3])
+        except Exception as e:
+            logger.debug(f"Could not get max profile size: {e}")
+
+        # Default fallback
+        return 2048
+
+    def _pad_to_square(self, input_content: np.ndarray) -> tuple:
+        """Pad input to square shape for MULTI model.
+
+        Args:
+            input_content: Input array with shape (N, C, H, W).
+
+        Returns:
+            Tuple of (padded_input, original_hw) where:
+            - padded_input: Square input array (N, C, S, S)
+            - original_hw: Original (H, W) for later cropping, or None if already square
+        """
+        N, C, H, W = input_content.shape
+
+        if H == W:
+            return input_content, None  # Already square
+
+        # Calculate square size
+        square_size = max(H, W)
+
+        # Limit to max profile size if needed
+        if square_size > self._max_square_size:
+            logger.warning(
+                f"Square size {square_size} exceeds max profile size {self._max_square_size}. "
+                f"Limiting to {self._max_square_size}. This may cause accuracy loss."
+            )
+            square_size = self._max_square_size
+
+        # Ensure divisible by 32 (TensorRT requirement)
+        square_size = int(round(square_size / 32) * 32)
+
+        # Create padded array (zero padding)
+        padded = np.zeros((N, C, square_size, square_size), dtype=input_content.dtype)
+
+        # Copy original content to top-left
+        copy_h = min(H, square_size)
+        copy_w = min(W, square_size)
+        padded[:, :, :copy_h, :copy_w] = input_content[:, :, :copy_h, :copy_w]
+
+        return padded, (H, W)
+
+    def _crop_output(self, output: np.ndarray, original_hw: tuple) -> np.ndarray:
+        """Crop output back to original shape after square inference.
+
+        Args:
+            output: Output array with shape (N, C, S, S) from square inference.
+            original_hw: Original (H, W) before padding.
+
+        Returns:
+            Cropped output array with shape (N, C, H, W).
+        """
+        if original_hw is None:
+            return output
+
+        orig_h, orig_w = original_hw
+        out_h, out_w = output.shape[2:4]
+
+        if out_h >= orig_h and out_w >= orig_w:
+            # Normal case: crop to original size
+            return output[:, :, :orig_h, :orig_w]
+        else:
+            # Output is smaller - need to scale
+            # This happens when square_size was limited by max_profile_size
+            scale_h = out_h / max(orig_h, orig_w)
+            scale_w = out_w / max(orig_h, orig_w)
+            crop_h = int(orig_h * scale_h)
+            crop_w = int(orig_w * scale_w)
+            return output[:, :, :crop_h, :crop_w]
 
     # =========================================================================
     # Initialization Helpers
