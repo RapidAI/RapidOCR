@@ -91,11 +91,11 @@ class TRTEngineBuilder:
         if self.task_type == "det":
             min_shape = profile_cfg.get("min_shape", (1, 3, 32, 32))
             opt_shape = profile_cfg.get("opt_shape", (1, 3, 736, 736))
-            max_shape = profile_cfg.get("max_shape", (1, 3, 2000, 2000))
+            max_shape = profile_cfg.get("max_shape", (1, 3, 2048, 2048))
         elif self.task_type == "rec":
             min_shape = profile_cfg.get("min_shape", (1, 3, 48, 32))
             opt_shape = profile_cfg.get("opt_shape", (6, 3, 48, 320))
-            max_shape = profile_cfg.get("max_shape", (6, 3, 48, 2000))
+            max_shape = profile_cfg.get("max_shape", (6, 3, 48, 2048))
         elif self.task_type == "cls":
             min_shape = profile_cfg.get("min_shape", (1, 3, 48, 32))
             opt_shape = profile_cfg.get("opt_shape", (6, 3, 48, 192))
@@ -104,7 +104,7 @@ class TRTEngineBuilder:
             # Generic fallback
             min_shape = (1, 3, 32, 32)
             opt_shape = (1, 3, 224, 224)
-            max_shape = (1, 3, 2000, 2000)
+            max_shape = (1, 3, 2048, 2048)
 
         # Set shapes for input tensor
         input_tensor = network.get_input(0)

@@ -95,12 +95,12 @@ EngineConfig:
         det_profile:
             min_shape: [1, 3, 32, 32]
             opt_shape: [1, 3, 736, 736]
-            max_shape: [1, 3, 2000, 2000]
+            max_shape: [1, 3, 2048, 2048]
 
         rec_profile:
             min_shape: [1, 3, 48, 32]
             opt_shape: [6, 3, 48, 320]
-            max_shape: [6, 3, 48, 2000]
+            max_shape: [6, 3, 48, 2048]
 
         cls_profile:
             min_shape: [1, 3, 48, 32]

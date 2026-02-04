@@ -26,8 +26,8 @@ import tensorrt as trt
 # =============================================================================
 
 # Default maximum shapes for buffer allocation when profile info unavailable
-DEFAULT_MAX_INPUT_SHAPE = (1, 3, 2000, 2000)  # Max for detection input
-DEFAULT_MAX_OUTPUT_SHAPE = (1, 1000, 1000)  # Generous output buffer
+DEFAULT_MAX_INPUT_SHAPE = (1, 3, 2048, 2048)  # Max for detection input
+DEFAULT_MAX_OUTPUT_SHAPE = (1, 2048, 2048)  # Generous output buffer
 
 # NumPy dtype to ctypes mapping for pinned memory allocation
 _NUMPY_TO_CTYPE = {
