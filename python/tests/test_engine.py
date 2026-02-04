@@ -22,6 +22,7 @@ img_path = tests_dir / "ch_en_num.jpg"
         EngineType.PADDLE,
         EngineType.OPENVINO,
         EngineType.TORCH,
+        EngineType.MNN,
         EngineType.TENSORRT,
     ],
 )
@@ -47,6 +48,7 @@ def test_ppocrv5_rec_mobile(engine_type):
         EngineType.PADDLE,
         EngineType.OPENVINO,
         EngineType.TORCH,
+        EngineType.MNN,
         EngineType.TENSORRT,
     ],
 )

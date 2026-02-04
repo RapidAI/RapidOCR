@@ -75,7 +75,7 @@ def test_arabic_lang(engine_type):
 
 @mark.parametrize(
     "engine_type",
-    [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE],
+    [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE, EngineType.MNN],
 )
 def test_el_lang(engine_type):
     engine = RapidOCR(
@@ -95,7 +95,7 @@ def test_el_lang(engine_type):
 
 @mark.parametrize(
     "engine_type",
-    [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE],
+    [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE, EngineType.MNN],
 )
 def test_th_lang(engine_type):
     engine = RapidOCR(
@@ -176,7 +176,7 @@ def test_korean_lang(ocr_version, gt):
 
 @mark.parametrize(
     "engine_type",
-    [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE],
+    [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE, EngineType.MNN],
 )
 def test_latin_lang(engine_type):
     engine = RapidOCR(
@@ -198,7 +198,7 @@ def test_latin_lang(engine_type):
 
 @mark.parametrize(
     "engine_type",
-    [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE],
+    [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE, EngineType.MNN],
 )
 def test_eslav_lang(engine_type):
     engine = RapidOCR(

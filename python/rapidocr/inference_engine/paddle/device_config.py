@@ -70,7 +70,8 @@ class DeviceConfig:
 
             if hasattr(self.infer_opts, "enable_new_executor"):
                 self.infer_opts.enable_new_executor()
-            self.infer_opts.set_optimization_level(3)
+            if hasattr(self.infer_opts, "set_optimization_level"):
+                self.infer_opts.set_optimization_level(3)
 
     @staticmethod
     def setup_device_envs(envs):
