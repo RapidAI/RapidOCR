@@ -81,6 +81,32 @@ EngineConfig:
         npu_ep_cfg:
             device_id: 0
 
+    tensorrt:
+        device_id: 0
+        use_fp16: true
+        use_int8: false
+        workspace_size: 1073741824  # 1GB = 1 << 30
+
+        # Engine caching
+        cache_dir: null  # null = use default models dir
+        force_rebuild: false
+
+        # Dynamic shape optimization profiles
+        det_profile:
+            min_shape: [1, 3, 32, 32]
+            opt_shape: [1, 3, 736, 736]
+            max_shape: [1, 3, 2048, 2048]
+
+        rec_profile:
+            min_shape: [1, 3, 48, 32]
+            opt_shape: [6, 3, 48, 320]
+            max_shape: [6, 3, 48, 2048]
+
+        cls_profile:
+            min_shape: [1, 3, 48, 32]
+            opt_shape: [6, 3, 48, 192]
+            max_shape: [6, 3, 48, 192]
+
     mnn: {}
 
 Det:
