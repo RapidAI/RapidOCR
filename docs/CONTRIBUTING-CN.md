@@ -57,7 +57,7 @@ pip install -e .
 
 ## 三、安装代码格式化与 pre-commit 钩子
 
-在**开发者环境**下安装 pre-commit，并启用 Git 提交前钩子，以便自动做代码格式检查与整理（如 black、autoflake 等）：
+在 **开发者环境** 下安装 pre-commit，并启用 Git 提交前钩子，以便自动做代码格式检查与整理（如 black、autoflake 等）：
 
 ```bash
 # 在 python 目录下、已激活的虚拟环境中安装
@@ -79,7 +79,7 @@ pre-commit run --all-files
 
 ## 四、运行单元测试
 
-在 **`python` 目录下**执行：
+在 **`python` 目录下** 执行：
 
 ```bash
 # 运行全部测试
@@ -148,7 +148,7 @@ def test_your_new_feature(engine):
 
 ## 七、运行所有单元测试
 
-在 **`python` 目录下**再次全量跑测，确保无回归：
+在 **`python` 目录下** 再次全量跑测，确保无回归：
 
 ```bash
 pytest tests/ -v
@@ -186,7 +186,7 @@ git commit -m "fix(python): 简短描述"
 git push myfork fix/xxx
 ```
 
-**请按约定式提交规范（Conventional Commits）书写 commit 信息**，便于维护者阅读与自动生成 Changelog。格式为：
+**请按约定式提交规范（Conventional Commits）书写 commit 信息** ，便于维护者阅读与自动生成 Changelog。格式为：
 
 ```text
 <类型>[可选范围]: <简短描述>
@@ -212,8 +212,8 @@ git push myfork fix/xxx
 ### 8.3 向 RapidOCR 主仓库提交 Pull Request（PR）
 
 1. 打开你 fork 后的仓库页面（如 `https://github.com/你的用户名/RapidOCR`）。
-2. 若刚推送分支，页面上通常会出现 **Compare & pull request**，点击即可；否则在 **Branches** 里选择你刚推送的分支，再点 **New pull request**。
-3. 确认 **base 仓库**为 `RapidAI/RapidOCR`、**base 分支**为 `main`（或仓库默认主分支），**head 仓库**为你的 fork、**head 分支**为你的分支（如 `fix/xxx`）。
+2. 若刚推送分支，页面上通常会出现 **Compare & pull request**，点击即可；否则在 **Branches** 里选择你刚推送的分支，再点 **New pull request** 。
+3. 确认 **base 仓库** 为 `RapidAI/RapidOCR`、**base 分支** 为 `main`（或仓库默认主分支），**head 仓库** 为你的 fork、**head 分支** 为你的分支（如 `fix/xxx`）。
 4. 填写 PR 标题和说明：
    - 标题：简要概括修改内容（如「Fix: 修复 Python 下 xxx 问题」）。
    - 说明中建议包含：
@@ -243,8 +243,8 @@ git push myfork fix/xxx
 
 ## 其他说明
 
-- **代码风格**：项目采用 [black](https://github.com/psf/black)、autoflake 等规范，已通过 pre-commit 钩子在提交时自动检查；也可在仓库根目录执行 `pre-commit run --all-files` 手动跑一遍。
-- **文档**：更多安装与使用说明见 [RapidOCR 文档](https://rapidai.github.io/RapidOCRDocs/)。
-- **问题与讨论**：Bug 与功能建议可通过 [GitHub Issues](https://github.com/RapidAI/RapidOCR/issues) 反馈。
+- **代码风格** ：项目采用 [black](https://github.com/psf/black)、autoflake 等规范，已通过 pre-commit 钩子在提交时自动检查；也可在仓库根目录执行 `pre-commit run --all-files` 手动跑一遍。
+- **文档** ：更多安装与使用说明见 [RapidOCR 文档](https://rapidai.github.io/RapidOCRDocs/)。
+- **问题与讨论** ：Bug 与功能建议可通过 [GitHub Issues](https://github.com/RapidAI/RapidOCR/issues) 反馈。
 
 再次感谢你的贡献！
