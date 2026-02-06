@@ -109,6 +109,12 @@ Full documentation can be found on [docs](https://rapidai.github.io/RapidOCRDocs
 - Many thanks to [DeadWood8](https://github.com/DeadWood8) for providing the [document](https://rapidai.github.io/RapidOCRDocs/main/install_usage/rapidocr_web/nuitka_package/) which packages rapidocr_web to exe by Nuitka.
 - Many thanks to [Loovelj](https://github.com/Loovelj) for fixing the bug of sorting the text boxes. For details see [issue 75](https://github.com/RapidAI/RapidOCR/issues/75).
 
+### 🤝 Contribution Guide
+
+This repository contains the **Python** component of RapidOCR. Components for other languages have been migrated to separate repositories.
+
+For the complete workflow on contributing to Python development, please refer to: [**Python CONTRIBUTING**](docs/CONTRIBUTING.md).
+
 ### 🎖 Code Contributors
 
 <p align="left">

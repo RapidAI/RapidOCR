@@ -108,6 +108,12 @@ result.vis("vis_result.jpg")
 - 非常感谢[DeadWood8](https://github.com/DeadWood8)提供了[Nuitka打包rapidocr_web的操作文档和可执行exe](https://rapidai.github.io/RapidOCRDocs/main/install_usage/rapidocr_web/nuitka_package/)。
 - 非常感谢[Loovelj](https://github.com/Loovelj)指出对文本检测框排序时顺序问题，详情参见[issue 75](https://github.com/RapidAI/RapidOCR/issues/75)。
 
+### 🤝 贡献指南
+
+本仓库为 RapidOCR 的 **Python** 部分，其他语言已迁移至独立仓库。
+
+参与 Python 开发的完整流程请参阅：[**Python CONTRIBUTING**](docs/CONTRIBUTING-CN.md)。
+
 ### 🎖 贡献者
 
 <p align="left">
