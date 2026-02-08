@@ -12,6 +12,7 @@ class DeviceType(Enum):
     MLU = "mlu"
     DCU = "dcu"
     GCU = "gcu"
+    MPS = "mps"
 
 
 class LangDet(Enum):

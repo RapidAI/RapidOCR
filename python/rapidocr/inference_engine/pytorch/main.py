@@ -19,6 +19,9 @@ class TorchInferSession(InferSession):
             inp = torch.from_numpy(img)
             inp = inp.to(self.device)
             outputs = self.predictor(inp).cpu().numpy()
+            if self.device.type=="mps":
+                del inp
+                torch.mps.empty_cache()
             return outputs
 
     def have_key(self, key: str = "character") -> bool:
