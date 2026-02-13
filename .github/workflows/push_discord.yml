@@ -1,0 +1,41 @@
+name: discord message
+on:
+  release:
+    types: [published]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Prepare Discord message
+        id: prepare_message
+        run: |
+          full_msg="🚀 **New Release!** ${{ github.event.release.name }}
+
+          **Tag:** ${{ github.event.release.tag_name }}
+          **Author:** ${{ github.event.release.author.login }}
+
+          **Release Notes:**
+          ${{ github.event.release.body }}"
+
+              if [ ${#full_msg} -gt 1990 ]; then
+                truncated_msg="${full_msg:0:1987}..."
+              else
+                truncated_msg="$full_msg"
+              fi
+
+              echo "message<<EOF" >> "$GITHUB_OUTPUT"
+              echo "$truncated_msg" >> "$GITHUB_OUTPUT"
+              echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Send to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_USERNAME: Github Actions
+          DISCORD_AVATAR: https://cdn.discordapp.com/avatars/1460099944252702846/e57fd67dc7ca0cc840a0e87a82281bc5.webp?size=80
+        uses: Ilshidur/action-discord@0.4.0
+        with:
+          args: ${{ steps.prepare_message.outputs.message }}
