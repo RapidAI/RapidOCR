@@ -1,15 +1,4 @@
-# git-cliff ~ configuration file
-# https://git-cliff.org/docs/configuration
-
 [changelog]
-# A Tera template to be rendered as the changelog's footer.
-# See https://keats.github.io/tera/docs/#introduction
-# header = """
-# # Changelog\n
-# All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.\n
-# """
-# A Tera template to be rendered for each release in the changelog.
-# See https://keats.github.io/tera/docs/#introduction
 body = """
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | striptags | trim | upper_first }}
@@ -49,8 +38,6 @@ body = """
     ## [unreleased]
 {% endif %}
 """
-# A Tera template to be rendered as the changelog's footer.
-# See https://keats.github.io/tera/docs/#introduction
 
 footer = """
 
@@ -58,10 +45,13 @@ footer = """
 
 # Remove leading and trailing whitespaces from the changelog's body.
 trim = true
-# postprocessors
 postprocessors = [
     # Replace the placeholder `<REPO>` with a URL.
     { pattern = '\$REPO', replace = "https://github.com/RapidAI/RapidOCR" }, # replace repository URL
+    # 去掉每行末尾的无效空格
+    { pattern = "(?m)[ \t]+$", replace = "" },
+    # 将连续多个空行压缩为最多一个空行
+    { pattern = "\n{3,}", replace = "\n\n" },
 ]
 
 [git]
