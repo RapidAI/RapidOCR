@@ -52,8 +52,8 @@ class OpenVINOInferSession(InferSession):
         cpu_config = CPUConfig(cfg.get("engine_cfg", {}))
         core.set_property("CPU", cpu_config.get_config())
 
-        model_onnx = core.read_model(model_path)
-        compile_model = core.compile_model(model=model_onnx, device_name="CPU")
+        self.model = core.read_model(model_path)
+        compile_model = core.compile_model(model=self.model, device_name="CPU")
         self.session = compile_model.create_infer_request()
 
     def __call__(self, input_content: np.ndarray) -> np.ndarray:
@@ -65,7 +65,37 @@ class OpenVINOInferSession(InferSession):
             raise OpenVINOError(error_info) from e
 
     def have_key(self, key: str = "character") -> bool:
-        return False
+        try:
+            self.get_character_list(key)
+            return True
+        except OpenVINOError:
+            return False
+
+    def get_character_list(self, key: str = "character") -> List[str]:
+        framework_info = self.get_rt_info_framework()
+        if framework_info is None:
+            raise OpenVINOError(f"Failed to get runtime framework info")
+
+        if key not in framework_info:
+            raise OpenVINOError(f"Key '{key}' not found in framework info")
+
+        val = framework_info[key]
+        if not hasattr(val, "value"):
+            raise OpenVINOError(
+                f"Invalid value object for key '{key}': missing 'value' attribute"
+            )
+
+        value = getattr(val, "value", None)
+        if value is None:
+            raise OpenVINOError(f"Value is None for key '{key}'")
+
+        return value.splitlines()
+
+    def get_rt_info_framework(self):
+        rt_info = self.model.get_rt_info()
+        if "framework" not in rt_info:
+            return None
+        return rt_info["framework"]
 
 
 class OpenVINOError(Exception):
