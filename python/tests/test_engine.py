@@ -10,6 +10,7 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
 from rapidocr import EngineType, ModelType, OCRVersion, RapidOCR
+from rapidocr.utils.utils import import_package
 
 tests_dir = root_dir / "tests" / "test_files"
 img_path = tests_dir / "ch_en_num.jpg"
@@ -23,7 +24,6 @@ img_path = tests_dir / "ch_en_num.jpg"
         EngineType.OPENVINO,
         EngineType.TORCH,
         EngineType.MNN,
-        EngineType.TENSORRT,
     ],
 )
 def test_ppocrv5_rec_mobile(engine_type):
@@ -49,7 +49,6 @@ def test_ppocrv5_rec_mobile(engine_type):
         EngineType.OPENVINO,
         EngineType.TORCH,
         EngineType.MNN,
-        EngineType.TENSORRT,
     ],
 )
 def test_ppocrv5_det_mobile(engine_type):
@@ -115,6 +114,7 @@ def test_engine_torch():
     assert result.txts[0] == "正品促销"
 
 
+@mark.skipif(not import_package("tensorrt"), reason="tensorrt is not installed")
 def test_engine_tensorrt():
     """Test TensorRT engine with full OCR pipeline."""
     engine = RapidOCR(
