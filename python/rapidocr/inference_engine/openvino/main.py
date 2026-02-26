@@ -3,6 +3,7 @@
 # @Contact: liekkaskono@163.com
 import traceback
 from pathlib import Path
+from typing import List
 
 import numpy as np
 from omegaconf import DictConfig
