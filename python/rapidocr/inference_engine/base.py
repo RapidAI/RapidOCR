@@ -5,7 +5,7 @@ import abc
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 import numpy as np
 from omegaconf import OmegaConf
@@ -107,6 +107,10 @@ class InferSession(abc.ABC):
 
     @abc.abstractmethod
     def have_key(self, key: str = "character") -> bool:
+        pass
+
+    @abc.abstractmethod
+    def get_character_list(self, key: str = "character") -> List[str]:
         pass
 
     @classmethod

@@ -3,6 +3,7 @@
 # @Contact: liekkaskono@163.com
 import traceback
 from pathlib import Path
+from typing import List
 
 import MNN
 import numpy as np
@@ -73,6 +74,9 @@ class MNNInferSession(InferSession):
 
     def have_key(self, key: str = "character") -> bool:
         return False
+
+    def get_character_list(self, key: str = "character") -> List[str]:
+        return []
 
 
 class MNNError(Exception):

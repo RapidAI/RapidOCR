@@ -1,6 +1,8 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+from typing import List
+
 import numpy as np
 import torch
 
@@ -23,6 +25,9 @@ class TorchInferSession(InferSession):
 
     def have_key(self, key: str = "character") -> bool:
         return False
+
+    def get_character_list(self, key: str = "character") -> List[str]:
+        return []
 
 
 class TorchInferError(Exception):

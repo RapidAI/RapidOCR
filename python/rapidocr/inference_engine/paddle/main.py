@@ -2,7 +2,7 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 from omegaconf.errors import ConfigKeyError
@@ -141,6 +141,9 @@ class PaddleInferSession(InferSession):
 
     def have_key(self, key: str = "character") -> bool:
         return False
+
+    def get_character_list(self, key: str = "character") -> List[str]:
+        return []
 
 
 class PaddleInferError(Exception):

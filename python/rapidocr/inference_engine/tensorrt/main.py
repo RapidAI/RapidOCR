@@ -24,13 +24,14 @@ Example:
     >>> with TRTInferSession(config) as session:
     ...     output = session(input_array)
 """
+
 import traceback
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
-from cuda.bindings import runtime as cudart
 import tensorrt as trt
+from cuda.bindings import runtime as cudart
 
 from ...utils.download_file import DownloadFile, DownloadFileInput
 from ...utils.log import logger
@@ -101,7 +102,9 @@ class TRTInferSession(InferSession):
         self._requires_square_input = self._check_multi_model(cfg)
         if self._requires_square_input:
             self._max_square_size = self._get_max_profile_size()
-            logger.debug(f"MULTI det model: requires square input, max_size={self._max_square_size}")
+            logger.debug(
+                f"MULTI det model: requires square input, max_size={self._max_square_size}"
+            )
         else:
             self._requires_square_input = False
             self._max_square_size = 2048
@@ -317,8 +320,9 @@ class TRTInferSession(InferSession):
         """
         try:
             from ...utils.typings import LangDet, TaskType
-            is_det = getattr(cfg, 'task_type', None) == TaskType.DET
-            is_multi = getattr(cfg, 'lang_type', None) == LangDet.MULTI
+
+            is_det = getattr(cfg, "task_type", None) == TaskType.DET
+            is_multi = getattr(cfg, "lang_type", None) == LangDet.MULTI
             return is_det and is_multi
         except Exception:
             return False
@@ -579,6 +583,9 @@ class TRTInferSession(InferSession):
             Always False for TensorRT engines.
         """
         return False
+
+    def get_character_list(self, key: str = "character") -> List[str]:
+        return []
 
     @classmethod
     def get_dict_key_url(cls, file_info: FileInfo) -> Optional[str]:
