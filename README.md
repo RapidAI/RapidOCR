@@ -33,20 +33,20 @@ Join our [Discord](https://discord.gg/33eyQJq498)
 
 ### 📝 Introduction
 
-Introducing the foremost multi-platform, multi-lingual OCR tool that boasts unparalleled speed, expansive support, and complete openness. This exceptional software is entirely free and renowned for facilitating swift offline deployments.
+RapidOCR is a completely open-source, free OCR tool that supports multi-platform, multi-language operation and rapid offline deployment. Its core advantages lie in extreme speed and extensive compatibility.
 
-**Supported Languages**: It inherently supports Chinese and English, with self-service conversion required for additional languages. Please refer [here](https://rapidai.github.io/RapidOCRDocs/main/blog/2022/09/28/%E6%94%AF%E6%8C%81%E8%AF%86%E5%88%AB%E8%AF%AD%E8%A8%80/) for specific language support details.
+**Supported Languages:** Default support for Chinese and English recognition. For other supported languages, please refer to the documentation: [Model List](https://rapidai.github.io/RapidOCRDocs/main/model_list/).
 
-**Rationale**: Acknowledging the limitations in [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)'s architecture, we embarked on a mission to simplify OCR inference across diverse platforms. This endeavor culminated in converting PaddleOCR's model to the versatile ONNX format and seamlessly integrating it into Python, C++, Java, and C# environments.
+**Project Origin:** Considering that [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) still has room for optimization in engineering aspects, we innovatively converted the models in PaddleOCR into the highly compatible ONNX format to simplify and accelerate the inference deployment of OCR models on various terminal devices. Furthermore, we achieved seamless cross-platform porting based on multiple programming languages such as Python, C++, Java, and C#, enabling developers to get started easily and integrate efficiently.
 
-**Etymology**: Derived from its essence, RapidOCR embodies lightness, velocity, affordability, and intelligence. Rooted in deep learning, this OCR technology underscores AI's prowess and emphasizes compact models, prioritizing swiftness without compromising efficacy.
+**Name Implication:** The name "RapidOCR" embodies our core expectations for the product: **Rapid** (simple operation, fast response), **Good & Economical** (low resource consumption, high cost-effectiveness), and **Intelligent** (achieving accurate and efficient recognition relying on deep learning technology). We focus on leveraging the advantages of artificial intelligence to create compact yet powerful models, relentlessly pursuing speed while ensuring excellent recognition results.
 
-**Usage Scenarios**:
+**User Guide:**
 
-- **Instant Deployment**: If the pre-existing models within our repository suffice, simply leverage RapidOCR for swift deployment.
-- **Customization**: In case of specific requirements, refine PaddleOCR with your data and proceed with RapidOCR deployment, ensuring tailored results.
+- **Direct Deployment:** If the models provided in this repository meet your needs, simply refer to the [Official Documentation](https://rapidai.github.io/RapidOCRDocs/main/quickstart/) to quickly complete the deployment and usage of RapidOCR.
+- **Custom Fine-tuning:** If the existing models cannot meet specific scenario requirements, you can fine-tune them using your own data based on PaddleOCR, and then apply the optimized models to the RapidOCR deployment process to achieve personalized customization.
 
-If our repository proves beneficial to your endeavors, kindly consider leaving a star ⭐ on GitHub to show your appreciation. It means the world to us!
+If you find this project helpful for your work or study, we kindly ask you to give us a ⭐ Star to provide valuable support and encouragement!
 
 ### 🎥 Visualization
 
