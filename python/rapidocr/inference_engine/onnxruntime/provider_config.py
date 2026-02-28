@@ -15,6 +15,7 @@ class EP(Enum):
     CUDA_EP = "CUDAExecutionProvider"
     DIRECTML_EP = "DmlExecutionProvider"
     CANN_EP = "CANNExecutionProvider"
+    COREML_EP = "CoreMLExecutionProvider"
 
 
 class ProviderConfig:
@@ -25,6 +26,7 @@ class ProviderConfig:
         self.cfg_use_cuda = engine_cfg.get("use_cuda", False)
         self.cfg_use_dml = engine_cfg.get("use_dml", False)
         self.cfg_use_cann = engine_cfg.get("use_cann", False)
+        self.cfg_use_coreml = engine_cfg.get("use_coreml", False)
 
         self.cfg = engine_cfg
 
@@ -43,6 +45,10 @@ class ProviderConfig:
         if self.is_cann_available():
             logger.info("Try to use CANNExecutionProvider to infer")
             results.insert(0, (EP.CANN_EP.value, self.cann_ep_cfg()))
+
+        if self.is_coreml_available():
+            logger.info("macOS/iOS detected, try to use CoreML as primary provider")
+            results.insert(0, (EP.COREML_EP.value, self.coreml_ep_cfg()))
 
         return results
 
@@ -63,6 +69,9 @@ class ProviderConfig:
     def cann_ep_cfg(self) -> Dict[str, Any]:
         return dict(self.cfg.cann_ep_cfg)
 
+    def coreml_ep_cfg(self) -> Dict[str, Any]:
+        return dict(self.cfg.coreml_ep_cfg)
+
     def verify_providers(self, session_providers: Sequence[str]):
         if not session_providers:
             raise ValueError("Session Providers is empty")
@@ -73,6 +82,7 @@ class ProviderConfig:
             EP.CUDA_EP: self.is_cuda_available,
             EP.DIRECTML_EP: self.is_dml_available,
             EP.CANN_EP: self.is_cann_available,
+            EP.COREML_EP: self.is_coreml_available,
         }
 
         for ep, check_func in providers_to_check.items():
@@ -159,6 +169,31 @@ class ProviderConfig:
             "Second, install onnxruntime with CANN support by following the instructions at:",
             "\thttps://onnxruntime.ai/docs/execution-providers/community-maintained/CANN-ExecutionProvider.html",
             f"Third, ensure {CANN_EP} is in available providers list. e.g. ['CANNExecutionProvider', 'CPUExecutionProvider']",
+        ]
+        self.print_log(install_instructions)
+        return False
+
+    def is_coreml_available(self) -> bool:
+        if not self.cfg_use_coreml:
+            return False
+
+        cur_os = platform.system()
+        if cur_os != "Darwin":
+            logger.warning(
+                f"CoreML is only supported in macOS/iOS. The current OS is {cur_os}. Use {self.default_provider} inference by default.",
+            )
+            return False
+
+        COREML_EP = EP.COREML_EP.value
+        if COREML_EP in self.had_providers:
+            return True
+
+        logger.warning(
+            f"{COREML_EP} is not in available providers ({self.had_providers}). Use {self.default_provider} inference by default."
+        )
+        install_instructions = [
+            "The standard onnxruntime package for macOS includes CoreML support.",
+            f"Ensure {COREML_EP} is in available providers list. e.g. ['CoreMLExecutionProvider', 'CPUExecutionProvider']",
         ]
         self.print_log(install_instructions)
         return False

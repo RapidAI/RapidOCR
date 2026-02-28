@@ -44,6 +44,17 @@ EngineConfig:
             optypelist_for_implmode: "Gelu"
             enable_cann_graph: true
 
+        use_coreml: false
+        coreml_ep_cfg: 
+            ModelFormat: "MLProgram"
+            MLComputeUnits: "ALL"
+            RequireStaticInputShapes: 0
+            EnableOnSubgraphs: 0
+            SpecializationStrategy: "FastPrediction"
+            ProfileComputePlan: 0
+            AllowLowPrecisionAccumulationOnGPU: 0
+            ModelCacheDirectory: "/tmp/RapidOCR"
+
     openvino:
         inference_num_threads: -1
         performance_hint: null
