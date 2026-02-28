@@ -17,6 +17,7 @@ model_dir = root_dir / "models"
 class DeviceConfig:
     def __init__(self, cfg):
         self.use_cuda = cfg.engine_cfg.use_cuda
+        self.use_mps = cfg.engine_cfg.use_mps
         self.use_npu = cfg.engine_cfg.use_npu
 
         self.cfg = cfg
@@ -25,6 +26,9 @@ class DeviceConfig:
         if self.use_cuda:
             device_id = self.cfg.engine_cfg.cuda_ep_cfg.device_id
             return self.get_device(DeviceType.CUDA, device_id)
+
+        if self.use_mps:
+            return self.get_device(DeviceType.MPS)
 
         if self.use_npu:
             device_id = self.cfg.engine_cfg.npu_ep_cfg.device_id
@@ -41,6 +45,9 @@ class DeviceConfig:
         if device_type == DeviceType.CUDA:
             return self.config_cuda(device_id)
 
+        if device_type == DeviceType.MPS:
+            return self.config_mps()
+
         if device_type == DeviceType.NPU:
             return self.config_npu(device_id)
 
@@ -56,6 +63,13 @@ class DeviceConfig:
 
         logger.info(f"Using GPU device with ID: {device_id}")
         return torch.device(f"cuda:{device_id}")
+
+    def config_mps(self) -> torch.device:
+        if not torch.backends.mps.is_available():
+            raise DeviceConfigError("MPS is not available.")
+
+        logger.info("Using MPS device")
+        return torch.device("mps")
 
     def config_npu(self, device_id: int) -> torch.device:
         try:

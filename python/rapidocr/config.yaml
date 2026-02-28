@@ -92,6 +92,8 @@ EngineConfig:
         npu_ep_cfg:
             device_id: 0
 
+        use_mps: false
+
     tensorrt:
         device_id: 0
         use_fp16: true
