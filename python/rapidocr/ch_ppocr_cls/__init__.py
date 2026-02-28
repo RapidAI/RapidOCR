@@ -3,3 +3,5 @@
 # @Contact: liekkaskono@163.com
 from .main import TextClassifier
 from .utils import TextClsOutput
+
+__all__ = ["TextClassifier", "TextClsOutput"]

@@ -3,3 +3,5 @@
 # @Contact: liekkaskono@163.com
 from .main import TextRecognizer
 from .typings import TextRecInput, TextRecOutput
+
+__all__ = ["TextRecognizer", "TextRecInput", "TextRecOutput"]

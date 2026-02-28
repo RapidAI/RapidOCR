@@ -2,3 +2,5 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 from .main import TorchInferError, TorchInferSession
+
+__all__ = ["TorchInferError", "TorchInferSession"]
