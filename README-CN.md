@@ -141,7 +141,7 @@ RapidOCR 是一个基于 Apache2.0 许可的开源项目，其持续开发之所
       <a href="https://github.com/zg-young">
         <img src="https://avatars.githubusercontent.com/u/56186938?v=4" width="60" style="border-radius: 12px; border: none;"/>
       </a><br />
-      <sub><a href="https://github.com/youzzhang">@youzzhang</a></sub>
+      <sub><a href="https://github.com/zg-young">@zg-young</a></sub>
     </td>
     <td align="center">
       <a href="https://github.com/Eunsolfs">
