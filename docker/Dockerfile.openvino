@@ -1,0 +1,5 @@
+FROM rapidocr-base:latest
+
+RUN pip install --no-cache-dir openvino==2023.3.0
+
+CMD ["bash"]

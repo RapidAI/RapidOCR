@@ -1,0 +1,7 @@
+FROM rapidocr-base:latest
+
+# PaddlePaddle CPU uses a special index URL
+RUN pip install --no-cache-dir paddlepaddle==3.1.1 \
+    -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
+
+CMD ["bash"]

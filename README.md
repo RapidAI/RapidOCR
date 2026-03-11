@@ -71,6 +71,22 @@ print(result)
 result.vis("vis_result.jpg")
 ```
 
+### 🐳 Docker
+
+Docker development environments are available for all supported inference engines:
+
+```bash
+# Build and test with ONNX Runtime (CPU)
+make build-onnxruntime-cpu
+make test-onnxruntime-cpu
+
+# Or use any engine: onnxruntime-gpu, tensorrt, paddle, openvino, pytorch, mnn
+make build-tensorrt
+make shell-tensorrt
+```
+
+See [docker/README.md](./docker/README.md) for full setup instructions, GPU configuration, and troubleshooting.
+
 ### 📚 Documentation
 
 Full documentation can be found on [docs](https://rapidai.github.io/RapidOCRDocs/), in Chinese.

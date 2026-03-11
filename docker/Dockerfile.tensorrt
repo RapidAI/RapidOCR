@@ -1,0 +1,39 @@
+FROM nvcr.io/nvidia/deepstream:7.0-gc-triton-devel
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+WORKDIR /app
+
+# System deps for opencv and build tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
+    gcc \
+    g++ \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install deps
+COPY python/requirements.txt /tmp/requirements.txt
+
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r /tmp/requirements.txt && \
+    pip uninstall -y opencv-python 2>/dev/null; \
+    pip install --no-cache-dir opencv-python-headless && \
+    pip install --no-cache-dir pytest && \
+    rm /tmp/requirements.txt
+
+# TensorRT Python bindings must match the system TRT version (8.6.1 in DeepStream 7.0).
+# cuda-python must match the container's CUDA 12.x toolkit.
+RUN pip install --no-cache-dir "tensorrt>=8.6,<8.7" "cuda-python>=12.0,<13.0"
+
+# Copy source (bind-mounted at runtime for live editing via docker-compose)
+COPY python/ /app/
+
+CMD ["bash"]
