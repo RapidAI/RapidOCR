@@ -74,6 +74,12 @@ class TextClassifier:
         elapse = time.perf_counter() - start_time
         return TextClsOutput(img_list=img_list, cls_res=cls_res, elapse=elapse)
 
+    def release(self):
+        """Release the inference session resources."""
+        if hasattr(self, "session") and self.session is not None:
+            self.session.release()
+            self.session = None
+
     def resize_norm_img(self, img: np.ndarray) -> np.ndarray:
         img_c, img_h, img_w = self.cls_image_shape
         h, w = img.shape[:2]

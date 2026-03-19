@@ -92,6 +92,10 @@ class InferSession(abc.ABC):
     def __call__(self, input_content: np.ndarray) -> np.ndarray:
         pass
 
+    def release(self):
+        """Release inference session resources. Subclasses should override for engine-specific cleanup."""
+        pass
+
     @staticmethod
     def _verify_model(model_path: Union[str, Path, None]):
         if model_path is None:

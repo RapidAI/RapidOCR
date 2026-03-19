@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+import gc
 import os
 import traceback
 from pathlib import Path
@@ -109,6 +110,13 @@ class OrtInferSession(InferSession):
         if key in meta_dict.keys():
             return True
         return False
+
+    def release(self):
+        """Release the ONNX Runtime InferenceSession and reclaim memory."""
+        if hasattr(self, "session") and self.session is not None:
+            del self.session
+            self.session = None
+            gc.collect()
 
 
 class ONNXRuntimeError(Exception):

@@ -150,6 +150,12 @@ class TextRecognizer:
             viser=VisRes(lang_type=self.cfg.lang_type, font_path=self.cfg.font_path),
         )
 
+    def release(self):
+        """Release the inference session resources."""
+        if hasattr(self, "session") and self.session is not None:
+            self.session.release()
+            self.session = None
+
     def resize_norm_img(self, img: np.ndarray, max_wh_ratio: float) -> np.ndarray:
         img_channel, img_height, img_width = self.rec_image_shape
         assert img_channel == img.shape[2]

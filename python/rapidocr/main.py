@@ -92,6 +92,38 @@ class RapidOCR:
 
         self.cfg = cfg
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.release()
+        return False
+
+    def release(self):
+        """Release all ONNX Runtime inference sessions and reclaim memory.
+
+        After calling this method, the instance can no longer perform OCR.
+        Use this when you need to free GPU/CPU memory held by the models.
+
+        Example::
+
+            ocr = RapidOCR()
+            result = ocr("image.png")
+            ocr.release()  # Free all model memory
+
+        Or use as a context manager::
+
+            with RapidOCR() as ocr:
+                result = ocr("image.png")
+            # Memory is automatically released
+        """
+        if hasattr(self, "text_det") and self.text_det is not None:
+            self.text_det.release()
+        if hasattr(self, "text_cls") and self.text_cls is not None:
+            self.text_cls.release()
+        if hasattr(self, "text_rec") and self.text_rec is not None:
+            self.text_rec.release()
+
     def __call__(
         self,
         img_content: Union[str, np.ndarray, bytes, Path],

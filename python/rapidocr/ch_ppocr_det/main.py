@@ -78,6 +78,12 @@ class TextDetector:
             limit_side_len = 2000
         return DetPreProcess(limit_side_len, self.limit_type, self.mean, self.std)
 
+    def release(self):
+        """Release the inference session resources."""
+        if hasattr(self, "session") and self.session is not None:
+            self.session.release()
+            self.session = None
+
     @staticmethod
     def sorted_boxes(dt_boxes: np.ndarray) -> np.ndarray:
         """
