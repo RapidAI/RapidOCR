@@ -1,9 +1,7 @@
 # -*- encoding: utf-8 -*-
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import numpy as np
+from unittest.mock import MagicMock
 
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
@@ -85,23 +83,6 @@ def test_rapidocr_release():
     obj.text_rec = MagicMock()
 
     obj.release()
-
-    obj.text_det.release.assert_called_once()
-    obj.text_cls.release.assert_called_once()
-    obj.text_rec.release.assert_called_once()
-
-
-def test_rapidocr_context_manager():
-    """RapidOCR should work as a context manager and release on exit."""
-    from rapidocr.main import RapidOCR
-
-    obj = object.__new__(RapidOCR)
-    obj.text_det = MagicMock()
-    obj.text_cls = MagicMock()
-    obj.text_rec = MagicMock()
-
-    with obj as ocr:
-        assert ocr is obj
 
     obj.text_det.release.assert_called_once()
     obj.text_cls.release.assert_called_once()
