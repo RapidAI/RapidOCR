@@ -1,7 +1,6 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-import gc
 import os
 import traceback
 from pathlib import Path
@@ -112,11 +111,15 @@ class OrtInferSession(InferSession):
         return False
 
     def release(self):
-        """Release the ONNX Runtime InferenceSession and reclaim memory."""
-        if hasattr(self, "session") and self.session is not None:
-            del self.session
+        """Release the ONNX Runtime InferenceSession and reclaim memory.
+
+        The session reference is set to None, allowing Python's reference
+        counting to free it. If another thread holds a reference (e.g. an
+        in-flight inference call), the session stays alive until that
+        completes.
+        """
+        if hasattr(self, "session"):
             self.session = None
-            gc.collect()
 
 
 class ONNXRuntimeError(Exception):
