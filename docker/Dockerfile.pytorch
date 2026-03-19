@@ -1,0 +1,7 @@
+FROM rapidocr-base:latest
+
+# PyTorch CPU from official index
+RUN pip install --no-cache-dir torch torchvision torchaudio \
+    --index-url https://download.pytorch.org/whl/cpu
+
+CMD ["bash"]

@@ -1,0 +1,35 @@
+FROM python:3.10-slim-bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+WORKDIR /app
+
+# System dependencies for opencv, pyclipper, shapely C extensions
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy only requirements first for layer caching
+COPY python/requirements.txt /tmp/requirements.txt
+
+# Install core deps with opencv-headless (no GUI needed in container)
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r /tmp/requirements.txt && \
+    pip uninstall -y opencv-python 2>/dev/null; \
+    pip install --no-cache-dir opencv-python-headless && \
+    pip install --no-cache-dir pytest && \
+    rm /tmp/requirements.txt
+
+# Copy source (bind-mounted at runtime for live editing via docker-compose)
+COPY python/ /app/
+
+CMD ["bash"]

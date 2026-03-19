@@ -1,0 +1,102 @@
+services:
+  onnxruntime-cpu:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.onnxruntime-cpu
+    image: rapidocr-onnxruntime-cpu:latest
+    working_dir: /app
+    volumes:
+      - models:/app/rapidocr/models
+      - ../python:/app
+    stdin_open: true
+    tty: true
+
+  onnxruntime-gpu:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.onnxruntime-gpu
+    image: rapidocr-onnxruntime-gpu:latest
+    working_dir: /app
+    volumes:
+      - models:/app/rapidocr/models
+      - ../python:/app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    stdin_open: true
+    tty: true
+
+  tensorrt:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.tensorrt
+    image: rapidocr-tensorrt:latest
+    working_dir: /app
+    volumes:
+      - models:/app/rapidocr/models
+      - ../python:/app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    stdin_open: true
+    tty: true
+
+  paddle:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.paddle
+    image: rapidocr-paddle:latest
+    working_dir: /app
+    volumes:
+      - models:/app/rapidocr/models
+      - ../python:/app
+    stdin_open: true
+    tty: true
+
+  openvino:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.openvino
+    image: rapidocr-openvino:latest
+    working_dir: /app
+    volumes:
+      - models:/app/rapidocr/models
+      - ../python:/app
+    stdin_open: true
+    tty: true
+
+  pytorch:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.pytorch
+    image: rapidocr-pytorch:latest
+    working_dir: /app
+    volumes:
+      - models:/app/rapidocr/models
+      - ../python:/app
+    stdin_open: true
+    tty: true
+
+  mnn:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.mnn
+    image: rapidocr-mnn:latest
+    working_dir: /app
+    volumes:
+      - models:/app/rapidocr/models
+      - ../python:/app
+    stdin_open: true
+    tty: true
+
+volumes:
+  models:
+    name: rapidocr-models
