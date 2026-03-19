@@ -2,6 +2,7 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import shlex
+import shutil
 import sys
 from pathlib import Path
 
@@ -29,6 +30,17 @@ def test_cli(capsys, cmd, gt):
     main(shlex.split(cmd))
     output = capsys.readouterr().out.strip()
     assert gt in output
+
+
+@mark.parametrize("cmd", [f"download_models --config {tests_dir}/test_config.yaml"])
+def test_cli_download_models(capsys, cmd):
+    main(shlex.split(cmd))
+    output = capsys.readouterr().out.strip()
+    assert "Models downloaded to" in output
+
+    model_dir = Path("./test_models").expanduser().resolve()
+    assert model_dir.exists()
+    shutil.rmtree(model_dir)
 
 
 @mark.parametrize("cmd", [f"config --save_cfg_file {tests_dir}/config.yaml"])

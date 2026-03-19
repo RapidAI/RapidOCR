@@ -1,9 +1,9 @@
 Global:
     text_score: 0.5
 
-    use_det: true
+    use_det: false
     use_cls: true
-    use_rec: true
+    use_rec: false
 
     min_height: 30
     width_height_ratio: 8
@@ -16,7 +16,7 @@ Global:
     font_path: null
     log_level: "info" # debug / info / warning / error / critical
 
-    model_root_dir: null
+    model_root_dir: ./test_models
 
 EngineConfig:
     onnxruntime:

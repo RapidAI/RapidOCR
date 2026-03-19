@@ -74,6 +74,12 @@ class TRTInferSession(InferSession):
             AssertionError: If CUDA device setup fails.
             RuntimeError: If engine building fails.
         """
+        self.model_root_dir = Path(cfg.get("model_root_dir"))
+        if not self.model_root_dir.exists():
+            raise FileNotFoundError(
+                f"model_root_dir {self.model_root_dir} does not exist"
+            )
+
         self.cfg = cfg
         self.engine_cfg = cfg.get("engine_cfg", {})
         self._closed = False
@@ -456,7 +462,7 @@ class TRTInferSession(InferSession):
         """
         cache_dir = self.engine_cfg.get("cache_dir")
         if cache_dir is None:
-            cache_dir = self.DEFAULT_MODEL_PATH
+            cache_dir = self.model_root_dir / "models"
 
         cache_dir = Path(cache_dir)
         cache_dir.mkdir(parents=True, exist_ok=True)

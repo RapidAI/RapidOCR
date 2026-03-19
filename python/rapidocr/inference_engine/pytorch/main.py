@@ -13,6 +13,12 @@ from .networks.main import ModelLoader
 
 class TorchInferSession(InferSession):
     def __init__(self, cfg) -> None:
+        self.model_root_dir = Path(cfg.get("model_root_dir"))
+        if not self.model_root_dir.exists():
+            raise FileNotFoundError(
+                f"model_root_dir {self.model_root_dir} does not exist"
+            )
+
         self.device = DeviceConfig(cfg).setup_device()
         self.predictor = ModelLoader(cfg, self.device).predictor
 
@@ -21,7 +27,7 @@ class TorchInferSession(InferSession):
             inp = torch.from_numpy(img)
             inp = inp.to(self.device)
             outputs = self.predictor(inp).cpu().numpy()
-            if self.device.type=="mps":
+            if self.device.type == "mps":
                 del inp
                 torch.mps.empty_cache()
             return outputs

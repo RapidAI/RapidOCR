@@ -83,7 +83,6 @@ class FileInfo:
 
 class InferSession(abc.ABC):
     model_info = OmegaConf.load(MODEL_URL_PATH)
-    DEFAULT_MODEL_PATH = cur_dir / "models"
 
     @abc.abstractmethod
     def __init__(self, config):

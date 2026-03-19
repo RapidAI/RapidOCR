@@ -17,6 +17,10 @@ from .provider_config import ProviderConfig
 
 class OrtInferSession(InferSession):
     def __init__(self, cfg: Dict[str, Any]):
+        model_root_dir = Path(cfg.get("model_root_dir"))
+        if not model_root_dir.exists():
+            raise FileNotFoundError(f"model_root_dir {model_root_dir} does not exist")
+
         # support custom session (PR #451)
         session = cfg.get("session", None)
         if session is not None:
@@ -41,7 +45,7 @@ class OrtInferSession(InferSession):
                     model_type=cfg.model_type,
                 )
             )
-            model_path = self.DEFAULT_MODEL_PATH / Path(model_info["model_dir"]).name
+            model_path = model_root_dir / Path(model_info["model_dir"]).name
             download_params = DownloadFileInput(
                 file_url=model_info["model_dir"],
                 sha256=model_info["SHA256"],

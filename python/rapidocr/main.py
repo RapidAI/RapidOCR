@@ -15,6 +15,7 @@ from .ch_ppocr_cls import TextClassifier, TextClsOutput
 from .ch_ppocr_det import TextDetector, TextDetOutput
 from .ch_ppocr_rec import TextRecInput, TextRecognizer, TextRecOutput
 from .cli import check_install, generate_cfg
+from .utils.download_models import download_models
 from .utils.load_image import LoadImage
 from .utils.log import logger
 from .utils.output import RapidOCROutput
@@ -54,6 +55,9 @@ class RapidOCR:
 
         if params:
             cfg = ParseParams.update_batch(cfg, params)
+
+        if cfg.Global.model_root_dir is None:
+            cfg.Global.model_root_dir = root_dir / "models"
         return cfg
 
     def _initialize(self, cfg: DictConfig):
@@ -63,15 +67,18 @@ class RapidOCR:
 
         self.use_det = cfg.Global.use_det
         cfg.Det.engine_cfg = cfg.EngineConfig[cfg.Det.engine_type.value]
+        cfg.Det.model_root_dir = cfg.Global.model_root_dir
         self.text_det = TextDetector(cfg.Det)
 
         self.use_cls = cfg.Global.use_cls
         cfg.Cls.engine_cfg = cfg.EngineConfig[cfg.Cls.engine_type.value]
+        cfg.Cls.model_root_dir = cfg.Global.model_root_dir
         self.text_cls = TextClassifier(cfg.Cls)
 
         self.use_rec = cfg.Global.use_rec
         cfg.Rec.engine_cfg = cfg.EngineConfig[cfg.Rec.engine_type.value]
         cfg.Rec.font_path = cfg.Global.font_path
+        cfg.Rec.model_root_dir = cfg.Global.model_root_dir
         self.text_rec = TextRecognizer(cfg.Rec)
 
         self.load_img = LoadImage()
@@ -372,6 +379,10 @@ def parse_args(arg_list: Optional[List[str]] = None):
     )
     parser_check.set_defaults(func=check_install)
 
+    parser_download = subparser.add_parser("download_models", help="Download models")
+    parser_download.add_argument("--config", type=str)
+    parser_download.set_defaults(func=download_models)
+
     args = parser.parse_args(arg_list)
     return args
 
@@ -381,6 +392,10 @@ def main(arg_list: Optional[List[str]] = None):
 
     if args.command == "config":
         generate_cfg(args)
+        return
+
+    if args.command == "download_models":
+        download_models(args.config)
         return
 
     params = {

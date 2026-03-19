@@ -21,7 +21,9 @@ from .device_config import CPUConfig
 
 class OpenVINOInferSession(InferSession):
     def __init__(self, cfg: DictConfig):
-        super().__init__(cfg)
+        model_root_dir = Path(cfg.get("model_root_dir"))
+        if not model_root_dir.exists():
+            raise FileNotFoundError(f"model_root_dir {model_root_dir} does not exist")
 
         core = Core()
 
@@ -36,7 +38,7 @@ class OpenVINOInferSession(InferSession):
                     model_type=cfg.model_type,
                 )
             )
-            model_path = self.DEFAULT_MODEL_PATH / Path(model_info["model_dir"]).name
+            model_path = model_root_dir / Path(model_info["model_dir"]).name
             download_params = DownloadFileInput(
                 file_url=model_info["model_dir"],
                 sha256=model_info["SHA256"],

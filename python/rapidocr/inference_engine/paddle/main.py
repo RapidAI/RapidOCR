@@ -17,6 +17,12 @@ from .device_config import DeviceConfig
 
 class PaddleInferSession(InferSession):
     def __init__(self, cfg, mode: Optional[str] = None) -> None:
+        self.model_root_dir = Path(cfg.get("model_root_dir"))
+        if not self.model_root_dir.exists():
+            raise FileNotFoundError(
+                f"model_root_dir {self.model_root_dir} does not exist"
+            )
+
         self.mode = mode
 
         pdmodel_path, pdiparams_path = self.setup_model(cfg)
@@ -113,7 +119,7 @@ class PaddleInferSession(InferSession):
     ) -> Path:
         model_file_url = f"{default_model_dir}/{model_file_name}"
         model_file_path = (
-            self.DEFAULT_MODEL_PATH / Path(default_model_dir).name / model_file_name
+            self.model_root_dir / Path(default_model_dir).name / model_file_name
         )
         DownloadFile.run(
             DownloadFileInput(
