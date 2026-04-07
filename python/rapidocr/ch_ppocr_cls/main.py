@@ -20,13 +20,19 @@ import cv2
 import numpy as np
 
 from rapidocr.inference_engine.base import get_engine
+from rapidocr.utils.typings import OCRVersion
 
 from .utils import ClsPostProcess, TextClsOutput
+
+CLS_SHAPE_BY_OCR_VERSION = {
+    OCRVersion.PPOCRV4: [3, 48, 192],
+    OCRVersion.PPOCRV5: [3, 80, 160],
+}
 
 
 class TextClassifier:
     def __init__(self, cfg: Dict[str, Any]):
-        self.cls_image_shape = cfg["cls_image_shape"]
+        self.cls_image_shape = CLS_SHAPE_BY_OCR_VERSION[cfg["ocr_version"]]
         self.cls_batch_num = cfg["cls_batch_num"]
         self.cls_thresh = cfg["cls_thresh"]
         self.postprocess_op = ClsPostProcess(cfg["label_list"])
@@ -83,7 +89,9 @@ class TextClassifier:
         else:
             resized_w = int(math.ceil(img_h * ratio))
 
-        resized_image = cv2.resize(img, (resized_w, img_h))
+        resized_image = cv2.resize(
+            img, (resized_w, img_h), interpolation=cv2.INTER_LINEAR
+        )
         resized_image = resized_image.astype("float32")
         if img_c == 1:
             resized_image = resized_image / 255

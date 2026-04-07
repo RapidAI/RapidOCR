@@ -136,7 +136,7 @@ class InferSession(abc.ABC):
                     return model_dict[k]
 
         for k in model_dict:
-            if k.startswith(lang_type):
+            if k.startswith(lang_type) and model_type in k:
                 return model_dict[k]
 
         logger.error(
