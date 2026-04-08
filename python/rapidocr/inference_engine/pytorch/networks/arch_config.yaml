@@ -1,4 +1,4 @@
-ch_PP-OCRv5_rec_mobile_infer:
+ch_PP-OCRv5_rec_mobile:
   model_type: rec
   algorithm: SVTR_LCNet
   Transform:
@@ -24,7 +24,7 @@ ch_PP-OCRv5_rec_mobile_infer:
           nrtr_dim: 384
           max_text_length: 25
 
-ch_PP-OCRv5_rec_server_infer:
+ch_PP-OCRv5_rec_server:
   model_type: rec
   algorithm: SVTR_HGNet
   Transform:
@@ -50,7 +50,7 @@ ch_PP-OCRv5_rec_server_infer:
           nrtr_dim: 384
           max_text_length: 25
 
-ch_PP-OCRv5_det_mobile_infer:
+ch_PP-OCRv5_det_mobile:
   model_type: det
   algorithm: DB
   Transform: null
@@ -67,7 +67,7 @@ ch_PP-OCRv5_det_mobile_infer:
     k: 50
     fix_nan: True
 
-ch_PP-OCRv5_det_server_infer:
+ch_PP-OCRv5_det_server:
   model_type: det
   algorithm: DB
   Transform: null
@@ -83,7 +83,7 @@ ch_PP-OCRv5_det_server_infer:
     k: 50
     mode: "large"
 
-ch_ptocr_mobile_v2.0_cls_infer:
+ch_ptocr_mobile_v2.0_cls_mobile:
   model_type: cls
   algorithm: CLS
   Transform:
@@ -96,7 +96,7 @@ ch_ptocr_mobile_v2.0_cls_infer:
     name: ClsHead
     class_dim: 2
 
-Multilingual_PP-OCRv3_det_infer:
+multi_PP-OCRv3_det_mobile:
   model_type: det
   algorithm: DB
   Transform:
@@ -113,7 +113,7 @@ Multilingual_PP-OCRv3_det_infer:
     name: DBHead
     k: 50
 
-en_PP-OCRv3_det_infer:
+en_PP-OCRv3_det_mobile:
   model_type: det
   algorithm: DB
   Transform:
@@ -130,7 +130,7 @@ en_PP-OCRv3_det_infer:
     name: DBHead
     k: 50
 
-en_PP-OCRv4_rec_infer:
+en_PP-OCRv4_rec_mobile:
   model_type: rec
   algorithm: SVTR_LCNet
   Transform:
@@ -156,7 +156,7 @@ en_PP-OCRv4_rec_infer:
           nrtr_dim: 384
           max_text_length: 25
 
-ch_PP-OCRv4_det_infer:
+ch_PP-OCRv4_det_mobile:
   model_type: det
   algorithm: DB
   Transform: null
@@ -172,7 +172,7 @@ ch_PP-OCRv4_det_infer:
     name: DBHead
     k: 50
 
-ch_PP-OCRv4_det_server_infer:
+ch_PP-OCRv4_det_server:
   model_type: det
   algorithm: DB
   Transform: null
@@ -188,7 +188,7 @@ ch_PP-OCRv4_det_server_infer:
     k: 50
     mode: "large"
 
-ch_PP-OCRv4_rec_infer:
+ch_PP-OCRv4_rec_mobile:
   model_type: rec
   algorithm: SVTR_LCNet
   Transform:
@@ -214,7 +214,7 @@ ch_PP-OCRv4_rec_infer:
           nrtr_dim: 384
           max_text_length: 25
 
-ch_PP-OCRv4_rec_server_infer:
+ch_PP-OCRv4_rec_server:
   model_type: rec
   algorithm: SVTR_HGNet
   Transform:
@@ -239,7 +239,7 @@ ch_PP-OCRv4_rec_server_infer:
           nrtr_dim: 384
           max_text_length: 25
 
-chinese_cht_PP-OCRv3_rec_infer:
+chinese_cht_PP-OCRv3_rec_mobile:
   model_type: rec
   algorithm: SVTR
   Transform:
@@ -260,7 +260,7 @@ chinese_cht_PP-OCRv3_rec_infer:
     out_channels: 8423
     fc_decay: 0.00001
 
-latin_PP-OCRv3_rec_infer:
+latin_PP-OCRv3_rec_mobile:
   model_type: rec
   algorithm: SVTR
   Transform:
@@ -281,7 +281,7 @@ latin_PP-OCRv3_rec_infer:
     out_channels: 187
     fc_decay: 0.00001
 
-cyrillic_PP-OCRv3_rec_infer:
+cyrillic_PP-OCRv3_rec_mobile:
   model_type: rec
   algorithm: SVTR
   Transform:
@@ -302,7 +302,7 @@ cyrillic_PP-OCRv3_rec_infer:
     out_channels: 165
     fc_decay: 0.00001
 
-arabic_PP-OCRv4_rec_infer:
+arabic_PP-OCRv4_rec_mobile:
   model_type: rec
   algorithm: SVTR
   Transform:
@@ -323,7 +323,7 @@ arabic_PP-OCRv4_rec_infer:
     out_channels: 164
     fc_decay: 0.00001
 
-korean_PP-OCRv4_rec_infer:
+korean_PP-OCRv4_rec_mobile:
   model_type: rec
   algorithm: SVTR
   Transform:
@@ -344,7 +344,7 @@ korean_PP-OCRv4_rec_infer:
     out_channels: 3690
     fc_decay: 0.00001
 
-japan_PP-OCRv4_rec_infer:
+japan_PP-OCRv4_rec_mobile:
   model_type: rec
   algorithm: SVTR
   Transform:
@@ -365,7 +365,7 @@ japan_PP-OCRv4_rec_infer:
     out_channels: 4401
     fc_decay: 0.00001
 
-ta_PP-OCRv4_rec_infer:
+ta_PP-OCRv4_rec_mobile:
   model_type: rec
   algorithm: SVTR
   Transform:
@@ -386,7 +386,7 @@ ta_PP-OCRv4_rec_infer:
     out_channels: 130
     fc_decay: 0.00001
 
-te_PP-OCRv4_rec_infer:
+te_PP-OCRv4_rec_mobile:
   model_type: rec
   algorithm: SVTR
   Transform:
@@ -407,7 +407,7 @@ te_PP-OCRv4_rec_infer:
     out_channels: 153
     fc_decay: 0.00001
 
-ka_PP-OCRv4_rec_infer:
+ka_PP-OCRv4_rec_mobile:
   model_type: rec
   algorithm: SVTR
   Transform:
@@ -428,7 +428,7 @@ ka_PP-OCRv4_rec_infer:
     out_channels: 155
     fc_decay: 0.00001
 
-devanagari_PP-OCRv4_rec_infer:
+devanagari_PP-OCRv4_rec_mobile:
   model_type: rec
   algorithm: SVTR
   Transform:
@@ -448,4 +448,3 @@ devanagari_PP-OCRv4_rec_infer:
     name: CTCHead
     out_channels: 169
     fc_decay: 0.00001
-
