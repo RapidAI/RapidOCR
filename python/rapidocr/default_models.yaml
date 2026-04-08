@@ -486,7 +486,7 @@ paddle:
         inference.pdmodel: f07501e6a3e96aa065ed5a656c8aee5bff9694ac8cb51826178dd4f34e884333
     cls:
       ch_ppocr_mobile_v2.0_cls_mobile:
-        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/cls/ch_ppocr_mobile_v2_0_cls_infer
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv4/cls/ch_ppocr_mobile_v2_0_cls_mobile
         inference.pdiparams: d1efda1b80e174b4fcb168a035ac96c1af4938892bd86a55f300a6027105d08c
         inference.pdiparams.info: ee0c2eaa4c09814802bf520c01dfdbc1345dc2879dc9e67424d32c7b0ee88e59
         inference.pdmodel: 3c4337ec61722a20b1dca2e5bfaffc313c0592bc89ad6e0d45168224186f6683
