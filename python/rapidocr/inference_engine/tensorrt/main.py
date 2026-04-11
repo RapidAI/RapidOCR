@@ -1,30 +1,6 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-"""
-TensorRT Inference Session for RapidOCR.
-
-This module provides TensorRT-based inference for OCR models, offering
-significant performance improvements over ONNX Runtime on NVIDIA GPUs.
-
-Key Features:
-- Automatic engine building and caching
-- Dynamic shape support via optimization profiles
-- Pre-allocated buffers for minimal inference overhead
-- Optional pinned memory for faster data transfers
-
-Performance Optimizations:
-1. Pre-allocated buffers with max shape (avoids reallocation overhead)
-2. Pinned memory for faster CPU-GPU transfers (~2x on discrete GPUs)
-3. Persistent CUDA stream (no stream creation per inference)
-4. Async memory copies overlapped with computation
-
-Example:
-    >>> from rapidocr.inference_engine.tensorrt import TRTInferSession
-    >>> with TRTInferSession(config) as session:
-    ...     output = session(input_array)
-"""
-
 import traceback
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -42,38 +18,7 @@ from .memory_utils import allocate_buffers, free_buffers
 
 
 class TRTInferSession(InferSession):
-    """TensorRT Inference Session for RapidOCR.
-
-    This class provides GPU-accelerated inference using NVIDIA TensorRT.
-    It manages engine loading/building, memory allocation, and inference
-    execution with optimizations for minimal latency.
-
-    Supports context manager protocol for automatic resource cleanup:
-        >>> with TRTInferSession(cfg) as session:
-        ...     result = session(input_data)
-
-    Attributes:
-        cfg: Configuration dictionary.
-        engine: TensorRT engine instance.
-        context: TensorRT execution context.
-        stream: CUDA stream for async operations.
-        inputs: List of input buffer objects.
-        outputs: List of output buffer objects.
-    """
-
     def __init__(self, cfg: Dict[str, Any]):
-        """Initialize TensorRT inference session.
-
-        Args:
-            cfg: Configuration dictionary containing:
-                - engine_cfg: TensorRT-specific settings (device_id, precision, etc.)
-                - model_path: Optional path to custom ONNX model
-                - task_type, lang_type, etc.: For default model selection
-
-        Raises:
-            AssertionError: If CUDA device setup fails.
-            RuntimeError: If engine building fails.
-        """
         self.model_root_dir = Path(cfg.get("model_root_dir"))
         if not self.model_root_dir.exists():
             raise FileNotFoundError(
@@ -84,17 +29,13 @@ class TRTInferSession(InferSession):
         self.engine_cfg = cfg.get("engine_cfg", {})
         self._closed = False
 
-        # Initialize CUDA device
         self.device_id = self._setup_cuda_device()
 
-        # TensorRT logger
         self.trt_logger = trt.Logger(trt.Logger.WARNING)
 
-        # Get or build engine
         engine_path = self._get_engine_path(cfg)
         self.engine = self._load_or_build_engine(cfg, engine_path)
 
-        # Create execution context
         self.context = self.engine.create_execution_context()
 
         # Allocate memory buffers (pre-allocated with max shape)
@@ -115,45 +56,13 @@ class TRTInferSession(InferSession):
             self._requires_square_input = False
             self._max_square_size = 2048
 
-    # =========================================================================
-    # Context Manager Protocol
-    # =========================================================================
-
     def __enter__(self) -> "TRTInferSession":
-        """Enter context manager.
-
-        Returns:
-            self: The session instance.
-        """
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Exit context manager and cleanup resources.
-
-        Args:
-            exc_type: Exception type if an exception occurred.
-            exc_val: Exception value if an exception occurred.
-            exc_tb: Exception traceback if an exception occurred.
-        """
         self.close()
 
     def close(self) -> None:
-        """Explicitly close and cleanup resources.
-
-        This method releases all CUDA resources including:
-        - GPU memory buffers
-        - CUDA stream
-        - TensorRT context and engine
-
-        Safe to call multiple times.
-
-        Example:
-            >>> session = TRTInferSession(cfg)
-            >>> try:
-            ...     result = session(data)
-            ... finally:
-            ...     session.close()
-        """
         if self._closed:
             return
 
@@ -185,12 +94,7 @@ class TRTInferSession(InferSession):
             logger.debug(f"Error during session close: {e}")
 
     def __del__(self):
-        """Destructor - cleanup resources if not already closed."""
         self.close()
-
-    # =========================================================================
-    # Inference Methods
-    # =========================================================================
 
     def __call__(self, input_content: np.ndarray) -> np.ndarray:
         """Run inference on input data.
@@ -244,17 +148,6 @@ class TRTInferSession(InferSession):
             ) from e
 
     def _set_input_shape(self, input_content: np.ndarray) -> tuple:
-        """Set input shape and get corresponding output shape.
-
-        For dynamic shape networks, we need to inform TensorRT of the
-        actual input shape before each inference.
-
-        Args:
-            input_content: Input array to get shape from.
-
-        Returns:
-            Output shape tuple after setting input shape.
-        """
         input_name = self.engine.get_tensor_name(0)
         self.context.set_input_shape(input_name, input_content.shape)
 
@@ -262,13 +155,6 @@ class TRTInferSession(InferSession):
         return self.context.get_tensor_shape(output_name)
 
     def _copy_input_to_device(self, input_content: np.ndarray) -> None:
-        """Copy input data to GPU asynchronously.
-
-        Uses pre-allocated pinned memory buffer for optimal transfer speed.
-
-        Args:
-            input_content: Input data to copy.
-        """
         input_flat = input_content.ravel()
         self.inputs[0].host[: input_flat.size] = input_flat
 
@@ -285,16 +171,6 @@ class TRTInferSession(InferSession):
         self.context.execute_async_v3(stream_handle=self.stream)
 
     def _copy_output_to_host(self, output_shape: tuple) -> np.ndarray:
-        """Copy output from GPU to CPU and reshape.
-
-        Only copies the actual output size, not the full pre-allocated buffer.
-
-        Args:
-            output_shape: Expected output shape.
-
-        Returns:
-            Output array reshaped to correct dimensions.
-        """
         output_size = int(np.prod(output_shape))
         output_nbytes = output_size * self.outputs[0].host.itemsize
 
@@ -311,19 +187,7 @@ class TRTInferSession(InferSession):
 
         return self.outputs[0].host[:output_size].reshape(output_shape)
 
-    # =========================================================================
-    # MULTI Model Square Input Handling
-    # =========================================================================
-
     def _check_multi_model(self, cfg: Dict[str, Any]) -> bool:
-        """Check if this is MULTI detection model requiring square input.
-
-        Args:
-            cfg: Configuration dictionary.
-
-        Returns:
-            True if this is MULTI detection model, False otherwise.
-        """
         try:
             from ...utils.typings import LangDet, TaskType
 
@@ -334,11 +198,6 @@ class TRTInferSession(InferSession):
             return False
 
     def _get_max_profile_size(self) -> int:
-        """Get maximum dimension from TensorRT optimization profile.
-
-        Returns:
-            Maximum height/width allowed by the optimization profile.
-        """
         try:
             # Try to get from config first
             profile_cfg = self.engine_cfg.get("det_profile", {})
@@ -359,16 +218,6 @@ class TRTInferSession(InferSession):
         return 2048
 
     def _pad_to_square(self, input_content: np.ndarray) -> tuple:
-        """Pad input to square shape for MULTI model.
-
-        Args:
-            input_content: Input array with shape (N, C, H, W).
-
-        Returns:
-            Tuple of (padded_input, original_hw) where:
-            - padded_input: Square input array (N, C, S, S)
-            - original_hw: Original (H, W) for later cropping, or None if already square
-        """
         N, C, H, W = input_content.shape
 
         if H == W:
@@ -426,19 +275,7 @@ class TRTInferSession(InferSession):
             crop_w = int(orig_w * scale_w)
             return output[:, :, :crop_h, :crop_w]
 
-    # =========================================================================
-    # Initialization Helpers
-    # =========================================================================
-
     def _setup_cuda_device(self) -> int:
-        """Setup CUDA device for inference.
-
-        Returns:
-            Device ID that was set.
-
-        Raises:
-            AssertionError: If CUDA device setup fails.
-        """
         device_id = self.engine_cfg.get("device_id", 0)
         status_tuple = cudart.cudaSetDevice(device_id)
         status = status_tuple[0]
@@ -449,17 +286,6 @@ class TRTInferSession(InferSession):
         return device_id
 
     def _get_engine_path(self, cfg: Dict[str, Any]) -> Path:
-        """Determine the TensorRT engine file path.
-
-        Engine files are cached per GPU architecture and precision setting
-        to avoid rebuilding on subsequent runs.
-
-        Args:
-            cfg: Configuration dictionary.
-
-        Returns:
-            Path to engine file (may not exist yet).
-        """
         cache_dir = self.engine_cfg.get("cache_dir")
         if cache_dir is None:
             cache_dir = self.model_root_dir / "models"
@@ -501,15 +327,6 @@ class TRTInferSession(InferSession):
     def _load_or_build_engine(
         self, cfg: Dict[str, Any], engine_path: Path
     ) -> trt.ICudaEngine:
-        """Load cached engine or build new one from ONNX.
-
-        Args:
-            cfg: Configuration dictionary.
-            engine_path: Path where engine should be cached.
-
-        Returns:
-            TensorRT engine instance.
-        """
         force_rebuild = self.engine_cfg.get("force_rebuild", False)
 
         # Try to load cached engine
@@ -536,11 +353,9 @@ class TRTInferSession(InferSession):
         return builder.build()
 
     def _get_onnx_path(self, cfg: Dict[str, Any]) -> Path:
-        """Get ONNX model path, downloading if necessary."""
         model_path = cfg.get("model_path")
 
         if model_path is None:
-            # Download default ONNX model
             original_engine_type = cfg.engine_type
             cfg.engine_type = EngineType.ONNXRUNTIME
 
@@ -556,7 +371,7 @@ class TRTInferSession(InferSession):
 
             cfg.engine_type = original_engine_type
 
-            model_path = self.DEFAULT_MODEL_PATH / Path(model_info["model_dir"]).name
+            model_path = self.model_root_dir / Path(model_info["model_dir"]).name
             download_params = DownloadFileInput(
                 file_url=model_info["model_dir"],
                 sha256=model_info["SHA256"],
@@ -570,24 +385,12 @@ class TRTInferSession(InferSession):
         return model_path
 
     def _load_engine(self, engine_path: Path) -> trt.ICudaEngine:
-        """Load a serialized TensorRT engine from disk."""
         runtime = trt.Runtime(self.trt_logger)
         with open(engine_path, "rb") as f:
             engine_data = f.read()
         return runtime.deserialize_cuda_engine(engine_data)
 
-    # =========================================================================
-    # Interface Methods (required by InferSession)
-    # =========================================================================
-
     def have_key(self, key: str = "character") -> bool:
-        """Check if engine has metadata key.
-
-        TensorRT engines don't store custom metadata like ONNX models.
-
-        Returns:
-            Always False for TensorRT engines.
-        """
         return False
 
     def get_character_list(self, key: str = "character") -> List[str]:
@@ -595,17 +398,6 @@ class TRTInferSession(InferSession):
 
     @classmethod
     def get_dict_key_url(cls, file_info: FileInfo) -> Optional[str]:
-        """Get dictionary URL by falling back to Paddle/ONNX model config.
-
-        TensorRT doesn't have entries in default_models.yaml, so we
-        look up the dictionary URL from Paddle or ONNX configurations.
-
-        Args:
-            file_info: Model file information.
-
-        Returns:
-            Dictionary URL string or None if not found.
-        """
         # Try Paddle first (usually has dict_url)
         for engine_type in [EngineType.PADDLE, EngineType.ONNXRUNTIME]:
             try:
@@ -626,6 +418,4 @@ class TRTInferSession(InferSession):
 
 
 class TensorRTError(Exception):
-    """Exception raised for TensorRT inference errors."""
-
     pass
