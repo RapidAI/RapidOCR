@@ -1,35 +1,18 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-"""
-TensorRT Memory Utilities for RapidOCR.
-
-This module provides memory management utilities for TensorRT inference,
-including buffer allocation with optional pinned memory support.
-
-Performance Notes:
-- Pre-allocating with MAX shape prevents expensive reallocation during inference
-- Pinned memory provides ~2x faster H2D/D2H transfers on discrete GPUs
-- On Tegra/Jetson (unified memory), pinned memory benefit is less pronounced
-"""
 import ctypes
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
 import numpy as np
-from cuda.bindings import runtime as cudart
 import tensorrt as trt
-
-
-# =============================================================================
-# Constants - Replace magic numbers with named constants
-# =============================================================================
+from cuda.bindings import runtime as cudart
 
 # Default maximum shapes for buffer allocation when profile info unavailable
 DEFAULT_MAX_INPUT_SHAPE = (1, 3, 2048, 2048)  # Max for detection input
 DEFAULT_MAX_OUTPUT_SHAPE = (1, 2048, 2048)  # Generous output buffer
 
-# NumPy dtype to ctypes mapping for pinned memory allocation
 _NUMPY_TO_CTYPE = {
     np.float32: ctypes.c_float,
     np.float16: ctypes.c_uint16,  # No native half in ctypes
@@ -38,11 +21,6 @@ _NUMPY_TO_CTYPE = {
     np.int8: ctypes.c_int8,
     np.uint8: ctypes.c_uint8,
 }
-
-
-# =============================================================================
-# Data Classes
-# =============================================================================
 
 
 @dataclass
@@ -69,11 +47,6 @@ class HostDeviceMemory:
     device: int
     is_pinned: bool = False
     host_ptr: Optional[int] = None
-
-
-# =============================================================================
-# Main Functions
-# =============================================================================
 
 
 def allocate_buffers(
@@ -193,11 +166,6 @@ def free_buffers(
                 cudart.cudaFreeHost(mem.host_ptr)
             except Exception:
                 pass  # Ignore cleanup errors
-
-
-# =============================================================================
-# Private Helper Functions
-# =============================================================================
 
 
 def _get_max_shape(
