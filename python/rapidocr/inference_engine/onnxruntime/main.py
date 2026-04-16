@@ -17,10 +17,6 @@ from .provider_config import ProviderConfig
 
 class OrtInferSession(InferSession):
     def __init__(self, cfg: Dict[str, Any]):
-        model_root_dir = Path(cfg.get("model_root_dir"))
-        if not model_root_dir.exists():
-            raise FileNotFoundError(f"model_root_dir {model_root_dir} does not exist")
-
         # support custom session (PR #451)
         session = cfg.get("session", None)
         if session is not None:
@@ -35,6 +31,13 @@ class OrtInferSession(InferSession):
 
         model_path = cfg.get("model_path", None)
         if model_path is None:
+            # Check model_root_dir only if model_path is None
+            model_root_dir = Path(cfg.get("model_root_dir"))
+            if not model_root_dir.exists():
+                raise FileNotFoundError(
+                    f"model_root_dir {model_root_dir} does not exist"
+                )
+
             # 说明用户没有指定自己模型，使用默认模型
             model_info = self.get_model_url(
                 FileInfo(

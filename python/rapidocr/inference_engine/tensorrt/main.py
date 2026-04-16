@@ -19,12 +19,6 @@ from .memory_utils import allocate_buffers, free_buffers
 
 class TRTInferSession(InferSession):
     def __init__(self, cfg: Dict[str, Any]):
-        self.model_root_dir = Path(cfg.get("model_root_dir"))
-        if not self.model_root_dir.exists():
-            raise FileNotFoundError(
-                f"model_root_dir {self.model_root_dir} does not exist"
-            )
-
         self.cfg = cfg
         self.engine_cfg = cfg.get("engine_cfg", {})
         self._closed = False
@@ -288,6 +282,14 @@ class TRTInferSession(InferSession):
     def _get_engine_path(self, cfg: Dict[str, Any]) -> Path:
         cache_dir = self.engine_cfg.get("cache_dir")
         if cache_dir is None:
+            # Check model_root_dir only if cache_dir is None
+            if self.model_root_dir is None:
+                self.model_root_dir = Path(cfg.get("model_root_dir"))
+                if not self.model_root_dir.exists():
+                    raise FileNotFoundError(
+                        f"model_root_dir {self.model_root_dir} does not exist"
+                    )
+
             cache_dir = self.model_root_dir / "models"
 
         cache_dir = Path(cache_dir)
@@ -370,6 +372,14 @@ class TRTInferSession(InferSession):
             )
 
             cfg.engine_type = original_engine_type
+
+            # Check model_root_dir only if model_path is None
+            if self.model_root_dir is None:
+                self.model_root_dir = Path(cfg.get("model_root_dir"))
+                if not self.model_root_dir.exists():
+                    raise FileNotFoundError(
+                        f"model_root_dir {self.model_root_dir} does not exist"
+                    )
 
             model_path = self.model_root_dir / Path(model_info["model_dir"]).name
             download_params = DownloadFileInput(

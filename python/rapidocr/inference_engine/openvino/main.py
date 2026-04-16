@@ -21,14 +21,17 @@ from .device_config import CPUConfig
 
 class OpenVINOInferSession(InferSession):
     def __init__(self, cfg: DictConfig):
-        model_root_dir = Path(cfg.get("model_root_dir"))
-        if not model_root_dir.exists():
-            raise FileNotFoundError(f"model_root_dir {model_root_dir} does not exist")
-
         core = Core()
 
         model_path = cfg.get("model_path", None)
         if model_path is None:
+            # Check model_root_dir only if model_path is None
+            model_root_dir = Path(cfg.get("model_root_dir"))
+            if not model_root_dir.exists():
+                raise FileNotFoundError(
+                    f"model_root_dir {model_root_dir} does not exist"
+                )
+
             model_info = self.get_model_url(
                 FileInfo(
                     engine_type=cfg.engine_type,
