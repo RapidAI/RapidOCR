@@ -284,7 +284,18 @@ class TRTInferSession(InferSession):
         if cache_dir is None:
             # Check model_root_dir only if cache_dir is None
             if self.model_root_dir is None:
-                self.model_root_dir = Path(cfg.get("model_root_dir"))
+                model_root_dir = cfg.get("model_root_dir", None)
+                if model_root_dir is None:
+                    raise ValueError(
+                        "Either model_path or model_root_dir must be provided in the configuration."
+                    )
+                model_root_dir = Path(model_root_dir)
+                if not model_root_dir.exists():
+                    raise FileNotFoundError(
+                        f"model_root_dir {model_root_dir} does not exist"
+                    )
+
+                self.model_root_dir = model_root_dir
                 if not self.model_root_dir.exists():
                     raise FileNotFoundError(
                         f"model_root_dir {self.model_root_dir} does not exist"
