@@ -352,6 +352,38 @@ class RapidOCRError(Exception):
     pass
 
 
+def has_vis_result(result: RapidOCROutput) -> bool:
+    return all(
+        getattr(result, attr, None) is not None for attr in ("boxes", "txts", "scores")
+    )
+
+
+def flatten_word_results(word_results):
+    if not word_results:
+        return []
+
+    flattened = []
+    for word_line in word_results:
+        if not word_line:
+            continue
+
+        if (
+            len(word_line) == 3
+            and isinstance(word_line[0], str)
+            and not isinstance(word_line[2], (list, tuple, np.ndarray))
+        ):
+            continue
+
+        for word_item in word_line:
+            if (
+                isinstance(word_item, tuple)
+                and len(word_item) == 3
+                and word_item[2] is not None
+            ):
+                flattened.append(word_item)
+    return flattened
+
+
 def parse_args(arg_list: Optional[List[str]] = None):
     parser = argparse.ArgumentParser()
     parser.add_argument("-img", "--img_path", type=str, default=None)
@@ -401,6 +433,7 @@ def main(arg_list: Optional[List[str]] = None):
     params = {
         "Global.text_score": args.text_score,
         "Global.return_word_box": args.return_word_box,
+        "Rec.lang_type": LangRec(args.lang_type),
     }
     ocr_engine = RapidOCR(params=params)
 
@@ -419,6 +452,10 @@ def main(arg_list: Optional[List[str]] = None):
     print(result)
 
     if args.vis_res:
+        if not has_vis_result(result):
+            logger.warning("No OCR result to visualize.")
+            return
+
         vis = VisRes(
             text_score=args.text_score,
             font_path=args.font_path,
@@ -427,7 +464,11 @@ def main(arg_list: Optional[List[str]] = None):
         cur_dir = args.vis_save_dir
 
         if args.return_word_box:
-            words_results = sum(result.word_results, ())
+            words_results = flatten_word_results(result.word_results)
+            if not words_results:
+                logger.warning("No word result to visualize.")
+                return
+
             words, words_scores, words_boxes = list(zip(*words_results))
             vis_img = vis(args.img_path, words_boxes, words, words_scores)
             save_path = cur_dir / f"{Path(args.img_path).stem}_vis_single.png"

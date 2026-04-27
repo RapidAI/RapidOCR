@@ -34,6 +34,7 @@ class ParseParams(OmegaConf):
     @classmethod
     def update_batch(cls, cfg: DictConfig, params: Dict[str, Any]) -> DictConfig:
         global_keys = list(OmegaConf.to_container(cfg.Global).keys())
+        section_keys = set(OmegaConf.to_container(cfg).keys())
         enum_params = [
             "engine_type",
             "model_type",
@@ -42,10 +43,21 @@ class ParseParams(OmegaConf):
             "task_type",
         ]
         for k, v in params.items():
-            if k.startswith("Global") and k.split(".")[1] not in global_keys:
+            key_parts = k.split(".")
+            if len(key_parts) < 2 or not all(key_parts):
                 raise ValueError(f"{k} is not a valid key.")
 
-            if k.split(".")[1] in enum_params and not isinstance(v, Enum):
+            section = key_parts[0]
+            if section not in section_keys:
+                raise ValueError(f"{k} is not a valid key.")
+
+            if section == "Global" and (
+                len(key_parts) != 2 or key_parts[1] not in global_keys
+            ):
+                raise ValueError(f"{k} is not a valid key.")
+
+            param_name = key_parts[-1]
+            if param_name in enum_params and not isinstance(v, Enum):
                 raise TypeError(f"The value of {k} must be Enum Type.")
 
             cls.update(cfg, k, v)

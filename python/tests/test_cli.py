@@ -12,7 +12,8 @@ from pytest import mark
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
-from rapidocr import RapidOCR
+from rapidocr import LangRec, RapidOCR
+from rapidocr.utils.output import RapidOCROutput
 from rapidocr.main import main
 
 tests_dir = root_dir / "tests" / "test_files"
@@ -91,3 +92,58 @@ def test_cli_lang_type():
     main(shlex.split(cmd))
     assert vis_path.exists()
     vis_path.unlink()
+
+
+def test_cli_lang_type_passed_to_engine(monkeypatch):
+    captured_params = {}
+
+    class DummyRapidOCR:
+        def __init__(self, params=None):
+            captured_params.update(params or {})
+
+        def __call__(self, img_path):
+            return RapidOCROutput()
+
+    monkeypatch.setattr("rapidocr.main.RapidOCR", DummyRapidOCR)
+
+    main(shlex.split(f"--img_path {img_path} --lang_type japan"))
+
+    assert captured_params["Rec.lang_type"] == LangRec.JAPAN
+
+
+def test_cli_vis_empty_result(monkeypatch, tmp_path):
+    class DummyRapidOCR:
+        def __init__(self, params=None):
+            pass
+
+        def __call__(self, img_path):
+            return RapidOCROutput()
+
+    monkeypatch.setattr("rapidocr.main.RapidOCR", DummyRapidOCR)
+
+    main(
+        shlex.split(
+            f"--img_path {img_path} -vis --vis_save_dir {tmp_path}"
+        )
+    )
+
+    assert not (tmp_path / f"{img_path.stem}_vis.png").exists()
+
+
+def test_cli_word_vis_empty_result(monkeypatch, tmp_path):
+    class DummyRapidOCR:
+        def __init__(self, params=None):
+            pass
+
+        def __call__(self, img_path, return_word_box=False):
+            return RapidOCROutput()
+
+    monkeypatch.setattr("rapidocr.main.RapidOCR", DummyRapidOCR)
+
+    main(
+        shlex.split(
+            f"--img_path {img_path} -vis --vis_save_dir {tmp_path} -word"
+        )
+    )
+
+    assert not (tmp_path / f"{img_path.stem}_vis_single.png").exists()

@@ -13,9 +13,11 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
 from rapidocr import LoadImageError, RapidOCR
+from rapidocr.utils.parse_parameters import ParseParams
 
 test_dir = root_dir / "tests" / "test_files"
 img_path = test_dir / "ch_en_num.jpg"
+config_path = root_dir / "rapidocr" / "config.yaml"
 
 
 @pytest.fixture()
@@ -107,6 +109,21 @@ def test_input_path(engine):
 def test_input_parameters(engine):
     result = engine(img_path, text_score=1.0)
     assert result.boxes is None
+
+
+@mark.parametrize("params", [{"text_score": 0.5}, {"Global": 0.5}, {"Unknown.key": 1}])
+def test_invalid_init_parameters(params):
+    cfg = ParseParams.load(config_path)
+
+    with pytest.raises(ValueError):
+        ParseParams.update_batch(cfg, params)
+
+
+def test_nested_init_parameters():
+    cfg = ParseParams.load(config_path)
+    ParseParams.update_batch(cfg, {"EngineConfig.onnxruntime.use_cuda": True})
+
+    assert cfg.EngineConfig.onnxruntime.use_cuda is True
 
 
 def test_input_three_ndim_two_channel(engine):
