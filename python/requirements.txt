@@ -6,6 +6,6 @@ Shapely>=1.7.1,!=2.0.4  # python3.12 2.0.4 bug
 PyYAML
 Pillow
 tqdm
-omegaconf
+omegaconf!=2.2.1 # https://github.com/omry/omegaconf/issues/934
 requests
 colorlog
