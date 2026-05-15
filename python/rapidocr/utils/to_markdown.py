@@ -17,69 +17,94 @@ class ToMarkdown:
         if boxes is None or txts is None:
             return "没有检测到任何文本。"
 
-        # 1. 将 box 和 text 绑定并排序
-        #    主键：box 的顶部 y 坐标；次键：box 的左侧 x 坐标
-        combined_data = sorted(
-            zip(boxes, txts),
-            key=lambda item: (
-                cls.get_box_properties(item[0])["top"],
-                cls.get_box_properties(item[0])["left"],
-            ),
-        )
-
-        output_lines = []
-        if not combined_data:
+        items = [
+            {"text": text, "props": cls.get_box_properties(box)}
+            for box, text in zip(boxes, txts)
+        ]
+        if not items:
             return ""
 
-        # 初始化当前行和前一个框的属性
-        current_line_parts = [combined_data[0][1]]
-        prev_props = cls.get_box_properties(combined_data[0][0])
+        items.sort(key=lambda item: (item["props"]["center_y"], item["props"]["left"]))
 
-        # 从第二个框开始遍历
-        for box, text in combined_data[1:]:
-            current_props = cls.get_box_properties(box)
+        lines = []
+        for item in items:
+            matched_line = None
+            for line in lines:
+                if cls.is_same_line(item["props"], line["props"]):
+                    matched_line = line
+                    break
 
-            # 启发式规则来决定如何布局
-            # 条件1：中心线距离是否足够近
-            min_height = min(current_props["height"], prev_props["height"])
-            centers_are_close = abs(
-                current_props["center_y"] - prev_props["center_y"]
-            ) < (min_height * 0.5)
+            if matched_line is None:
+                lines.append({"items": [item], "props": dict(item["props"])})
+                continue
 
-            # 条件2：是否存在垂直方向的重叠
-            # 计算重叠区域的顶部和底部
-            overlap_top = max(prev_props["top"], current_props["top"])
-            overlap_bottom = min(prev_props["bottom"], current_props["bottom"])
-            has_vertical_overlap = overlap_bottom > overlap_top
+            matched_line["items"].append(item)
+            matched_line["props"] = cls.merge_props(matched_line["props"], item["props"])
 
-            # 最终判断：满足任一条件即可
-            is_same_line = centers_are_close or has_vertical_overlap
+        lines.sort(key=lambda line: (line["props"]["top"], line["props"]["left"]))
 
-            if is_same_line:
-                # 在同一行，用空格隔开
-                current_line_parts.append("   ")  # 使用多个空格以产生明显间距
-                current_line_parts.append(text)
-            else:
-                # 不在同一行，需要换行
-                # 先将上一行组合成字符串并添加到输出列表
-                output_lines.append("".join(current_line_parts))
+        output_lines = []
+        prev_line_props = None
+        for line in lines:
+            line["items"].sort(key=lambda item: item["props"]["left"])
 
-                # 规则2：判断是否需要插入空行（新段落）
-                # 如果垂直间距大于上一个框高度的某个比例（如70%），则认为是一个新段落
-                vertical_gap = current_props["top"] - prev_props["bottom"]
-                if vertical_gap > prev_props["height"] * 0.7:
-                    output_lines.append("")  # 插入空行来创建段落
+            current_line_parts = [line["items"][0]["text"]]
+            prev_item_props = line["items"][0]["props"]
 
-                # 开始一个新行
-                current_line_parts = [text]
+            for item in line["items"][1:]:
+                current_props = item["props"]
+                gap = current_props["left"] - prev_item_props["right"]
+                current_line_parts.append(cls.get_gap_text(gap, prev_item_props, current_props))
+                current_line_parts.append(item["text"])
+                prev_item_props = current_props
 
-            # 更新前一个框的属性
-            prev_props = current_props
+            if prev_line_props is not None:
+                vertical_gap = line["props"]["top"] - prev_line_props["bottom"]
+                if vertical_gap > max(prev_line_props["height"], line["props"]["height"]) * 0.8:
+                    output_lines.append("")
 
-        # 添加最后一行
-        output_lines.append("".join(current_line_parts))
+            output_lines.append("".join(current_line_parts))
+            prev_line_props = line["props"]
 
         return "\n".join(output_lines)
+
+    @staticmethod
+    def is_same_line(current_props: dict, line_props: dict) -> bool:
+        overlap_top = max(line_props["top"], current_props["top"])
+        overlap_bottom = min(line_props["bottom"], current_props["bottom"])
+        overlap = max(0.0, overlap_bottom - overlap_top)
+
+        min_height = max(1.0, min(current_props["height"], line_props["height"]))
+        overlap_ratio = overlap / min_height
+        center_diff = abs(current_props["center_y"] - line_props["center_y"])
+
+        return overlap_ratio > 0.5 or center_diff < min_height * 0.35
+
+    @staticmethod
+    def merge_props(a: dict, b: dict) -> dict:
+        top = min(a["top"], b["top"])
+        bottom = max(a["bottom"], b["bottom"])
+        left = min(a["left"], b["left"])
+        right = max(a["right"], b["right"])
+
+        return {
+            "top": top,
+            "bottom": bottom,
+            "left": left,
+            "right": right,
+            "height": bottom - top,
+            "width": right - left,
+            "center_y": top + (bottom - top) / 2,
+        }
+
+    @staticmethod
+    def get_gap_text(gap: float, prev_props: dict, current_props: dict) -> str:
+        if gap <= 1:
+            return ""
+
+        ref_width = max(1.0, min(prev_props["width"], current_props["width"]))
+        spaces = max(1, int(round(gap / max(1.0, ref_width * 0.5))))
+        return " " * min(spaces, 12)
 
     @staticmethod
     def get_box_properties(box: np.ndarray) -> dict:
@@ -91,11 +116,14 @@ class ToMarkdown:
         top = np.min(ys)
         bottom = np.max(ys)
         left = np.min(xs)
+        right = np.max(xs)
 
         return {
             "top": top,
             "bottom": bottom,
             "left": left,
+            "right": right,
             "height": bottom - top,
+            "width": right - left,
             "center_y": top + (bottom - top) / 2,
         }
