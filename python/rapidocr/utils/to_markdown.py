@@ -54,13 +54,18 @@ class ToMarkdown:
             for item in line["items"][1:]:
                 current_props = item["props"]
                 gap = current_props["left"] - prev_item_props["right"]
-                current_line_parts.append(cls.get_gap_text(gap, prev_item_props, current_props))
+                current_line_parts.append(
+                    cls.get_gap_text(gap, prev_item_props, current_props)
+                )
                 current_line_parts.append(item["text"])
                 prev_item_props = current_props
 
             if prev_line_props is not None:
                 vertical_gap = line["props"]["top"] - prev_line_props["bottom"]
-                if vertical_gap > max(prev_line_props["height"], line["props"]["height"]) * 0.8:
+                if (
+                    vertical_gap
+                    > max(prev_line_props["height"], line["props"]["height"]) * 0.8
+                ):
                     output_lines.append("")
 
             output_lines.append("".join(current_line_parts))
