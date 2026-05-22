@@ -59,8 +59,8 @@ class ProviderConfig:
         return dict(self.cfg.cuda_ep_cfg)
 
     def dml_ep_cfg(self) -> Dict[str, Any]:
-        if self.cfg.dm_ep_cfg is not None:
-            return self.cfg.dm_ep_cfg
+        if self.cfg.dml_ep_cfg is not None:
+            return self.cfg.dml_ep_cfg
 
         if self.is_cuda_available():
             return self.cuda_ep_cfg()

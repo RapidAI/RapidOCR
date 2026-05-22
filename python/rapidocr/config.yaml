@@ -35,7 +35,7 @@ EngineConfig:
             do_copy_in_default_stream: true
 
         use_dml: false
-        dm_ep_cfg: null
+        dml_ep_cfg: null
 
         use_cann: false
         cann_ep_cfg:
