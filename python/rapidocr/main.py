@@ -412,7 +412,7 @@ def parse_args(arg_list: Optional[List[str]] = None):
     parser_check.set_defaults(func=check_install)
 
     parser_download = subparser.add_parser("download_models", help="Download models")
-    parser_download.add_argument("--config", type=str)
+    parser_download.add_argument("--config", type=str, default=None)
     parser_download.set_defaults(func=download_models)
 
     args = parser.parse_args(arg_list)

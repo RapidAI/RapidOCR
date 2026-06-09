@@ -14,7 +14,14 @@ from .utils import mkdir
 root_dir = Path(__file__).resolve().parent.parent
 
 
-def download_models(config_path: Union[str, Path]) -> None:
+def download_models(config_path: Union[str, Path, None] = None) -> None:
+    if config_path is None:
+        config_path = root_dir / "config.yaml"
+    else:
+        config_path = Path(config_path).expanduser().resolve()
+        if not config_path.is_file():
+            raise FileNotFoundError(f"Config file not found: {config_path}")
+
     cfg = ParseParams.load(config_path)
 
     model_root_dir = cfg.Global.get("model_root_dir")
