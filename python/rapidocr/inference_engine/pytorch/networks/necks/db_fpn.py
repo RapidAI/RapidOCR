@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from torch import nn
 
 from ..backbones.det_mobilenet_v3 import SEModule
-from ..necks.intracl import IntraCLBlock
+from .intracl import IntraCLBlock
 
 
 def hard_swish(x, inplace=True):
@@ -21,7 +21,7 @@ class DSConv(nn.Module):
         groups=None,
         if_act=True,
         act="relu",
-        **kwargs
+        **kwargs,
     ):
         super(DSConv, self).__init__()
         if groups == None:
