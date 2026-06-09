@@ -5,9 +5,6 @@ on:
     tags:
       - v*
 
-env:
-  RESOURCES_URL: https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/required_for_whl_v3.0.0.zip
-
 jobs:
   UnitTesting:
     runs-on: ubuntu-latest
@@ -47,26 +44,10 @@ jobs:
           python-version: '3.10'
           architecture: 'x64'
 
-      - name: Download models
-        run: |
-          cd python
-          wget $RESOURCES_URL
-          ZIP_NAME=${RESOURCES_URL##*/}
-          DIR_NAME=${ZIP_NAME%.*}
-          unzip $ZIP_NAME
-          cp $DIR_NAME/resources/models/*.* rapidocr/models
-
       - name: Run setup.py
         run: |
           cd python
           pip install setuptools get_pypi_latest_version wheel
-          mkdir rapidocr_t
-          mv rapidocr rapidocr_t
-          mv rapidocr_t rapidocr
-          cd rapidocr
-          echo "from .rapidocr.main import RapidOCR, VisRes" > __init__.py
-
-          cd ..
           python -m pip install --upgrade pip
           python setup.py bdist_wheel ${{ github.ref_name }}
           mv dist ../

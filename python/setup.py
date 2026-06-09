@@ -1,12 +1,14 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+import shutil
 import sys
 from pathlib import Path
 from typing import List, Union
 
 import setuptools
 from get_pypi_latest_version import GetPyPiLatestVersion
+from rapidocr.utils.download_models import download_models
 
 
 def read_txt(txt_path: Union[Path, str]) -> List[str]:
@@ -24,7 +26,25 @@ def get_readme():
     return readme
 
 
+download_models()
+
 MODULE_NAME = "rapidocr"
+PACKAGE_DIR = Path(MODULE_NAME)
+WRAP_DIR = Path(f"wrap_temp/{MODULE_NAME}")
+NEED_WRAP = "bdist_wheel" in sys.argv
+
+if NEED_WRAP:
+    if WRAP_DIR.exists():
+        shutil.rmtree(WRAP_DIR)
+    WRAP_DIR.mkdir(parents=True)
+
+    dest_dir = WRAP_DIR / MODULE_NAME
+    shutil.copytree(PACKAGE_DIR, dest_dir)
+
+    with open(WRAP_DIR / "__init__.py", "w", encoding="utf-8") as f:
+        f.write("from .rapidocr.main import RapidOCR, VisRes\n")
+
+    PACKAGE_DIR = WRAP_DIR
 
 obtainer = GetPyPiLatestVersion()
 try:
@@ -59,9 +79,16 @@ setuptools.setup(
     license="Apache-2.0",
     include_package_data=True,
     install_requires=read_txt("requirements.txt"),
-    package_dir={"": MODULE_NAME},
-    packages=setuptools.find_namespace_packages(where=MODULE_NAME),
-    package_data={"": ["*.onnx", "*.yaml", "*.txt"]},
+    package_dir={"": str(PACKAGE_DIR)},
+    packages=setuptools.find_namespace_packages(where=str(PACKAGE_DIR)),
+    package_data={
+        MODULE_NAME: [
+            "*.yaml",
+            "models/ch_PP-OCRv4_det_mobile.onnx",
+            "models/ch_PP-OCRv4_rec_mobile.onnx",
+            "models/ch_ppocr_mobile_v2.0_cls_mobile.onnx",
+        ]
+    },
     keywords=[
         "ocr,text_detection,text_recognition,db,onnxruntime,paddleocr,openvino,rapidocr"
     ],
@@ -79,3 +106,6 @@ setuptools.setup(
         "console_scripts": [f"{MODULE_NAME}={MODULE_NAME}.main:main"],
     },
 )
+
+if NEED_WRAP and Path("wrap_temp").exists():
+    shutil.rmtree("wrap_temp")
