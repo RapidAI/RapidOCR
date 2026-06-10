@@ -6,7 +6,7 @@ on:
       - v*
 
 jobs:
-  UnitTesting:
+  TestAndPublish:
     runs-on: ubuntu-latest
     steps:
       - name: Pull latest code
@@ -21,34 +21,23 @@ jobs:
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
 
-      - name: Unit testings
+      - name: Install all dependencies
         run: |
           cd python
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest wheel get_pypi_latest_version openvino==2023.3.0 onnxruntime python-bidi MNN
+          pip install pytest wheel setuptools get_pypi_latest_version openvino==2023.3.0 onnxruntime python-bidi MNN
           pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
           python -m pip install paddlepaddle==3.1.1 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
 
-          pytest tests/test_*.py
-
-  GenerateWHL_PushPyPi:
-    needs: UnitTesting
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-          architecture: 'x64'
-
-      - name: Run setup.py
+      - name: Unit testings
         run: |
           cd python
-          pip install setuptools get_pypi_latest_version wheel
-          python -m pip install --upgrade pip
+          pytest tests/test_*.py
+
+      - name: Build wheel package
+        run: |
+          cd python
           python setup.py bdist_wheel ${{ github.ref_name }}
           mv dist ../
 
