@@ -362,6 +362,7 @@ class TRTInferSession(InferSession):
             cfg=self.engine_cfg,
             task_type=cfg.task_type.value,
             trt_logger=self.trt_logger,
+            ocr_version=cfg.ocr_version,
         )
         return builder.build()
 

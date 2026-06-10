@@ -7,6 +7,7 @@ from typing import Any, Dict
 import tensorrt as trt
 
 from ...utils.log import logger
+from ...utils.typings import OCRVersion
 
 
 class TRTEngineBuilder:
@@ -19,12 +20,14 @@ class TRTEngineBuilder:
         cfg: Dict[str, Any],
         task_type: str,
         trt_logger: trt.Logger,
+        ocr_version: OCRVersion,
     ):
         self.onnx_path = onnx_path
         self.engine_path = engine_path
         self.cfg = cfg
         self.task_type = task_type
         self.trt_logger = trt_logger
+        self.ocr_version = ocr_version
 
     def build(self) -> trt.ICudaEngine:
         """Build TensorRT engine from ONNX"""
@@ -97,9 +100,14 @@ class TRTEngineBuilder:
             opt_shape = profile_cfg.get("opt_shape", (6, 3, 48, 320))
             max_shape = profile_cfg.get("max_shape", (6, 3, 48, 2048))
         elif self.task_type == "cls":
-            min_shape = profile_cfg.get("min_shape", (1, 3, 48, 32))
-            opt_shape = profile_cfg.get("opt_shape", (6, 3, 48, 192))
-            max_shape = profile_cfg.get("max_shape", (6, 3, 48, 192))
+            if self.ocr_version == OCRVersion.PPOCRV4:
+                min_shape = profile_cfg.get("min_shape", (1, 3, 48, 192))
+                opt_shape = profile_cfg.get("opt_shape", (6, 3, 48, 192))
+                max_shape = profile_cfg.get("max_shape", (6, 3, 48, 192))
+            elif self.ocr_version == OCRVersion.PPOCRV5:
+                min_shape = profile_cfg.get("min_shape", (1, 3, 80, 160))
+                opt_shape = profile_cfg.get("opt_shape", (6, 3, 80, 160))
+                max_shape = profile_cfg.get("max_shape", (6, 3, 80, 160))
         else:
             # Generic fallback
             min_shape = (1, 3, 32, 32)
