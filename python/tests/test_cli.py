@@ -12,6 +12,8 @@ from pytest import mark
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
+import rapidocr.cli as cli_module
+import rapidocr.main as main_module
 from rapidocr import LangRec, RapidOCR
 from rapidocr.utils.output import RapidOCROutput
 from rapidocr.main import main
@@ -57,11 +59,42 @@ def test_cli_config(capsys, cmd):
 
 
 @mark.parametrize("cmd", ["check"])
-def test_cli_check(capsys, cmd):
+def test_cli_check(monkeypatch, capsys, cmd):
+    class DummyRapidOCR:
+        def __init__(self, params=None):
+            pass
+
+        def __call__(self, img_url):
+            return RapidOCROutput(txts=("正品促销",))
+
+    monkeypatch.setattr(main_module, "RapidOCR", DummyRapidOCR)
+
     main(shlex.split(cmd))
     output = capsys.readouterr().out.strip()
 
     assert "Success! rapidocr is installed correctly!" in output
+
+
+def test_check_required_files_missing(monkeypatch, tmp_path):
+    missing_file = tmp_path / "missing.yaml"
+    monkeypatch.setattr(cli_module, "REQUIRED_PACKAGE_FILES", [missing_file])
+
+    with pytest.raises(FileNotFoundError, match="missing required package files"):
+        cli_module.check_required_files()
+
+
+def test_cli_check_validates_required_files_before_engine(monkeypatch):
+    def raise_missing_file():
+        raise FileNotFoundError("missing package file")
+
+    def init_engine(*args, **kwargs):
+        raise AssertionError("RapidOCR should not be initialized")
+
+    monkeypatch.setattr(main_module, "check_required_files", raise_missing_file)
+    monkeypatch.setattr(main_module, "RapidOCR", init_engine)
+
+    with pytest.raises(FileNotFoundError, match="missing package file"):
+        main(["check"])
 
 
 @mark.parametrize(

@@ -14,7 +14,7 @@ from .cal_rec_boxes import CalRecBoxes
 from .ch_ppocr_cls import TextClassifier, TextClsOutput
 from .ch_ppocr_det import TextDetector, TextDetOutput
 from .ch_ppocr_rec import TextRecInput, TextRecognizer, TextRecOutput
-from .cli import check_install, generate_cfg
+from .cli import check_install, check_required_files, generate_cfg
 from .utils.download_models import download_models
 from .utils.load_image import LoadImage
 from .utils.log import logger
@@ -430,6 +430,9 @@ def main(arg_list: Optional[List[str]] = None):
         download_models(args.config)
         return
 
+    if args.command == "check":
+        check_required_files()
+
     params = {
         "Global.text_score": args.text_score,
         "Global.return_word_box": args.return_word_box,
@@ -438,7 +441,7 @@ def main(arg_list: Optional[List[str]] = None):
     ocr_engine = RapidOCR(params=params)
 
     if args.command == "check":
-        check_install(ocr_engine)
+        check_install(ocr_engine, check_files=False)
         return
 
     if args.img_path is None:
