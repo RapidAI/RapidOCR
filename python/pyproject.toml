@@ -34,6 +34,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 [project.urls]
@@ -59,9 +60,6 @@ namespaces = false
 [tool.setuptools.package-data]
 rapidocr = [
     "**/*.yaml",
-    "models/ch_PP-OCRv4_det_mobile.onnx",
-    "models/ch_PP-OCRv4_rec_mobile.onnx",
-    "models/ch_ppocr_mobile_v2.0_cls_mobile.onnx",
 ]
 
 [tool.setuptools_scm]
