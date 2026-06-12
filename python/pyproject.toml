@@ -11,7 +11,7 @@ name = "rapidocr"
 dynamic = ["version", "dependencies"]
 description = "Awesome OCR Library"
 readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.6,<4"
+requires-python = ">=3.8,<4"
 license = "Apache-2.0"
 authors = [
     { name = "SWHL", email = "liekkaskono@163.com" },
@@ -27,8 +27,6 @@ keywords = [
     "rapidocr",
 ]
 classifiers = [
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",

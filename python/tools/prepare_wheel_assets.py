@@ -7,7 +7,7 @@ import sys
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable, List, Optional
 
 PYTHON_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_YAML = PYTHON_ROOT / "rapidocr" / "config.yaml"
@@ -100,7 +100,7 @@ def load_yaml(path: Path) -> dict:
     return data
 
 
-def resolve_model_specs(config: dict) -> list[ModelSpec]:
+def resolve_model_specs(config: dict) -> List[ModelSpec]:
     global_cfg = config.get("Global", {})
     specs = []
 
@@ -129,7 +129,7 @@ def resolve_model_specs(config: dict) -> list[ModelSpec]:
     return specs
 
 
-def resolve_assets(specs: Iterable[ModelSpec], registry: dict) -> list[WheelAsset]:
+def resolve_assets(specs: Iterable[ModelSpec], registry: dict) -> List[WheelAsset]:
     assets = []
     for spec in specs:
         model_info = select_model_info(spec, registry)
@@ -160,7 +160,7 @@ def select_model_info(spec: ModelSpec, registry: dict) -> dict:
     )
 
 
-def model_info_to_assets(spec: ModelSpec, model_info: dict) -> list[WheelAsset]:
+def model_info_to_assets(spec: ModelSpec, model_info: dict) -> List[WheelAsset]:
     model_url = _required_str(model_info, "model_dir", "model registry")
 
     if spec.engine == "paddle":
@@ -295,7 +295,7 @@ def download_asset(asset: WheelAsset, save_path: Path) -> None:
     print(f"Saved {save_path}")
 
 
-def _dedupe_assets(assets: Iterable[WheelAsset]) -> list[WheelAsset]:
+def _dedupe_assets(assets: Iterable[WheelAsset]) -> List[WheelAsset]:
     deduped = {}
     for asset in assets:
         existing = deduped.get(asset.relative_path)
@@ -317,8 +317,8 @@ def _get_content_length(value: Optional[str]) -> Optional[int]:
 
 
 def _print_progress(downloaded: int, total_size: Optional[int]) -> None:
-    if total_size is None:
-        return
+    if not total_size:
+         return
     percent = downloaded / total_size * 100
     print(
         f"\r  {downloaded / 1024 / 1024:.1f}MB / "
