@@ -3,20 +3,23 @@ name: Push rapidocr to pypi
 on:
   push:
     tags:
-      - v*
+      - "v*"
 
 jobs:
   TestAndPublish:
     runs-on: ubuntu-latest
+
     steps:
       - name: Pull latest code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
-          architecture: 'x64'
+          python-version: "3.10"
+          architecture: "x64"
 
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
@@ -25,9 +28,9 @@ jobs:
         run: |
           cd python
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest wheel setuptools get_pypi_latest_version openvino==2023.3.0 onnxruntime python-bidi MNN
-          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r requirements.txt
+          python -m pip install pytest build setuptools wheel setuptools-scm openvino==2023.3.0 onnxruntime python-bidi MNN
+          python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
           python -m pip install paddlepaddle==3.1.1 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
 
       - name: Unit testings
@@ -35,13 +38,26 @@ jobs:
           cd python
           pytest tests/test_*.py
 
+      - name: Verify release tag
+        run: |
+          test -n "$GITHUB_REF_NAME"
+          git tag --points-at HEAD | grep -Fx "$GITHUB_REF_NAME"
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION_FOR_RAPIDOCR=$VERSION" >> "$GITHUB_ENV"
+          echo "Building rapidocr version: $VERSION"
+
+      - name: Prepare wheel assets
+        run: |
+          cd python
+          python tools/prepare_wheel_assets.py
+
       - name: Build wheel package
         run: |
           cd python
-          python setup.py bdist_wheel ${{ github.ref_name }}
+          python -m build --wheel
           mv dist ../
 
-      - name: Publish distribution 📦 to PyPI
+      - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@v1.5.0
         with:
           password: ${{ secrets.RAPIDOCR }}
