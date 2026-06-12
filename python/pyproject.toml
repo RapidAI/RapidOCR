@@ -1,0 +1,71 @@
+[build-system]
+requires = [
+    "setuptools>=77",
+    "wheel",
+    "setuptools-scm>=8",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rapidocr"
+dynamic = ["version", "dependencies"]
+description = "Awesome OCR Library"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.6,<4"
+license = "Apache-2.0"
+authors = [
+    { name = "SWHL", email = "liekkaskono@163.com" },
+]
+keywords = [
+    "ocr",
+    "text_detection",
+    "text_recognition",
+    "db",
+    "onnxruntime",
+    "paddleocr",
+    "openvino",
+    "rapidocr",
+]
+classifiers = [
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.urls]
+Documentation = "https://rapidai.github.io/RapidOCRDocs"
+Changelog = "https://github.com/RapidAI/RapidOCR/releases"
+
+[project.scripts]
+rapidocr = "rapidocr.main:main"
+
+[tool.setuptools]
+include-package-data = true
+platforms = ["Any"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["rapidocr*"]
+exclude = ["tests*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+rapidocr = [
+    "**/*.yaml",
+    "models/ch_PP-OCRv4_det_mobile.onnx",
+    "models/ch_PP-OCRv4_rec_mobile.onnx",
+    "models/ch_ppocr_mobile_v2.0_cls_mobile.onnx",
+]
+
+[tool.setuptools_scm]
+root = ".."
+tag_regex = "^v?(?P<version>[0-9]+(?:\\.[0-9]+)*.*)$"
+version_file = "rapidocr/_version.py"
+local_scheme = "no-local-version"
