@@ -47,6 +47,7 @@ class LangRec(Enum):
 class OCRVersion(Enum):
     PPOCRV4 = "PP-OCRv4"
     PPOCRV5 = "PP-OCRv5"
+    PPOCRV6 = "PP-OCRv6"
 
 
 class EngineType(Enum):
@@ -61,6 +62,9 @@ class EngineType(Enum):
 class ModelType(Enum):
     MOBILE = "mobile"
     SERVER = "server"
+    TINY = "tiny"
+    SMALL = "small"
+    MEDIUM = "medium"
 
 
 class TaskType(Enum):
