@@ -118,27 +118,27 @@ onnxruntime:
   PP-OCRv6:
     det:
       ch_PP-OCRv6_det_tiny:
-        model_dir: https://www.modelscope.cn/models/PaddlePaddle/PP-OCRv6_tiny_det_onnx/resolve/master/inference.onnx
+        model_dir: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/onnx/PP-OCRv6/det/ch_PP-OCRv6_det_tiny.onnx
         SHA256: 193bab7a04fca699a6c82e6abb5b81bdb28177f0abd4062552b04908dafb19f8
       ch_PP-OCRv6_det_small:
-        model_dir: https://www.modelscope.cn/models/PaddlePaddle/PP-OCRv6_small_det_onnx/resolve/master/inference.onnx
+        model_dir: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/onnx/PP-OCRv6/det/ch_PP-OCRv6_det_small.onnx
         SHA256: d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e
       ch_PP-OCRv6_det_medium:
-        model_dir: https://www.modelscope.cn/models/PaddlePaddle/PP-OCRv6_medium_det_onnx/resolve/master/inference.onnx
+        model_dir: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/onnx/PP-OCRv6/det/ch_PP-OCRv6_det_medium.onnx
         SHA256: eb13b44b25bb36f89528b68720af8a61d9cf381176107f465db1757b65d086e1
     rec:
       ch_PP-OCRv6_rec_tiny:
-        model_dir: https://www.modelscope.cn/models/PaddlePaddle/PP-OCRv6_tiny_rec_onnx/resolve/master/inference.onnx
+        model_dir: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/onnx/PP-OCRv6/rec/ch_PP-OCRv6_rec_tiny.onnx
         SHA256: 9ef676d6ed3c88256a2d92c640c44f25b0c40947e111b14b8be8f594091563e6
-        dict_url: https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/main/ppocr/utils/dict/ppocrv6_tiny_dict.txt
+        dict_url: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/paddle/PP-OCRv6/rec/ppocrv6_tiny_dict.txt
       ch_PP-OCRv6_rec_small:
-        model_dir: https://www.modelscope.cn/models/PaddlePaddle/PP-OCRv6_small_rec_onnx/resolve/master/inference.onnx
+        model_dir: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/onnx/PP-OCRv6/rec/ch_PP-OCRv6_rec_small.onnx
         SHA256: 5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634
-        dict_url: https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/main/ppocr/utils/dict/ppocrv6_dict.txt
+        dict_url: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/paddle/PP-OCRv6/rec/ppocrv6_dict.txt
       ch_PP-OCRv6_rec_medium:
-        model_dir: https://www.modelscope.cn/models/PaddlePaddle/PP-OCRv6_medium_rec_onnx/resolve/master/inference.onnx
+        model_dir: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/onnx/PP-OCRv6/rec/ch_PP-OCRv6_rec_medium.onnx
         SHA256: 9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba
-        dict_url: https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/main/ppocr/utils/dict/ppocrv6_dict.txt
+        dict_url: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/paddle/PP-OCRv6/rec/ppocrv6_dict.txt
 openvino:
   PP-OCRv4:
     det:
@@ -259,27 +259,27 @@ openvino:
   PP-OCRv6:
     det:
       ch_PP-OCRv6_det_tiny:
-        model_dir: https://www.modelscope.cn/models/PaddlePaddle/PP-OCRv6_tiny_det_onnx/resolve/master/inference.onnx
+        model_dir: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/onnx/PP-OCRv6/det/ch_PP-OCRv6_det_tiny.onnx
         SHA256: 193bab7a04fca699a6c82e6abb5b81bdb28177f0abd4062552b04908dafb19f8
       ch_PP-OCRv6_det_small:
-        model_dir: https://www.modelscope.cn/models/PaddlePaddle/PP-OCRv6_small_det_onnx/resolve/master/inference.onnx
+        model_dir: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/onnx/PP-OCRv6/det/ch_PP-OCRv6_det_small.onnx
         SHA256: d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e
       ch_PP-OCRv6_det_medium:
-        model_dir: https://www.modelscope.cn/models/PaddlePaddle/PP-OCRv6_medium_det_onnx/resolve/master/inference.onnx
+        model_dir: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/onnx/PP-OCRv6/det/ch_PP-OCRv6_det_medium.onnx
         SHA256: eb13b44b25bb36f89528b68720af8a61d9cf381176107f465db1757b65d086e1
     rec:
       ch_PP-OCRv6_rec_tiny:
-        model_dir: https://www.modelscope.cn/models/PaddlePaddle/PP-OCRv6_tiny_rec_onnx/resolve/master/inference.onnx
+        model_dir: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/onnx/PP-OCRv6/rec/ch_PP-OCRv6_rec_tiny.onnx
         SHA256: 9ef676d6ed3c88256a2d92c640c44f25b0c40947e111b14b8be8f594091563e6
-        dict_url: https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/main/ppocr/utils/dict/ppocrv6_tiny_dict.txt
+        dict_url: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/paddle/PP-OCRv6/rec/ppocrv6_tiny_dict.txt
       ch_PP-OCRv6_rec_small:
-        model_dir: https://www.modelscope.cn/models/PaddlePaddle/PP-OCRv6_small_rec_onnx/resolve/master/inference.onnx
+        model_dir: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/onnx/PP-OCRv6/rec/ch_PP-OCRv6_rec_small.onnx
         SHA256: 5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634
-        dict_url: https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/main/ppocr/utils/dict/ppocrv6_dict.txt
+        dict_url: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/paddle/PP-OCRv6/rec/ppocrv6_dict.txt
       ch_PP-OCRv6_rec_medium:
-        model_dir: https://www.modelscope.cn/models/PaddlePaddle/PP-OCRv6_medium_rec_onnx/resolve/master/inference.onnx
+        model_dir: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/onnx/PP-OCRv6/rec/ch_PP-OCRv6_rec_medium.onnx
         SHA256: 9c09abf0957f7968c7586464b7397b84ad2387a0497a351af40e9acc71b673ba
-        dict_url: https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/main/ppocr/utils/dict/ppocrv6_dict.txt
+        dict_url: https://www.modelscope.cn/models/jaminmei/PP-OCRv6-onnx/resolve/v1.0/paddle/PP-OCRv6/rec/ppocrv6_dict.txt
 mnn:
   PP-OCRv4:
     det:
