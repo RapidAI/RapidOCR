@@ -128,3 +128,40 @@ def test_engine_tensorrt():
     result = engine(img_path)
     assert result.txts is not None
     assert len(result.txts) > 0
+
+
+@mark.parametrize(
+    "engine_type",
+    [EngineType.ONNXRUNTIME, EngineType.OPENVINO],
+)
+def test_ppocrv6_det_small(engine_type):
+    engine = RapidOCR(
+        params={
+            "Det.ocr_version": OCRVersion.PPOCRV6,
+            "Det.model_type": ModelType.SMALL,
+            "Det.engine_type": engine_type,
+        }
+    )
+    result = engine(img_path, use_det=True, use_cls=False, use_rec=False)
+
+    assert result.boxes is not None
+    assert len(result.boxes) == 18
+
+
+@mark.parametrize(
+    "engine_type",
+    [EngineType.ONNXRUNTIME, EngineType.OPENVINO],
+)
+def test_ppocrv6_rec_small(engine_type):
+    engine = RapidOCR(
+        params={
+            "Rec.ocr_version": OCRVersion.PPOCRV6,
+            "Rec.model_type": ModelType.SMALL,
+            "Rec.engine_type": engine_type,
+        }
+    )
+    rec_img_path = tests_dir / "text_rec.jpg"
+    result = engine(rec_img_path, use_det=False, use_cls=False, use_rec=True)
+
+    assert result.txts is not None
+    assert result.txts[0] == "韩国小馆"
