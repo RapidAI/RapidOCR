@@ -21,8 +21,8 @@ class TRTInferSession(InferSession):
     def __init__(self, cfg: Dict[str, Any]):
         self.cfg = cfg
         self.engine_cfg = cfg.get("engine_cfg", {})
+        self.model_root_dir = None
         self._closed = False
-
         self.device_id = self._setup_cuda_device()
 
         self.trt_logger = trt.Logger(trt.Logger.WARNING)
