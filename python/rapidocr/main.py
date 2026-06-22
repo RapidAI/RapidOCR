@@ -35,6 +35,13 @@ root_dir = Path(__file__).resolve().parent
 DEFAULT_CFG_PATH = root_dir / "config.yaml"
 
 
+def normalize_cli_lang_type(lang_type: str) -> Union[LangRec, str]:
+    try:
+        return LangRec(lang_type)
+    except ValueError:
+        return lang_type
+
+
 class RapidOCR:
     def __init__(
         self, config_path: Optional[str] = None, params: Optional[Dict[str, Any]] = None
@@ -392,7 +399,6 @@ def parse_args(arg_list: Optional[List[str]] = None):
         "--lang_type",
         type=str,
         default="ch",
-        choices=list(v.value for v in LangRec),
     )
     parser.add_argument("-vis", "--vis_res", action="store_true", default=False)
     parser.add_argument("--vis_save_dir", type=Path, default=".")
@@ -433,10 +439,11 @@ def main(arg_list: Optional[List[str]] = None):
     if args.command == "check":
         check_required_files()
 
+    lang_type = normalize_cli_lang_type(args.lang_type)
     params = {
         "Global.text_score": args.text_score,
         "Global.return_word_box": args.return_word_box,
-        "Rec.lang_type": LangRec(args.lang_type),
+        "Rec.lang_type": lang_type,
     }
     ocr_engine = RapidOCR(params=params)
 
@@ -462,7 +469,7 @@ def main(arg_list: Optional[List[str]] = None):
         vis = VisRes(
             text_score=args.text_score,
             font_path=args.font_path,
-            lang_type=LangRec(args.lang_type),
+            lang_type=lang_type,
         )
         cur_dir = args.vis_save_dir
 

@@ -3,11 +3,11 @@
 # @Contact: liekkaskono@163.com
 import math
 import random
+from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple, Union
 
 import cv2
-from functools import lru_cache
 import numpy as np
 from omegaconf import OmegaConf
 from PIL import Image, ImageDraw, ImageFont
@@ -15,6 +15,7 @@ from PIL import Image, ImageDraw, ImageFont
 from .download_file import DownloadFile, DownloadFileInput
 from .load_image import LoadImage
 from .log import logger
+from .model_resolver import normalize_lang
 from .typings import LangRec
 
 root_dir = Path(__file__).resolve().parent.parent
@@ -32,7 +33,8 @@ def font_cfg():
 
 @lru_cache()
 def get_font_path(
-    font_path: Optional[Union[str, Path]] = None, lang_type: Optional[LangRec] = None
+    font_path: Optional[Union[str, Path]] = None,
+    lang_type: Union[LangRec, None, str] = None,
 ) -> str:
     default_info = font_cfg()["ch"]
     default_input_params = DownloadFileInput(
@@ -47,7 +49,7 @@ def get_font_path(
         DownloadFile.run(default_input_params)
         return str(DEFAULT_FONT_PATH)
 
-    lang_type = lang_type.value
+    lang_type = normalize_lang(lang_type)
 
     if font_path is None:
         # 指定了语种，但是没有指定字体文件，根据语种选择字体文件
@@ -60,7 +62,7 @@ def get_font_path(
 
             DownloadFile.run(default_input_params)
             return str(DEFAULT_FONT_PATH)
-        
+
         font_url, font_sha256 = font_info["path"], font_info["SHA256"]
         save_font_path = DEFAULT_FONT_DIR / f"{Path(font_url).name}"
         input_param = DownloadFileInput(
@@ -82,7 +84,7 @@ class VisRes:
     def __init__(
         self,
         text_score: float = 0.5,
-        lang_type: Optional[LangRec] = None,
+        lang_type: Union[LangRec, None, str] = None,
         font_path: Optional[str] = None,
     ):
         self.text_score = text_score

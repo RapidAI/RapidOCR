@@ -11,6 +11,7 @@ import numpy as np
 from omegaconf import OmegaConf
 
 from ..utils.log import logger
+from ..utils.model_resolver import normalize_lang, resolve_model_key
 from ..utils.typings import EngineType, ModelType, OCRVersion, TaskType
 from ..utils.utils import import_package
 
@@ -77,7 +78,7 @@ class FileInfo:
     engine_type: EngineType
     ocr_version: OCRVersion
     task_type: TaskType
-    lang_type: Enum
+    lang_type: Union[Enum, str]
     model_type: ModelType
 
 
@@ -117,7 +118,7 @@ class InferSession(abc.ABC):
         engine_type = file_info.engine_type.value
         ocr_version = file_info.ocr_version.value
         task_type = file_info.task_type.value
-        lang_type = file_info.lang_type.value
+        lang_type = normalize_lang(file_info.lang_type)
         model_type = file_info.model_type.value
 
         model_dict = OmegaConf.select(
@@ -127,6 +128,21 @@ class InferSession(abc.ABC):
         if not model_dict:
             raise ValueError(
                 f"Unsupported configuration: {engine_type}.{ocr_version}.{task_type}.{model_type}"
+            )
+
+        model_key = resolve_model_key(
+            file_info.task_type,
+            file_info.ocr_version,
+            file_info.lang_type,
+            file_info.model_type,
+        )
+
+        if model_key is not None:
+            if model_key in model_dict:
+                return model_dict[model_key]
+
+            raise ValueError(
+                f"Unsupported configuration: {engine_type}.{ocr_version}.{task_type}.{lang_type}.{model_type}"
             )
 
         # 优先查找 server 模型

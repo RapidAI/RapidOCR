@@ -11,6 +11,7 @@ from cuda.bindings import runtime as cudart
 
 from ...utils.download_file import DownloadFile, DownloadFileInput
 from ...utils.log import logger
+from ...utils.model_resolver import normalize_lang, resolve_model_key
 from ...utils.typings import EngineType
 from ..base import FileInfo, InferSession
 from .engine_builder import TRTEngineBuilder
@@ -317,8 +318,17 @@ class TRTInferSession(InferSession):
         if cfg.get("model_path"):
             return Path(cfg["model_path"]).stem
 
+        model_key = resolve_model_key(
+            cfg.task_type,
+            cfg.ocr_version,
+            cfg.lang_type,
+            cfg.model_type,
+        )
+        if model_key is not None:
+            return model_key
+
         task_type = cfg.task_type.value
-        lang_type = cfg.lang_type.value
+        lang_type = normalize_lang(cfg.lang_type)
         ocr_version = cfg.ocr_version.value
         model_type = cfg.model_type.value
         return f"{lang_type}_{ocr_version}_{task_type}_{model_type}"

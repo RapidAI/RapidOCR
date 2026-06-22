@@ -39,7 +39,6 @@ class ParseParams(OmegaConf):
             "engine_type",
             "model_type",
             "ocr_version",
-            "lang_type",
             "task_type",
         ]
         for k, v in params.items():
@@ -75,12 +74,21 @@ class ParseParams(OmegaConf):
     @staticmethod
     def LangType(task_type: TaskType, lang_type: str):
         if task_type == TaskType.DET:
-            return LangDet(lang_type)
+            try:
+                return LangDet(lang_type)
+            except ValueError:
+                return lang_type  # Return the original string if it's not a valid LangDet value
 
         if task_type == TaskType.CLS:
-            return LangCls(lang_type)
+            try:
+                return LangCls(lang_type)
+            except ValueError:
+                return lang_type  # Return the original string if it's not a valid LangCls value
 
         if task_type == TaskType.REC:
-            return LangRec(lang_type)
+            try:
+                return LangRec(lang_type)
+            except ValueError:
+                return lang_type  # Return the original string if it's not a valid LangRec value
 
         raise ValueError(f"task_type {task_type.value} is not in [Det, Cls, Rec]")

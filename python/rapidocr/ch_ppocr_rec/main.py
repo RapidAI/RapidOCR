@@ -23,7 +23,7 @@ from rapidocr.inference_engine.base import FileInfo, get_engine
 
 from ..utils.download_file import DownloadFile, DownloadFileInput
 from ..utils.log import logger
-from ..utils.typings import LangRec
+from ..utils.model_resolver import normalize_lang
 from ..utils.utils import reorder_bidi_for_display
 from ..utils.vis_res import VisRes
 from .typings import TextRecInput, TextRecOutput
@@ -49,6 +49,8 @@ class TextRecognizer:
         self.rec_image_shape = cfg["rec_img_shape"]
 
         self.cfg = cfg
+
+        self.RTL_LANGS = {"arabic", "fa", "ur"}
 
     def get_character_dict(self, cfg):
         character = None
@@ -137,7 +139,7 @@ class TextRecognizer:
         all_line_results, all_word_results = list(zip(*rec_res))
         txts, scores = list(zip(*all_line_results))
 
-        if self.cfg.lang_type == LangRec.ARABIC:
+        if normalize_lang(self.cfg.lang_type) in self.RTL_LANGS:
             txts = reorder_bidi_for_display(txts)
 
         elapse = time.perf_counter() - start_time
