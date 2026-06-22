@@ -35,13 +35,6 @@ root_dir = Path(__file__).resolve().parent
 DEFAULT_CFG_PATH = root_dir / "config.yaml"
 
 
-def normalize_cli_lang_type(lang_type: str) -> Union[LangRec, str]:
-    try:
-        return LangRec(lang_type)
-    except ValueError:
-        return lang_type
-
-
 class RapidOCR:
     def __init__(
         self, config_path: Optional[str] = None, params: Optional[Dict[str, Any]] = None
@@ -423,6 +416,13 @@ def parse_args(arg_list: Optional[List[str]] = None):
 
     args = parser.parse_args(arg_list)
     return args
+
+
+def normalize_cli_lang_type(lang_type: str) -> Union[LangRec, str]:
+    try:
+        return LangRec(lang_type)
+    except ValueError:
+        return lang_type
 
 
 def main(arg_list: Optional[List[str]] = None):

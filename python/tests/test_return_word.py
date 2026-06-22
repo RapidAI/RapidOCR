@@ -11,14 +11,27 @@ from pytest import mark
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
-from rapidocr import RapidOCR
+from rapidocr import EngineType, LangRec, ModelType, OCRVersion, RapidOCR
 
 test_dir = root_dir / "tests" / "test_files"
 
 
 @pytest.fixture()
 def engine():
-    engine = RapidOCR()
+    engine = RapidOCR(
+        params={
+            "Det.ocr_version": OCRVersion.PPOCRV4,
+            "Det.model_type": ModelType.MOBILE,
+            "Det.engine_type": EngineType.ONNXRUNTIME,
+            "Cls.ocr_version": OCRVersion.PPOCRV4,
+            "Cls.model_type": ModelType.MOBILE,
+            "Cls.engine_type": EngineType.ONNXRUNTIME,
+            "Rec.ocr_version": OCRVersion.PPOCRV4,
+            "Rec.model_type": ModelType.MOBILE,
+            "Rec.engine_type": EngineType.ONNXRUNTIME,
+            "Rec.lang_type": LangRec.CH,
+        }
+    )
     return engine
 
 

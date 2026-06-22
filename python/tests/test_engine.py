@@ -9,7 +9,7 @@ from pytest import mark
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
-from rapidocr import EngineType, ModelType, OCRVersion, RapidOCR
+from rapidocr import EngineType, LangRec, ModelType, OCRVersion, RapidOCR
 from rapidocr.utils.utils import import_package
 
 tests_dir = root_dir / "tests" / "test_files"
@@ -90,8 +90,13 @@ def test_engine_paddle(ocr_version, gt):
         params={
             "Det.engine_type": EngineType.PADDLE,
             "Det.ocr_version": ocr_version,
+            "Det.lang_type": LangRec.CH,
+            "Det.model_type": ModelType.MOBILE,
             "Cls.engine_type": EngineType.PADDLE,
             "Rec.engine_type": EngineType.PADDLE,
+            "Rec.ocr_version": OCRVersion.PPOCRV4,
+            "Rec.lang_type": LangRec.CH,
+            "Rec.model_type": ModelType.MOBILE,
         }
     )
 
@@ -103,9 +108,15 @@ def test_engine_paddle(ocr_version, gt):
 def test_engine_torch():
     engine = RapidOCR(
         params={
+            "Det.ocr_version": OCRVersion.PPOCRV4,
+            "Det.model_type": ModelType.MOBILE,
+            "Det.lang_type": LangRec.CH,
             "Det.engine_type": EngineType.TORCH,
             "Cls.engine_type": EngineType.TORCH,
             "Rec.engine_type": EngineType.TORCH,
+            "Rec.ocr_version": OCRVersion.PPOCRV4,
+            "Rec.model_type": ModelType.MOBILE,
+            "Rec.lang_type": LangRec.CH,
         }
     )
 

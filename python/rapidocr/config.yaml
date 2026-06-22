@@ -127,8 +127,8 @@ EngineConfig:
 Det:
     engine_type: "onnxruntime"
     lang_type: "ch"
-    model_type: "mobile"
-    ocr_version: "PP-OCRv4"
+    model_type: "small"
+    ocr_version: "PP-OCRv6"
 
     task_type: "det"
 
@@ -166,8 +166,8 @@ Cls:
 Rec:
     engine_type: "onnxruntime"
     lang_type: "ch"
-    model_type: "mobile"
-    ocr_version: "PP-OCRv4"
+    model_type: "small"
+    ocr_version: "PP-OCRv6"
 
     task_type: "rec"
 

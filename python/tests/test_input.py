@@ -12,7 +12,14 @@ from pytest import mark
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
-from rapidocr import LoadImageError, RapidOCR
+from rapidocr import (
+    EngineType,
+    LangRec,
+    LoadImageError,
+    ModelType,
+    OCRVersion,
+    RapidOCR,
+)
 from rapidocr.utils.parse_parameters import ParseParams
 
 test_dir = root_dir / "tests" / "test_files"
@@ -22,7 +29,20 @@ config_path = root_dir / "rapidocr" / "config.yaml"
 
 @pytest.fixture()
 def engine():
-    engine = RapidOCR()
+    engine = RapidOCR(
+        params={
+            "Det.ocr_version": OCRVersion.PPOCRV4,
+            "Det.model_type": ModelType.MOBILE,
+            "Det.engine_type": EngineType.ONNXRUNTIME,
+            "Cls.ocr_version": OCRVersion.PPOCRV4,
+            "Cls.model_type": ModelType.MOBILE,
+            "Cls.engine_type": EngineType.ONNXRUNTIME,
+            "Rec.ocr_version": OCRVersion.PPOCRV4,
+            "Rec.model_type": ModelType.MOBILE,
+            "Rec.engine_type": EngineType.ONNXRUNTIME,
+            "Rec.lang_type": LangRec.CH,
+        }
+    )
     return engine
 
 

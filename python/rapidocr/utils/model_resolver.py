@@ -66,7 +66,7 @@ PP_OCRV6_LANGS = frozenset(
         "nl",
         "no",
         "oc",
-        "pi",
+        "pl",
         "pt",
         "qu",
         "rm",

@@ -138,7 +138,18 @@ def test_en_lang(ocr_version):
 
 def test_ch_doc_server():
     engine = RapidOCR(
-        params={"Rec.lang_type": LangRec.CH_DOC, "Rec.model_type": ModelType.SERVER}
+        params={
+            "Det.ocr_version": OCRVersion.PPOCRV4,
+            "Det.model_type": ModelType.MOBILE,
+            "Det.engine_type": EngineType.ONNXRUNTIME,
+            "Cls.ocr_version": OCRVersion.PPOCRV4,
+            "Cls.model_type": ModelType.MOBILE,
+            "Cls.engine_type": EngineType.ONNXRUNTIME,
+            "Rec.ocr_version": OCRVersion.PPOCRV4,
+            "Rec.model_type": ModelType.SERVER,
+            "Rec.engine_type": EngineType.ONNXRUNTIME,
+            "Rec.lang_type": LangRec.CH_DOC,
+        }
     )
 
     img_path = tests_dir / "ch_doc_server.png"
@@ -149,7 +160,18 @@ def test_ch_doc_server():
 
 def test_server_rec():
     engine = RapidOCR(
-        params={"Rec.lang_type": LangRec.CH, "Rec.model_type": ModelType.SERVER}
+        params={
+            "Det.ocr_version": OCRVersion.PPOCRV4,
+            "Det.model_type": ModelType.MOBILE,
+            "Det.engine_type": EngineType.ONNXRUNTIME,
+            "Cls.ocr_version": OCRVersion.PPOCRV4,
+            "Cls.model_type": ModelType.MOBILE,
+            "Cls.engine_type": EngineType.ONNXRUNTIME,
+            "Rec.ocr_version": OCRVersion.PPOCRV4,
+            "Rec.model_type": ModelType.SERVER,
+            "Rec.engine_type": EngineType.ONNXRUNTIME,
+            "Rec.lang_type": LangRec.CH_DOC,
+        }
     )
     result = engine(img_path)
     assert result.txts is not None
