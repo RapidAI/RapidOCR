@@ -161,13 +161,14 @@ class InferSession(abc.ABC):
             f"  ocr_version   = {ocr_version}\n"
             f"  task_type     = {task_type}\n"
             f"  lang_type     = {lang_type}\n"
+            f"  model_type     = {model_type}\n"
             "\n"
             "Please refer to the official model list for supported combinations:\n"
             "https://rapidai.github.io/RapidOCRDocs/main/model_list/\n"
             "\n"
             "Example valid usage:\n"
             "  from rapidocr import LangRec, OCRVersion, RapidOCR\n"
-            "  engine = RapidOCR(params={'Rec.ocr_version': OCRVersion.PPOCRV5, 'Rec.lang_type': LangRec.CH})",
+            "  engine = RapidOCR(params={'Rec.ocr_version': OCRVersion.PPOCRV5, 'Rec.lang_type': LangRec.CH, 'Rec.model_type': 'mobile'})",
         )
         raise ValueError("Invalid OCR configuration.")
 

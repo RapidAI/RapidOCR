@@ -10,13 +10,7 @@ from pytest import mark
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 
-from rapidocr import (
-    EngineType,
-    LangRec,
-    ModelType,
-    OCRVersion,
-    RapidOCR,
-)
+from rapidocr import EngineType, LangRec, ModelType, OCRVersion, RapidOCR
 
 tests_dir = root_dir / "tests" / "test_files"
 img_path = tests_dir / "ch_en_num.jpg"
@@ -109,9 +103,7 @@ def test_th_lang(engine_type):
     img_path = tests_dir / "th_rec.jpg"
     result = engine(img_path, use_det=False, use_cls=False, use_rec=True)
     assert result.txts is not None
-    assert (
-        result.txts[0] == "การแพทย์แผนจีนช่วยให้เด็กสมองพิการในคาซัคสถานกลับมาเดินได้"
-    )
+    assert result.txts[0] == "การแพทย์แผนจีนช่วยให้เด็กสมองพิการในคาซัคสถานกลับมาเดินได้"
 
 
 @mark.parametrize(

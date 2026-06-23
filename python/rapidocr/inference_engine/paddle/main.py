@@ -11,6 +11,7 @@ from paddle import inference
 from ...utils.download_file import DownloadFile, DownloadFileInput
 from ...utils.log import logger
 from ...utils.typings import OCRVersion
+from ...utils.utils import mkdir
 from ..base import FileInfo, InferSession
 from .device_config import DeviceConfig
 
@@ -18,10 +19,7 @@ from .device_config import DeviceConfig
 class PaddleInferSession(InferSession):
     def __init__(self, cfg, mode: Optional[str] = None) -> None:
         self.model_root_dir = Path(cfg.get("model_root_dir"))
-        if not self.model_root_dir.exists():
-            raise FileNotFoundError(
-                f"model_root_dir {self.model_root_dir} does not exist"
-            )
+        mkdir(self.model_root_dir)
 
         self.mode = mode
 

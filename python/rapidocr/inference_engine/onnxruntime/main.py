@@ -11,6 +11,7 @@ from onnxruntime import GraphOptimizationLevel, InferenceSession, SessionOptions
 
 from ...utils.download_file import DownloadFile, DownloadFileInput
 from ...utils.log import logger
+from ...utils.utils import mkdir
 from ..base import FileInfo, InferSession
 from .provider_config import ProviderConfig
 
@@ -38,10 +39,7 @@ class OrtInferSession(InferSession):
                     "Either model_path or model_root_dir must be provided in the configuration."
                 )
             model_root_dir = Path(model_root_dir)
-            if not model_root_dir.exists():
-                raise FileNotFoundError(
-                    f"model_root_dir {model_root_dir} does not exist"
-                )
+            mkdir(model_root_dir)
 
             # 说明用户没有指定自己模型，使用默认模型
             model_info = self.get_model_url(

@@ -10,6 +10,11 @@ from pathlib import Path
 from typing import Iterable, List, Optional
 
 PYTHON_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PYTHON_ROOT))
+
+from rapidocr.utils.model_resolver import normalize_lang, resolve_model_key
+from rapidocr.utils.typings import ModelType, OCRVersion, TaskType
+
 DEFAULT_CONFIG_YAML = PYTHON_ROOT / "rapidocr" / "config.yaml"
 DEFAULT_MANIFEST_IN = PYTHON_ROOT / "MANIFEST.in"
 DEFAULT_MODEL_DIR = PYTHON_ROOT / "rapidocr" / "models"
@@ -147,8 +152,28 @@ def select_model_info(spec: ModelSpec, registry: dict) -> dict:
             f"{spec.engine}.{spec.ocr_version}.{spec.task}"
         ) from e
 
+    model_key = _resolve_model_key(spec)
+    if model_key is not None:
+        model_info = task_models.get(model_key)
+        if not isinstance(model_info, dict):
+            raise RuntimeError(
+                "No model registry entry matches routed default config: "
+                f"{spec.engine}.{spec.ocr_version}.{spec.task} "
+                f"lang={spec.lang} model_type={spec.model_type} "
+                f"model_key={model_key}"
+            )
+        return model_info
+
+    lang = normalize_lang(spec.lang)
+    if spec.model_type == ModelType.SERVER.value:
+        for model_name, model_info in task_models.items():
+            if model_name.startswith(lang) and spec.model_type in model_name:
+                if not isinstance(model_info, dict):
+                    raise RuntimeError(f"Invalid model registry entry: {model_name}")
+                return model_info
+
     for model_name, model_info in task_models.items():
-        if model_name.startswith(spec.lang) and spec.model_type in model_name:
+        if model_name.startswith(lang) and spec.model_type in model_name:
             if not isinstance(model_info, dict):
                 raise RuntimeError(f"Invalid model registry entry: {model_name}")
             return model_info
@@ -158,6 +183,17 @@ def select_model_info(spec: ModelSpec, registry: dict) -> dict:
         f"{spec.engine}.{spec.ocr_version}.{spec.task} "
         f"lang={spec.lang} model_type={spec.model_type}"
     )
+
+
+def _resolve_model_key(spec: ModelSpec) -> Optional[str]:
+    try:
+        task_type = TaskType(spec.task)
+        ocr_version = OCRVersion(spec.ocr_version)
+        model_type = ModelType(spec.model_type)
+    except ValueError:
+        return None
+
+    return resolve_model_key(task_type, ocr_version, spec.lang, model_type)
 
 
 def model_info_to_assets(spec: ModelSpec, model_info: dict) -> List[WheelAsset]:

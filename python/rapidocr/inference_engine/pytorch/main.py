@@ -7,6 +7,7 @@ from typing import List
 import numpy as np
 import torch
 
+from ...utils.utils import mkdir
 from ..base import InferSession
 from .device_config import DeviceConfig
 from .networks.main import ModelLoader
@@ -15,10 +16,7 @@ from .networks.main import ModelLoader
 class TorchInferSession(InferSession):
     def __init__(self, cfg) -> None:
         self.model_root_dir = Path(cfg.get("model_root_dir"))
-        if not self.model_root_dir.exists():
-            raise FileNotFoundError(
-                f"model_root_dir {self.model_root_dir} does not exist"
-            )
+        mkdir(self.model_root_dir)
 
         self.device = DeviceConfig(cfg).setup_device()
         self.predictor = ModelLoader(cfg, self.device).predictor

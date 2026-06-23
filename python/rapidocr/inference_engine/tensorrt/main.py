@@ -13,6 +13,7 @@ from ...utils.download_file import DownloadFile, DownloadFileInput
 from ...utils.log import logger
 from ...utils.model_resolver import normalize_lang, resolve_model_key
 from ...utils.typings import EngineType
+from ...utils.utils import mkdir
 from ..base import FileInfo, InferSession
 from .engine_builder import TRTEngineBuilder
 from .memory_utils import allocate_buffers, free_buffers
@@ -291,10 +292,7 @@ class TRTInferSession(InferSession):
                         "Either model_path or model_root_dir must be provided in the configuration."
                     )
                 model_root_dir = Path(model_root_dir)
-                if not model_root_dir.exists():
-                    raise FileNotFoundError(
-                        f"model_root_dir {model_root_dir} does not exist"
-                    )
+                mkdir(model_root_dir)
 
                 self.model_root_dir = model_root_dir
                 if not self.model_root_dir.exists():
