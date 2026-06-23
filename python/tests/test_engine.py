@@ -132,7 +132,7 @@ def test_engine_tensorrt():
 
 @mark.parametrize(
     "engine_type",
-    [EngineType.ONNXRUNTIME, EngineType.OPENVINO],
+    [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE],
 )
 def test_ppocrv6_det_small(engine_type):
     engine = RapidOCR(
@@ -150,7 +150,7 @@ def test_ppocrv6_det_small(engine_type):
 
 @mark.parametrize(
     "engine_type",
-    [EngineType.ONNXRUNTIME, EngineType.OPENVINO],
+    [EngineType.ONNXRUNTIME, EngineType.OPENVINO, EngineType.PADDLE],
 )
 def test_ppocrv6_rec_small(engine_type):
     engine = RapidOCR(

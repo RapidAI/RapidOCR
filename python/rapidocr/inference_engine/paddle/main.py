@@ -24,6 +24,7 @@ class PaddleInferSession(InferSession):
             )
 
         self.mode = mode
+        self.yml_path = None
 
         pdmodel_path, pdiparams_path = self.setup_model(cfg)
         infer_opts = inference.Config(str(pdmodel_path), str(pdiparams_path))
@@ -98,6 +99,11 @@ class PaddleInferSession(InferSession):
                 model_info, default_model_dir, pdiparams_name
             )
 
+            if "inference.yml" in model_info:
+                self.yml_path = self.download_model(
+                    model_info, default_model_dir, "inference.yml"
+                )
+
             logger.info(f"Using {pdmodel_path}")
             logger.info(f"Using {pdiparams_path}")
             return pdmodel_path, pdiparams_path
@@ -132,7 +138,7 @@ class PaddleInferSession(InferSession):
         return model_file_path
 
     def init_predictor(self, infer_opts, ocr_version):
-        if ocr_version == OCRVersion.PPOCRV5:
+        if ocr_version in (OCRVersion.PPOCRV5, OCRVersion.PPOCRV6):
             infer_opts.enable_memory_optim()
             return inference.create_predictor(infer_opts)
 
@@ -146,9 +152,29 @@ class PaddleInferSession(InferSession):
         return inference.create_predictor(infer_opts)
 
     def have_key(self, key: str = "character") -> bool:
-        return False
+        if self.yml_path is None or not self.yml_path.exists():
+            return False
+        try:
+            from omegaconf import OmegaConf
+
+            yml = OmegaConf.load(self.yml_path)
+            postprocess = OmegaConf.select(yml, "PostProcess")
+            return postprocess is not None and "character_dict" in postprocess
+        except Exception:
+            return False
 
     def get_character_list(self, key: str = "character") -> List[str]:
+        if self.yml_path is None or not self.yml_path.exists():
+            return []
+        try:
+            from omegaconf import OmegaConf
+
+            yml = OmegaConf.load(self.yml_path)
+            character_dict = OmegaConf.select(yml, "PostProcess.character_dict")
+            if character_dict:
+                return list(character_dict)
+        except Exception:
+            pass
         return []
 
 

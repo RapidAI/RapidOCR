@@ -64,7 +64,7 @@ class DeviceConfig:
 
             logger.info(f"Set CPU math library threads to: {infer_num_threads}")
 
-        if self.ocr_version == OCRVersion.PPOCRV5:
+        if self.ocr_version in (OCRVersion.PPOCRV5, OCRVersion.PPOCRV6):
             if hasattr(self.infer_opts, "enable_new_ir"):
                 self.infer_opts.enable_new_ir(True)
 
