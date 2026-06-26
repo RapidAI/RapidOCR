@@ -130,7 +130,7 @@ class PaddleInferSession(InferSession):
         return model_file_path
 
     def init_predictor(self, infer_opts, ocr_version):
-        if ocr_version == OCRVersion.PPOCRV5:
+        if ocr_version in (OCRVersion.PPOCRV5, OCRVersion.PPOCRV6):
             infer_opts.enable_memory_optim()
             return inference.create_predictor(infer_opts)
 

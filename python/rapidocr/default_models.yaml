@@ -634,6 +634,42 @@ paddle:
         inference.json: b81929eeaff8e52db0fafb49c9fbfc5bc0572f81641fe0179cc52096323fb4d4
         inference.pdiparams: 0de2bcf996cf553e2b848dd7b1769dafffc6917b1ccdf55c1d8efe7909fbf743
         inference.yml: 8d5120d0e1a30a9df7ed46aa9119da3796ed066777089d1c1d705f132d5e90f9
+  PP-OCRv6:
+    det:
+      ch_PP-OCRv6_det_tiny:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv6/det/PP-OCRv6_det_tiny
+        inference.pdiparams: 853f7ed317d4f2f80de646842e5bbc32f9d39c601562cbe466cda42e4bafb1b1
+        inference.json: 935c18972799dd8f2a2ff424b9f8b2c6adee4b89f3a76f0746210ec33ba9b3d8
+        inference.yml: 3ac018be6f97499a08faa3bbdeb33640968d9307f6736d152902747a9f259593
+      ch_PP-OCRv6_det_small:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv6/det/PP-OCRv6_det_small
+        inference.pdiparams: 5043d4ccc8d63402ccea8feefcee4db57077431a873e78d2191836a178a492da
+        inference.json: 89240f689a4a77aad75ef55a8df0a15c8e1d4980a327d17e58f24bbadde5aeab
+        inference.yml: 193f435274bf9f0b5f71a929bbfbcf148282df7e633b34e7c373e8f44741b516
+      ch_PP-OCRv6_det_medium:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv6/det/PP-OCRv6_det_medium
+        inference.pdiparams: 8dad21324d3fb0ec20ddc2cab2c0b9bd2cec393e78fb5995571edce5d046613b
+        inference.json: 0f1a7ec35da36173529c7a60238b7f7919e3831929c3f700ad90ad4896adecd5
+        inference.yml: 7298d5ead546584af2504d03355f881ac7a7bc0eb1e282d3e159277c1d0af871
+    rec:
+      ch_PP-OCRv6_rec_tiny:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv6/rec/PP-OCRv6_rec_tiny
+        inference.pdiparams: bb2f8f54d1e25f28c71b6fa4fe23f5940e159cae27fbee96155c99f822156e57
+        inference.json: b5b14770c7dcf092781e92f4278a2ae5f95048f08b4b8a04140e88cb2745f147
+        inference.yml: 66170210bad538e83fff3c4a3867e547d6bf20b50d64b20347c4b913f3034ea1
+        dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv6/rec/PP-OCRv6_rec_tiny/ppocrv6_tiny_dict.txt
+      ch_PP-OCRv6_rec_small:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv6/rec/PP-OCRv6_rec_small
+        inference.pdiparams: 406e1e689c9a7fbb04178007a3fe10cf852afe7bf8bb3bc6dbb9d532b13bd907
+        inference.json: f0bf53c853937a917affdd74467472167727f8ab0f0f7bded01c4a16c27e46e6
+        inference.yml: ab078671bb49f06228eadccd34f1bb501e157f7a047095ffb943ba81512c77d1
+        dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv6/rec/PP-OCRv6_rec_small/ppocrv6_dict.txt
+      ch_PP-OCRv6_rec_medium:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv6/rec/PP-OCRv6_rec_medium
+        inference.pdiparams: 1b01c79a914587933f615569e75de54f2e638ebb5d3f3b3c1b38c24ede8c7319
+        inference.json: 0b2e25e990bd072f1bf77d59d67d508bce6c4bd44af6624e0fb27d6da2cd00e8
+        inference.yml: 991b700facf5b50a7de193468207d5f4255b538dde0d312ae3b7c7a9b6873129
+        dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/paddle/PP-OCRv6/rec/PP-OCRv6_rec_medium/ppocrv6_dict.txt
 
 torch:
   PP-OCRv4:
