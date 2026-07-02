@@ -186,6 +186,110 @@ class EncoderWithSVTR(nn.Module):
         return z
 
 
+class EncoderWithLightSVTR(nn.Module):
+    """Light SVTR neck: attention with lightweight skip connection.
+
+    Replaces heavy guide fusion with a lightweight 1x1 skip conv + add.
+    Adds a DWConv before attention for local context priming.
+
+    When use_guide=True, applies detach to input so that neck
+    gradients do not propagate back to the backbone (implicit regularization).
+    """
+
+    def __init__(
+        self,
+        in_channels,
+        dims=64,
+        depth=1,
+        num_heads=8,
+        qkv_bias=True,
+        mlp_ratio=4.0,
+        drop_rate=0.1,
+        attn_drop_rate=0.1,
+        drop_path=0.0,
+        qk_scale=None,
+        local_kernel=7,
+        use_guide=False,
+    ):
+        super().__init__()
+        self.use_guide = use_guide
+        self.conv_reduce = ConvBNLayer(
+            in_channels,
+            dims,
+            kernel_size=1,
+            act="swish",
+        )
+        self.local_conv = nn.Sequential(
+            nn.Conv2d(
+                dims,
+                dims,
+                [1, local_kernel],
+                padding=[0, local_kernel // 2],
+                groups=dims,
+                bias=False,
+            ),
+            nn.BatchNorm2d(dims),
+            nn.SiLU(),
+        )
+
+        self.svtr_block = nn.ModuleList(
+            [
+                Block(
+                    dim=dims,
+                    num_heads=num_heads,
+                    mixer="Global",
+                    HW=None,
+                    mlp_ratio=mlp_ratio,
+                    qkv_bias=qkv_bias,
+                    qk_scale=qk_scale,
+                    drop=drop_rate,
+                    act_layer="swish",
+                    attn_drop=attn_drop_rate,
+                    drop_path=drop_path,
+                    norm_layer="nn.LayerNorm",
+                    epsilon=1e-05,
+                    prenorm=False,
+                )
+                for _ in range(depth)
+            ]
+        )
+        self.norm = nn.LayerNorm(dims, eps=1e-6)
+
+        self.skip_conv = ConvBNLayer(
+            in_channels,
+            dims,
+            kernel_size=1,
+            act="swish",
+        )
+
+        self.out_channels = dims
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            nn.init.trunc_normal_(m.weight, std=0.02)
+            if m.bias is not None:
+                nn.init.zeros_(m.bias)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.zeros_(m.bias)
+            nn.init.ones_(m.weight)
+
+    def forward(self, x):
+        if self.use_guide:
+            x = x.clone().detach()
+        skip = self.skip_conv(x)
+        z = self.conv_reduce(x)
+        z = z + self.local_conv(z)
+        B, C, H, W = z.shape
+        z = z.flatten(2).permute(0, 2, 1)
+        for blk in self.svtr_block:
+            z = blk(z)
+        z = self.norm(z)
+        z = z.reshape(-1, H, W, C).permute(0, 3, 1, 2)
+        z = z + skip
+        return z
+
+
 class SequenceEncoder(nn.Module):
     def __init__(self, in_channels, encoder_type, hidden_size=48, **kwargs):
         super(SequenceEncoder, self).__init__()
@@ -200,12 +304,13 @@ class SequenceEncoder(nn.Module):
                 "fc": EncoderWithFC,
                 "rnn": EncoderWithRNN,
                 "svtr": EncoderWithSVTR,
+                "lightsvtr": EncoderWithLightSVTR,
             }
             assert encoder_type in support_encoder_dict, "{} must in {}".format(
                 encoder_type, support_encoder_dict.keys()
             )
 
-            if encoder_type == "svtr":
+            if encoder_type in ("svtr", "lightsvtr"):
                 self.encoder = support_encoder_dict[encoder_type](
                     self.encoder_reshape.out_channels, **kwargs
                 )
@@ -217,7 +322,7 @@ class SequenceEncoder(nn.Module):
             self.only_reshape = False
 
     def forward(self, x):
-        if self.encoder_type != "svtr":
+        if self.encoder_type not in ("svtr", "lightsvtr"):
             x = self.encoder_reshape(x)
             if not self.only_reshape:
                 x = self.encoder(x)

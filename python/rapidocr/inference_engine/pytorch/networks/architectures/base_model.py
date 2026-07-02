@@ -3,6 +3,7 @@ from torch import nn
 from ..backbones import build_backbone
 from ..heads import build_head
 from ..necks import build_neck
+from ..transforms import build_transform
 
 
 class BaseModel(nn.Module):
@@ -16,6 +17,19 @@ class BaseModel(nn.Module):
 
         in_channels = config.get("in_channels", 3)
         model_type = config["model_type"]
+        # build transfrom,
+        # for rec, transfrom can be TPS,None
+        # for det and cls, transfrom shoule to be None,
+        # if you make model differently, you can use transfrom in det and cls
+        if "Transform" not in config or config["Transform"] is None:
+            self.use_transform = False
+        else:
+            self.use_transform = True
+            config["Transform"]["in_channels"] = in_channels
+            self.transform = build_transform(config["Transform"])
+            in_channels = self.transform.out_channels
+            # raise NotImplementedError
+
         # build backbone, backbone is need for del, rec and cls
         if "Backbone" not in config or config["Backbone"] is None:
             self.use_backbone = False
@@ -70,6 +84,8 @@ class BaseModel(nn.Module):
 
     def forward(self, x):
         y = dict()
+        if self.use_transform:
+            x = self.transform(x)
         if self.use_backbone:
             x = self.backbone(x)
         if isinstance(x, dict):

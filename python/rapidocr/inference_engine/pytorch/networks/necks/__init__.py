@@ -16,10 +16,23 @@ __all__ = ["build_neck"]
 
 
 def build_neck(config):
-    from .db_fpn import DBFPN, LKPAN, RSEFPN
+    from .db_fpn import DBFPN, LKPAN, RSEFPN, RepLKFPN, RepLKPAN
     from .rnn import SequenceEncoder
 
-    support_dict = ["DBFPN", "SequenceEncoder", "RSEFPN", "LKPAN"]
+    support_dict = [
+        "FPN",
+        "DBFPN",
+        "EASTFPN",
+        "SASTFPN",
+        "SequenceEncoder",
+        "PGFPN",
+        "TableFPN",
+        "RSEFPN",
+        "LKPAN",
+        "FCEFPN",
+        "RepLKFPN",
+        "RepLKPAN",
+    ]
 
     module_name = config.pop("name")
     assert module_name in support_dict, Exception(

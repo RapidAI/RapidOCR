@@ -1,3 +1,133 @@
+PP-OCRv6_rec_tiny:
+  model_type: rec
+  algorithm: SVTR_LCNet
+  Transform:
+  Backbone:
+    name: PPLCNetV4
+    model_size: tiny
+  Head:
+    name: MultiHead
+    out_channels_list:
+      CTCLabelDecode: 6906 #'blank' + ...(6904) + ' '
+    head_list:
+      - CTCHead:
+          Neck:
+            name: reshape
+          Head:
+            mid_channels: 80
+            use_guide: true
+            fc_decay: 0.00001
+      - NRTRHead:
+          nrtr_dim: 384
+          max_text_length: 25
+
+PP-OCRv6_rec_small:
+  model_type: rec
+  algorithm: SVTR_LCNet
+  Transform:
+  Backbone:
+    name: PPLCNetV4
+    model_size: small
+  Head:
+    name: MultiHead
+    out_channels_list:
+      CTCLabelDecode: 18710 #'blank' + ...(18708) + ' '
+    head_list:
+      - CTCHead:
+          Neck:
+            name: lightsvtr
+            dims: 120
+            depth: 2
+            mlp_ratio: 2.0
+            local_kernel: 7
+          Head:
+            fc_decay: 0.00001
+      - NRTRHead:
+          nrtr_dim: 384
+          max_text_length: 25
+
+PP-OCRv6_rec_medium:
+  model_type: rec
+  algorithm: SVTR_LCNet
+  Transform:
+  Backbone:
+    name: PPLCNetV4
+    model_size: medium
+  Head:
+    name: MultiHead
+    out_channels_list:
+      CTCLabelDecode: 18710 #'blank' + ...(18708) + ' '
+    head_list:
+      - CTCHead:
+          Neck:
+            name: lightsvtr
+            dims: 192
+            depth: 2
+            mlp_ratio: 4.0
+            local_kernel: 7
+            use_guide: false
+          Head:
+            fc_decay: 0.00001
+      - NRTRHead:
+          nrtr_dim: 512
+          max_text_length: 25
+
+PP-OCRv6_det_tiny:
+  model_type: det
+  algorithm: DB
+  Transform: null
+  Backbone:
+    name: PPLCNetV4
+    det: true
+    model_size: tiny
+  Neck:
+    name: RepLKFPN
+    out_channels: 64
+    dilated_kernel_size: 5
+    shortcut: true
+  Head:
+    name: DBHead
+    k: 50
+    fix_nan: true
+    aux_in_channels: 64
+
+PP-OCRv6_det_small:
+  model_type: det
+  algorithm: DB
+  Transform: null
+  Backbone:
+    name: PPLCNetV4
+    det: true
+    model_size: small
+  Neck:
+    name: RepLKFPN
+    out_channels: 96
+    dilated_kernel_size: 7
+    shortcut: true
+  Head:
+    name: DBHead
+    k: 50
+    fix_nan: true
+    aux_in_channels: 96
+
+PP-OCRv6_det_medium:
+  model_type: det
+  algorithm: DB
+  Transform: null
+  Backbone:
+    name: PPLCNetV4
+    det: true
+    model_size: medium
+  Neck:
+    name: RepLKPAN
+    out_channels: 256
+    intracl: true
+  Head:
+    name: DBHead
+    k: 50
+    fix_nan: true
+    aux_in_channels: 256
+
 ch_PP-OCRv5_rec_mobile:
   model_type: rec
   algorithm: SVTR_LCNet
