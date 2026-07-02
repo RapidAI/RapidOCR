@@ -7,7 +7,6 @@ repos:
         [
           "--recursive",
           "--in-place",
-          "--remove-all-unused-imports",
           "--ignore-init-module-imports",
         ]
       files: \.py$

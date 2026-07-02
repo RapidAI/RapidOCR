@@ -1,6 +1,7 @@
 from torch import nn
 
 from ..necks.rnn import Im2Seq, SequenceEncoder
+from .rec_ctc_head import CTCHead
 
 
 class FCTranspose(nn.Module):
