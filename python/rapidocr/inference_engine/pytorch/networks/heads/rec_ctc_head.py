@@ -11,27 +11,44 @@ class CTCHead(nn.Module):
         mid_channels=None,
         return_feats=False,
         use_guide=False,
+        guide_layer_type="default",
         **kwargs,
     ):
         super(CTCHead, self).__init__()
         self.use_guide = use_guide
         if use_guide:
-            # Depthwise-separable Conv1d block:
-            # DW Conv1d(k=5, groups=in_channels) → BN → ReLU → PW Conv1d(k=1) → BN
-            self.guide_layer = nn.Sequential(
-                nn.Conv1d(
-                    in_channels,
-                    in_channels,
-                    5,
-                    padding=2,
-                    groups=in_channels,
-                    bias=True,
-                ),
-                nn.BatchNorm1d(in_channels),
-                nn.ReLU(),
-                nn.Conv1d(in_channels, in_channels, 1, bias=True),
-                nn.BatchNorm1d(in_channels),
-            )
+            if guide_layer_type == "ppocrv6_tiny":
+                self.guide_layer = nn.Sequential(
+                    nn.Conv1d(
+                        in_channels,
+                        in_channels,
+                        5,
+                        padding=2,
+                        groups=in_channels,
+                        bias=False,
+                    ),
+                    nn.BatchNorm1d(in_channels),
+                    nn.Hardswish(),
+                    nn.Conv1d(in_channels, in_channels, 1, bias=False),
+                    nn.BatchNorm1d(in_channels),
+                    nn.Hardswish(),
+                )
+            else:
+                self.guide_layer = nn.Sequential(
+                    nn.Conv1d(
+                        in_channels,
+                        in_channels,
+                        5,
+                        padding=2,
+                        groups=in_channels,
+                        bias=True,
+                    ),
+                    nn.BatchNorm1d(in_channels),
+                    nn.ReLU(),
+                    nn.Conv1d(in_channels, in_channels, 1, bias=True),
+                    nn.BatchNorm1d(in_channels),
+                )
+
         if mid_channels is None:
             self.fc = nn.Linear(
                 in_channels,

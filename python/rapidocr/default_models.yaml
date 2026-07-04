@@ -802,8 +802,8 @@ torch:
         SHA256: 40c40ff2d432888f53697d73b37d8b280c65ad66696d6412834a90b40cebc81d
     rec:
       multi_PP-OCRv6_rec_tiny:
-        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.1/torch/PP-OCRv6/rec/PP-OCRv6_rec_tiny.pth
-        SHA256: 82a9b90ec19bcdbc6f2cd54f7b08394aeb01d947b9dfc43e483b90fb30238b85
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/torch/PP-OCRv6/rec/PP-OCRv6_rec_tiny.pth
+        SHA256: dceca3cd44855565e9c10391f22767aa2937c2195df3ce7dd0d9d3d5b6bfa011
         dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.1/paddle/PP-OCRv6/rec/PP-OCRv6_rec_tiny/ppocrv6_tiny_dict.txt
       multi_PP-OCRv6_rec_small:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.1/torch/PP-OCRv6/rec/PP-OCRv6_rec_small.pth

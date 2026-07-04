@@ -1,7 +1,10 @@
+import copy
+
 from torch import nn
 
 from ..necks.rnn import Im2Seq, SequenceEncoder
 from .rec_ctc_head import CTCHead
+from .rec_nrtr_head import Transformer
 
 
 class FCTranspose(nn.Module):
@@ -20,7 +23,8 @@ class FCTranspose(nn.Module):
 class MultiHead(nn.Module):
     def __init__(self, in_channels, out_channels_list, **kwargs):
         super().__init__()
-        self.head_list = kwargs.pop("head_list")
+        self.head_list = copy.deepcopy(kwargs.pop("head_list"))
+        self.build_gtc_head = kwargs.pop("build_gtc_head", False)
 
         self.gtc_head = "sar"
         assert len(self.head_list) >= 2
@@ -29,7 +33,25 @@ class MultiHead(nn.Module):
             if name == "SARHead":
                 pass
             elif name == "NRTRHead":
-                pass
+                if not self.build_gtc_head:
+                    continue
+                gtc_args = self.head_list[idx][name]
+                max_text_length = gtc_args.get("max_text_length", 25)
+                nrtr_dim = gtc_args.get("nrtr_dim", 256)
+                num_decoder_layers = gtc_args.get("num_decoder_layers", 4)
+                self.before_gtc = nn.Sequential(
+                    nn.Flatten(2), FCTranspose(in_channels, nrtr_dim)
+                )
+                self.gtc_head = Transformer(
+                    d_model=nrtr_dim,
+                    nhead=nrtr_dim // 32,
+                    num_encoder_layers=-1,
+                    beam_size=-1,
+                    num_decoder_layers=num_decoder_layers,
+                    max_len=max_text_length,
+                    dim_feedforward=nrtr_dim * 4,
+                    out_channels=out_channels_list["NRTRLabelDecode"],
+                )
             elif name == "CTCHead":
                 # ctc neck
                 self.encoder_reshape = Im2Seq(in_channels)
@@ -65,6 +87,6 @@ class MultiHead(nn.Module):
             sar_out = self.sar_head(x, data[1:])["res"]
             head_out["sar"] = sar_out
         else:
-            gtc_out = self.gtc_head(self.before_gtc(x), data[1:])["res"]
+            gtc_out = self.gtc_head(self.before_gtc(x), data[1:])
             head_out["nrtr"] = gtc_out
         return head_out

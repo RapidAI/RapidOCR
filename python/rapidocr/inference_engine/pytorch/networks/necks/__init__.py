@@ -19,24 +19,18 @@ def build_neck(config):
     from .db_fpn import DBFPN, LKPAN, RSEFPN, RepLKFPN, RepLKPAN
     from .rnn import SequenceEncoder
 
-    support_dict = [
-        "FPN",
-        "DBFPN",
-        "EASTFPN",
-        "SASTFPN",
-        "SequenceEncoder",
-        "PGFPN",
-        "TableFPN",
-        "RSEFPN",
-        "LKPAN",
-        "FCEFPN",
-        "RepLKFPN",
-        "RepLKPAN",
-    ]
+    support_dict = {
+        "DBFPN": DBFPN,
+        "SequenceEncoder": SequenceEncoder,
+        "RSEFPN": RSEFPN,
+        "LKPAN": LKPAN,
+        "RepLKFPN": RepLKFPN,
+        "RepLKPAN": RepLKPAN,
+    }
 
     module_name = config.pop("name")
     assert module_name in support_dict, Exception(
         "neck only support {}".format(support_dict)
     )
-    module_class = eval(module_name)(**config)
+    module_class = support_dict[module_name](**config)
     return module_class

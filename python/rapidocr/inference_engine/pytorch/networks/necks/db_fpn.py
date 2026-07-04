@@ -24,8 +24,9 @@ class DSConv(nn.Module):
         **kwargs,
     ):
         super(DSConv, self).__init__()
-        if groups == None:
+        if groups is None:
             groups = in_channels
+
         self.if_act = if_act
         self.act = act
         self.conv1 = nn.Conv2d(

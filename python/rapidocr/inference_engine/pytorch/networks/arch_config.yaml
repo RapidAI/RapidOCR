@@ -9,6 +9,8 @@ PP-OCRv6_rec_tiny:
     name: MultiHead
     out_channels_list:
       CTCLabelDecode: 6906 #'blank' + ...(6904) + ' '
+      NRTRLabelDecode: 6909
+    build_gtc_head: false
     head_list:
       - CTCHead:
           Neck:
@@ -16,6 +18,7 @@ PP-OCRv6_rec_tiny:
           Head:
             mid_channels: 80
             use_guide: true
+            guide_layer_type: ppocrv6_tiny
             fc_decay: 0.00001
       - NRTRHead:
           nrtr_dim: 384
