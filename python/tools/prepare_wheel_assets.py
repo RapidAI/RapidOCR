@@ -4,6 +4,7 @@
 import argparse
 import hashlib
 import sys
+import types
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,6 +12,18 @@ from typing import Iterable, List, Optional
 
 PYTHON_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PYTHON_ROOT))
+
+# Register lightweight package stubs so that Python can resolve
+# ``rapidocr.utils.*`` without executing ``rapidocr/__init__.py``,
+# which pulls in cv2, numpy, and other heavy runtime dependencies
+# that this script does not need.
+_pkg = types.ModuleType("rapidocr")
+_pkg.__path__ = [str(PYTHON_ROOT / "rapidocr")]
+sys.modules.setdefault("rapidocr", _pkg)
+
+_utils_pkg = types.ModuleType("rapidocr.utils")
+_utils_pkg.__path__ = [str(PYTHON_ROOT / "rapidocr" / "utils")]
+sys.modules.setdefault("rapidocr.utils", _utils_pkg)
 
 from rapidocr.utils.model_resolver import normalize_lang, resolve_model_key
 from rapidocr.utils.typings import ModelType, OCRVersion, TaskType
