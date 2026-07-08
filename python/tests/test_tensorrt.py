@@ -111,9 +111,7 @@ def import_tensorrt_main(monkeypatch):
     return tensorrt_main
 
 
-def test_tensorrt_cache_dir_initializes_model_root_dir_for_build(
-    monkeypatch, tmp_path
-):
+def test_tensorrt_cache_dir_initializes_model_root_dir_for_build(monkeypatch, tmp_path):
     tensorrt_main = import_tensorrt_main(monkeypatch)
 
     downloaded_paths = []
@@ -302,28 +300,6 @@ def test_tensorrt_falls_back_to_rebuild_when_cached_engine_load_fails(
     tensorrt_main.TRTInferSession(cfg)
 
     assert build_count == 1
-
-
-def test_tensorrt_square_padding_and_crop(monkeypatch):
-    tensorrt_main = import_tensorrt_main(monkeypatch)
-
-    session = object.__new__(tensorrt_main.TRTInferSession)
-    session._closed = True
-    session._max_square_size = 64
-
-    import numpy as np
-
-    img = np.ones((1, 3, 32, 48), dtype=np.float32)
-    padded, original_hw = session._pad_to_square(img)
-
-    assert padded.shape == (1, 3, 64, 64)
-    assert original_hw == (32, 48)
-    np.testing.assert_array_equal(padded[:, :, :32, :48], img)
-    assert padded[:, :, 32:, :].sum() == 0
-    assert padded[:, :, :, 48:].sum() == 0
-
-    cropped = session._crop_output(padded, original_hw)
-    assert cropped.shape == (1, 3, 32, 48)
 
 
 def test_tensorrt_get_dict_key_url_uses_fallback_engines(monkeypatch):

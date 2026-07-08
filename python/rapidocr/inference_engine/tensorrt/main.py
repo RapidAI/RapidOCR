@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+import os
 import traceback
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -32,7 +33,7 @@ class TRTInferSession(InferSession):
         engine_path = self._get_engine_path(cfg)
         self.engine = self._load_or_build_engine(cfg, engine_path)
 
-        self.context = self.engine.create_execution_context()
+        self.context = self._create_execution_context(engine_path)
 
         # Allocate memory buffers (pre-allocated with max shape)
         self.inputs, self.outputs, self.bindings, self.stream = allocate_buffers(
@@ -222,8 +223,11 @@ class TRTInferSession(InferSession):
         model_name = self._get_model_name(cfg)
         gpu_arch = self._get_gpu_arch()
         precision = "fp16" if self.engine_cfg.get("use_fp16", True) else "fp32"
+        tf32_override = os.environ.get("NVIDIA_TF32_OVERRIDE", "unset")
 
-        return cache_dir / f"{model_name}_{gpu_arch}_{precision}.engine"
+        return cache_dir / (
+            f"{model_name}_{gpu_arch}_{precision}_tf32{tf32_override}.engine"
+        )
 
     def _get_model_name(self, cfg: Dict[str, Any]) -> str:
         """Extract model name from config for engine filename."""
@@ -332,7 +336,23 @@ class TRTInferSession(InferSession):
         runtime = trt.Runtime(self.trt_logger)
         with open(engine_path, "rb") as f:
             engine_data = f.read()
-        return runtime.deserialize_cuda_engine(engine_data)
+
+        engine = runtime.deserialize_cuda_engine(engine_data)
+        if engine is None:
+            raise TensorRTError(f"Failed to deserialize TensorRT engine: {engine_path}")
+        return engine
+
+    def _create_execution_context(self, engine_path: Path) -> trt.IExecutionContext:
+        context = self.engine.create_execution_context()
+        if context is None:
+            tf32_override = os.environ.get("NVIDIA_TF32_OVERRIDE", "unset")
+            raise TensorRTError(
+                "Failed to create TensorRT execution context for "
+                f"{engine_path}. NVIDIA_TF32_OVERRIDE={tf32_override}. "
+                "Remove the cached engine or rebuild it under the current "
+                "TensorRT/CUDA environment."
+            )
+        return context
 
     def have_key(self, key: str = "character") -> bool:
         return False
