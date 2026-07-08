@@ -11,8 +11,8 @@ onnxruntime:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.1/onnx/PP-OCRv4/det/en_PP-OCRv3_det_mobile.onnx
         SHA256: ea07c15d38ac40cd69da3c493444ec75b44ff23840553ff8ba102c1219ed39c2
       multi_PP-OCRv3_det_mobile:
-        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.1/onnx/PP-OCRv4/det/multi_PP-OCRv3_det_mobile.onnx
-        SHA256: 5475c6c7f4d84a6c4f32241b487435d59f126a40c023387af99732258844cdc3
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/onnx/PP-OCRv4/det/multi_PP-OCRv3_det_mobile.onnx
+        SHA256: 5582933662898cd2b4c2eae8a7e5e4fbdff84773711f29db00a1cbd185059001
     rec:
       arabic_PP-OCRv4_rec_mobile:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.1/onnx/PP-OCRv4/rec/arabic_PP-OCRv4_rec_mobile.onnx
