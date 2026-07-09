@@ -58,6 +58,8 @@ namespaces = false
 [tool.setuptools.package-data]
 rapidocr = [
     "**/*.yaml",
+    "**/*.pyi",
+    "py.typed",
 ]
 
 [tool.setuptools_scm]
