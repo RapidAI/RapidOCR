@@ -174,7 +174,13 @@ RapidOCR 是一个基于 Apache2.0 许可的开源项目，其持续开发之所
 
 ### ⭐️ Star history
 
-[![Stargazers over time](https://starchart.cc/RapidAI/RapidOCR.svg?variant=adaptive)](https://starchart.cc/RapidAI/RapidOCR)
+<a href="https://www.star-history.com/?repos=RapidAI%2FRapidOCR&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=RapidAI/RapidOCR&type=date&theme=dark&legend=top-left&sealed_token=ofP3tG1ULqpq_dRsqvYhkAODMaeXdXA6sWStHgaK7S3F_yVACWlI319ved61isdZPB-n8aPK9rZnGxqQmD-MG8rgku26WTtDZaMMpJkW2DbbFuhpP4Oo4NHTgod1UYnq7scKjbJvLUv6KrBNjdJLFmsXt50jERIxyeME53c9-w5WnMQ3necIJt2V7I0E" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=RapidAI/RapidOCR&type=date&legend=top-left&sealed_token=ofP3tG1ULqpq_dRsqvYhkAODMaeXdXA6sWStHgaK7S3F_yVACWlI319ved61isdZPB-n8aPK9rZnGxqQmD-MG8rgku26WTtDZaMMpJkW2DbbFuhpP4Oo4NHTgod1UYnq7scKjbJvLUv6KrBNjdJLFmsXt50jERIxyeME53c9-w5WnMQ3necIJt2V7I0E" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=RapidAI/RapidOCR&type=date&legend=top-left&sealed_token=ofP3tG1ULqpq_dRsqvYhkAODMaeXdXA6sWStHgaK7S3F_yVACWlI319ved61isdZPB-n8aPK9rZnGxqQmD-MG8rgku26WTtDZaMMpJkW2DbbFuhpP4Oo4NHTgod1UYnq7scKjbJvLUv6KrBNjdJLFmsXt50jERIxyeME53c9-w5WnMQ3necIJt2V7I0E" />
+ </picture>
+</a>
 
 ### ⚖️ 开源许可证
 
