@@ -5,10 +5,13 @@ Global:
     use_cls: true
     use_rec: true
 
+    use_preprocess_img: true
+    min_side_len: 30
+    max_side_len: 2000
+
+    use_apply_vertical_padding: true
     min_height: 30
     width_height_ratio: 8
-    max_side_len: 2000
-    min_side_len: 30
 
     return_word_box: false
     return_single_char_box: false
