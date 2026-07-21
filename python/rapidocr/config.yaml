@@ -9,7 +9,7 @@ Global:
     min_side_len: 30
     max_side_len: 2000
 
-    use_apply_vertical_padding: true
+    use_vertical_padding: true
     min_height: 30
     width_height_ratio: 8
 

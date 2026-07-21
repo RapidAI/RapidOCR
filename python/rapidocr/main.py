@@ -279,21 +279,26 @@ class RapidOCR:
             setattr(obj, path[-1], value)
 
     def preprocess_img(self, ori_img: np.ndarray) -> Tuple[np.ndarray, Dict[str, Any]]:
-        op_record = {}
+        if not self.cfg.Global.use_preprocess_img:
+            return ori_img, {"preprocess": {"ratio_h": 1.0, "ratio_w": 1.0}}
+
         img, ratio_h, ratio_w = resize_image_within_bounds(
             ori_img, self.min_side_len, self.max_side_len
         )
-        op_record["preprocess"] = {"ratio_h": ratio_h, "ratio_w": ratio_w}
+        op_record = {"preprocess": {"ratio_h": ratio_h, "ratio_w": ratio_w}}
         return img, op_record
 
     def detect_and_crop(
         self, img: np.ndarray, op_record: Dict[str, Any]
     ) -> Tuple[List[np.ndarray], TextDetOutput]:
-        img, op_record = apply_vertical_padding(
-            img, op_record, self.width_height_ratio, self.min_height
-        )
-        det_res = self.text_det(img)
+        if self.cfg.Global.use_vertical_padding:
+            img, op_record = apply_vertical_padding(
+                img, op_record, self.width_height_ratio, self.min_height
+            )
+        else:
+            op_record["padding_1"] = {"top": 0, "left": 0}
 
+        det_res = self.text_det(img)
         if det_res.boxes is None:
             raise RapidOCRError("The text detection result is empty")
 
