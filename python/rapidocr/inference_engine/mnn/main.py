@@ -73,8 +73,7 @@ class MNNInferSession(InferSession):
                 out_shape, MNN.Halide_Type_Float, MNN.Tensor_DimensionType_Caffe
             )
             output.copyToHostTensor(out_tensor)
-
-            return np.array(out_tensor.getData()).reshape(out_shape)
+            return np.array(out_tensor.getNumpyData(), copy=True).reshape(out_shape)
 
         except Exception as e:
             error_info = traceback.format_exc()
