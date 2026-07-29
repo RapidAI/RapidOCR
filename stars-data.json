@@ -1,0 +1,17 @@
+{
+  "snapshots": [
+    {
+      "timestamp": "2026-07-29T00:33:57.324Z",
+      "totalStars": 7284,
+      "repos": [
+        {
+          "fullName": "RapidAI/RapidOCR",
+          "name": "RapidOCR",
+          "owner": "RapidAI",
+          "stars": 7284
+        }
+      ]
+    }
+  ],
+  "starsAtLastNotification": 7284
+}
