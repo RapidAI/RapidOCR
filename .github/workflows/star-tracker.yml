@@ -16,3 +16,5 @@ jobs:
       - uses: fbuireu/github-star-tracker@v1
         with:
           github-token: ${{ secrets.STAR_TRACKER_TOKEN }}
+          visibility: 'public' # public | private | all | owned
+          only-repos: 'RapidOCR'
