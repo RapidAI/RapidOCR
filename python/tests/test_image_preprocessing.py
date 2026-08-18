@@ -12,9 +12,7 @@ from rapidocr.ch_ppocr_det import TextDetOutput
 
 def test_preprocess_img_returns_original_when_disabled(monkeypatch):
     engine = RapidOCR.__new__(RapidOCR)
-    engine.cfg = SimpleNamespace(
-        Global=SimpleNamespace(use_preprocess_img=False)
-    )
+    engine.cfg = SimpleNamespace(Global=SimpleNamespace(use_preprocess_img=False))
     ori_img = np.zeros((20, 40, 3), dtype=np.uint8)
 
     def fail_if_called(*args, **kwargs):
@@ -30,9 +28,7 @@ def test_preprocess_img_returns_original_when_disabled(monkeypatch):
 
 def test_detect_and_crop_skips_vertical_padding_when_disabled(monkeypatch):
     engine = RapidOCR.__new__(RapidOCR)
-    engine.cfg = SimpleNamespace(
-        Global=SimpleNamespace(use_vertical_padding=False)
-    )
+    engine.cfg = SimpleNamespace(Global=SimpleNamespace(use_vertical_padding=False))
     img = np.zeros((20, 40, 3), dtype=np.uint8)
     boxes = np.array([[[0, 0], [10, 0], [10, 10], [0, 10]]], dtype=np.float32)
     detected_images = []

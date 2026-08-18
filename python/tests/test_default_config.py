@@ -2,6 +2,7 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -245,11 +246,32 @@ def test_default_engine_runtime_config(default_engine):
     assert default_engine.cfg.Rec.model_type == ModelType.SMALL
     assert default_engine.cfg.Cls.ocr_version == OCRVersion.PPOCRV4
     assert default_engine.cfg.Cls.model_type == ModelType.MOBILE
-    assert default_engine.text_det.limit_side_len == 736
-    assert default_engine.text_det.limit_type == "min"
-    assert default_engine.text_cls.cls_image_shape == [3, 48, 192]
-    assert default_engine.text_rec.rec_image_shape == [3, 48, 320]
-    assert default_engine.text_rec.rec_batch_num == 6
+
+
+def test_update_det_params_before_model_load():
+    engine = RapidOCR()
+
+    assert engine.text_det is None
+
+    engine.update_params(box_thresh=0.7, unclip_ratio=2.0)
+
+    assert engine.text_det is None
+    assert engine.cfg.Det.box_thresh == 0.7
+    assert engine.cfg.Det.unclip_ratio == 2.0
+
+
+def test_update_det_params_after_model_load():
+    engine = RapidOCR()
+    engine.text_det = SimpleNamespace(
+        postprocess_op=SimpleNamespace(box_thresh=0.5, unclip_ratio=1.6)
+    )
+
+    engine.update_params(box_thresh=0.7, unclip_ratio=2.0)
+
+    assert engine.cfg.Det.box_thresh == 0.7
+    assert engine.cfg.Det.unclip_ratio == 2.0
+    assert engine.text_det.postprocess_op.box_thresh == 0.7
+    assert engine.text_det.postprocess_op.unclip_ratio == 2.0
 
 
 def test_default_engine_real_full_pipeline(default_engine):
