@@ -1,17 +1,14 @@
 repos:
-- repo: https://gitee.com/SWHL/autoflake
-  rev: v2.1.1
-  hooks:
-    - id: autoflake
-      args:
-        [
-          "--recursive",
-          "--in-place",
-          "--ignore-init-module-imports",
-        ]
-      files: \.py$
-- repo: https://gitee.com/SWHL/black
-  rev: 23.1.0
-  hooks:
-    - id: black
-      files: \.py$
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.0
+    hooks:
+      - id: ruff-check
+        args:
+          - --fix
+          - --unsafe-fixes
+          - --line-length=88
+          - --select=F401,F841,I
+          - --per-file-ignores=__init__.py:F401
+      - id: ruff-format
+        args:
+          - --line-length=88
