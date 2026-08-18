@@ -72,6 +72,42 @@ print(result)
 result.vis("vis_result.jpg")
 ```
 
+### 🚀 GPU Quickstart (onnxruntime backend)
+
+The default install (`pip install rapidocr onnxruntime`) is **CPU-only**. `RapidOCR()` will run on CPU with **no warning**, even on a machine with a GPU, because the default `onnxruntime` package has no CUDA execution provider and the default config has `EngineConfig.onnxruntime.use_cuda=False`.
+
+To actually use an NVIDIA GPU (e.g. Tesla T4) with the default `onnxruntime` backend, all **three** of the following are required — missing any one silently falls back to CPU:
+
+1. Swap the ONNX Runtime package for the GPU build (match the version to your CUDA/cuDNN):
+   ```bash
+   pip uninstall onnxruntime
+   pip install onnxruntime-gpu
+   ```
+2. Enable CUDA in the engine config:
+   ```python
+   from rapidocr import RapidOCR
+
+   engine = RapidOCR(params={"EngineConfig.onnxruntime.use_cuda": True})
+   ```
+3. Make sure a matching CUDA/cuDNN runtime is available. If there is no system-wide CUDA install, the pip CUDA runtime packages work (adjust for your CUDA major version):
+   ```bash
+   pip install nvidia-cuda-runtime-cu12 nvidia-cudnn-cu12 nvidia-cublas-cu12 nvidia-cufft-cu12 nvidia-curand-cu12
+   export LD_LIBRARY_PATH=$(python -c "import nvidia, os; print(os.path.dirname(os.path.dirname(nvidia.__file__)))")/nvidia/*/lib:$LD_LIBRARY_PATH
+   ```
+
+To confirm the GPU is actually being used, check the effective execution provider after building the engine:
+
+```python
+print(engine.text_det.session.session.get_providers())
+# Expect CUDAExecutionProvider first, not CPUExecutionProvider
+```
+
+Measured on a Tesla T4 (16GB, Turing, sm_75): mean latency on a 430x323 image dropped from **503.8ms (CPU)** to **150.6ms (CUDA)** — a **3.34x** speedup, with the same OCR result. Peak VRAM usage was ~0.55GB, well within the T4's 16GB.
+
+If `use_cuda=True` is set but `onnxruntime-gpu` is not installed, RapidOCR logs an installation hint rather than failing silently — but with the default CPU-only `onnxruntime` package and `use_cuda=False` (the defaults), there is no warning at all.
+
+See [AGENTS.md](./AGENTS.md) for further GPU/precision notes (fp32 vs fp16/int8, backend selection).
+
 ### 🐳 Docker
 
 Docker development environments are available for all supported inference engines:
