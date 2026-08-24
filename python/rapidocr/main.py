@@ -3,6 +3,7 @@
 # @Contact: liekkaskono@163.com
 import argparse
 import copy
+import threading
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -67,12 +68,15 @@ class RapidOCR:
 
         self.use_det = cfg.Global.use_det
         self.text_det = None
+        self._det_model_lock = threading.Lock()
 
         self.use_cls = cfg.Global.use_cls
         self.text_cls = None
+        self._cls_model_lock = threading.Lock()
 
         self.use_rec = cfg.Global.use_rec
         self.text_rec = None
+        self._rec_model_lock = threading.Lock()
 
         self.load_img = LoadImage()
         self.max_side_len = cfg.Global.max_side_len
@@ -117,30 +121,36 @@ class RapidOCR:
 
     def _load_det_model(self):
         if self.text_det is None:
-            self.cfg.Det.engine_cfg = self.cfg.EngineConfig[
-                self.cfg.Det.engine_type.value
-            ]
-            self.cfg.Det.model_root_dir = self.cfg.Global.model_root_dir
-            self.text_det = TextDetector(self.cfg.Det)
+            with self._det_model_lock:
+                if self.text_det is None:
+                    self.cfg.Det.engine_cfg = self.cfg.EngineConfig[
+                        self.cfg.Det.engine_type.value
+                    ]
+                    self.cfg.Det.model_root_dir = self.cfg.Global.model_root_dir
+                    self.text_det = TextDetector(self.cfg.Det)
         return self.text_det
 
     def _load_cls_model(self):
         if self.text_cls is None:
-            self.cfg.Cls.engine_cfg = self.cfg.EngineConfig[
-                self.cfg.Cls.engine_type.value
-            ]
-            self.cfg.Cls.model_root_dir = self.cfg.Global.model_root_dir
-            self.text_cls = TextClassifier(self.cfg.Cls)
+            with self._cls_model_lock:
+                if self.text_cls is None:
+                    self.cfg.Cls.engine_cfg = self.cfg.EngineConfig[
+                        self.cfg.Cls.engine_type.value
+                    ]
+                    self.cfg.Cls.model_root_dir = self.cfg.Global.model_root_dir
+                    self.text_cls = TextClassifier(self.cfg.Cls)
         return self.text_cls
 
     def _load_rec_model(self):
         if self.text_rec is None:
-            self.cfg.Rec.engine_cfg = self.cfg.EngineConfig[
-                self.cfg.Rec.engine_type.value
-            ]
-            self.cfg.Rec.font_path = self.cfg.Global.font_path
-            self.cfg.Rec.model_root_dir = self.cfg.Global.model_root_dir
-            self.text_rec = TextRecognizer(self.cfg.Rec)
+            with self._rec_model_lock:
+                if self.text_rec is None:
+                    self.cfg.Rec.engine_cfg = self.cfg.EngineConfig[
+                        self.cfg.Rec.engine_type.value
+                    ]
+                    self.cfg.Rec.font_path = self.cfg.Global.font_path
+                    self.cfg.Rec.model_root_dir = self.cfg.Global.model_root_dir
+                    self.text_rec = TextRecognizer(self.cfg.Rec)
         return self.text_rec
 
     def run_ocr_steps(self, img: np.ndarray, op_record: Dict[str, Any]):
