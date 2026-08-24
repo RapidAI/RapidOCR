@@ -1,0 +1,2490 @@
+#version 450
+
+// One invocation handles four adjacent FP32 values.  PP-OCR feature maps are
+// contiguous NCHW planes, so this maps naturally to vec4 loads/stores and
+// reduces dispatch bookkeeping without changing the scalar tail semantics.
+// The Y dimension remains the independent crop-batch index.
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+// InputA is also the result storage.  Every invocation owns a disjoint
+// contiguous four-float span, reads it before writing it, and never needs an
+// inter-invocation dependency.  Keeping the result in this mapped input
+// buffer removes a whole activation buffer and the device-to-host copy into a
+// third staging buffer for the synchronous hybrid path.
+layout(std430, binding = 0) buffer InputA { float a[]; };
+// Most graph modes treat B as immutable weights/another activation.  The
+// device DB post-process mode also uses it as its on-device connectivity
+// scratch map, so it must be writable in the shared descriptor ABI.
+layout(std430, binding = 1) buffer InputB { float b[]; };
+// Binding C is normally read-only bias/affine data. Mode 38 uses it as the
+// third QKV output; keeping the declaration writable is legal for all other
+// modes and avoids a second pipeline solely for that graph-local transform.
+layout(std430, binding = 2) buffer InputC { float c[]; };
+layout(std430, binding = 3) buffer OutputD { float d[]; };
+// Binding E is normally a read-only residual. Mode 38 uses it as the K QKV
+// output; writable storage preserves all existing reads and avoids a second
+// descriptor/pipeline layout for a graph-local transform.
+layout(std430, binding = 4) buffer ResidualE { float e[]; };
+
+// The pointwise-convolution modes stage learned [M,C] weights in workgroup
+// memory. One workgroup maps to four output channels and 256 adjacent spatial
+// positions per channel, so its four weight rows are reused by all 64 vec4
+// producing lanes. Four channels x 1024 input channels consumes 16 KiB, the
+// Vulkan guaranteed shared-memory floor. Wider layers take the generic path.
+shared float pointwise_weights[4096];
+// Depthwise convolution has one small [KH,KW] filter per channel.  Assigning
+// a workgroup to a single output channel lets all its output positions reuse
+// that filter from workgroup memory rather than fetching it once per pixel.
+// PP-OCRv6's depthwise kernels are at most 9x9; keep a conservative 16x16
+// cache and transparently retain global loads for a larger exported kernel.
+shared float depthwise_weights[256];
+// Ordinary detector convolutions use the same output channel over a spatial
+// tile.  For the common 3x3/2x2 projections this makes the entire [C,KH,KW]
+// filter small enough to stage once per workgroup instead of rereading it for
+// every output pixel.  Larger exports transparently take the generic path.
+shared float conv_weights[4096];
+// 16x16 output tile halo for 3x3 s1/s2. 4096 floats is the guaranteed 16 KiB
+// shared-memory floor: s1 18x18 stages 12 IC/pass (Concat.2 C=64), s2 34x34
+// stages 3 IC/pass (stem pool-concat C=32).
+shared float conv_spatial_tile[4096];
+// Row-transform workgroups use these only in the parallel Softmax branch.
+shared float softmax_row_max;
+shared float softmax_row_inverse_sum;
+// Terminal CTC's vocabulary rows are much wider than its sequence count.
+// Reduce one row cooperatively: the recognizer commonly has only a few dozen
+// time steps but up to several thousand classes, so a one-thread-per-row
+// implementation leaves nearly the whole GPU idle on small/medium models.
+shared float ctc_row_max[256];
+shared float ctc_row_sum[256];
+shared uint ctc_row_best[256];
+
+layout(push_constant) uniform Params {
+  uint count;
+  uint batches;
+  uint operation0;
+  uint operation1;
+  uint operation2;
+  uint operation3;
+  uint steps;
+  uint right_repeat;
+  // Number of compact RHS values needed for one output batch and the
+  // distance to the next batch's RHS.  A zero stride means the same model
+  // constant (for example [1,C,1,1]) is shared by every input crop.
+  uint right_per_batch;
+  uint right_batch_stride;
+  // mode=0 is the existing one-RHS binary chain. mode=1 is a fused channel
+  // affine, mode=2 adds its exact Swish activation; b is scale and c is bias
+  // with the same compact layout in both affine modes. Modes 3/4 are NCHW
+  // 1x1 Conv (+ ReLU in mode 4), modes 5/6 additionally add the equal-shape
+  // residual from binding E before optional ReLU: `count` is output values per batch,
+  // `right_repeat` the spatial plane, `right_per_batch` input channels and
+  // `right_batch_stride` output channels. Mode 7 is the same pointwise Conv
+  // with exact Swish fused into the output write. Mode 10 fuses exact Sigmoid.
+  // Mode 11 fuses ONNX HardSigmoid; operation0/operation1 carry the raw FP32
+  // alpha/beta bits so detector gates keep their exported parameters exactly.
+  // Mode 8 performs affine +
+  // Swish then a same-shape binary op, using binding D as the second live
+  // activation so the intermediate stays device-resident. Mode 9 is pointwise
+  // Conv + residual Add + exact Swish in one output write. Mode 12 is the
+  // detector's exact HardSwish: `x * clamp(alpha*x+beta, 0, 1)`, where
+  // operation0/operation1 carry alpha/beta raw FP32 bits.
+  // Mode 13 is a regular NCHW depthwise convolution.  `count` is output
+  // values per batch, `right_repeat`/`right_per_batch` are input H/W,
+  // `right_batch_stride`/`steps` are output H/W, and operation0..3 carry
+  // kernel H/W and stride H/W. `b` contains [C,KH,KW], `c` contains [C].
+  // The high 16 bits of mode carry non-negative top/left padding; low bits
+  // retain the mode identifier. Mode 29 is the second dispatch in a
+  // depthwise->pointwise chain: it reads the intermediate from D and writes
+  // the final result into A. E then packs [M,C] weights followed by [M] bias.
+  uint mode;
+} params;
+
+vec4 apply_binary(vec4 left, vec4 right, uint operation) {
+  if (operation == 0u) return left + right;
+  if (operation == 1u) return left - right;
+  if (operation == 2u) return left * right;
+  return left / right;
+}
+
+float apply_binary_scalar(float left, float right, uint operation) {
+  if (operation == 0u) return left + right;
+  if (operation == 1u) return left - right;
+  if (operation == 2u) return left * right;
+  return left / right;
+}
+
+// Matches the opt-in AVX2/AVX-512 GELU approximation. This is selected only
+// for the same x86 policy/shape that kernels::Gelu() selects; default ONNX
+// Erf-GELU never enters this shader path.
+vec4 approximate_gelu(vec4 x) {
+  const vec4 z = vec4(0.7978845608028654) *
+      (x + vec4(0.044715) * x * x * x);
+  const vec4 z2 = z * z;
+  const vec4 t = clamp(z * (vec4(27.0) + z2) /
+                       (vec4(27.0) + vec4(9.0) * z2), vec4(-1.0), vec4(1.0));
+  return vec4(0.5) * x * (vec4(1.0) + t);
+}
+
+float approximate_gelu_scalar(float x) {
+  const float z = 0.7978845608028654 * (x + 0.044715 * x * x * x);
+  const float z2 = z * z;
+  const float t = clamp(z * (27.0 + z2) / (27.0 + 9.0 * z2), -1.0, 1.0);
+  return 0.5 * x * (1.0 + t);
+}
+
+// GLSL 450 does not expose an Erf intrinsic. This well-conditioned
+// Abramowitz/Stegun complementary-error-function polynomial has a maximum
+// absolute error below 1.5e-7 for FP32 inputs, substantially tighter than
+// the optional tanh GELU approximation used by CPU SIMD fusions.
+float erf_fp32(float x) {
+  const float sign = x < 0.0 ? -1.0 : 1.0;
+  const float ax = abs(x);
+  const float t = 1.0 / (1.0 + 0.5 * ax);
+  const float polynomial = -1.26551223 + t * (1.00002368 + t * (0.37409196 +
+      t * (0.09678418 + t * (-0.18628806 + t * (0.27886807 +
+      t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277))))))));
+  return sign * (1.0 - t * exp(-ax * ax + polynomial));
+}
+
+void main() {
+  // Mode 54 is the complete detector DB post-process.  It intentionally uses
+  // one GPU invocation: detector maps are compact (normally <= 240x240), and
+  // this deterministic raster flood-fill exactly retains the CPU DB rules
+  // without downloading the FP32 probability map. Binding A is one detector
+  // N-plane, B is device-only state, and C returns only
+  // [count, x0,y0,x1,y1,score ...].  It is a control/data-reduction kernel,
+  // not a CPU inference fallback.
+  if (params.mode == 54u) {
+    if (gl_GlobalInvocationID.x != 0u || gl_GlobalInvocationID.y != 0u) return;
+    const uint height = params.right_repeat;
+    const uint width = params.right_per_batch;
+    const uint image_width = params.operation3;
+    const uint image_height = params.steps;
+    const uint capacity = params.right_batch_stride;
+    const uint elements = params.count;
+    if (height == 0u || width == 0u || image_width == 0u || image_height == 0u ||
+        elements != height * width || capacity == 0u) return;
+    const float threshold = uintBitsToFloat(params.operation0);
+    const float box_threshold = uintBitsToFloat(params.operation1);
+    const float unclip_ratio = uintBitsToFloat(params.operation2);
+    // 0 background/finished, 1 unseen foreground, 2 flood frontier,
+    // 3 current component.  The second half of B is a device-only FIFO of
+    // pixel indices, giving linear-time component traversal instead of a
+    // repeated whole-map wave scan. State never crosses the host boundary.
+    for (uint i = 0u; i < elements; ++i) b[i] = a[i] > threshold ? 1.0 : 0.0;
+    uint result_count = 0u;
+    for (uint start = 0u; start < elements; ++start) {
+      if (b[start] != 1.0) continue;
+      b[start] = 2.0;
+      uint head = 0u, tail = 1u;
+      b[elements] = float(start);
+      uint min_x = width, max_x = 0u, min_y = height, max_y = 0u, pixels = 0u;
+      float sum = 0.0;
+      while (head < tail) {
+        const uint index = uint(b[elements + head++]);
+        b[index] = 3.0;
+        const uint y = index / width, x = index - y * width;
+        min_x = min(min_x, x); max_x = max(max_x, x);
+        min_y = min(min_y, y); max_y = max(max_y, y);
+        sum += a[index]; ++pixels;
+        const int ix = int(x), iy = int(y);
+        for (int dy = -1; dy <= 1; ++dy) for (int dx = -1; dx <= 1; ++dx) {
+          if (dx == 0 && dy == 0) continue;
+          const int nx = ix + dx, ny = iy + dy;
+          if (nx >= 0 && nx < int(width) && ny >= 0 && ny < int(height)) {
+            const uint neighbor = uint(ny) * width + uint(nx);
+            if (b[neighbor] == 1.0) {
+              b[neighbor] = 2.0;
+              b[elements + tail++] = float(neighbor);
+            }
+          }
+        }
+      }
+      // Release just this component's FIFO/state slots, preserving a linear
+      // traversal even on dense detector maps with many independent blobs.
+      for (uint item = 0u; item < tail; ++item) b[uint(b[elements + item])] = 0.0;
+      if (pixels == 0u) continue;
+      const float score = sum / float(pixels);
+      if (score < box_threshold) continue;
+      const float bw = float(max_x - min_x + 1u), bh = float(max_y - min_y + 1u);
+      const float expand = max(1.0, unclip_ratio * sqrt(bw * bh) * 0.15);
+      const float x0 = clamp(float(min_x) - expand, 0.0, float(width - 1u));
+      const float x1 = clamp(float(max_x) + expand, 0.0, float(width - 1u));
+      const float y0 = clamp(float(min_y) - expand, 0.0, float(height - 1u));
+      const float y1 = clamp(float(max_y) + expand, 0.0, float(height - 1u));
+      if (min(x1 - x0, y1 - y0) < 3.0 || result_count >= capacity) continue;
+      const uint base = 1u + result_count * 5u;
+      c[base] = x0 * float(image_width) / float(width);
+      c[base + 1u] = y0 * float(image_height) / float(height);
+      c[base + 2u] = x1 * float(image_width) / float(width);
+      c[base + 3u] = y1 * float(image_height) / float(height);
+      c[base + 4u] = score;
+      ++result_count;
+    }
+    // Match the public OCR ordering policy on-device before recognition jobs
+    // are built. It is an insertion sort because DB returns few boxes in the
+    // usual document case and avoids a host-side geometry pass.
+    for (uint i = 1u; i < result_count; ++i) {
+      const uint current = 1u + i * 5u;
+      const float x0 = c[current], y0 = c[current + 1u], x1 = c[current + 2u],
+                  y1 = c[current + 3u], score = c[current + 4u];
+      uint j = i;
+      while (j > 0u) {
+        const uint previous = 1u + (j - 1u) * 5u;
+        const bool before = abs(y0 - c[previous + 1u]) < 10.0
+            ? x0 < c[previous] : y0 < c[previous + 1u];
+        if (!before) break;
+        const uint target = 1u + j * 5u;
+        for (uint field = 0u; field < 5u; ++field) c[target + field] = c[previous + field];
+        --j;
+      }
+      const uint target = 1u + j * 5u;
+      c[target] = x0; c[target + 1u] = y0; c[target + 2u] = x1;
+      c[target + 3u] = y1; c[target + 4u] = score;
+    }
+    c[0] = float(result_count);
+    return;
+  }
+  // Mode 45 is the medium detector tail's conservative depthwise path.  The
+  // `896x5x22` layer has too little spatial work for a vec4 workgroup to be
+  // useful, and this scalar indexing avoids a Radeon/LLPC device-loss seen
+  // after the full preceding graph.  It is algebraically the same FP32
+  // depthwise convolution as mode 13, with one invocation per output value.
+  if ((params.mode & 0xffffu) == 52u || (params.mode & 0xffffu) == 53u) {
+    const uint batch = gl_GlobalInvocationID.y;
+    // Mode 53 is the segmented variant used for the Radeon-sensitive
+    // detector tail.  Unlike mode 52 it keeps the original whole-buffer
+    // descriptors and carries only a channel window in the high mode bits.
+    // This avoids changing storage-buffer descriptor offsets between four
+    // otherwise identical dispatches on drivers that aggressively cache
+    // descriptor metadata.  The tensor never leaves device memory.
+    const uint channel_begin = (params.mode & 0xffffu) == 53u
+        ? (params.mode >> 16u) : 0u;
+    const uint output_index = gl_GlobalInvocationID.x + channel_begin * params.steps * params.right_batch_stride;
+    const uint input_h = params.right_repeat;
+    const uint input_w = params.right_per_batch;
+    const uint output_h = params.right_batch_stride;
+    const uint output_w = params.steps;
+    const uint kernel_h = params.operation0;
+    const uint kernel_w = params.operation1;
+    const uint stride_h = params.operation2;
+    const uint stride_w = params.operation3;
+    // Mode 53 qualifies only the exported 3x3 pad-one detector tail.  Its
+    // upper bits carry channel_begin, so retain that fixed padding locally.
+    const uint pad_top = (params.mode & 0xffffu) == 53u ? 1u : (params.mode >> 16u) & 0xffu;
+    const uint pad_left = (params.mode & 0xffffu) == 53u ? 1u : (params.mode >> 24u) & 0xffu;
+    if (batch >= params.batches || output_index >= params.count || input_h == 0u ||
+        input_w == 0u || output_h == 0u || output_w == 0u || kernel_h == 0u ||
+        kernel_w == 0u || stride_h == 0u || stride_w == 0u) return;
+    const uint input_plane = input_h * input_w;
+    const uint output_plane = output_h * output_w;
+    const uint channel = output_index / output_plane;
+    const uint spatial = output_index - channel * output_plane;
+    const uint output_y = spatial / output_w;
+    const uint output_x = spatial - output_y * output_w;
+    const int input_y = int(output_y * stride_h) - int(pad_top);
+    const int input_x = int(output_x * stride_w) - int(pad_left);
+    float value = c[channel];
+    const uint input_base = (batch * (params.count / output_plane) + channel) * input_plane;
+    const uint weight_base = channel * kernel_h * kernel_w;
+    for (uint ky = 0u; ky < kernel_h; ++ky) {
+      const int y = input_y + int(ky);
+      if (y < 0 || y >= int(input_h)) continue;
+      for (uint kx = 0u; kx < kernel_w; ++kx) {
+        const int x = input_x + int(kx);
+        if (x >= 0 && x < int(input_w)) {
+          value += a[input_base + uint(y) * input_w + uint(x)] *
+              b[weight_base + ky * kernel_w + kx];
+        }
+      }
+    }
+    d[batch * params.count + output_index] = value;
+    return;
+  }
+  // Mode 32 is the GPU-only graph executor's in-place unary activation.
+  // `operation0`: ReLU, Sigmoid, Swish, HardSigmoid, HardSwish, GELU, Sqrt,
+  // Square. `operation1`
+  // and `operation2` preserve ONNX HardSigmoid's alpha/beta bits exactly.
+  if (params.mode == 32u) {
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    const uint batch = gl_GlobalInvocationID.y;
+    if (batch >= params.batches || index >= params.count) return;
+    const uint offset = batch * params.count + index;
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+      float value = a[offset + lane];
+      if (params.operation0 == 0u) value = max(value, 0.0);
+      else if (params.operation0 == 1u) value = 1.0 / (1.0 + exp(-value));
+      else if (params.operation0 == 2u) value *= 1.0 / (1.0 + exp(-value));
+      else if (params.operation0 == 3u) value = clamp(uintBitsToFloat(params.operation1) * value +
+                                                       uintBitsToFloat(params.operation2), 0.0, 1.0);
+      else if (params.operation0 == 4u) value *= clamp(uintBitsToFloat(params.operation1) * value +
+                                                       uintBitsToFloat(params.operation2), 0.0, 1.0);
+      else if (params.operation0 == 5u) value = 0.5 * value * (1.0 + erf_fp32(value * 0.7071067811865475));
+      else if (params.operation0 == 6u) value = sqrt(value);
+      else value *= value;
+      a[offset + lane] = value;
+    }
+    return;
+  }
+  // Mode 41 is a contiguous suffix broadcast.  It deliberately writes to D
+  // (rather than aliasing A): graph liveness may require both inputs after a
+  // residual/SE branch. `right_repeat` is the scalar span of a compact RHS
+  // value, `right_per_batch` is its item count, and zero batch stride denotes
+  // a shared model constant.
+  if (params.mode == 41u) {
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    const uint batch = gl_GlobalInvocationID.y;
+    if (batch >= params.batches || index >= params.count || params.right_repeat == 0u ||
+        params.right_per_batch == 0u) return;
+    const uint rhs_base = params.right_batch_stride == 0u ? 0u : batch * params.right_batch_stride;
+    const uint base = batch * params.count;
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+      const float lhs = a[base + index + lane];
+      const float rhs = b[rhs_base + ((index + lane) / params.right_repeat)];
+      d[base + index + lane] = apply_binary_scalar(lhs, rhs, params.operation0);
+    }
+    return;
+  }
+  // Mode 42 concatenates up to four contiguous tensors. Bindings A/B/C/E
+  // supply the inputs and D is the assembled output. `operation0..3` are the
+  // axis lengths, `steps` is `outer`, and `right_repeat` is `inner`. The
+  // host graph planner chooses this mode only when each input is a live arena
+  // slot, so all FPN feature assembly remains device-resident.
+  if (params.mode == 42u) {
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    const uint total = params.count;
+    const uint outer = params.steps;
+    const uint inner = params.right_repeat;
+    const uint lengths[4] = uint[4](params.operation0, params.operation1, params.operation2, params.operation3);
+    const uint total_axis = lengths[0] + lengths[1] + lengths[2] + lengths[3];
+    if (index >= total || outer == 0u || inner == 0u || total_axis == 0u ||
+        total != outer * total_axis * inner) return;
+    for (uint lane = 0u; lane < 4u && index + lane < total; ++lane) {
+      const uint dst = index + lane;
+      const uint group = dst / (total_axis * inner);
+      const uint local = dst - group * total_axis * inner;
+      const uint axis = local / inner;
+      const uint within = local - axis * inner;
+      uint prefix = 0u;
+      if (axis < lengths[0]) d[dst] = a[(group * lengths[0] + axis) * inner + within];
+      else if (axis < (prefix = lengths[0] + lengths[1]))
+        d[dst] = b[(group * lengths[1] + (axis - lengths[0])) * inner + within];
+      else if (axis < (prefix += lengths[2]))
+        d[dst] = c[(group * lengths[2] + (axis - lengths[0] - lengths[1])) * inner + within];
+      else d[dst] = e[(group * lengths[3] + (axis - prefix)) * inner + within];
+    }
+    return;
+  }
+  // Mode 43 is integer-factor asymmetric/floor nearest resize. The PP-OCRv6
+  // FPN exporter emits precisely this ONNX form (2x/4x/8x); unlike the
+  // Resize+Add fusion it also covers a Resize whose consumer is a later
+  // Concat or convolution.
+  if (params.mode == 43u) {
+    // Generic depthwise dispatch is a packed vec4 grid.  With 256 shader
+    // invocations per workgroup, one workgroup covers 1,024 output floats.
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    const uint batch = gl_GlobalInvocationID.y;
+    const uint channels = params.operation0;
+    const uint input_h = params.operation1;
+    const uint input_w = params.operation2;
+    const uint scale_h = params.operation3;
+    const uint scale_w = params.steps;
+    const uint output_h = input_h * scale_h;
+    const uint output_w = input_w * scale_w;
+    const uint output_plane = output_h * output_w;
+    if (batch >= params.batches || index >= params.count || channels == 0u || input_h == 0u || input_w == 0u ||
+        scale_h == 0u || scale_w == 0u) return;
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+      const uint output_index = index + lane;
+      const uint channel = output_index / output_plane;
+      const uint spatial = output_index - channel * output_plane;
+      const uint y = spatial / output_w;
+      const uint x = spatial - y * output_w;
+      const uint source = (batch * channels + channel) * input_h * input_w +
+                          (y / scale_h) * input_w + (x / scale_w);
+      d[batch * params.count + output_index] = a[source];
+    }
+    return;
+  }
+  // Mode 44 is a graph-local device copy. It supports branch fan-out and
+  // non-aliasable terminal outputs without a mapped-memory memcpy.
+  if (params.mode == 44u) {
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    if (index >= params.count) return;
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane)
+      d[index + lane] = a[index + lane];
+    return;
+  }
+  // Mode 33 is generic in-place NCHW channel affine. It is the device form
+  // of inference BatchNorm after the immutable scale/mean/variance constants
+  // have been folded by the graph executor. B/C are compact `[C]` vectors.
+  if (params.mode == 33u || params.mode == 45u || params.mode == 66u) {
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    const uint batch = gl_GlobalInvocationID.y;
+    const uint plane = params.right_repeat;
+    const uint channels = params.right_per_batch;
+    if (batch >= params.batches || index >= params.count || plane == 0u || channels == 0u) return;
+    const uint offset = batch * params.count + index;
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+      const uint channel = (index + lane) / plane;
+      float value = a[offset + lane] * b[channel] + c[channel];
+      if (params.mode == 45u) value *= 1.0 / (1.0 + exp(-value));
+      else if (params.mode == 66u) value *= clamp(value / 6.0 + 0.5, 0.0, 1.0);
+      a[offset + lane] = value;
+    }
+    return;
+  }
+  // Mode 60 copies `count` floats from A to E so Conv.0 can stay resident
+  // while later stem layers ping-pong A/D. Mapped UMA vkCmdCopyBuffer was
+  // observed to leave a 32x48 Conv.0 plane stale (mid RGB+Conv.012).
+  if ((params.mode & 0xffffu) == 60u || (params.mode & 0xffffu) == 61u) {
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    if (index >= params.count) return;
+    const bool d_to_a = (params.mode & 0xffffu) == 61u;
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+      if (d_to_a) a[index + lane] = d[index + lane];
+      else e[index + lane] = a[index + lane];
+    }
+    return;
+  }
+  // Modes 46/47 fuse packed-RGB bilinear sampling and NCHW normalization for
+  // the detector/recognizer front ends. A's byte representation contains
+  // native packed RGB input; D is
+  // the NCHW result. Mode 46 uses PP-OCR detector BGR/ImageNet affine
+  // constants; mode 47 uses recognizer BGR [-1,1] normalization.
+  if ((params.mode & 0xffffu) == 46u || (params.mode & 0xffffu) == 47u) {
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    const uint source_w = params.operation0;
+    const uint source_h = params.operation1;
+    const uint left = params.operation2;
+    const uint top = params.operation3;
+    const uint region_w = params.steps;
+    const uint region_h = params.right_repeat;
+    const uint output_w = params.right_per_batch;
+    const uint output_h = params.right_batch_stride;
+    uint content_w = params.mode >> 16u;
+    if (content_w == 0u || content_w > output_w) content_w = output_w;
+    const uint plane = output_w * output_h;
+    const uint batch = gl_GlobalInvocationID.y;
+    if (batch >= params.batches || index >= params.count || source_w == 0u || source_h == 0u ||
+        region_w == 0u || region_h == 0u || output_w == 0u || output_h == 0u ||
+        params.count != 3u * plane) return;
+    const uint source_batch_base = batch * source_w * source_h * 3u;
+    const uint output_batch_base = batch * params.count;
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+      const uint out_index = index + lane;
+      const uint channel = out_index / plane;
+      const uint spatial = out_index - channel * plane;
+      const uint oy = spatial / output_w;
+      const uint ox = spatial - oy * output_w;
+      if (ox >= content_w) {
+        d[output_batch_base + out_index] = 0.0;
+        continue;
+      }
+      // `precise` forbids FMA contraction so (ox+0.5)*src/dst matches the
+      // CPU preprocessor's left-associative FP32 mul/div. Without it, large
+      // detector pages (720x152→704x160) disagree by one uint8 step on a
+      // few hundred edge pixels and hybrid RGB+Conv.0 cannot admit.
+      precise const float fx = (float(ox) + 0.5) * float(region_w) / float(content_w) - 0.5;
+      precise const float fy = (float(oy) + 0.5) * float(region_h) / float(output_h) - 0.5;
+      const int x_floor = int(floor(fx)); const int y_floor = int(floor(fy));
+      const uint x0 = uint(clamp(x_floor, 0, int(region_w) - 1));
+      const uint y0 = uint(clamp(y_floor, 0, int(region_h) - 1));
+      const uint x1 = min(x0 + 1u, region_w - 1u); const uint y1 = min(y0 + 1u, region_h - 1u);
+      precise const float dx = fx - float(x_floor); precise const float dy = fy - float(y_floor);
+      // Model channels are BGR while source pixels are packed RGB.
+      const uint rgb_component = 2u - channel;
+      const uint i00 = source_batch_base + ((top + y0) * source_w + left + x0) * 3u + rgb_component;
+      const uint i01 = source_batch_base + ((top + y0) * source_w + left + x1) * 3u + rgb_component;
+      const uint i10 = source_batch_base + ((top + y1) * source_w + left + x0) * 3u + rgb_component;
+      const uint i11 = source_batch_base + ((top + y1) * source_w + left + x1) * 3u + rgb_component;
+      // Keep the interpolation variables explicitly float.  GLSL otherwise
+      // permits a different contraction/precision path from the portable C++
+      // `float` implementation on large detector images.
+      precise const float one_minus_dx = float(1.0) - dx;
+      precise const float one_minus_dy = float(1.0) - dy;
+      // The compact shader toolchain used by this project does not expose
+      // 8-bit storage-buffer types. Packed source bytes are therefore read
+      // through uint words; each word supplies four RGB bytes in little
+      // endian Vulkan host memory. This stays entirely on-device and avoids
+      // the former CPU byte-to-FP32 conversion.
+      const uint word00 = floatBitsToUint(a[i00 >> 2u]);
+      const uint word01 = floatBitsToUint(a[i01 >> 2u]);
+      const uint word10 = floatBitsToUint(a[i10 >> 2u]);
+      const uint word11 = floatBitsToUint(a[i11 >> 2u]);
+      const float sample00 = float((word00 >> ((i00 & 3u) * 8u)) & 0xffu);
+      const float sample01 = float((word01 >> ((i01 & 3u) * 8u)) & 0xffu);
+      const float sample10 = float((word10 >> ((i10 & 3u) * 8u)) & 0xffu);
+      const float sample11 = float((word11 >> ((i11 & 3u) * 8u)) & 0xffu);
+      precise const float upper = sample00 * one_minus_dx + sample01 * dx;
+      precise const float lower = sample10 * one_minus_dx + sample11 * dx;
+      // Match WriteResizeRegionToNchw: int(interp + 0.5) toward-zero on
+      // non-negative samples. `precise` keeps the two-stage bilinear from
+      // contracting into an FMA that rounds a different uint8.
+      precise const float vertical = upper * one_minus_dy + lower * dy;
+      const float sampled_value = clamp(float(int(vertical + 0.5)), 0.0, 255.0);
+      float scale; float offset;
+      if ((params.mode & 0xffffu) == 47u) { scale = 2.0 / 255.0; offset = -1.0; }
+      else if (channel == 0u) { scale = 1.0 / (255.0 * 0.229); offset = -0.485 / 0.229; }
+      else if (channel == 1u) { scale = 1.0 / (255.0 * 0.224); offset = -0.456 / 0.224; }
+      else { scale = 1.0 / (255.0 * 0.225); offset = -0.406 / 0.225; }
+      d[output_batch_base + out_index] = sampled_value * scale + offset;
+    }
+    return;
+  }
+  // Mode 48 reduces one terminal [batch, step] row to compact CTC data.
+  // D/E are compact FP32 result buffers; D's integer index is represented
+  // exactly as FP32 (vocabulary < 2^24).  Its high mode bit means InputA is
+  // pre-Softmax logits: compute only the winner's stable Softmax probability
+  // instead of materialising the complete [N,T,V] probability activation.
+  if ((params.mode & 0xffffu) == 48u && (params.mode & 0x40000000u) != 0u) {
+    const uint row = gl_WorkGroupID.x;
+    const uint local = gl_LocalInvocationID.x;
+    const uint rows = params.operation0;
+    const uint classes = params.operation1;
+    if (row >= rows || classes == 0u) return;
+    const uint offset = row * classes;
+    float local_maximum = -3.402823466e+38;
+    uint local_best = 0xffffffffu;
+    const bool src_d = (params.mode & 0x20000000u) != 0u;
+    for (uint cidx = local; cidx < classes; cidx += gl_WorkGroupSize.x) {
+      const float value = src_d ? d[offset + cidx] : a[offset + cidx];
+      if (value > local_maximum ||
+          (value == local_maximum && cidx < local_best)) {
+        local_maximum = value;
+        local_best = cidx;
+      }
+    }
+    ctc_row_max[local] = local_maximum;
+    ctc_row_best[local] = local_best;
+    barrier();
+    // Keep the earliest class on equal scores, matching the portable
+    // `if (value > maximum)` greedy CTC rule.
+    for (uint width = gl_WorkGroupSize.x / 2u; width > 0u; width >>= 1u) {
+      if (local < width) {
+        const float right = ctc_row_max[local + width];
+        const uint right_best = ctc_row_best[local + width];
+        const float left = ctc_row_max[local];
+        const uint left_best = ctc_row_best[local];
+        if (right > left || (right == left && right_best < left_best)) {
+          ctc_row_max[local] = right;
+          ctc_row_best[local] = right_best;
+        }
+      }
+      barrier();
+    }
+    const float maximum = ctc_row_max[0];
+    const uint best = ctc_row_best[0];
+    if ((params.mode & 0x80000000u) == 0u) {
+      // Input values are the graph's materialised Softmax probabilities.
+      if (local == 0u) {
+        if (src_d) a[row] = float(best); else d[row] = float(best);
+        e[row] = maximum;
+      }
+    } else {
+      float partial_sum = 0.0;
+      for (uint cidx = local; cidx < classes; cidx += gl_WorkGroupSize.x)
+        partial_sum += exp((src_d ? d[offset + cidx] : a[offset + cidx]) - maximum);
+      ctc_row_sum[local] = partial_sum;
+      barrier();
+      for (uint width = gl_WorkGroupSize.x / 2u; width > 0u; width >>= 1u) {
+        if (local < width) ctc_row_sum[local] += ctc_row_sum[local + width];
+        barrier();
+      }
+      if (local == 0u) {
+        if (src_d) a[row] = float(best); else d[row] = float(best);
+        e[row] = 1.0 / ctc_row_sum[0];
+      }
+    }
+    return;
+  }
+  // Compatibility CTC path: one invocation handles one row. This retains the
+  // established deterministic reduction order for the default Radeon/LLPC
+  // deployment. The cooperative variant above is kept behind an explicit
+  // feature bit because GPU wave/subgroup scheduling determines which one is
+  // faster on a given adapter.
+  if ((params.mode & 0xffffu) == 48u) {
+    const uint row = gl_GlobalInvocationID.x;
+    const uint rows = params.operation0;
+    const uint classes = params.operation1;
+    if (row >= rows || classes == 0u) return;
+    const uint offset = row * classes;
+    uint best = 0u; float maximum = a[offset];
+    for (uint cidx = 1u; cidx < classes; ++cidx) {
+      const float value = a[offset + cidx];
+      if (value > maximum) { maximum = value; best = cidx; }
+    }
+    d[row] = float(best);
+    if ((params.mode & 0x80000000u) == 0u) {
+      e[row] = maximum;
+    } else {
+      float sum = 0.0;
+      for (uint cidx = 0u; cidx < classes; ++cidx)
+        sum += exp(a[offset + cidx] - maximum);
+      e[row] = 1.0 / sum;
+    }
+    return;
+  }
+  // Mode 65 is the recognizer terminal: one workgroup owns one GEMM row and
+  // reduces CTC Top-1 + winner Softmax without materialising [T,V] logits.
+  if ((params.mode & 0xffffu) == 65u) {
+    const uint row = gl_WorkGroupID.x;
+    const uint local = gl_LocalInvocationID.x;
+    const uint rows = params.operation0;
+    const uint depth = params.operation1;
+    const uint vocab = params.operation2;
+    const bool has_bias = params.operation3 != 0u;
+    if (row >= rows || depth == 0u || vocab == 0u) return;
+    const uint left_base = row * depth;
+    float local_maximum = -3.402823466e+38;
+    uint local_best = 0xffffffffu;
+    for (uint class_id = local; class_id < vocab; class_id += gl_WorkGroupSize.x) {
+      float value = has_bias ? c[class_id] : 0.0;
+      for (uint k = 0u; k < depth; ++k)
+        value += a[left_base + k] * b[k * vocab + class_id];
+      if (value > local_maximum || (value == local_maximum && class_id < local_best)) {
+        local_maximum = value;
+        local_best = class_id;
+      }
+    }
+    ctc_row_max[local] = local_maximum;
+    ctc_row_best[local] = local_best;
+    barrier();
+    for (uint width = gl_WorkGroupSize.x / 2u; width > 0u; width >>= 1u) {
+      if (local < width) {
+        const float right = ctc_row_max[local + width];
+        const uint right_best = ctc_row_best[local + width];
+        const float leftv = ctc_row_max[local];
+        const uint left_best = ctc_row_best[local];
+        if (right > leftv || (right == leftv && right_best < left_best)) {
+          ctc_row_max[local] = right;
+          ctc_row_best[local] = right_best;
+        }
+      }
+      barrier();
+    }
+    const float maximum = ctc_row_max[0];
+    const uint best = ctc_row_best[0];
+    float partial_sum = 0.0;
+    for (uint class_id = local; class_id < vocab; class_id += gl_WorkGroupSize.x) {
+      float value = has_bias ? c[class_id] : 0.0;
+      for (uint k = 0u; k < depth; ++k)
+        value += a[left_base + k] * b[k * vocab + class_id];
+      partial_sum += exp(value - maximum);
+    }
+    ctc_row_sum[local] = partial_sum;
+    barrier();
+    for (uint width = gl_WorkGroupSize.x / 2u; width > 0u; width >>= 1u) {
+      if (local < width) ctc_row_sum[local] += ctc_row_sum[local + width];
+      barrier();
+    }
+    if (local == 0u) { d[row] = float(best); e[row] = 1.0 / ctc_row_sum[0]; }
+    return;
+  }
+  // Mode 49 converts a probability map to a compact 0/1 mask on device.
+  // The host consumes this byte-equivalent result only for final component
+  // enumeration; no detector floating activation is evaluated on CPU.
+  if (params.mode == 49u) {
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    if (index >= params.count) return;
+    const float threshold = uintBitsToFloat(params.operation0);
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane)
+      d[index + lane] = a[index + lane] > threshold ? 1.0 : 0.0;
+    return;
+  }
+  // Modes 34/35 are row-wise LayerNorm and Softmax used in recognizer
+  // attention. LayerNorm still uses a scalar lane for exact CPU-order
+  // reductions. Softmax's independent exponentiation/write phase is split
+  // over the whole 256-lane workgroup after lane zero computes its stable
+  // maximum/sum, retaining the same sequential sum order while eliminating a
+  // high-latency serial activation write for large vocab/attention rows.
+  if (params.mode == 34u || params.mode == 35u) {
+    const uint rows = params.operation0;
+    const uint width = params.operation1;
+    if (width == 0u) return;
+    // operation3!=0: one thread owns one row (same sequential reduction as
+    // the lane-0 LayerNorm path). Attention rows are tens of columns; a
+    // 256-wide group per row left 255 lanes idle.
+    if (params.operation3 != 0u) {
+      const uint row = gl_GlobalInvocationID.x;
+      if (row >= rows) return;
+      const uint offset = row * width;
+      if (params.mode == 34u) {
+        float mean = 0.0;
+        for (uint column = 0u; column < width; ++column) mean += a[offset + column];
+        mean /= float(width);
+        float variance = 0.0;
+        for (uint column = 0u; column < width; ++column) {
+          const float centered = a[offset + column] - mean;
+          variance += centered * centered;
+        }
+        const float denominator = sqrt(variance / float(width) + uintBitsToFloat(params.operation2));
+        for (uint column = 0u; column < width; ++column)
+          a[offset + column] = ((a[offset + column] - mean) / denominator) * b[column] + c[column];
+      } else {
+        float maximum = a[offset];
+        for (uint column = 1u; column < width; ++column) maximum = max(maximum, a[offset + column]);
+        float sum = 0.0;
+        for (uint column = 0u; column < width; ++column) sum += exp(a[offset + column] - maximum);
+        const float inverse_sum = 1.0 / sum;
+        for (uint column = 0u; column < width; ++column)
+          a[offset + column] = exp(a[offset + column] - maximum) * inverse_sum;
+      }
+      return;
+    }
+    const uint row = gl_WorkGroupID.x;
+    if (row >= rows) return;
+    const uint offset = row * width;
+    if (params.mode == 34u) {
+      if (gl_LocalInvocationID.x != 0u) return;
+      float mean = 0.0;
+      for (uint column = 0u; column < width; ++column) mean += a[offset + column];
+      mean /= float(width);
+      float variance = 0.0;
+      for (uint column = 0u; column < width; ++column) {
+        const float centered = a[offset + column] - mean;
+        variance += centered * centered;
+      }
+      const float denominator = sqrt(variance / float(width) + uintBitsToFloat(params.operation2));
+      for (uint column = 0u; column < width; ++column)
+        a[offset + column] = ((a[offset + column] - mean) / denominator) * b[column] + c[column];
+    } else {
+      if (gl_LocalInvocationID.x == 0u) {
+        float maximum = a[offset];
+        for (uint column = 1u; column < width; ++column) maximum = max(maximum, a[offset + column]);
+        float sum = 0.0;
+        for (uint column = 0u; column < width; ++column) sum += exp(a[offset + column] - maximum);
+        softmax_row_max = maximum; softmax_row_inverse_sum = 1.0 / sum;
+      }
+      barrier();
+      const float maximum = softmax_row_max; const float inverse_sum = softmax_row_inverse_sum;
+      for (uint column = gl_LocalInvocationID.x; column < width; column += gl_WorkGroupSize.x)
+        a[offset + column] = exp(a[offset + column] - maximum) * inverse_sum;
+    }
+    return;
+  }
+  // Mode 36 is a compact general rank-four transpose. The C++ graph planner
+  // represents rank-three tensors as `[1,D0,D1,D2]`; bit pairs in `steps`
+  // encode output-axis -> input-axis. This is sufficient for every exported
+  // PP-OCRv6 NTC/NCT and attention permutation while leaving tensor metadata
+  // on the host and activation storage wholly resident.
+  if (params.mode == 36u) {
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    if (index >= params.count) return;
+    const uint dims[4] = uint[4](params.operation0, params.operation1, params.operation2, params.operation3);
+    const uint perm[4] = uint[4](params.steps & 3u, (params.steps >> 2u) & 3u,
+                                  (params.steps >> 4u) & 3u, (params.steps >> 6u) & 3u);
+    if (dims[0] == 0u || dims[1] == 0u || dims[2] == 0u || dims[3] == 0u) return;
+    const uint out_dims[4] = uint[4](dims[perm[0]], dims[perm[1]], dims[perm[2]], dims[perm[3]]);
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+      uint remainder = index + lane;
+      uint out_coord[4]; uint in_coord[4];
+      out_coord[3] = remainder % out_dims[3]; remainder /= out_dims[3];
+      out_coord[2] = remainder % out_dims[2]; remainder /= out_dims[2];
+      out_coord[1] = remainder % out_dims[1]; remainder /= out_dims[1];
+      out_coord[0] = remainder;
+      in_coord[perm[0]] = out_coord[0]; in_coord[perm[1]] = out_coord[1];
+      in_coord[perm[2]] = out_coord[2]; in_coord[perm[3]] = out_coord[3];
+      const uint input_index = ((in_coord[0] * dims[1] + in_coord[1]) * dims[2] + in_coord[2]) * dims[3] + in_coord[3];
+      d[index + lane] = a[input_index];
+    }
+    return;
+  }
+  // Mode 37 is the NCHW spatial reduction used by detector and recognizer SE
+  // gates. One invocation retains the portable scalar accumulation order for
+  // one channel plane, yet leaves both the source and compact result on GPU.
+  if (params.mode == 37u) {
+    const uint index = gl_GlobalInvocationID.x;
+    const uint planes = params.operation0;
+    const uint plane = params.operation1;
+    if (index >= planes || plane == 0u) return;
+    float sum = 0.0;
+    const uint offset = index * plane;
+    for (uint item = 0u; item < plane; ++item) sum += a[offset + item];
+    d[index] = sum / float(plane);
+    return;
+  }
+  // Mode 38 splits the PP-OCR fused QKV tensor `[N,T,3,H,D]` straight to
+  // Q/K/V `[N,H,T,D]`. Binding D receives Q, E K, and C V. Each input/output
+  // mapping is one-to-one, with distinct buffers for all four tensors.
+  if (params.mode == 38u) {
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    const uint batches = params.operation0;
+    const uint steps = params.operation1;
+    const uint heads = params.operation2;
+    const uint width = params.operation3;
+    const uint branch_elements = batches * steps * heads * width;
+    if (index >= branch_elements || batches == 0u || steps == 0u || heads == 0u || width == 0u) return;
+    for (uint lane = 0u; lane < 4u && index + lane < branch_elements; ++lane) {
+      const uint linear_index = index + lane;
+      // The destination is contiguous `[N,H,T,D]`, hence decompose it from
+      // D -> T -> H -> N. The source retains `[N,T,3,H,D]`.
+      const uint feature = linear_index % width; uint remainder = linear_index / width;
+      const uint t = remainder % steps; remainder /= steps;
+      const uint h = remainder % heads; const uint n = remainder / heads;
+      const uint source = (((n * steps + t) * 3u + 0u) * heads + h) * width + feature;
+      const uint output_offset = ((n * heads + h) * steps + t) * width + feature;
+      d[output_offset] = a[source];
+      e[output_offset] = a[source + heads * width];
+      c[output_offset] = a[source + 2u * heads * width];
+    }
+    return;
+  }
+  // Mode 39 is attention's batched row-major GEMM. Global Y is the compact
+  // `[batch,head]` matrix index. operation3!=0: one thread owns four adjacent
+  // columns of one row and reuses each A scalar (same K-order FP32 reduction).
+  // operation3==0 is the legacy output_matrix walk with four independent K loops.
+  if (params.mode == 39u) {
+    const uint rows = params.operation0;
+    const uint depth = params.operation1;
+    const uint columns = params.operation2;
+    const uint left_matrix = rows * depth;
+    const uint right_matrix = depth * columns;
+    const uint output_matrix = rows * columns;
+    // operation3==2: mode-24 8x128 LDS tile, Z is the [batch,head] matrix.
+    // Same K-order FMAs as the row kernel; empty column/row lanes write 0
+    // into LDS and skip the store. Disable from the dispatcher.
+    if (params.operation3 == 2u) {
+      const uint matrix = gl_WorkGroupID.z;
+      if (matrix >= params.batches || rows == 0u || depth == 0u || columns == 0u) return;
+      const uint local = gl_LocalInvocationID.x;
+      const uint tile_row = gl_WorkGroupID.y * 8u;
+      const uint row = tile_row + local / 32u;
+      const uint column = gl_WorkGroupID.x * 128u + (local % 32u) * 4u;
+      vec4 value = vec4(0.0);
+      const uint a_base = matrix * left_matrix;
+      const uint b_base = matrix * right_matrix;
+      for (uint k0 = 0u; k0 < depth; k0 += 16u) {
+        for (uint index = local; index < 128u; index += gl_WorkGroupSize.x) {
+          const uint r = index / 16u;
+          const uint k = index % 16u;
+          pointwise_weights[2048u + index] = tile_row + r < rows && k0 + k < depth
+              ? a[a_base + (tile_row + r) * depth + k0 + k] : 0.0;
+        }
+        for (uint index = local; index < 2048u; index += gl_WorkGroupSize.x) {
+          const uint k = index / 128u;
+          const uint col = index % 128u;
+          const uint global_column = gl_WorkGroupID.x * 128u + col;
+          pointwise_weights[index] = k0 + k < depth && global_column < columns
+              ? b[b_base + (k0 + k) * columns + global_column] : 0.0;
+        }
+        barrier();
+        const uint row_in_tile = local / 32u;
+        const uint column_in_tile = (local % 32u) * 4u;
+        if (k0 + 16u <= depth) {
+          for (uint k = 0u; k < 16u; ++k) {
+            const float av = pointwise_weights[2048u + row_in_tile * 16u + k];
+            const uint right = k * 128u + column_in_tile;
+            value += av * vec4(pointwise_weights[right], pointwise_weights[right + 1u],
+                               pointwise_weights[right + 2u], pointwise_weights[right + 3u]);
+          }
+        } else {
+          for (uint k = 0u; k0 + k < depth; ++k) {
+            const float av = pointwise_weights[2048u + row_in_tile * 16u + k];
+            const uint right = k * 128u + column_in_tile;
+            value += av * vec4(pointwise_weights[right], pointwise_weights[right + 1u],
+                               pointwise_weights[right + 2u], pointwise_weights[right + 3u]);
+          }
+        }
+        barrier();
+      }
+      if (row < rows && column < columns) {
+        const uint dst = matrix * output_matrix + row * columns + column;
+        d[dst] = value.x;
+        if (column + 1u < columns) d[dst + 1u] = value.y;
+        if (column + 2u < columns) d[dst + 2u] = value.z;
+        if (column + 3u < columns) d[dst + 3u] = value.w;
+      }
+      return;
+    }
+    const uint matrix = gl_GlobalInvocationID.y;
+    if (matrix >= params.batches || rows == 0u || depth == 0u || columns == 0u) return;
+    if (params.operation3 != 0u) {
+      const uint col4 = (columns + 3u) / 4u;
+      const uint task = gl_GlobalInvocationID.x;
+      const uint row = task / col4;
+      const uint column = (task - row * col4) * 4u;
+      if (row >= rows || column >= columns) return;
+      const uint a_row = matrix * left_matrix + row * depth;
+      const uint b_base = matrix * right_matrix + column;
+      const uint remain = min(4u, columns - column);
+      float s0 = 0.0, s1 = 0.0, s2 = 0.0, s3 = 0.0;
+      for (uint k = 0u; k < depth; ++k) {
+        const float av = a[a_row + k];
+        const uint bk = b_base + k * columns;
+        s0 += av * b[bk];
+        if (remain > 1u) s1 += av * b[bk + 1u];
+        if (remain > 2u) s2 += av * b[bk + 2u];
+        if (remain > 3u) s3 += av * b[bk + 3u];
+      }
+      const uint dst = matrix * output_matrix + row * columns + column;
+      d[dst] = s0;
+      if (remain > 1u) d[dst + 1u] = s1;
+      if (remain > 2u) d[dst + 2u] = s2;
+      if (remain > 3u) d[dst + 3u] = s3;
+      return;
+    }
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    if (index >= params.count) return;
+    for (uint lane = 0u; lane < 4u && index + lane < output_matrix; ++lane) {
+      const uint output_index = index + lane;
+      const uint row = output_index / columns;
+      const uint column = output_index - row * columns;
+      float sum = 0.0;
+      for (uint k = 0u; k < depth; ++k)
+        sum += a[matrix * left_matrix + row * depth + k] * b[matrix * right_matrix + k * columns + column];
+      d[matrix * output_matrix + output_index] = sum;
+    }
+    return;
+  }
+  // Mode 58 fuses expand 1x1 GELU and project 1x1 + residual(A) into one
+  // dispatch. A workgroup owns a short spatial strip, stages the hidden GELU
+  // in LDS, then projects. IC/H reductions stay ascending, matching the
+  // two-kernel PointwiseConv(GELU)+PointwiseConvAdd sequence. Binding C is
+  // packed [expand_bias | project_bias].
+  if (params.mode == 58u) {
+    const uint channels = params.operation0;
+    const uint hidden = params.operation1;
+    const uint plane = params.operation2;
+    const uint batch = gl_WorkGroupID.y;
+    if (channels == 0u || hidden == 0u || plane == 0u || hidden > 256u ||
+        batch >= params.batches) return;
+    const uint tile = min(16u, 4096u / hidden);
+    if (tile == 0u) return;
+    const uint tiles = (plane + tile - 1u) / tile;
+    const uint tile_id = gl_WorkGroupID.x;
+    if (tile_id >= tiles) return;
+    const uint sp0 = tile_id * tile;
+    const uint n_sp = min(tile, plane - sp0);
+    const uint local = gl_LocalInvocationID.x;
+    const uint a_batch = batch * channels * plane;
+    for (uint task = local; task < hidden * n_sp; task += gl_WorkGroupSize.x) {
+      const uint hc = task / n_sp;
+      const uint t = task - hc * n_sp;
+      const uint sp = sp0 + t;
+      float acc = c[hc];
+      for (uint ic = 0u; ic < channels; ++ic)
+        acc += a[a_batch + ic * plane + sp] * b[hc * channels + ic];
+      conv_spatial_tile[hc * tile + t] =
+          0.5 * acc * (1.0 + erf_fp32(acc * 0.7071067811865475));
+    }
+    barrier();
+    for (uint task = local; task < channels * n_sp; task += gl_WorkGroupSize.x) {
+      const uint oc = task / n_sp;
+      const uint t = task - oc * n_sp;
+      const uint sp = sp0 + t;
+      float acc = c[hidden + oc];
+      for (uint hc = 0u; hc < hidden; ++hc)
+        acc += conv_spatial_tile[hc * tile + t] * e[oc * hidden + hc];
+      acc += a[a_batch + oc * plane + sp];
+      d[a_batch + oc * plane + sp] = acc;
+    }
+    return;
+  }
+  // Mode 62/63: rec-sized 3x3 s1 pad1 depthwise + 1x1 pointwise. A workgroup
+  // owns a short spatial strip, stages the depthwise row in LDS, then the
+  // 1x1 projection. Binding C is packed [dw_bias[C] | pw_bias[M]]. Mode 63
+  // applies exact Erf GELU on the pointwise write.
+  if (params.mode == 62u || params.mode == 63u) {
+    const uint channels = params.operation0;
+    const uint height = params.operation1;
+    const uint width = params.operation2;
+    const uint output_channels = params.operation3;
+    const uint plane = height * width;
+    const uint batch = gl_WorkGroupID.y;
+    if (channels == 0u || height == 0u || width == 0u || output_channels == 0u ||
+        plane == 0u || channels > 256u || batch >= params.batches) return;
+    const uint tile = min(16u, 4096u / channels);
+    if (tile == 0u) return;
+    const uint tiles = (plane + tile - 1u) / tile;
+    const uint tile_id = gl_WorkGroupID.x;
+    if (tile_id >= tiles) return;
+    const uint sp0 = tile_id * tile;
+    const uint n_sp = min(tile, plane - sp0);
+    const uint local = gl_LocalInvocationID.x;
+    const uint a_batch = batch * channels * plane;
+    const uint d_batch = batch * output_channels * plane;
+    for (uint task = local; task < channels * n_sp; task += gl_WorkGroupSize.x) {
+      const uint ic = task / n_sp;
+      const uint t = task - ic * n_sp;
+      const uint sp = sp0 + t;
+      const uint y = sp / width;
+      const uint x = sp - y * width;
+      float acc = c[ic];
+      const int iy0 = int(y) - 1;
+      const int ix0 = int(x) - 1;
+      const uint wbase = ic * 9u;
+      for (int ky = 0; ky < 3; ++ky) {
+        const int iy = iy0 + ky;
+        if (iy < 0 || iy >= int(height)) continue;
+        for (int kx = 0; kx < 3; ++kx) {
+          const int ix = ix0 + kx;
+          if (ix < 0 || ix >= int(width)) continue;
+          acc += a[a_batch + ic * plane + uint(iy) * width + uint(ix)] *
+                 b[wbase + uint(ky) * 3u + uint(kx)];
+        }
+      }
+      conv_spatial_tile[ic * tile + t] = acc;
+    }
+    barrier();
+    for (uint task = local; task < output_channels * n_sp; task += gl_WorkGroupSize.x) {
+      const uint oc = task / n_sp;
+      const uint t = task - oc * n_sp;
+      const uint sp = sp0 + t;
+      float acc = c[channels + oc];
+      for (uint ic = 0u; ic < channels; ++ic)
+        acc += conv_spatial_tile[ic * tile + t] * e[oc * channels + ic];
+      if (params.mode == 63u)
+        acc = 0.5 * acc * (1.0 + erf_fp32(acc * 0.7071067811865475));
+      d[d_batch + oc * plane + sp] = acc;
+    }
+    return;
+  }
+  // Mode 40 is NCHW Pool2D. Its low flag in operation0 selects AveragePool;
+  // ONNX count_include_pad=false is preserved by dividing only valid samples.
+  // Mode 57 is the same max/avg window reading binding E so a stem can pool
+  // a saved Conv.0 map without copying it back into A.
+  if ((params.mode & 0xffffu) == 40u || (params.mode & 0xffffu) == 57u) {
+    const uint batch = gl_GlobalInvocationID.y;
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    const uint channels = params.operation1;
+    const uint input_h = params.operation2;
+    const uint input_w = params.operation3;
+    const uint output_h = params.steps;
+    const uint output_w = params.right_repeat;
+    const uint kernel_h = params.right_per_batch;
+    const uint kernel_w = params.right_batch_stride;
+    const uint stride_h = (params.mode >> 16u) & 0xffu;
+    const uint stride_w = (params.mode >> 24u) & 0xffu;
+    const uint pad_top = (params.operation0 >> 8u) & 0xffu;
+    const uint pad_left = (params.operation0 >> 16u) & 0xffu;
+    const bool average = (params.operation0 & 1u) != 0u;
+    if (batch >= params.batches || index >= params.count || channels == 0u || input_h == 0u || input_w == 0u ||
+        output_h == 0u || output_w == 0u || kernel_h == 0u || kernel_w == 0u || stride_h == 0u || stride_w == 0u) return;
+    const uint input_plane = input_h * input_w;
+    const uint output_plane = output_h * output_w;
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+      const uint output_index = index + lane;
+      const uint channel = output_index / output_plane;
+      const uint spatial = output_index % output_plane;
+      const uint oy = spatial / output_w; const uint ox = spatial % output_w;
+      const int origin_y = int(oy * stride_h) - int(pad_top);
+      const int origin_x = int(ox * stride_w) - int(pad_left);
+      float result = average ? 0.0 : -3.402823466e+38;
+      uint valid = 0u;
+      const uint base = (batch * channels + channel) * input_plane;
+      for (uint ky = 0u; ky < kernel_h; ++ky) for (uint kx = 0u; kx < kernel_w; ++kx) {
+        const int y = origin_y + int(ky), x = origin_x + int(kx);
+        if (y >= 0 && y < int(input_h) && x >= 0 && x < int(input_w)) {
+          const float value = ((params.mode & 0xffffu) == 57u)
+              ? e[base + uint(y) * input_w + uint(x)]
+              : a[base + uint(y) * input_w + uint(x)];
+          result = average ? result + value : max(result, value); ++valid;
+        }
+      }
+      d[batch * params.count + output_index] = average ? result / float(valid) : result;
+    }
+    return;
+  }
+  if ((params.mode & 0xffffu) == 13u || (params.mode & 0xffffu) == 20u ||
+      (params.mode & 0xffffu) == 21u || (params.mode & 0xffffu) == 22u) {
+    const uint batch = gl_GlobalInvocationID.y;
+    if (batch >= params.batches) return;
+    const uint input_h = params.right_repeat;
+    const uint input_w = params.right_per_batch;
+    const uint output_h = params.right_batch_stride;
+    const uint output_w = params.steps;
+    const uint kernel_h = params.operation0;
+    const uint kernel_w = params.operation1;
+    const uint stride_h = params.operation2;
+    const uint stride_w = params.operation3;
+    const uint pad_top = (params.mode >> 16u) & 0xffu;
+    const uint pad_left = (params.mode >> 24u) & 0xffu;
+    if (input_h == 0u || input_w == 0u || output_h == 0u || output_w == 0u ||
+        kernel_h == 0u || kernel_w == 0u || stride_h == 0u || stride_w == 0u) return;
+    const uint input_plane = input_h * input_w;
+    const uint output_plane = output_h * output_w;
+    const uint channels = params.count / output_plane;
+    const uint outputs_per_workgroup = gl_WorkGroupSize.x * 4u;
+    const uint groups_per_channel =
+        (output_plane + outputs_per_workgroup - 1u) / outputs_per_workgroup;
+    if (channels == 0u || groups_per_channel == 0u) return;
+    // The cached-filter workgroup mapping is beneficial only for a complete
+    // 1,024-value spatial tile. Smaller planes use the contiguous vec4 path.
+    if (output_plane >= outputs_per_workgroup) {
+      const uint channel = gl_WorkGroupID.x / groups_per_channel;
+      if (channel >= channels) return;
+      const uint spatial_start = (gl_WorkGroupID.x - channel * groups_per_channel) *
+          outputs_per_workgroup + gl_LocalInvocationID.x * 4u;
+    const uint kernel_elements = kernel_h * kernel_w;
+    const bool cache_weights = kernel_elements <= 256u;
+    const uint weight_base = channel * kernel_elements;
+    if (cache_weights) {
+      for (uint k = gl_LocalInvocationID.x; k < kernel_elements; k += gl_WorkGroupSize.x) {
+        depthwise_weights[k] = b[weight_base + k];
+      }
+      barrier();
+    }
+    for (uint lane = 0u; lane < 4u && spatial_start + lane < output_plane; ++lane) {
+      const uint spatial = spatial_start + lane;
+      const uint oy = spatial / output_w;
+      const uint ox = spatial - oy * output_w;
+      float value = c[channel];
+      const int input_y = int(oy * stride_h) - int(pad_top);
+      const int input_x = int(ox * stride_w) - int(pad_left);
+    const uint input_base = batch * channels * input_plane +
+                              channel * input_plane;
+      for (uint ky = 0u; ky < kernel_h; ++ky) {
+        const int y = input_y + int(ky);
+        if (y < 0 || y >= int(input_h)) continue;
+        for (uint kx = 0u; kx < kernel_w; ++kx) {
+          const int x = input_x + int(kx);
+          if (x >= 0 && x < int(input_w)) {
+            const float source = a[input_base + uint(y) * input_w + uint(x)];
+            const float depthwise_weight = cache_weights
+                ? depthwise_weights[ky * kernel_w + kx]
+                : b[weight_base + ky * kernel_w + kx];
+            value += source * depthwise_weight;
+          }
+        }
+      }
+      if ((params.mode & 0xffffu) == 20u) value = max(value, 0.0);
+      else if ((params.mode & 0xffffu) == 21u) value = value / (1.0 + exp(-value));
+      else if ((params.mode & 0xffffu) == 22u) value *= clamp(value / 6.0 + 0.5, 0.0, 1.0);
+      d[batch * params.count + channel * output_plane + spatial] = value;
+    }
+    return;
+    }
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    if (index >= params.count) return;
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+      const uint output_index = index + lane;
+      const uint channel = output_index / output_plane;
+      const uint spatial = output_index - channel * output_plane;
+      const uint oy = spatial / output_w;
+      const uint ox = spatial - oy * output_w;
+      float value = c[channel];
+      const int input_y = int(oy * stride_h) - int(pad_top);
+      const int input_x = int(ox * stride_w) - int(pad_left);
+      const uint input_base = batch * channels * input_plane + channel * input_plane;
+      const uint weight_base = channel * kernel_h * kernel_w;
+      for (uint ky = 0u; ky < kernel_h; ++ky) {
+        const int y = input_y + int(ky);
+        if (y < 0 || y >= int(input_h)) continue;
+        for (uint kx = 0u; kx < kernel_w; ++kx) {
+          const int x = input_x + int(kx);
+          if (x >= 0 && x < int(input_w)) {
+            value += a[input_base + uint(y) * input_w + uint(x)] *
+                     b[weight_base + ky * kernel_w + kx];
+          }
+        }
+      }
+      if ((params.mode & 0xffffu) == 20u) value = max(value, 0.0);
+      else if ((params.mode & 0xffffu) == 21u) value = value / (1.0 + exp(-value));
+      else if ((params.mode & 0xffffu) == 22u) value *= clamp(value / 6.0 + 0.5, 0.0, 1.0);
+      d[batch * params.count + output_index] = value;
+    }
+    return;
+  }
+  // Modes 58/59: 2x2 stride-1 pad_top=pad_left=0 (SAME_UPPER zeros on the
+  // bottom/right). Detector Conv.1/Conv.2 after a resident Conv.0. Weight
+  // and bias bases live in right_repeat / right_per_batch so packed stem
+  // parameters stay in place without per-layer buffer copies. ReLU if 59.
+  if ((params.mode & 0x7fffu) == 58u || (params.mode & 0x7fffu) == 59u) {
+    const uint channels = params.operation0;
+    const uint input_h = params.operation1;
+    const uint input_w = params.operation2;
+    const uint output_h = params.operation3;
+    const uint output_w = params.steps;
+    const uint param_weight_base = params.right_repeat;
+    const uint param_bias_base = params.right_per_batch;
+    const bool swap_ad = (params.mode & 0x8000u) != 0u;
+    const bool relu = (params.mode & 0x7fffu) == 59u;
+    if (channels == 0u || input_h == 0u || input_w == 0u || output_h == 0u ||
+        output_w == 0u) return;
+    const uint output_channels = params.count / (output_h * output_w);
+    const uint tiles_x = (output_w + 15u) / 16u;
+    const uint tiles_y = (output_h + 15u) / 16u;
+    const uint tiles = tiles_x * tiles_y;
+    if (tiles == 0u || output_channels == 0u) return;
+    const uint tile_id = gl_WorkGroupID.x;
+    const uint oc_block = tile_id / tiles;
+    const uint spatial_tile = tile_id - oc_block * tiles;
+    const uint tx = spatial_tile % tiles_x;
+    const uint ty = spatial_tile / tiles_x;
+    const uint local = gl_LocalInvocationID.x;
+    const uint lx = local % 16u;
+    const uint ly = local / 16u;
+    const uint ox = tx * 16u + lx;
+    const uint oy = ty * 16u + ly;
+    const uint oc0 = oc_block * 4u;
+    if (oc0 >= output_channels) return;
+    const uint input_plane = input_h * input_w;
+    const uint output_plane = output_h * output_w;
+    const uint tile_w = 17u;
+    const uint halo_plane = 17u * 17u;
+    const uint origin_y = ty * 16u;
+    const uint origin_x = tx * 16u;
+    float acc0 = c[param_bias_base + oc0];
+    float acc1 = oc0 + 1u < output_channels ? c[param_bias_base + oc0 + 1u] : 0.0;
+    float acc2 = oc0 + 2u < output_channels ? c[param_bias_base + oc0 + 2u] : 0.0;
+    float acc3 = oc0 + 3u < output_channels ? c[param_bias_base + oc0 + 3u] : 0.0;
+    const bool in_bounds = ox < output_w && oy < output_h;
+    const uint filter_count = 4u * channels * 4u;
+    const bool filters_in_dw = filter_count <= 256u;
+    for (uint i = local; i < filter_count; i += gl_WorkGroupSize.x) {
+      const uint q = i / (channels * 4u);
+      const uint rem = i - q * channels * 4u;
+      const uint oc = oc0 + q;
+      const float w = oc < output_channels
+          ? b[param_weight_base + oc * channels * 4u + rem] : 0.0;
+      if (filters_in_dw) depthwise_weights[i] = w;
+      else conv_weights[i] = w;
+    }
+    barrier();
+    const uint ic_tile = min(channels, 2592u / halo_plane);
+    const uint ic_step = ic_tile == 0u ? 1u : ic_tile;
+    for (uint ic0 = 0u; ic0 < channels; ic0 += ic_step) {
+      const uint n_ic = min(ic_step, channels - ic0);
+      const uint packed = n_ic * halo_plane;
+      for (uint i = local; i < packed; i += gl_WorkGroupSize.x) {
+        const uint ic = i / halo_plane;
+        const uint rem = i - ic * halo_plane;
+        const uint sy = rem / tile_w;
+        const uint sx = rem - sy * tile_w;
+        const uint gy = origin_y + sy;
+        const uint gx = origin_x + sx;
+        float v = 0.0;
+        if (gy < input_h && gx < input_w)
+          v = swap_ad
+              ? d[(ic0 + ic) * input_plane + gy * input_w + gx]
+              : a[(ic0 + ic) * input_plane + gy * input_w + gx];
+        conv_spatial_tile[i] = v;
+      }
+      barrier();
+      if (in_bounds) {
+        for (uint ic = 0u; ic < n_ic; ++ic) {
+          const uint src_ic = ic0 + ic;
+          const uint p0 = ic * halo_plane + ly * tile_w + lx;
+          const float i00 = conv_spatial_tile[p0];
+          const float i01 = conv_spatial_tile[p0 + 1u];
+          const float i10 = conv_spatial_tile[p0 + tile_w];
+          const float i11 = conv_spatial_tile[p0 + tile_w + 1u];
+          for (uint q = 0u; q < 4u; ++q) {
+            const uint oc = oc0 + q;
+            if (oc >= output_channels) break;
+            const uint wb = q * channels * 4u + src_ic * 4u;
+            const float w0 = filters_in_dw ? depthwise_weights[wb] : conv_weights[wb];
+            const float w1 = filters_in_dw ? depthwise_weights[wb + 1u] : conv_weights[wb + 1u];
+            const float w2 = filters_in_dw ? depthwise_weights[wb + 2u] : conv_weights[wb + 2u];
+            const float w3 = filters_in_dw ? depthwise_weights[wb + 3u] : conv_weights[wb + 3u];
+            const float sum = i00 * w0 + i01 * w1 + i10 * w2 + i11 * w3;
+            if (q == 0u) acc0 += sum;
+            else if (q == 1u) acc1 += sum;
+            else if (q == 2u) acc2 += sum;
+            else acc3 += sum;
+          }
+        }
+      }
+      barrier();
+    }
+    if (in_bounds) {
+      const uint out_base = oy * output_w + ox;
+      const float o0 = relu ? max(acc0, 0.0) : acc0;
+      const float o1 = relu ? max(acc1, 0.0) : acc1;
+      const float o2 = relu ? max(acc2, 0.0) : acc2;
+      const float o3 = relu ? max(acc3, 0.0) : acc3;
+      if (swap_ad) {
+        a[out_base + oc0 * output_plane] = o0;
+        if (oc0 + 1u < output_channels) a[out_base + (oc0 + 1u) * output_plane] = o1;
+        if (oc0 + 2u < output_channels) a[out_base + (oc0 + 2u) * output_plane] = o2;
+        if (oc0 + 3u < output_channels) a[out_base + (oc0 + 3u) * output_plane] = o3;
+      } else {
+        d[out_base + oc0 * output_plane] = o0;
+        if (oc0 + 1u < output_channels) d[out_base + (oc0 + 1u) * output_plane] = o1;
+        if (oc0 + 2u < output_channels) d[out_base + (oc0 + 2u) * output_plane] = o2;
+        if (oc0 + 3u < output_channels) d[out_base + (oc0 + 3u) * output_plane] = o3;
+      }
+    }
+    return;
+  }
+  // Modes 50/51: large-spatial 3x3 (stride 1 or 2, ReLU if 51). Mode 40 is
+  // Pool2D and mode 41 is broadcast, so these ids must stay distinct even
+  // when pad bits occupy the high half of `mode`. One workgroup owns a
+  // 16x16 output tile and four output channels. RGB Conv.0 (C=3, s2)
+  // packs every source channel's halo into LDS so the 3x3 taps do not
+  // gather across a 128x704 plane on every MAC.
+  if ((params.mode & 0x7fffu) == 50u || (params.mode & 0x7fffu) == 51u) {
+    const uint batch = gl_GlobalInvocationID.y;
+    if (batch >= params.batches) return;
+    const uint channels = params.operation0;
+    const uint input_h = params.operation1;
+    const uint input_w = params.operation2;
+    const uint output_h = params.operation3;
+    const uint output_w = params.steps;
+    const uint stride = params.right_batch_stride;
+    const uint pad_top = (params.mode >> 16u) & 0xffu;
+    const uint pad_left = (params.mode >> 24u) & 0xffu;
+    const bool swap_ad = (params.mode & 0x8000u) != 0u;
+    if (channels == 0u || input_h == 0u || input_w == 0u || output_h == 0u ||
+        output_w == 0u || (stride != 1u && stride != 2u)) return;
+    const uint output_channels = params.count / (output_h * output_w);
+    const uint tiles_x = (output_w + 15u) / 16u;
+    const uint tiles_y = (output_h + 15u) / 16u;
+    const uint tiles = tiles_x * tiles_y;
+    if (tiles == 0u) return;
+    const uint tile_id = gl_WorkGroupID.x;
+    const uint oc_block = tile_id / tiles;
+    const uint spatial_tile = tile_id - oc_block * tiles;
+    const uint tx = spatial_tile % tiles_x;
+    const uint ty = spatial_tile / tiles_x;
+    const uint local = gl_LocalInvocationID.x;
+    const uint lx = local % 16u;
+    const uint ly = local / 16u;
+    const uint ox = tx * 16u + lx;
+    const uint oy = ty * 16u + ly;
+    const uint oc0 = oc_block * 4u;
+    if (oc0 >= output_channels) return;
+    const uint input_plane = input_h * input_w;
+    const uint output_plane = output_h * output_w;
+    const uint tile_w = 16u * stride + 2u;
+    const uint tile_h = 16u * stride + 2u;
+    const uint halo_plane = tile_w * tile_h;
+    const int origin_y = int(ty * 16u * stride) - int(pad_top);
+    const int origin_x = int(tx * 16u * stride) - int(pad_left);
+    const uint input_batch_base = batch * channels * input_plane;
+    float acc0 = c[oc0];
+    float acc1 = oc0 + 1u < output_channels ? c[oc0 + 1u] : 0.0;
+    float acc2 = oc0 + 2u < output_channels ? c[oc0 + 2u] : 0.0;
+    float acc3 = oc0 + 3u < output_channels ? c[oc0 + 3u] : 0.0;
+    const bool in_bounds = ox < output_w && oy < output_h;
+    const uint filter_count = 4u * channels * 9u;
+    const bool filters_in_dw = filter_count <= 256u;
+    const bool filters_in_cw = !filters_in_dw && filter_count <= 4096u;
+    const bool packed_rgb = channels <= 3u && halo_plane * channels <= 4096u &&
+        (filters_in_dw || !filters_in_cw);
+    if (filters_in_dw || filters_in_cw) {
+      for (uint i = local; i < filter_count; i += gl_WorkGroupSize.x) {
+        const uint q = i / (channels * 9u);
+        const uint rem = i - q * channels * 9u;
+        const uint oc = oc0 + q;
+        const float w = oc < output_channels ? b[oc * channels * 9u + rem] : 0.0;
+        if (filters_in_dw) depthwise_weights[i] = w;
+        else conv_weights[i] = w;
+      }
+    }
+    if (packed_rgb) {
+      const uint packed = halo_plane * channels;
+      for (uint i = local; i < packed; i += gl_WorkGroupSize.x) {
+        const uint ic = i / halo_plane;
+        const uint rem = i - ic * halo_plane;
+        const uint sy = rem / tile_w;
+        const uint sx = rem - sy * tile_w;
+        const int gy = origin_y + int(sy);
+        const int gx = origin_x + int(sx);
+        float v = 0.0;
+        if (gy >= 0 && gy < int(input_h) && gx >= 0 && gx < int(input_w))
+          v = swap_ad ? d[input_batch_base + ic * input_plane + uint(gy) * input_w + uint(gx)]
+                      : a[input_batch_base + ic * input_plane + uint(gy) * input_w + uint(gx)];
+        conv_weights[i] = v;
+      }
+      barrier();
+      if (in_bounds) {
+        const uint sy = ly * stride;
+        const uint sx = lx * stride;
+        for (uint ic = 0u; ic < channels; ++ic) {
+          const uint p0 = ic * halo_plane + sy * tile_w + sx;
+          const uint p1 = p0 + tile_w;
+          const uint p2 = p1 + tile_w;
+          const float i00 = conv_weights[p0], i01 = conv_weights[p0 + 1u], i02 = conv_weights[p0 + 2u];
+          const float i10 = conv_weights[p1], i11 = conv_weights[p1 + 1u], i12 = conv_weights[p1 + 2u];
+          const float i20 = conv_weights[p2], i21 = conv_weights[p2 + 1u], i22 = conv_weights[p2 + 2u];
+          for (uint q = 0u; q < 4u; ++q) {
+            const uint oc = oc0 + q;
+            if (oc >= output_channels) break;
+            const uint wb = q * channels * 9u + ic * 9u;
+            const float w0 = depthwise_weights[wb], w1 = depthwise_weights[wb + 1u], w2 = depthwise_weights[wb + 2u];
+            const float w3 = depthwise_weights[wb + 3u], w4 = depthwise_weights[wb + 4u], w5 = depthwise_weights[wb + 5u];
+            const float w6 = depthwise_weights[wb + 6u], w7 = depthwise_weights[wb + 7u], w8 = depthwise_weights[wb + 8u];
+            const float sum = i00 * w0 + i01 * w1 + i02 * w2 + i10 * w3 + i11 * w4 + i12 * w5 +
+                              i20 * w6 + i21 * w7 + i22 * w8;
+            if (q == 0u) acc0 += sum;
+            else if (q == 1u) acc1 += sum;
+            else if (q == 2u) acc2 += sum;
+            else acc3 += sum;
+          }
+        }
+      }
+    } else {
+      if (filters_in_dw || filters_in_cw) barrier();
+      // Stage as many input-channel halos as the 4096-wide tile holds so
+      // Concat.2 (C=64, s1 18x18) does 12 channels per barrier instead of 64.
+      const uint ic_tile = halo_plane == 0u ? 1u : min(channels, 4096u / halo_plane);
+      const uint ic_step = ic_tile == 0u ? 1u : ic_tile;
+      for (uint ic0 = 0u; ic0 < channels; ic0 += ic_step) {
+        const uint n_ic = min(ic_step, channels - ic0);
+        const uint packed = n_ic * halo_plane;
+        for (uint i = local; i < packed; i += gl_WorkGroupSize.x) {
+          const uint ic = i / halo_plane;
+          const uint rem = i - ic * halo_plane;
+          const uint sy = rem / tile_w;
+          const uint sx = rem - sy * tile_w;
+          const int gy = origin_y + int(sy);
+          const int gx = origin_x + int(sx);
+          float v = 0.0;
+          if (gy >= 0 && gy < int(input_h) && gx >= 0 && gx < int(input_w))
+            v = swap_ad ? d[input_batch_base + (ic0 + ic) * input_plane + uint(gy) * input_w + uint(gx)]
+                        : a[input_batch_base + (ic0 + ic) * input_plane + uint(gy) * input_w + uint(gx)];
+          conv_spatial_tile[i] = v;
+        }
+        barrier();
+        if (in_bounds) {
+          const uint sy = ly * stride;
+          const uint sx = lx * stride;
+          for (uint ic = 0u; ic < n_ic; ++ic) {
+            const uint src_ic = ic0 + ic;
+            const uint base = ic * halo_plane + sy * tile_w + sx;
+            const uint p0 = base;
+            const uint p1 = base + tile_w;
+            const uint p2 = p1 + tile_w;
+            const float i00 = conv_spatial_tile[p0], i01 = conv_spatial_tile[p0 + 1u], i02 = conv_spatial_tile[p0 + 2u];
+            const float i10 = conv_spatial_tile[p1], i11 = conv_spatial_tile[p1 + 1u], i12 = conv_spatial_tile[p1 + 2u];
+            const float i20 = conv_spatial_tile[p2], i21 = conv_spatial_tile[p2 + 1u], i22 = conv_spatial_tile[p2 + 2u];
+            for (uint q = 0u; q < 4u; ++q) {
+              const uint oc = oc0 + q;
+              if (oc >= output_channels) break;
+              float w0, w1, w2, w3, w4, w5, w6, w7, w8;
+              if (filters_in_dw || filters_in_cw) {
+                const uint wb = q * channels * 9u + src_ic * 9u;
+                if (filters_in_dw) {
+                  w0 = depthwise_weights[wb]; w1 = depthwise_weights[wb + 1u]; w2 = depthwise_weights[wb + 2u];
+                  w3 = depthwise_weights[wb + 3u]; w4 = depthwise_weights[wb + 4u]; w5 = depthwise_weights[wb + 5u];
+                  w6 = depthwise_weights[wb + 6u]; w7 = depthwise_weights[wb + 7u]; w8 = depthwise_weights[wb + 8u];
+                } else {
+                  w0 = conv_weights[wb]; w1 = conv_weights[wb + 1u]; w2 = conv_weights[wb + 2u];
+                  w3 = conv_weights[wb + 3u]; w4 = conv_weights[wb + 4u]; w5 = conv_weights[wb + 5u];
+                  w6 = conv_weights[wb + 6u]; w7 = conv_weights[wb + 7u]; w8 = conv_weights[wb + 8u];
+                }
+              } else {
+                const uint wb = oc * channels * 9u + src_ic * 9u;
+                w0 = b[wb]; w1 = b[wb + 1u]; w2 = b[wb + 2u];
+                w3 = b[wb + 3u]; w4 = b[wb + 4u]; w5 = b[wb + 5u];
+                w6 = b[wb + 6u]; w7 = b[wb + 7u]; w8 = b[wb + 8u];
+              }
+              const float sum = i00 * w0 + i01 * w1 + i02 * w2 + i10 * w3 + i11 * w4 + i12 * w5 +
+                                i20 * w6 + i21 * w7 + i22 * w8;
+              if (q == 0u) acc0 += sum;
+              else if (q == 1u) acc1 += sum;
+              else if (q == 2u) acc2 += sum;
+              else acc3 += sum;
+            }
+          }
+        }
+        barrier();
+      }
+    }
+    if (in_bounds) {
+      const uint out_base = batch * params.count + oy * output_w + ox;
+      const bool relu = (params.mode & 0x7fffu) == 51u;
+      const float o0 = relu ? max(acc0, 0.0) : acc0;
+      const float o1 = relu ? max(acc1, 0.0) : acc1;
+      const float o2 = relu ? max(acc2, 0.0) : acc2;
+      const float o3 = relu ? max(acc3, 0.0) : acc3;
+      if (swap_ad) {
+        a[out_base + oc0 * output_plane] = o0;
+        if (oc0 + 1u < output_channels) a[out_base + (oc0 + 1u) * output_plane] = o1;
+        if (oc0 + 2u < output_channels) a[out_base + (oc0 + 2u) * output_plane] = o2;
+        if (oc0 + 3u < output_channels) a[out_base + (oc0 + 3u) * output_plane] = o3;
+      } else {
+        d[out_base + oc0 * output_plane] = o0;
+        if (oc0 + 1u < output_channels) d[out_base + (oc0 + 1u) * output_plane] = o1;
+        if (oc0 + 2u < output_channels) d[out_base + (oc0 + 2u) * output_plane] = o2;
+        if (oc0 + 3u < output_channels) d[out_base + (oc0 + 3u) * output_plane] = o3;
+      }
+    }
+    return;
+  }
+  // Modes 14/15/26/27/28 are the detector's ordinary ungrouped convolution,
+  // with the latter modes respectively applying ReLU, exact Swish, Sigmoid,
+  // or HardSwish before the one host readback. Each
+  // invocation owns four adjacent positions of one output channel where
+  // possible; every output reduction retains the ONNX FP32 accumulation
+  // order.  Inputs/weights/biases are respectively [N,C,H,W], [M,C,KH,KW]
+  // and [M].
+  if ((params.mode & 0x7fffu) == 14u || (params.mode & 0x7fffu) == 15u ||
+      (params.mode & 0x7fffu) == 26u || (params.mode & 0x7fffu) == 27u ||
+      (params.mode & 0x7fffu) == 28u) {
+    const uint batch = gl_GlobalInvocationID.y;
+    if (batch >= params.batches) return;
+    const bool swap_ad = (params.mode & 0x8000u) != 0u;
+    const uint channels = params.operation0;
+    const uint input_h = params.operation1;
+    const uint input_w = params.operation2;
+    const uint output_h = params.operation3;
+    const uint output_w = params.steps;
+    const uint kernel_h = params.right_repeat;
+    const uint kernel_w = params.right_per_batch;
+    const uint stride = params.right_batch_stride;
+    const uint pad_top = (params.mode >> 16u) & 0xffu;
+    const uint pad_left = (params.mode >> 24u) & 0xffu;
+    if (channels == 0u || input_h == 0u || input_w == 0u || output_h == 0u ||
+        output_w == 0u || kernel_h == 0u || kernel_w == 0u || stride == 0u) return;
+    const uint input_plane = input_h * input_w;
+    const uint output_plane = output_h * output_w;
+    const uint kernel_plane = kernel_h * kernel_w;
+    const uint output_channels = params.count / output_plane;
+    const uint weights_per_channel = channels * kernel_plane;
+    // The graph dispatcher may use several workgroups per output channel.
+    // In that form gl_WorkGroupID.x contains both the channel and spatial-tile
+    // index; keep this threshold synchronized with RunArenaConv2d().
+    const uint outputs_per_workgroup = gl_WorkGroupSize.x * 4u;
+    const uint groups_per_channel =
+        (output_plane + outputs_per_workgroup - 1u) / outputs_per_workgroup;
+    // Keep all workgroup lanes on the same barrier path.  This fast path uses
+    // one workgroup per (batch, output-channel, spatial tile), so its compact
+    // [C,KH,KW] weight row is shared by up to 1,024 output values.
+    // This must exactly mirror the host dispatch policy in RunArenaConv2d().
+    // Small output planes use the generic vec4 dispatch; interpreting those
+    // workgroups as channel tiles corrupts compact SE gate convolutions.
+    if (weights_per_channel <= 4096u && output_plane >= 2048u &&
+        stride == 1u && groups_per_channel != 0u) {
+      const uint local = gl_LocalInvocationID.x;
+      // 3x3 filters of at most 113 input channels fit four output rows in
+      // the 4096-wide cache. One input tap then feeds four FMAs, which is
+      // the FPN Concat+Conv (64->16) arithmetic-intensity problem.
+      const bool tile4oc = kernel_h == 3u && kernel_w == 3u &&
+          (weights_per_channel * 4u <= 4096u);
+      const uint oc_tile = tile4oc ? 4u : 1u;
+      const uint oc_block = gl_WorkGroupID.x / groups_per_channel;
+      const uint output_channel = oc_block * oc_tile;
+      const bool valid_channel = output_channel < output_channels;
+      const uint cached = weights_per_channel * oc_tile;
+      for (uint weight = local; weight < cached; weight += gl_WorkGroupSize.x) {
+        const uint q = weight / weights_per_channel;
+        const uint rem = weight - q * weights_per_channel;
+        const uint oc = output_channel + q;
+        conv_weights[weight] = (oc < output_channels) ? b[oc * weights_per_channel + rem] : 0.0;
+      }
+      barrier();
+      if (!valid_channel) return;
+      const uint spatial_start = (gl_WorkGroupID.x - oc_block * groups_per_channel) *
+          outputs_per_workgroup + local * 4u;
+      const uint lane_count = 4u;
+      const uint input_batch_base = batch * channels * input_plane;
+      const bool conv3x3_same = kernel_h == 3u && kernel_w == 3u && stride == 1u &&
+          pad_top == 1u && pad_left == 1u;
+      const bool conv3x3_s2 = kernel_h == 3u && kernel_w == 3u && stride == 2u &&
+          pad_top == 1u && pad_left == 1u;
+      for (uint lane = 0u; lane < lane_count && spatial_start + lane < output_plane; ++lane) {
+        const uint spatial = spatial_start + lane;
+        const uint output_y = spatial / output_w;
+        const uint output_x = spatial % output_w;
+        float acc0 = c[output_channel];
+        float acc1 = (oc_tile > 1u && output_channel + 1u < output_channels) ? c[output_channel + 1u] : 0.0;
+        float acc2 = (oc_tile > 1u && output_channel + 2u < output_channels) ? c[output_channel + 2u] : 0.0;
+        float acc3 = (oc_tile > 1u && output_channel + 3u < output_channels) ? c[output_channel + 3u] : 0.0;
+        const int input_y = int(output_y * stride) - int(pad_top);
+        const int input_x = int(output_x * stride) - int(pad_left);
+        const bool interior = conv3x3_same && output_y > 0u && output_x > 0u &&
+            output_y + 1u < input_h && output_x + 1u < input_w;
+        const bool interior_s2 = conv3x3_s2 && output_y > 0u && output_x > 0u &&
+            (output_y * 2u + 1u) < input_h && (output_x * 2u + 1u) < input_w;
+        if (interior || interior_s2) {
+          const uint row0 = interior
+              ? (output_y - 1u) * input_w + (output_x - 1u)
+              : (output_y * 2u - 1u) * input_w + (output_x * 2u - 1u);
+          for (uint channel = 0u; channel < channels; ++channel) {
+            const uint ib = input_batch_base + channel * input_plane + row0;
+            const float i00 = swap_ad ? d[ib] : a[ib];
+            const float i01 = swap_ad ? d[ib + 1u] : a[ib + 1u];
+            const float i02 = swap_ad ? d[ib + 2u] : a[ib + 2u];
+            const float i10 = swap_ad ? d[ib + input_w] : a[ib + input_w];
+            const float i11 = swap_ad ? d[ib + input_w + 1u] : a[ib + input_w + 1u];
+            const float i12 = swap_ad ? d[ib + input_w + 2u] : a[ib + input_w + 2u];
+            const float i20 = swap_ad ? d[ib + 2u * input_w] : a[ib + 2u * input_w];
+            const float i21 = swap_ad ? d[ib + 2u * input_w + 1u] : a[ib + 2u * input_w + 1u];
+            const float i22 = swap_ad ? d[ib + 2u * input_w + 2u] : a[ib + 2u * input_w + 2u];
+            for (uint q = 0u; q < oc_tile; ++q) {
+              if (output_channel + q >= output_channels) break;
+              const uint wo = q * weights_per_channel + channel * 9u;
+              const float sum = i00 * conv_weights[wo] + i01 * conv_weights[wo + 1u] +
+                                i02 * conv_weights[wo + 2u] + i10 * conv_weights[wo + 3u] +
+                                i11 * conv_weights[wo + 4u] + i12 * conv_weights[wo + 5u] +
+                                i20 * conv_weights[wo + 6u] + i21 * conv_weights[wo + 7u] +
+                                i22 * conv_weights[wo + 8u];
+              if (q == 0u) acc0 += sum;
+              else if (q == 1u) acc1 += sum;
+              else if (q == 2u) acc2 += sum;
+              else acc3 += sum;
+            }
+          }
+        } else {
+          for (uint channel = 0u; channel < channels; ++channel) {
+            const uint input_channel_base = input_batch_base + channel * input_plane;
+            for (uint ky = 0u; ky < kernel_h; ++ky) {
+              const int y = input_y + int(ky);
+              if (y < 0 || y >= int(input_h)) continue;
+              for (uint kx = 0u; kx < kernel_w; ++kx) {
+                const int x = input_x + int(kx);
+                if (x >= 0 && x < int(input_w)) {
+                  const float srcv = swap_ad
+                      ? d[input_channel_base + uint(y) * input_w + uint(x)]
+                      : a[input_channel_base + uint(y) * input_w + uint(x)];
+                  const uint ko = channel * kernel_plane + ky * kernel_w + kx;
+                  acc0 += srcv * conv_weights[ko];
+                  if (oc_tile > 1u) {
+                    acc1 += srcv * conv_weights[weights_per_channel + ko];
+                    acc2 += srcv * conv_weights[2u * weights_per_channel + ko];
+                    acc3 += srcv * conv_weights[3u * weights_per_channel + ko];
+                  }
+                }
+              }
+            }
+          }
+        }
+        const bool relu = (params.mode & 0x7fffu) == 15u;
+        const bool swish = (params.mode & 0x7fffu) == 26u;
+        const bool sigmoid = (params.mode & 0x7fffu) == 27u;
+        const bool hswish = (params.mode & 0x7fffu) == 28u;
+        const uint out_base = batch * params.count + spatial;
+        const uint nch = output_channels - output_channel;
+        const uint emit = oc_tile < nch ? oc_tile : nch;
+        for (uint q = 0u; q < emit; ++q) {
+          float value = q == 0u ? acc0 : (q == 1u ? acc1 : (q == 2u ? acc2 : acc3));
+          if (relu) value = max(value, 0.0);
+          else if (swish) value *= 1.0 / (1.0 + exp(-value));
+          else if (sigmoid) value = 1.0 / (1.0 + exp(-value));
+          else if (hswish) value *= clamp(value / 6.0 + 0.5, 0.0, 1.0);
+          if (swap_ad) a[out_base + (output_channel + q) * output_plane] = value;
+          else d[out_base + (output_channel + q) * output_plane] = value;
+        }
+      }
+      return;
+    }
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    if (index >= params.count) return;
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+      const uint output_index = index + lane;
+      const uint output_channel = output_index / output_plane;
+      const uint spatial = output_index % output_plane;
+      const uint output_y = spatial / output_w;
+      const uint output_x = spatial % output_w;
+      float value = c[output_channel];
+      const int input_y = int(output_y * stride) - int(pad_top);
+      const int input_x = int(output_x * stride) - int(pad_left);
+      const uint weight_channel_base = output_channel * channels * kernel_plane;
+      const uint input_batch_base = batch * channels * input_plane;
+      for (uint channel = 0u; channel < channels; ++channel) {
+        const uint input_channel_base = input_batch_base + channel * input_plane;
+        const uint weight_base = weight_channel_base + channel * kernel_plane;
+        for (uint ky = 0u; ky < kernel_h; ++ky) {
+          const int y = input_y + int(ky);
+          if (y < 0 || y >= int(input_h)) continue;
+          for (uint kx = 0u; kx < kernel_w; ++kx) {
+            const int x = input_x + int(kx);
+            if (x >= 0 && x < int(input_w)) {
+              value += (swap_ad
+                  ? d[input_channel_base + uint(y) * input_w + uint(x)]
+                  : a[input_channel_base + uint(y) * input_w + uint(x)]) *
+                       b[weight_base + ky * kernel_w + kx];
+            }
+          }
+        }
+      }
+      if ((params.mode & 0x7fffu) == 15u) value = max(value, 0.0);
+      else if ((params.mode & 0x7fffu) == 26u) value *= 1.0 / (1.0 + exp(-value));
+      else if ((params.mode & 0x7fffu) == 27u) value = 1.0 / (1.0 + exp(-value));
+      else if ((params.mode & 0x7fffu) == 28u) value *= clamp(value / 6.0 + 0.5, 0.0, 1.0);
+      if (swap_ad) a[batch * params.count + output_index] = value;
+      else d[batch * params.count + output_index] = value;
+    }
+    return;
+  }
+  // Mode 56 is the detector stem tail: 3x3 stride-2 Conv(+ReLU) over
+  // Concat(MaxPool(E), A). D holds the already-pooled Conv.0 map, A holds
+  // Conv.2, E receives the stem so the host reads one compact activation.
+  if ((params.mode & 0xffffu) == 56u) {
+    const uint batch = gl_GlobalInvocationID.y;
+    if (batch >= params.batches) return;
+    const uint oc0 = params.operation0;
+    const uint oc2 = params.operation1;
+    const uint input_h = params.operation2;
+    const uint input_w = params.operation3;
+    const uint output_h = params.steps;
+    const uint output_w = params.right_repeat;
+    const uint param_weight_base = params.right_per_batch;
+    const uint param_bias_base = params.right_batch_stride;
+    const uint pad_top = (params.mode >> 16u) & 0xffu;
+    const uint pad_left = (params.mode >> 24u) & 0xffu;
+    const uint channels = oc0 + oc2;
+    if (oc0 == 0u || oc2 == 0u || channels == 0u || input_h == 0u || input_w == 0u ||
+        output_h == 0u || output_w == 0u) return;
+    const uint input_plane = input_h * input_w;
+    const uint output_plane = output_h * output_w;
+    const uint output_channels = params.count / output_plane;
+    const uint weights_per_channel = channels * 9u;
+    const uint outputs_per_workgroup = gl_WorkGroupSize.x * 4u;
+    const uint groups_per_channel =
+        (output_plane + outputs_per_workgroup - 1u) / outputs_per_workgroup;
+    if (weights_per_channel > 4096u || output_plane < 256u || groups_per_channel == 0u) {
+      const uint index = gl_GlobalInvocationID.x * 4u;
+      if (index >= params.count) return;
+      for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+        const uint output_index = index + lane;
+        const uint output_channel = output_index / output_plane;
+        const uint spatial = output_index - output_channel * output_plane;
+        const uint output_y = spatial / output_w;
+        const uint output_x = spatial - output_y * output_w;
+        float value = c[param_bias_base + output_channel];
+        const int input_y = int(output_y * 2u) - int(pad_top);
+        const int input_x = int(output_x * 2u) - int(pad_left);
+        const uint weight_channel_base = output_channel * weights_per_channel;
+        for (uint channel = 0u; channel < channels; ++channel) {
+          const bool from_d = channel < oc0;
+          const uint src_ch = from_d ? channel : channel - oc0;
+          const uint input_channel_base = src_ch * input_plane;
+          const uint weight_base = weight_channel_base + channel * 9u;
+          for (uint ky = 0u; ky < 3u; ++ky) {
+            const int y = input_y + int(ky);
+            if (y < 0 || y >= int(input_h)) continue;
+            for (uint kx = 0u; kx < 3u; ++kx) {
+              const int x = input_x + int(kx);
+              if (x >= 0 && x < int(input_w)) {
+                const float srcv = from_d
+                    ? d[input_channel_base + uint(y) * input_w + uint(x)]
+                    : a[input_channel_base + uint(y) * input_w + uint(x)];
+                value += srcv * b[param_weight_base + weight_base + ky * 3u + kx];
+              }
+            }
+          }
+        }
+        e[batch * params.count + output_index] = max(value, 0.0);
+      }
+      return;
+    }
+    const uint local = gl_LocalInvocationID.x;
+    const bool tile4oc = weights_per_channel * 4u <= 4096u;
+    const uint oc_tile = tile4oc ? 4u : 1u;
+    const uint oc_block = gl_WorkGroupID.x / groups_per_channel;
+    const uint output_channel = oc_block * oc_tile;
+    const bool valid_channel = output_channel < output_channels;
+    const uint cached = weights_per_channel * oc_tile;
+    for (uint weight = local; weight < cached; weight += gl_WorkGroupSize.x) {
+      const uint q = weight / weights_per_channel;
+      const uint rem = weight - q * weights_per_channel;
+      const uint oc = output_channel + q;
+      conv_weights[weight] = (oc < output_channels)
+          ? b[param_weight_base + oc * weights_per_channel + rem] : 0.0;
+    }
+    barrier();
+    if (!valid_channel) return;
+    const uint spatial_start = (gl_WorkGroupID.x - oc_block * groups_per_channel) *
+        outputs_per_workgroup + local * 4u;
+    for (uint lane = 0u; lane < 4u && spatial_start + lane < output_plane; ++lane) {
+      const uint spatial = spatial_start + lane;
+      const uint output_y = spatial / output_w;
+      const uint output_x = spatial - output_y * output_w;
+      float acc0 = c[param_bias_base + output_channel];
+      float acc1 = (oc_tile > 1u && output_channel + 1u < output_channels)
+          ? c[param_bias_base + output_channel + 1u] : 0.0;
+      float acc2 = (oc_tile > 1u && output_channel + 2u < output_channels)
+          ? c[param_bias_base + output_channel + 2u] : 0.0;
+      float acc3 = (oc_tile > 1u && output_channel + 3u < output_channels)
+          ? c[param_bias_base + output_channel + 3u] : 0.0;
+      const int input_y = int(output_y * 2u) - int(pad_top);
+      const int input_x = int(output_x * 2u) - int(pad_left);
+      const bool interior = output_y > 0u && output_x > 0u &&
+          (output_y * 2u + 1u) < input_h && (output_x * 2u + 1u) < input_w;
+      for (uint channel = 0u; channel < channels; ++channel) {
+        const bool from_d = channel < oc0;
+        const uint src_ch = from_d ? channel : channel - oc0;
+        const uint input_channel_base = src_ch * input_plane;
+        if (interior) {
+          const uint row0 = (output_y * 2u - 1u) * input_w + (output_x * 2u - 1u);
+          const uint ib = input_channel_base + row0;
+          const float i00 = from_d ? d[ib] : a[ib];
+          const float i01 = from_d ? d[ib + 1u] : a[ib + 1u];
+          const float i02 = from_d ? d[ib + 2u] : a[ib + 2u];
+          const float i10 = from_d ? d[ib + input_w] : a[ib + input_w];
+          const float i11 = from_d ? d[ib + input_w + 1u] : a[ib + input_w + 1u];
+          const float i12 = from_d ? d[ib + input_w + 2u] : a[ib + input_w + 2u];
+          const float i20 = from_d ? d[ib + 2u * input_w] : a[ib + 2u * input_w];
+          const float i21 = from_d ? d[ib + 2u * input_w + 1u] : a[ib + 2u * input_w + 1u];
+          const float i22 = from_d ? d[ib + 2u * input_w + 2u] : a[ib + 2u * input_w + 2u];
+          for (uint q = 0u; q < oc_tile; ++q) {
+            if (output_channel + q >= output_channels) break;
+            const uint wo = q * weights_per_channel + channel * 9u;
+            const float sum = i00 * conv_weights[wo] + i01 * conv_weights[wo + 1u] +
+                              i02 * conv_weights[wo + 2u] + i10 * conv_weights[wo + 3u] +
+                              i11 * conv_weights[wo + 4u] + i12 * conv_weights[wo + 5u] +
+                              i20 * conv_weights[wo + 6u] + i21 * conv_weights[wo + 7u] +
+                              i22 * conv_weights[wo + 8u];
+            if (q == 0u) acc0 += sum;
+            else if (q == 1u) acc1 += sum;
+            else if (q == 2u) acc2 += sum;
+            else acc3 += sum;
+          }
+        } else {
+          for (uint ky = 0u; ky < 3u; ++ky) {
+            const int y = input_y + int(ky);
+            if (y < 0 || y >= int(input_h)) continue;
+            for (uint kx = 0u; kx < 3u; ++kx) {
+              const int x = input_x + int(kx);
+              if (x >= 0 && x < int(input_w)) {
+                const float srcv = from_d
+                    ? d[input_channel_base + uint(y) * input_w + uint(x)]
+                    : a[input_channel_base + uint(y) * input_w + uint(x)];
+                const uint ko = channel * 9u + ky * 3u + kx;
+                acc0 += srcv * conv_weights[ko];
+                if (oc_tile > 1u) {
+                  acc1 += srcv * conv_weights[weights_per_channel + ko];
+                  acc2 += srcv * conv_weights[2u * weights_per_channel + ko];
+                  acc3 += srcv * conv_weights[3u * weights_per_channel + ko];
+                }
+              }
+            }
+          }
+        }
+      }
+      const uint nch = output_channels - output_channel;
+      const uint emit = oc_tile < nch ? oc_tile : nch;
+      for (uint q = 0u; q < emit; ++q) {
+        float value = q == 0u ? acc0 : (q == 1u ? acc1 : (q == 2u ? acc2 : acc3));
+        e[batch * params.count + spatial + (output_channel + q) * output_plane] = max(value, 0.0);
+      }
+    }
+    return;
+  }
+  // Mode 16 is the detector FPN's 2x2 stride-two transposed convolution.
+  // With zero padding/output padding its output tiles never overlap: every
+  // (oy,ox) maps to one input (oy/2,ox/2) and one weight tap.  This keeps a
+  // batched upsample/projection in one dispatch without materialising an
+  // expanded input tensor.
+  if ((params.mode & 0xffffu) == 16u) {
+    const uint batch = gl_GlobalInvocationID.y;
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    if (batch >= params.batches || index >= params.count) return;
+    const uint input_channels = params.operation0;
+    const uint output_channels = params.operation1;
+    const uint input_h = params.operation2;
+    const uint input_w = params.operation3;
+    if (input_channels == 0u || output_channels == 0u || input_h == 0u || input_w == 0u) return;
+    const uint input_plane = input_h * input_w;
+    const uint output_w = input_w * 2u;
+    const uint output_plane = input_plane * 4u;
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+      const uint output_index = index + lane;
+      const uint output_channel = output_index / output_plane;
+      const uint spatial = output_index % output_plane;
+      const uint output_y = spatial / output_w;
+      const uint output_x = spatial % output_w;
+      const uint input_index = (output_y >> 1u) * input_w + (output_x >> 1u);
+      const uint tap = ((output_y & 1u) << 1u) | (output_x & 1u);
+      float value = c[output_channel];
+      const uint input_base = batch * input_channels * input_plane + input_index;
+      for (uint input_channel = 0u; input_channel < input_channels; ++input_channel) {
+        value += a[input_base + input_channel * input_plane] *
+                 b[((input_channel * output_channels + output_channel) << 2u) + tap];
+      }
+      const uint act = params.mode >> 16u;
+      if (act == 1u) value = max(value, 0.0);
+      else if (act == 2u) value = 1.0 / (1.0 + exp(-value));
+      d[batch * params.count + output_index] = value;
+    }
+    return;
+  }
+  // Mode 17 is the tiled variant of mode 16.  A workgroup owns one output
+  // channel and 1,024 output pixels, so its compact [Cin,2,2] filter row is
+  // staged once in the existing ordinary-convolution shared array.  The FPN
+  // transpose geometry has no cross-pixel accumulation, therefore this keeps
+  // the identical input-channel FP32 reduction order while avoiding a global
+  // weight fetch for every output pixel.
+  if ((params.mode & 0xffffu) == 17u) {
+    const uint batch = gl_WorkGroupID.y;
+    const uint input_channels = params.operation0;
+    const uint output_channels = params.operation1;
+    const uint input_h = params.operation2;
+    const uint input_w = params.operation3;
+    const uint output_w = input_w * 2u;
+    const uint output_plane = input_h * input_w * 4u;
+    const uint groups_per_channel = (output_plane + 1023u) / 1024u;
+    const uint output_channel = gl_WorkGroupID.x / groups_per_channel;
+    const bool valid = batch < params.batches && output_channel < output_channels &&
+                       input_channels > 0u && input_h > 0u && input_w > 0u;
+    const uint local = gl_LocalInvocationID.x;
+    const uint weights_per_channel = input_channels * 4u;
+    // All workgroup lanes take the same barrier path, including malformed
+    // out-of-range groups.  C++ selects this mode only up to the 4,096-float
+    // shared-array capacity.
+    for (uint weight = local; weight < weights_per_channel; weight += gl_WorkGroupSize.x) {
+      // ONNX ConvTranspose weights are [Cin,Cout,2,2], unlike Conv's
+      // output-channel-major layout. Repack just this compact filter row
+      // while staging it, then the reduction can use contiguous shared loads.
+      const uint input_channel = weight >> 2u;
+      const uint tap = weight & 3u;
+      conv_weights[weight] = valid
+          ? b[((input_channel * output_channels + output_channel) << 2u) + tap]
+          : 0.0;
+    }
+    barrier();
+    if (!valid) return;
+    const uint spatial_start = (gl_WorkGroupID.x - output_channel * groups_per_channel) *
+        1024u + local * 4u;
+    const uint input_plane = input_h * input_w;
+    const uint input_batch_base = batch * input_channels * input_plane;
+    for (uint lane = 0u; lane < 4u && spatial_start + lane < output_plane; ++lane) {
+      const uint spatial = spatial_start + lane;
+      const uint output_y = spatial / output_w;
+      const uint output_x = spatial % output_w;
+      const uint input_index = (output_y >> 1u) * input_w + (output_x >> 1u);
+      const uint tap = ((output_y & 1u) << 1u) | (output_x & 1u);
+      float value = c[output_channel];
+      for (uint input_channel = 0u; input_channel < input_channels; ++input_channel) {
+        value += a[input_batch_base + input_channel * input_plane + input_index] *
+                 conv_weights[(input_channel << 2u) + tap];
+      }
+      const uint act = params.mode >> 16u;
+      if (act == 1u) value = max(value, 0.0);
+      else if (act == 2u) value = 1.0 / (1.0 + exp(-value));
+      d[batch * params.count + output_channel * output_plane + spatial] = value;
+    }
+    return;
+  }
+  // Mode 67 chains two 2x2 stride-2 ConvTransposes: Relu on the exclusive
+  // 2x mid patch, Sigmoid on the 4x output. A is [N,Cin,H,W], B is W0
+  // [Cin,Mid,2,2], C is b0[Mid], E is W1[Mid,Cout,2,2] then b1[Cout], D is
+  // [N,Cout,4H,4W]. operation0..3 are Cin/Mid/H/W, steps is Cout.
+  if ((params.mode & 0xffffu) == 67u) {
+    const uint batch = gl_GlobalInvocationID.y;
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    if (batch >= params.batches || index >= params.count) return;
+    const uint input_channels = params.operation0;
+    const uint mid_channels = params.operation1;
+    const uint input_h = params.operation2;
+    const uint input_w = params.operation3;
+    const uint output_channels = params.steps;
+    if (input_channels == 0u || mid_channels == 0u || output_channels == 0u ||
+        input_h == 0u || input_w == 0u) return;
+    const uint input_plane = input_h * input_w;
+    const uint output_w = input_w * 4u;
+    const uint output_plane = input_plane * 16u;
+    const uint w1_floats = mid_channels * output_channels * 4u;
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+      const uint output_index = index + lane;
+      const uint output_channel = output_index / output_plane;
+      const uint spatial = output_index % output_plane;
+      const uint output_y = spatial / output_w;
+      const uint output_x = spatial % output_w;
+      const uint input_y = output_y >> 2u;
+      const uint input_x = output_x >> 2u;
+      const uint ky = (output_y >> 1u) & 1u;
+      const uint kx = (output_x >> 1u) & 1u;
+      const uint ly = output_y & 1u;
+      const uint lx = output_x & 1u;
+      const uint mid_tap = (ky << 1u) | kx;
+      const uint out_tap = (ly << 1u) | lx;
+      const uint input_index = input_y * input_w + input_x;
+      const uint input_base = batch * input_channels * input_plane + input_index;
+      float acc = e[w1_floats + output_channel];
+      for (uint mid = 0u; mid < mid_channels; ++mid) {
+        float cell = c[mid];
+        for (uint input_channel = 0u; input_channel < input_channels; ++input_channel) {
+          cell += a[input_base + input_channel * input_plane] *
+                  b[((input_channel * mid_channels + mid) << 2u) + mid_tap];
+        }
+        cell = max(cell, 0.0);
+        acc += cell * e[((mid * output_channels + output_channel) << 2u) + out_tap];
+      }
+      d[batch * params.count + output_index] = 1.0 / (1.0 + exp(-acc));
+    }
+    return;
+  }
+  // Mode 18 is detector FPN's `Resize(nearest, 2x) + Add` local fusion.
+  // Binding A holds [N,C,H,W] source, binding E the equal-sized residual,
+  // and binding D receives [N,C,2H,2W].  Keep the expanded activation on the
+  // device until the fused addition is complete; X still covers four output
+  // values per invocation and Y is the true NCHW batch axis.
+  if ((params.mode & 0xffffu) == 18u) {
+    const uint batch = gl_GlobalInvocationID.y;
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    const uint input_h = params.right_repeat;
+    const uint input_w = params.right_per_batch;
+    const uint channels = params.right_batch_stride;
+    if (batch >= params.batches || index >= params.count || input_h == 0u ||
+        input_w == 0u || channels == 0u) return;
+    const uint input_plane = input_h * input_w;
+    const uint output_w = input_w * 2u;
+    const uint output_plane = input_plane * 4u;
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+      const uint output_index = index + lane;
+      const uint channel = output_index / output_plane;
+      const uint spatial = output_index % output_plane;
+      const uint output_y = spatial / output_w;
+      const uint output_x = spatial % output_w;
+      const uint input_index = (output_y >> 1u) * input_w + (output_x >> 1u);
+      const uint source_offset = (batch * channels + channel) * input_plane + input_index;
+      const uint output_offset = batch * params.count + output_index;
+      d[output_offset] = a[source_offset] + e[output_offset];
+    }
+    return;
+  }
+  // Mode 31 consumes the device-resident output of modes 16/17 and adds the
+  // equal-sized FPN lateral residual from E.  Its source ConvTranspose and
+  // this Add are deliberately separate dispatches because the transpose
+  // kernel's optional shared-filter tile needs a workgroup barrier; keeping
+  // D on device still removes one full host round trip and one CPU traversal.
+  if ((params.mode & 0xffffu) == 31u) {
+    const uint batch = gl_GlobalInvocationID.y;
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    if (batch >= params.batches || index >= params.count) return;
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+      const uint output_offset = batch * params.count + index + lane;
+      a[output_offset] = d[output_offset] + e[output_offset];
+    }
+    return;
+  }
+  // Modes 19/23 are the compact row-major GEMM fallback used by recognizer
+  // projections and the final CTC logits head. Mode 23 adds the recognizer
+  // MLP's exact Swish writeback.
+  // before the result leaves the device. One invocation computes four
+  // contiguous output columns for a row, which keeps B's [K,columns] loads
+  // contiguous and reuses the same A value across all four accumulators.
+  // Binding C is an optional column bias; operation3 says whether it is
+  // present.
+  if ((params.mode & 0xffffu) == 19u || (params.mode & 0xffffu) == 23u) {
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    const uint rows = params.operation0;
+    const uint depth = params.operation1;
+    const uint columns = params.operation2;
+    if (index >= params.count || rows == 0u || depth == 0u || columns == 0u) return;
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+      const uint output_index = index + lane;
+      const uint row = output_index / columns;
+      const uint column = output_index - row * columns;
+      float value = params.operation3 != 0u ? c[column] : 0.0;
+      const uint a_lda = params.right_repeat == 0u ? depth : params.right_repeat;
+      for (uint k = 0u; k < depth; ++k) {
+        const float left = params.right_repeat == 0u ? a[row * depth + k] : a[k * a_lda + row];
+        value += left * b[k * columns + column];
+      }
+      if ((params.mode & 0xffffu) == 23u) value *= 1.0 / (1.0 + exp(-value));
+      d[output_index] = value;
+    }
+    return;
+  }
+  // Modes 24/25 are the batch-oriented GEMM paths. A 256-lane workgroup owns
+  // an 8-row by 128-column tile (each lane writes four adjacent columns). It
+  // stages an 8x16 A tile and 16x128 B tile in the existing shared array,
+  // sharing each B value across eight rows. K tiles are consumed strictly in
+  // ascending order, preserving the CPU GEMM reduction order. Mode 25 folds
+  // the recognizer MLP's exact Swish into the final write, avoiding the older
+  // generic-GEMM fallback for a real flattened crop batch.
+  if ((params.mode & 0xffffu) == 24u || (params.mode & 0xffffu) == 25u) {
+    const uint rows = params.operation0;
+    const uint depth = params.operation1;
+    const uint columns = params.operation2;
+    const uint local = gl_LocalInvocationID.x;
+    const uint tile_row = gl_WorkGroupID.y * 8u;
+    const uint row = tile_row + local / 32u;
+    const uint column = gl_WorkGroupID.x * 128u + (local % 32u) * 4u;
+    vec4 value = vec4(0.0);
+    if (row < rows && column < columns && params.operation3 != 0u) {
+      value = vec4(c[column], column + 1u < columns ? c[column + 1u] : 0.0,
+                   column + 2u < columns ? c[column + 2u] : 0.0,
+                   column + 3u < columns ? c[column + 3u] : 0.0);
+    }
+    const uint a_lda = params.right_repeat == 0u ? depth : params.right_repeat;
+    for (uint k0 = 0u; k0 < depth; k0 += 16u) {
+      for (uint index = local; index < 128u; index += gl_WorkGroupSize.x) {
+        const uint r = index / 16u;
+        const uint k = index % 16u;
+        const uint rr = tile_row + r;
+        const uint kk = k0 + k;
+        pointwise_weights[2048u + index] = rr < rows && kk < depth
+            ? (params.right_repeat == 0u ? a[rr * depth + kk] : a[kk * a_lda + rr]) : 0.0;
+      }
+      for (uint index = local; index < 2048u; index += gl_WorkGroupSize.x) {
+        const uint k = index / 128u;
+        const uint col = index % 128u;
+        const uint global_column = gl_WorkGroupID.x * 128u + col;
+        pointwise_weights[index] = k0 + k < depth && global_column < columns
+            ? b[(k0 + k) * columns + global_column] : 0.0;
+      }
+      barrier();
+      const uint row_in_tile = local / 32u;
+      const uint column_in_tile = (local % 32u) * 4u;
+      if (k0 + 16u <= depth) {
+        for (uint k = 0u; k < 16u; ++k) {
+          const float left = pointwise_weights[2048u + row_in_tile * 16u + k];
+          const uint right = k * 128u + column_in_tile;
+          value += left * vec4(pointwise_weights[right], pointwise_weights[right + 1u],
+                               pointwise_weights[right + 2u], pointwise_weights[right + 3u]);
+        }
+      } else {
+        for (uint k = 0u; k0 + k < depth; ++k) {
+          const float left = pointwise_weights[2048u + row_in_tile * 16u + k];
+          const uint right = k * 128u + column_in_tile;
+          value += left * vec4(pointwise_weights[right], pointwise_weights[right + 1u],
+                               pointwise_weights[right + 2u], pointwise_weights[right + 3u]);
+        }
+      }
+      barrier();
+    }
+    if (row < rows && column < columns) {
+      if ((params.mode & 0xffffu) == 25u) {
+        value *= 1.0 / (vec4(1.0) + exp(-value));
+      }
+      const uint output_offset = row * columns + column;
+      d[output_offset] = value.x;
+      if (column + 1u < columns) d[output_offset + 1u] = value.y;
+      if (column + 2u < columns) d[output_offset + 2u] = value.z;
+      if (column + 3u < columns) d[output_offset + 3u] = value.w;
+    }
+    return;
+  }
+  // Tiled pointwise Conv fast path.  Unlike the generic contiguous-output
+  // mapping below, a workgroup here owns four complete output planes over one
+  // 256-element spatial tile.  That makes the immutable weight row a shared
+  // resource instead of streaming it once for every output vec4.
+  if ((params.mode == 3u || params.mode == 4u || params.mode == 5u ||
+       params.mode == 6u || params.mode == 7u || params.mode == 9u ||
+       params.mode == 10u || params.mode == 11u || params.mode == 12u ||
+       params.mode == 29u || params.mode == 30u || params.mode == 55u) &&
+      params.right_per_batch <= 1024u) {
+    const uint channels_per_group = 4u;
+    const uint lanes_per_channel = gl_WorkGroupSize.x / channels_per_group;
+    const uint spatial_per_group = lanes_per_channel * 4u;
+    const uint groups_per_channel =
+        (params.right_repeat + spatial_per_group - 1u) / spatial_per_group;
+    const uint channel_block = gl_WorkGroupID.x / groups_per_channel;
+    const uint spatial_block = gl_WorkGroupID.x - channel_block * groups_per_channel;
+    const uint first_channel = channel_block * channels_per_group;
+    const uint local = gl_LocalInvocationID.x;
+
+    // Cooperatively stage four [C] weight rows.  All workgroups in this
+    // dispatch take this uniform path, so the barrier is well defined.
+    const uint weight_count = channels_per_group * params.right_per_batch;
+    for (uint index = local; index < weight_count; index += gl_WorkGroupSize.x) {
+      const uint output_channel = first_channel + index / params.right_per_batch;
+      if (output_channel < params.right_batch_stride) {
+        pointwise_weights[index] = (params.mode == 29u || params.mode == 30u)
+            ? e[output_channel * params.right_per_batch + index % params.right_per_batch]
+            : b[output_channel * params.right_per_batch + index % params.right_per_batch];
+      }
+    }
+    barrier();
+
+    const uint channel_lane = local / lanes_per_channel;
+    const uint spatial_lane = local - channel_lane * lanes_per_channel;
+    const uint output_channel = first_channel + channel_lane;
+    const uint spatial = spatial_block * spatial_per_group + spatial_lane * 4u;
+    if (output_channel >= params.right_batch_stride || spatial >= params.right_repeat ||
+        gl_WorkGroupID.y >= params.batches) return;
+
+    const uint batch = gl_WorkGroupID.y;
+    const uint input_count = params.right_per_batch * params.right_repeat;
+    const uint output_base = batch * params.count + output_channel * params.right_repeat + spatial;
+    if (spatial + 4u <= params.right_repeat) {
+      const uint input_base = batch * input_count + spatial;
+      vec4 value = vec4((params.mode == 29u || params.mode == 30u)
+          ? e[params.right_batch_stride * params.right_per_batch + output_channel]
+          : c[output_channel]);
+      for (uint input_channel = 0u; input_channel < params.right_per_batch; ++input_channel) {
+        const uint source = input_base + input_channel * params.right_repeat;
+        value += vec4((params.mode == 29u || params.mode == 30u) ? d[source] : a[source],
+                      (params.mode == 29u || params.mode == 30u) ? d[source + 1u] : a[source + 1u],
+                      (params.mode == 29u || params.mode == 30u) ? d[source + 2u] : a[source + 2u],
+                      (params.mode == 29u || params.mode == 30u) ? d[source + 3u] : a[source + 3u]) *
+                 vec4(pointwise_weights[channel_lane * params.right_per_batch + input_channel]);
+      }
+      if (params.mode == 5u || params.mode == 6u || params.mode == 9u) {
+        value += vec4(e[output_base], e[output_base + 1u], e[output_base + 2u],
+                      e[output_base + 3u]);
+      }
+      if (params.mode == 4u || params.mode == 6u) value = max(value, vec4(0.0));
+      if (params.mode == 7u || params.mode == 9u) value *= 1.0 / (1.0 + exp(-value));
+      if (params.mode == 10u) value = 1.0 / (1.0 + exp(-value));
+      if (params.mode == 11u) value = clamp(uintBitsToFloat(params.operation0) * value +
+                                             vec4(uintBitsToFloat(params.operation1)),
+                                             vec4(0.0), vec4(1.0));
+      if (params.mode == 12u) value *= clamp(uintBitsToFloat(params.operation0) * value +
+                                              vec4(uintBitsToFloat(params.operation1)),
+                                              vec4(0.0), vec4(1.0));
+      if (params.mode == 30u) value = approximate_gelu(value);
+      if (params.mode == 55u) value = vec4(
+          0.5 * value.x * (1.0 + erf_fp32(value.x * 0.7071067811865475)),
+          0.5 * value.y * (1.0 + erf_fp32(value.y * 0.7071067811865475)),
+          0.5 * value.z * (1.0 + erf_fp32(value.z * 0.7071067811865475)),
+          0.5 * value.w * (1.0 + erf_fp32(value.w * 0.7071067811865475)));
+      if (params.mode == 29u || params.mode == 30u) {
+        a[output_base] = value.x;
+        a[output_base + 1u] = value.y;
+        a[output_base + 2u] = value.z;
+        a[output_base + 3u] = value.w;
+      } else {
+        d[output_base] = value.x;
+        d[output_base + 1u] = value.y;
+        d[output_base + 2u] = value.z;
+        d[output_base + 3u] = value.w;
+      }
+    } else {
+      for (uint lane = 0u; spatial + lane < params.right_repeat; ++lane) {
+        float value = (params.mode == 29u || params.mode == 30u)
+            ? e[params.right_batch_stride * params.right_per_batch + output_channel]
+            : c[output_channel];
+        const uint input_base = batch * input_count + spatial + lane;
+        for (uint input_channel = 0u; input_channel < params.right_per_batch; ++input_channel) {
+          value += ((params.mode == 29u || params.mode == 30u) ? d[input_base + input_channel * params.right_repeat]
+                                       : a[input_base + input_channel * params.right_repeat]) *
+                   pointwise_weights[channel_lane * params.right_per_batch + input_channel];
+        }
+        if (params.mode == 5u || params.mode == 6u || params.mode == 9u) value += e[output_base + lane];
+        if (params.mode == 4u || params.mode == 6u) value = max(value, 0.0);
+        if (params.mode == 7u || params.mode == 9u) value *= 1.0 / (1.0 + exp(-value));
+        if (params.mode == 10u) value = 1.0 / (1.0 + exp(-value));
+        if (params.mode == 11u) value = clamp(uintBitsToFloat(params.operation0) * value +
+                                               uintBitsToFloat(params.operation1), 0.0, 1.0);
+        if (params.mode == 12u) value *= clamp(uintBitsToFloat(params.operation0) * value +
+                                               uintBitsToFloat(params.operation1), 0.0, 1.0);
+        if (params.mode == 30u) value = approximate_gelu_scalar(value);
+        if (params.mode == 55u) value = 0.5 * value * (1.0 + erf_fp32(value * 0.7071067811865475));
+        if (params.mode == 29u || params.mode == 30u) a[output_base + lane] = value;
+        else d[output_base + lane] = value;
+      }
+    }
+    return;
+  }
+  const uint index = gl_GlobalInvocationID.x * 4u;
+  const uint batch = gl_GlobalInvocationID.y;
+  if (index >= params.count || batch >= params.batches) return;
+  const uint offset = batch * params.count + index;
+  if (params.mode == 5u || params.mode == 6u || params.mode == 9u) {
+    // The residual lives in a separate read-only buffer, so the output remains
+    // non-aliased and every invocation owns one final output value.
+    const uint input_count = params.right_per_batch * params.right_repeat;
+    // Just like the non-residual pointwise path below, a normal OCR feature
+    // plane supplies four contiguous spatial values.  Keep those four lanes
+    // together through both the projection and the residual add: this reduces
+    // loop/control overhead and lets the driver form vector FMAs.  The scalar
+    // path deliberately handles channel boundaries and odd-width tails so the
+    // NCHW addressing and FP32 accumulation order remain unchanged.
+    if (index + 4u <= params.count &&
+        (index % params.right_repeat) + 4u <= params.right_repeat) {
+      const uint output_channel = index / params.right_repeat;
+      const uint spatial = index % params.right_repeat;
+      const uint output_offset = batch * params.count + index;
+      vec4 value = vec4(c[output_channel]) +
+          vec4(e[output_offset], e[output_offset + 1u],
+               e[output_offset + 2u], e[output_offset + 3u]);
+      const uint weight_base = output_channel * params.right_per_batch;
+      const uint input_base = batch * input_count + spatial;
+      for (uint input_channel = 0u; input_channel < params.right_per_batch; ++input_channel) {
+        const uint source = input_base + input_channel * params.right_repeat;
+        value += vec4(a[source], a[source + 1u], a[source + 2u], a[source + 3u]) *
+                 vec4(b[weight_base + input_channel]);
+      }
+      if (params.mode == 6u) value = max(value, vec4(0.0));
+      else if (params.mode == 9u) value = value / (vec4(1.0) + exp(-value));
+      d[output_offset] = value.x;
+      d[output_offset + 1u] = value.y;
+      d[output_offset + 2u] = value.z;
+      d[output_offset + 3u] = value.w;
+      return;
+    }
+    for (uint lane = 0u; index + lane < params.count; ++lane) {
+      const uint output_index = index + lane;
+      const uint output_channel = output_index / params.right_repeat;
+      const uint spatial = output_index % params.right_repeat;
+      const uint output_offset = batch * params.count + output_index;
+      float value = c[output_channel] + e[output_offset];
+      const uint weight_base = output_channel * params.right_per_batch;
+      const uint input_base = batch * input_count + spatial;
+      for (uint input_channel = 0u; input_channel < params.right_per_batch; ++input_channel) {
+        value += a[input_base + input_channel * params.right_repeat] *
+                 b[weight_base + input_channel];
+      }
+      d[output_offset] = params.mode == 6u ? max(value, 0.0) :
+          (params.mode == 9u ? value / (1.0 + exp(-value)) : value);
+    }
+    return;
+  }
+  if (params.mode == 3u || params.mode == 4u || params.mode == 7u ||
+      params.mode == 10u || params.mode == 11u || params.mode == 12u ||
+      params.mode == 29u || params.mode == 30u) {
+    const uint input_count = params.right_per_batch * params.right_repeat;
+    // The normal pointwise case has long contiguous spatial planes.  Compute
+    // four adjacent positions of one output channel together: this turns the
+    // inner dot product into vec4 FMA-friendly arithmetic and keeps the
+    // scalar path only for a channel boundary/tail.
+    if (index + 4u <= params.count &&
+        (index % params.right_repeat) + 4u <= params.right_repeat) {
+      const uint output_channel = index / params.right_repeat;
+      const uint spatial = index % params.right_repeat;
+      vec4 value = vec4((params.mode == 29u || params.mode == 30u)
+          ? e[params.right_batch_stride * params.right_per_batch + output_channel]
+          : c[output_channel]);
+      const uint weight_base = output_channel * params.right_per_batch;
+      const uint input_base = batch * input_count + spatial;
+      for (uint input_channel = 0u; input_channel < params.right_per_batch; ++input_channel) {
+        const uint source = input_base + input_channel * params.right_repeat;
+        value += vec4((params.mode == 29u || params.mode == 30u) ? d[source] : a[source],
+                      (params.mode == 29u || params.mode == 30u) ? d[source + 1u] : a[source + 1u],
+                      (params.mode == 29u || params.mode == 30u) ? d[source + 2u] : a[source + 2u],
+                      (params.mode == 29u || params.mode == 30u) ? d[source + 3u] : a[source + 3u]) *
+                 vec4((params.mode == 29u || params.mode == 30u) ? e[weight_base + input_channel]
+                                          : b[weight_base + input_channel]);
+      }
+      if (params.mode == 4u) value = max(value, vec4(0.0));
+      else if (params.mode == 7u) value = value / (vec4(1.0) + exp(-value));
+      else if (params.mode == 10u) value = 1.0 / (vec4(1.0) + exp(-value));
+      else if (params.mode == 11u) value = clamp(uintBitsToFloat(params.operation0) * value +
+                                                  vec4(uintBitsToFloat(params.operation1)),
+                                                  vec4(0.0), vec4(1.0));
+      else if (params.mode == 12u) value *= clamp(uintBitsToFloat(params.operation0) * value +
+                                                   vec4(uintBitsToFloat(params.operation1)),
+                                                   vec4(0.0), vec4(1.0));
+      if (params.mode == 30u) value = approximate_gelu(value);
+      if (params.mode == 29u || params.mode == 30u) {
+        a[offset] = value.x;
+        a[offset + 1u] = value.y;
+        a[offset + 2u] = value.z;
+        a[offset + 3u] = value.w;
+      } else {
+        d[offset] = value.x;
+        d[offset + 1u] = value.y;
+        d[offset + 2u] = value.z;
+        d[offset + 3u] = value.w;
+      }
+      return;
+    }
+    for (uint lane = 0u; index + lane < params.count; ++lane) {
+      const uint output_index = index + lane;
+      const uint output_channel = output_index / params.right_repeat;
+      const uint spatial = output_index % params.right_repeat;
+      float value = (params.mode == 29u || params.mode == 30u)
+          ? e[params.right_batch_stride * params.right_per_batch + output_channel]
+          : c[output_channel];
+      const uint weight_base = output_channel * params.right_per_batch;
+      const uint input_base = batch * input_count + spatial;
+      for (uint input_channel = 0u; input_channel < params.right_per_batch; ++input_channel) {
+        value += ((params.mode == 29u || params.mode == 30u) ? d[input_base + input_channel * params.right_repeat]
+                                     : a[input_base + input_channel * params.right_repeat]) *
+                 ((params.mode == 29u || params.mode == 30u) ? e[weight_base + input_channel]
+                                      : b[weight_base + input_channel]);
+      }
+      float final_value = params.mode == 4u ? max(value, 0.0) :
+          (params.mode == 7u ? value / (1.0 + exp(-value)) :
+           (params.mode == 10u ? 1.0 / (1.0 + exp(-value)) :
+            (params.mode == 11u ? clamp(uintBitsToFloat(params.operation0) * value +
+                                         uintBitsToFloat(params.operation1), 0.0, 1.0) :
+             (params.mode == 12u ? value * clamp(uintBitsToFloat(params.operation0) * value +
+                                                  uintBitsToFloat(params.operation1), 0.0, 1.0) : value))));
+      if (params.mode == 30u) final_value = approximate_gelu_scalar(final_value);
+      if (params.mode == 29u || params.mode == 30u) a[offset + lane] = final_value;
+      else d[offset + lane] = final_value;
+    }
+    return;
+  }
+  if (params.mode == 1u || params.mode == 2u) {
+    if (index + 4u <= params.count &&
+        (index % params.right_repeat) + 4u <= params.right_repeat) {
+      vec4 left = vec4(a[offset], a[offset + 1u], a[offset + 2u], a[offset + 3u]);
+      const uint coefficient_offset = params.right_batch_stride == 0u
+          ? 0u : batch * params.right_batch_stride;
+      const uint channel = index / params.right_repeat;
+      left = left * vec4(b[coefficient_offset + channel]) + vec4(c[coefficient_offset + channel]);
+      if (params.mode == 2u) left = left / (vec4(1.0) + exp(-left));
+      a[offset] = left.x;
+      a[offset + 1u] = left.y;
+      a[offset + 2u] = left.z;
+      a[offset + 3u] = left.w;
+      return;
+    }
+    for (uint lane = 0u; index + lane < params.count; ++lane) {
+      const uint coefficient_offset = params.right_batch_stride == 0u
+          ? 0u : batch * params.right_batch_stride;
+      const uint channel = (index + lane) / params.right_repeat;
+      float value = a[offset + lane] * b[coefficient_offset + channel] +
+                    c[coefficient_offset + channel];
+      if (params.mode == 2u) value = value / (1.0 + exp(-value));
+      a[offset + lane] = value;
+    }
+    return;
+  }
+  if (params.mode == 8u) {
+    if (index + 4u <= params.count &&
+        (index % params.right_repeat) + 4u <= params.right_repeat) {
+      const uint coefficient_offset = params.right_batch_stride == 0u
+          ? 0u : batch * params.right_batch_stride;
+      const uint channel = index / params.right_repeat;
+      vec4 value = vec4(a[offset], a[offset + 1u], a[offset + 2u], a[offset + 3u]);
+      value = value * vec4(b[coefficient_offset + channel]) +
+          vec4(c[coefficient_offset + channel]);
+      value = value / (vec4(1.0) + exp(-value));
+      const vec4 right = vec4(d[offset], d[offset + 1u], d[offset + 2u], d[offset + 3u]);
+      value = apply_binary(value, right, params.operation0);
+      a[offset] = value.x;
+      a[offset + 1u] = value.y;
+      a[offset + 2u] = value.z;
+      a[offset + 3u] = value.w;
+      return;
+    }
+    for (uint lane = 0u; index + lane < params.count; ++lane) {
+      const uint coefficient_offset = params.right_batch_stride == 0u
+          ? 0u : batch * params.right_batch_stride;
+      const uint channel = (index + lane) / params.right_repeat;
+      float value = a[offset + lane] * b[coefficient_offset + channel] +
+          c[coefficient_offset + channel];
+      value = value / (1.0 + exp(-value));
+      a[offset + lane] = apply_binary_scalar(value, d[offset + lane], params.operation0);
+    }
+    return;
+  }
+  // Most OCR planes are divisible by four. Keep the last 1--3 elements on a
+  // scalar path so no shader ever reads past an allocation.
+  if (params.right_repeat == 1u && index + 4u <= params.count) {
+    vec4 left = vec4(a[offset], a[offset + 1u], a[offset + 2u], a[offset + 3u]);
+    const vec4 right = vec4(b[offset], b[offset + 1u], b[offset + 2u], b[offset + 3u]);
+    left = apply_binary(left, right, params.operation0);
+    if (params.steps > 1u) left = apply_binary(left, right, params.operation1);
+    if (params.steps > 2u) left = apply_binary(left, right, params.operation2);
+    if (params.steps > 3u) left = apply_binary(left, right, params.operation3);
+    a[offset] = left.x;
+    a[offset + 1u] = left.y;
+    a[offset + 2u] = left.z;
+    a[offset + 3u] = left.w;
+    return;
+  }
+  // A channel/gate broadcast is normally a long contiguous run (H*W).  Keep
+  // it vectorized whenever all four values belong to the same run; the small
+  // boundary fragment below remains scalar and exact.
+  if (params.right_repeat >= 4u && index + 4u <= params.count &&
+      (index % params.right_repeat) + 4u <= params.right_repeat) {
+    vec4 left = vec4(a[offset], a[offset + 1u], a[offset + 2u], a[offset + 3u]);
+    const uint right_offset = params.right_batch_stride == 0u
+        ? 0u : batch * params.right_batch_stride;
+    const float scalar_right = b[right_offset + index / params.right_repeat];
+    const vec4 right = vec4(scalar_right);
+    left = apply_binary(left, right, params.operation0);
+    if (params.steps > 1u) left = apply_binary(left, right, params.operation1);
+    if (params.steps > 2u) left = apply_binary(left, right, params.operation2);
+    if (params.steps > 3u) left = apply_binary(left, right, params.operation3);
+    a[offset] = left.x;
+    a[offset + 1u] = left.y;
+    a[offset + 2u] = left.z;
+    a[offset + 3u] = left.w;
+    return;
+  }
+  for (uint lane = 0u; index + lane < params.count; ++lane) {
+    float value = a[offset + lane];
+    const float right = params.right_repeat == 1u
+        ? b[offset + lane]
+        : b[(params.right_batch_stride == 0u ? 0u : batch * params.right_batch_stride) +
+            (index + lane) / params.right_repeat];
+    value = apply_binary_scalar(value, right, params.operation0);
+    if (params.steps > 1u) value = apply_binary_scalar(value, right, params.operation1);
+    if (params.steps > 2u) value = apply_binary_scalar(value, right, params.operation2);
+    if (params.steps > 3u) value = apply_binary_scalar(value, right, params.operation3);
+    a[offset + lane] = value;
+  }
+}

@@ -1,0 +1,80 @@
+#version 450
+
+// Isolated scalar depthwise kernel for PP-OCRv6 detector's named terminal
+// 896-channel layer. It covers both its normal 5x22 feature map and narrow
+// Hx30 maps reached by wide detector inputs. It intentionally has no shared
+// memory, mode switch, or unrelated operators: on some AMD LLPC builds that
+// isolation is required for reliable long-graph execution. The
+// descriptor/push-constant ABI matches the main graph pipeline, so activations
+// remain in the same device-local arena.
+// One workgroup owns one NCHW channel. This avoids a flattened dispatch where
+// neighbouring invocations span many unrelated channel filters, a pattern
+// that has caused device loss in the long medium-detector command stream on
+// some AMD LLPC stacks. The graph executor selects this module only for the
+// driver-sensitive terminal tail.
+// 128 lanes cover the normal 5x22 plane while reducing the per-workgroup
+// wave footprint on the AMD integrated adapter. The runtime dispatch remains
+// one workgroup per channel, so addressing and numerical accumulation stay
+// unchanged.
+layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
+// This production tail always has separate input/output arena slots.  Declare
+// A read-only in SPIR-V as well as in the source: on AMD/LLPC this prevents a
+// long recorded graph from conservatively treating the terminal input as a
+// possible SSBO write target and dropping its loads.
+layout(std430, binding = 0) readonly buffer InputA { float a[]; };
+layout(std430, binding = 1) readonly buffer InputB { float b[]; };
+layout(std430, binding = 2) readonly buffer InputC { float c[]; };
+layout(std430, binding = 3) buffer OutputD { float d[]; };
+layout(std430, binding = 4) readonly buffer UnusedE { float e[]; };
+
+layout(push_constant) uniform Params {
+  uint count;
+  uint batches;
+  uint kernel_h;
+  uint kernel_w;
+  uint stride_h;
+  uint stride_w;
+  uint output_w;
+  uint input_h;
+  uint input_w;
+  uint output_h;
+  uint mode;
+} params;
+
+void main() {
+  const uint channel = gl_WorkGroupID.x;
+  const uint spatial = gl_LocalInvocationID.x;
+  const uint batch = gl_GlobalInvocationID.y;
+  if (batch >= params.batches || params.input_h == 0u ||
+      params.input_w == 0u || params.output_h == 0u || params.output_w == 0u ||
+      params.kernel_h == 0u || params.kernel_w == 0u || params.stride_h == 0u ||
+      params.stride_w == 0u) return;
+
+  const uint output_plane = params.output_h * params.output_w;
+  const uint input_plane = params.input_h * params.input_w;
+  const uint channels = params.count / output_plane;
+  // This pipeline is selected only for the exported 3x3, pad-one tail.
+  // The main Vulkan ABI packs pad-top and pad-left into the high mode bits;
+  // retaining it here makes this small module safe for both qualified shapes.
+  const int pad_top = int((params.mode >> 16u) & 0xffu);
+  const int pad_left = int((params.mode >> 24u) & 0xffu);
+  if (channel >= channels || spatial >= output_plane) return;
+  const uint output_y = spatial / params.output_w;
+  const uint output_x = spatial - output_y * params.output_w;
+  const int input_y = int(output_y * params.stride_h) - pad_top;
+  const int input_x = int(output_x * params.stride_w) - pad_left;
+  float value = c[channel];
+  const uint input_base = (batch * (params.count / output_plane) + channel) * input_plane;
+  const uint weight_base = channel * params.kernel_h * params.kernel_w;
+  for (uint ky = 0u; ky < params.kernel_h; ++ky) {
+    const int y = input_y + int(ky);
+    if (y < 0 || y >= int(params.input_h)) continue;
+    for (uint kx = 0u; kx < params.kernel_w; ++kx) {
+      const int x = input_x + int(kx);
+      if (x >= 0 && x < int(params.input_w))
+        value += a[input_base + uint(y) * params.input_w + uint(x)] *
+                 b[weight_base + ky * params.kernel_w + kx];
+    }
+  }
+  d[batch * params.count + channel * output_plane + spatial] = value;
+}

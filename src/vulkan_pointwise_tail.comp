@@ -1,0 +1,48 @@
+#version 450
+
+// Standalone 1x1 projection for the PP-OCRv6 medium detector tail. It shares
+// the main graph's descriptor and push-constant ABI but deliberately has no
+// shared arrays, mode branches, or auxiliary operators. This isolates the
+// large 1792->896 projection from an AMD LLPC mega-shader interaction while
+// retaining an entirely device-resident Vulkan graph.
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+layout(std430, binding = 0) readonly buffer InputA { float a[]; };
+layout(std430, binding = 1) readonly buffer WeightsB { float b[]; };
+layout(std430, binding = 2) readonly buffer BiasC { float c[]; };
+layout(std430, binding = 3) buffer OutputD { float d[]; };
+layout(std430, binding = 4) readonly buffer UnusedE { float e[]; };
+
+layout(push_constant) uniform Params {
+  uint count;
+  uint batches;
+  uint operation0;
+  uint operation1;
+  uint operation2;
+  uint operation3;
+  uint steps;
+  uint plane;
+  uint input_channels;
+  uint output_channels;
+  uint mode;
+} params;
+
+void main() {
+  const uint index = gl_GlobalInvocationID.x * 4u;
+  const uint batch = gl_GlobalInvocationID.y;
+  if (batch >= params.batches || index >= params.count || params.plane == 0u ||
+      params.input_channels == 0u || params.output_channels == 0u) return;
+  const uint input_batch = batch * params.input_channels * params.plane;
+  const uint output_batch = batch * params.count;
+  for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+    const uint output_index = index + lane;
+    const uint output_channel = output_index / params.plane;
+    const uint spatial = output_index - output_channel * params.plane;
+    if (output_channel >= params.output_channels) return;
+    float value = c[output_channel];
+    const uint weight_base = output_channel * params.input_channels;
+    for (uint input_channel = 0u; input_channel < params.input_channels; ++input_channel)
+      value += a[input_batch + input_channel * params.plane + spatial] *
+               b[weight_base + input_channel];
+    d[output_batch + output_index] = value;
+  }
+}

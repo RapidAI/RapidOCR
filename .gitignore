@@ -1,0 +1,16 @@
+# Local build products and generated analysis output
+/build*/
+/bench/
+/**/graphify-out/
+/build-msvc-env.txt
+
+# Nested vendor repository metadata; vendor source is committed as normal files.
+/third_party/Vulkan-Headers/.git/
+
+# Editor and OS files
+.vs/
+.idea/
+*.user
+*.suo
+.DS_Store
+Thumbs.db
