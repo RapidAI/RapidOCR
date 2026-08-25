@@ -62,6 +62,6 @@ class ModelLoader:
 
     def _build_and_load_model(self, arch_config, model_path: Path):
         model = BaseModel(arch_config)
-        state_dict = torch.load(model_path, map_location="cpu", weights_only=False)
+        state_dict = torch.load(model_path, map_location="cpu", weights_only=True)
         model.load_state_dict(state_dict)
         return model
