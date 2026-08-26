@@ -62,6 +62,11 @@ class ModelLoader:
 
     def _build_and_load_model(self, arch_config, model_path: Path):
         model = BaseModel(arch_config)
-        state_dict = torch.load(model_path, map_location="cpu", weights_only=True)
+        try:
+            state_dict = torch.load(model_path, map_location="cpu", weights_only=True)
+        except TypeError as e:
+            raise RuntimeError(
+                "Safe model loading requires PyTorch >= 1.13. Please upgrade PyTorch to load this model securely."
+            ) from e
         model.load_state_dict(state_dict)
         return model
