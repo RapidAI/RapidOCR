@@ -42,6 +42,9 @@ Changelog = "https://github.com/RapidAI/RapidOCR/releases"
 [project.scripts]
 rapidocr = "rapidocr.main:main"
 
+[project.optional-dependencies]
+rtl = ["python-bidi>=0.4.2,<1.0"]
+
 [tool.setuptools]
 include-package-data = true
 platforms = ["Any"]

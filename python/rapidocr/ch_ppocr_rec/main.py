@@ -24,7 +24,8 @@ from rapidocr.inference_engine.base import FileInfo, get_engine
 from ..utils.download_file import DownloadFile, DownloadFileInput
 from ..utils.log import logger
 from ..utils.model_resolver import normalize_lang
-from ..utils.utils import reorder_bidi_for_display
+from ..utils.typings import LangRec
+from ..utils.utils import reorder_bidi_for_display, validate_rtl_dependency
 from ..utils.vis_res import VisRes
 from .typings import TextRecInput, TextRecOutput
 from .utils import CTCLabelDecode
@@ -32,10 +33,14 @@ from .utils import CTCLabelDecode
 DEFAULT_DICT_PATH = Path(__file__).parent.parent / "models" / "ppocr_keys_v1.txt"
 DEFAULT_DICT_URL = "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v2.0.7/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer/ppocr_keys_v1.txt"
 DEFAULT_MODEL_PATH = Path(__file__).parent.parent / "models"
+RTL_LANGS = {LangRec.ARABIC.value}
 
 
 class TextRecognizer:
     def __init__(self, cfg: Dict[str, Any]):
+        if normalize_lang(cfg.lang_type) in RTL_LANGS:
+            validate_rtl_dependency()
+
         self.session = get_engine(cfg.engine_type)(cfg)
 
         # onnx has inner character, other engine get or download character_dict_path
@@ -49,8 +54,6 @@ class TextRecognizer:
         self.rec_image_shape = cfg["rec_img_shape"]
 
         self.cfg = cfg
-
-        self.RTL_LANGS = {"arabic", "fa", "ur"}
 
     def get_character_dict(self, cfg):
         character = None
@@ -139,7 +142,7 @@ class TextRecognizer:
         all_line_results, all_word_results = list(zip(*rec_res))
         txts, scores = list(zip(*all_line_results))
 
-        if normalize_lang(self.cfg.lang_type) in self.RTL_LANGS:
+        if normalize_lang(self.cfg.lang_type) in RTL_LANGS:
             txts = reorder_bidi_for_display(txts)
 
         elapse = time.perf_counter() - start_time

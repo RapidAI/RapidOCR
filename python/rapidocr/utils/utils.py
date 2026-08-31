@@ -12,16 +12,22 @@ import cv2
 import numpy as np
 
 
+def validate_rtl_dependency():
+    try:
+        from bidi.algorithm import get_display  # noqa: F401
+    except ImportError as exc:
+        raise ModuleNotFoundError(
+            "RTL recognition requires the optional dependency 'python-bidi'. "
+            "Install it with: pip install 'rapidocr[rtl]'"
+        ) from exc
+
+
 def reorder_bidi_for_display(
     texts: Tuple[Union[str, bytes], ...],
 ) -> Tuple[Union[str, bytes], ...]:
-    try:
-        from bidi.algorithm import get_display
-    except ImportError as e:
-        raise ModuleNotFoundError(
-            "Required dependency 'python-bidi' is not installed. "
-            "Install it with: pip install python-bidi"
-        ) from e
+    validate_rtl_dependency()
+
+    from bidi.algorithm import get_display  # noqa: F401
 
     return tuple([get_display(text) for text in texts])
 
