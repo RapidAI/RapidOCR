@@ -355,13 +355,18 @@ class Transformer(nn.Module):
             torch.tensor(hyp_scores),
         ]
 
-    def generate_square_subsequent_mask(self, sz):
+    def generate_square_subsequent_mask(self, sz, device=None):
         """Generate a square mask for the sequence. The masked positions are filled with float('-inf').
         Unmasked positions are filled with float(0.0).
         """
-        mask = torch.zeros([sz, sz], dtype=torch.float32)
+        mask = torch.zeros([sz, sz], dtype=torch.float32, device=device)
         mask_inf = torch.triu(
-            torch.full(size=[sz, sz], fill_value=float("-Inf"), dtype=torch.float32),
+            torch.full(
+                size=[sz, sz],
+                fill_value=float("-Inf"),
+                dtype=torch.float32,
+                device=device,
+            ),
             diagonal=1,
         )
         mask = mask + mask_inf
