@@ -30,7 +30,7 @@
     }
   </style>
   <rect width="800" height="400" class="chart-bg" />
-  <text x="400" y="14" text-anchor="middle" class="chart-text" font-size="16" font-weight="bold" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">Growth Forecast</text>
+  <text x="400" y="14" text-anchor="middle" class="chart-text" font-size="16" font-weight="bold" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">RapidAI/RapidOCR Growth Forecast</text>
   <g class="legend">
     <rect x="220" y="31" width="12" height="3" fill="#dfb317" />
     <line x1="220" y1="32.5" x2="232" y2="32.5" stroke="#dfb317" stroke-width="2" />
