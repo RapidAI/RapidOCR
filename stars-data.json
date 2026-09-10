@@ -516,7 +516,19 @@
           "stars": 7752
         }
       ]
+    },
+    {
+      "timestamp": "2026-09-10T02:08:11.378Z",
+      "totalStars": 7760,
+      "repos": [
+        {
+          "fullName": "RapidAI/RapidOCR",
+          "name": "RapidOCR",
+          "owner": "RapidAI",
+          "stars": 7760
+        }
+      ]
     }
   ],
-  "starsAtLastNotification": 7752
+  "starsAtLastNotification": 7760
 }
