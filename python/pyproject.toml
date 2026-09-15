@@ -45,6 +45,7 @@ rapidocr = "rapidocr.main:main"
 
 [project.optional-dependencies]
 rtl = ["python-bidi>=0.4.2,<1.0"]
+opencv-python = ["opencv-python>=4.5.1.48"]
 
 [tool.setuptools]
 include-package-data = true
