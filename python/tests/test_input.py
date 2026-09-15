@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+import ctypes
 import sys
 from pathlib import Path
 
@@ -21,6 +22,7 @@ from rapidocr import (
     RapidOCR,
 )
 from rapidocr.utils.parse_parameters import ParseParams
+from rapidocr.utils.load_image import LoadImage, MemoryImage
 
 test_dir = root_dir / "tests" / "test_files"
 img_path = test_dir / "ch_en_num.jpg"
@@ -118,6 +120,51 @@ def test_input_bytes(engine):
         result = engine(f.read())
     assert len(result) == 18
     assert result.txts[0] == "正品促销"
+
+
+def test_input_memory_image(engine):
+    """An encoded image can be passed by address and byte length."""
+    encoded = img_path.read_bytes()
+    buffer = ctypes.create_string_buffer(encoded)
+    memory_img = MemoryImage(ctypes.addressof(buffer), len(encoded))
+
+    result = engine(memory_img)
+
+    assert len(result) == 18
+    assert result.txts[0] == "正品促销"
+
+
+def test_input_memory_image_matches_bytes(engine):
+    encoded = img_path.read_bytes()
+    buffer = ctypes.create_string_buffer(encoded)
+    memory_img = MemoryImage(ctypes.addressof(buffer), len(encoded))
+
+    expected = engine(encoded)
+    actual = engine(memory_img)
+
+    assert actual.txts == expected.txts
+    assert actual.scores == expected.scores
+    np.testing.assert_allclose(actual.boxes, expected.boxes)
+
+
+@pytest.mark.parametrize(
+    "address,length",
+    [(0, 1), (-1, 1), (1, 0), (1, -1)],
+)
+def test_input_memory_image_invalid_address_or_length(address, length):
+    loader = LoadImage()
+
+    with pytest.raises(LoadImageError, match="MemoryImage loading failed"):
+        loader(MemoryImage(address, length))
+
+
+def test_input_memory_image_invalid_encoded_data():
+    encoded = b"not an image"
+    buffer = ctypes.create_string_buffer(encoded)
+    loader = LoadImage()
+
+    with pytest.raises(LoadImageError, match="MemoryImage loading failed"):
+        loader(MemoryImage(ctypes.addressof(buffer), len(encoded)))
 
 
 def test_input_path(engine):

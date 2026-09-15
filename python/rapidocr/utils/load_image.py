@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+from ctypes import string_at
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Union
@@ -13,7 +14,15 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 from .utils import is_url
 
 root_dir = Path(__file__).resolve().parent
-InputType = Union[str, np.ndarray, bytes, Path, Image.Image]
+
+
+class MemoryImage:
+    def __init__(self, address: int, length: int):
+        self.address = address
+        self.length = length
+
+
+InputType = Union[str, np.ndarray, bytes, Path, Image.Image, MemoryImage]
 
 
 class LoadImage:
@@ -56,6 +65,12 @@ class LoadImage:
 
         if isinstance(img, Image.Image):
             return self.img_to_ndarray(img)
+
+        if isinstance(img, MemoryImage):
+            try:
+                return self.load_memory_image(img)
+            except Exception as e:
+                raise LoadImageError("MemoryImage loading failed.") from e
 
         raise LoadImageError(f"{type(img)} is not supported!")
 
@@ -158,6 +173,19 @@ class LoadImage:
         blended = (foreground_blend + background_blend).astype(np.uint8)
 
         return cv2.cvtColor(blended, cv2.COLOR_RGB2BGR)
+
+    def load_memory_image(self, img: MemoryImage) -> np.ndarray:
+        if img.address <= 0 or img.length <= 0:
+            raise LoadImageError("invalid memory address or length")
+
+        encoded = string_at(img.address, img.length)
+        arr = np.frombuffer(encoded, dtype=np.uint8)
+        result = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+
+        if result is None:
+            raise LoadImageError("cannot decode image from memory")
+
+        return result
 
 
 class LoadImageError(Exception):

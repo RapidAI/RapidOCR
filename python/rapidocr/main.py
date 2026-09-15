@@ -17,7 +17,7 @@ from .ch_ppocr_det import TextDetector, TextDetOutput
 from .ch_ppocr_rec import TextRecInput, TextRecognizer, TextRecOutput
 from .cli import check_install, check_required_files, generate_cfg
 from .utils.download_models import download_models
-from .utils.load_image import LoadImage
+from .utils.load_image import InputType, LoadImage
 from .utils.log import logger
 from .utils.output import RapidOCROutput
 from .utils.parse_parameters import ParseParams
@@ -91,7 +91,7 @@ class RapidOCR:
 
     def __call__(
         self,
-        img_content: Union[str, np.ndarray, bytes, Path],
+        img_content: InputType,
         use_det: Optional[bool] = None,
         use_cls: Optional[bool] = None,
         use_rec: Optional[bool] = None,
