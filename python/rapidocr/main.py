@@ -19,6 +19,7 @@ from .cli import check_install, check_required_files, generate_cfg
 from .utils.download_models import download_models
 from .utils.load_image import InputType, LoadImage
 from .utils.log import logger
+from .utils.model_resolver import list_supported_langs
 from .utils.output import RapidOCROutput
 from .utils.parse_parameters import ParseParams
 from .utils.process_img import (
@@ -28,7 +29,7 @@ from .utils.process_img import (
     map_img_to_original,
     resize_image_within_bounds,
 )
-from .utils.typings import LangRec
+from .utils.typings import LangRec, ModelType, OCRVersion, TaskType
 from .utils.utils import filter_by_indices
 from .utils.vis_res import VisRes
 
@@ -394,6 +395,19 @@ class RapidOCR:
         ocr_res.word_results = tuple(filter_words)
         return ocr_res
 
+    @staticmethod
+    def list_supported_langs(task_type, ocr_version, model_type=None):
+        if isinstance(task_type, str):
+            task_type = TaskType(task_type.lower())
+
+        if isinstance(ocr_version, str):
+            ocr_version = OCRVersion(ocr_version)
+
+        if isinstance(model_type, str):
+            model_type = ModelType(model_type.lower())
+
+        return list_supported_langs(task_type, ocr_version, model_type)
+
 
 class RapidOCRError(Exception):
     pass
@@ -435,10 +449,14 @@ def parse_args(arg_list: Optional[List[str]] = None):
     parser = argparse.ArgumentParser()
     parser.add_argument("-img", "--img_path", type=str, default=None)
     parser.add_argument("--text_score", type=float, default=0.5)
+    parser.add_argument("--lang_type", type=str, default="ch")
+    parser.add_argument("--list-langs", action="store_true", dest="list_langs")
+    parser.add_argument("--task", choices=[x.value for x in TaskType], default="rec")
     parser.add_argument(
-        "--lang_type",
-        type=str,
-        default="ch",
+        "--ocr_version", choices=[x.value for x in OCRVersion], default="PP-OCRv5"
+    )
+    parser.add_argument(
+        "--model_type", choices=[x.value for x in ModelType], default="mobile"
     )
     parser.add_argument("-vis", "--vis_res", action="store_true", default=False)
     parser.add_argument("--vis_save_dir", type=Path, default=".")
@@ -474,6 +492,16 @@ def normalize_cli_lang_type(lang_type: str) -> Union[LangRec, str]:
 
 def main(arg_list: Optional[List[str]] = None):
     args = parse_args(arg_list)
+
+    if args.list_langs:
+        print(
+            "\n".join(
+                RapidOCR.list_supported_langs(
+                    args.task, args.ocr_version, args.model_type
+                )
+            )
+        )
+        return
 
     if args.command == "config":
         generate_cfg(args)
