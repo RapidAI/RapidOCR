@@ -1,3 +1,311 @@
+model_routes:
+  # Reusable language sets for models that share one multilingual model.
+  _defs:
+    ppocrv6_langs: &ppocrv6_langs
+      - ch
+      - chinese_cht
+      - en
+      - japan
+      - af
+      - az
+      - bs
+      - ca
+      - cs
+      - cy
+      - da
+      - de
+      - es
+      - et
+      - eu
+      - fi
+      - fr
+      - ga
+      - gl
+      - hr
+      - hu
+      - id
+      - is
+      - it
+      - ku
+      - la
+      - lb
+      - lt
+      - lv
+      - mi
+      - ms
+      - mt
+      - nl
+      - "no"
+      - oc
+      - pl
+      - pt
+      - qu
+      - rm
+      - ro
+      - rs_latin
+      - sk
+      - sl
+      - sq
+      - sv
+      - sw
+      - tl
+      - tr
+      - uz
+      - vi
+      - french
+      - german
+
+    ppocrv6_tiny_langs: &ppocrv6_tiny_langs
+      - ch
+      - chinese_cht
+      - en
+      - af
+      - az
+      - bs
+      - ca
+      - cs
+      - cy
+      - da
+      - de
+      - es
+      - et
+      - eu
+      - fi
+      - fr
+      - ga
+      - gl
+      - hr
+      - hu
+      - id
+      - is
+      - it
+      - ku
+      - la
+      - lb
+      - lt
+      - lv
+      - mi
+      - ms
+      - mt
+      - nl
+      - "no"
+      - oc
+      - pl
+      - pt
+      - qu
+      - rm
+      - ro
+      - rs_latin
+      - sk
+      - sl
+      - sq
+      - sv
+      - sw
+      - tl
+      - tr
+      - uz
+      - vi
+      - french
+      - german
+
+  PP-OCRv6:
+    aliases:
+      zh: ch
+      zh_cn: ch
+      zh-cn: ch
+      zh_tw: chinese_cht
+      zh-tw: chinese_cht
+      ja: japan
+      jp: japan
+
+    det:
+      tiny:
+        - lang: multi
+          model_key: multi_PP-OCRv6_det_tiny
+          supported_langs: *ppocrv6_tiny_langs
+      small:
+        - lang: multi
+          model_key: multi_PP-OCRv6_det_small
+          supported_langs: *ppocrv6_langs
+      medium:
+        - lang: multi
+          model_key: multi_PP-OCRv6_det_medium
+          supported_langs: *ppocrv6_langs
+
+    rec:
+      tiny:
+        - lang: multi
+          model_key: multi_PP-OCRv6_rec_tiny
+          supported_langs: *ppocrv6_tiny_langs
+      small:
+        - lang: multi
+          model_key: multi_PP-OCRv6_rec_small
+          supported_langs: *ppocrv6_langs
+      medium:
+        - lang: multi
+          model_key: multi_PP-OCRv6_rec_medium
+          supported_langs: *ppocrv6_langs
+
+  PP-OCRv5:
+    det:
+      aliases:
+        zh: ch
+        zh_cn: ch
+        zh-cn: ch
+      mobile:
+        - lang: multi
+          model_key: ch_PP-OCRv5_det_mobile
+          supported_langs: [ch, multi]
+      server:
+        - lang: multi
+          model_key: ch_PP-OCRv5_det_server
+          supported_langs: [ch, multi]
+
+    cls:
+      mobile:
+        - lang: multi
+          model_key: ch_PP-LCNet_x0_25_textline_ori_cls_mobile
+          supported_langs: [ch, multi]
+      server:
+        - lang: multi
+          model_key: ch_PP-LCNet_x1_0_textline_ori_cls_server
+          supported_langs: [ch, multi]
+
+    rec:
+      aliases:
+        zh: ch
+        zh_cn: ch
+        zh-cn: ch
+        ko: korean
+        ar: arabic
+      mobile:
+        - lang: ch
+          model_key: ch_PP-OCRv5_rec_mobile
+          supported_langs: [ch]
+        - lang: korean
+          model_key: korean_PP-OCRv5_rec_mobile
+          supported_langs: [korean]
+        - lang: latin
+          model_key: latin_PP-OCRv5_rec_mobile
+          supported_langs: [latin]
+        - lang: eslav
+          model_key: eslav_PP-OCRv5_rec_mobile
+          supported_langs: [eslav]
+        - lang: en
+          model_key: en_PP-OCRv5_rec_mobile
+          supported_langs: [en]
+        - lang: th
+          model_key: th_PP-OCRv5_rec_mobile
+          supported_langs: [th]
+        - lang: el
+          model_key: el_PP-OCRv5_rec_mobile
+          supported_langs: [el]
+        - lang: arabic
+          model_key: arabic_PP-OCRv5_rec_mobile
+          supported_langs: [arabic]
+        - lang: cyrillic
+          model_key: cyrillic_PP-OCRv5_rec_mobile
+          supported_langs: [cyrillic]
+        - lang: devanagari
+          model_key: devanagari_PP-OCRv5_rec_mobile
+          supported_langs: [devanagari]
+        - lang: ta
+          model_key: ta_PP-OCRv5_rec_mobile
+          supported_langs: [ta]
+        - lang: te
+          model_key: te_PP-OCRv5_rec_mobile
+          supported_langs: [te]
+      server:
+        - lang: ch
+          model_key: ch_PP-OCRv5_rec_server
+          supported_langs: [ch]
+
+  PP-OCRv4:
+    det:
+      aliases:
+        zh: ch
+        zh_cn: ch
+        zh-cn: ch
+      # model_type -> list of model routes
+      mobile:
+        - lang: ch
+          model_key: ch_PP-OCRv4_det_mobile
+          supported_langs: [ch]
+        - lang: en
+          model_key: en_PP-OCRv3_det_mobile
+          supported_langs: [en]
+        - lang: multi
+          model_key: multi_PP-OCRv3_det_mobile
+          supported_langs: [multi]
+      server:
+        - lang: ch
+          model_key: ch_PP-OCRv4_det_server
+          supported_langs: [ch]
+
+    cls:
+      mobile:
+        - lang: multi
+          model_key: ch_ppocr_mobile_v2.0_cls_mobile
+          supported_langs: [ch, multi]
+
+    rec:
+      aliases:
+        zh: ch
+        zh_cn: ch
+        zh-cn: ch
+        zh_tw: chinese_cht
+        zh-tw: chinese_cht
+        ja: japan
+        jp: japan
+        ko: korean
+        ar: arabic
+      # model_type -> list of model routes
+      mobile:
+        - lang: arabic
+          model_key: arabic_PP-OCRv4_rec_mobile
+          supported_langs: [arabic]
+        - lang: ch
+          model_key: ch_PP-OCRv4_rec_mobile
+          supported_langs: [ch]
+        - lang: chinese_cht
+          model_key: chinese_cht_PP-OCRv3_rec_mobile
+          supported_langs: [chinese_cht]
+        - lang: cyrillic
+          model_key: cyrillic_PP-OCRv3_rec_mobile
+          supported_langs: [cyrillic]
+        - lang: devanagari
+          model_key: devanagari_PP-OCRv4_rec_mobile
+          supported_langs: [devanagari]
+        - lang: en
+          model_key: en_PP-OCRv4_rec_mobile
+          supported_langs: [en]
+        - lang: japan
+          model_key: japan_PP-OCRv4_rec_mobile
+          supported_langs: [japan]
+        - lang: ka
+          model_key: ka_PP-OCRv4_rec_mobile
+          supported_langs: [ka]
+        - lang: korean
+          model_key: korean_PP-OCRv4_rec_mobile
+          supported_langs: [korean]
+        - lang: latin
+          model_key: latin_PP-OCRv3_rec_mobile
+          supported_langs: [latin]
+        - lang: ta
+          model_key: ta_PP-OCRv4_rec_mobile
+          supported_langs: [ta]
+        - lang: te
+          model_key: te_PP-OCRv4_rec_mobile
+          supported_langs: [te]
+      server:
+        - lang: ch
+          model_key: ch_PP-OCRv4_rec_server
+          supported_langs: [ch]
+        - lang: ch_doc
+          model_key: ch_doc_PP-OCRv4_rec_server
+          supported_langs: [ch_doc]
+
+
 onnxruntime:
   PP-OCRv4:
     det:
@@ -116,6 +424,14 @@ onnxruntime:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/onnx/PP-OCRv5/cls/ch_PP-LCNet_x1_0_textline_ori_cls_server.onnx
         SHA256: 7d3c02ef6c7da8ae08b4347cc7695b2081aae68c325d64375724ecf39c99e743
   PP-OCRv6:
+    aliases:
+      zh: ch
+      zh_cn: ch
+      zh-cn: ch
+      zh_tw: chinese_cht
+      zh-tw: chinese_cht
+      ja: japan
+      jp: japan
     det:
       multi_PP-OCRv6_det_tiny:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx
@@ -136,6 +452,7 @@ onnxruntime:
       multi_PP-OCRv6_rec_medium:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/onnx/PP-OCRv6/rec/PP-OCRv6_rec_medium.onnx
         SHA256: eef444829dbbe18d7fea59a3f6eb75647518d2b3a9568d27c92e42940204894b
+
 openvino:
   PP-OCRv4:
     det:
@@ -254,6 +571,14 @@ openvino:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/onnx/PP-OCRv5/cls/ch_PP-LCNet_x1_0_textline_ori_cls_server.onnx
         SHA256: 7d3c02ef6c7da8ae08b4347cc7695b2081aae68c325d64375724ecf39c99e743
   PP-OCRv6:
+    aliases:
+      zh: ch
+      zh_cn: ch
+      zh-cn: ch
+      zh_tw: chinese_cht
+      zh-tw: chinese_cht
+      ja: japan
+      jp: japan
     det:
       multi_PP-OCRv6_det_tiny:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx
@@ -274,6 +599,7 @@ openvino:
       multi_PP-OCRv6_rec_medium:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/onnx/PP-OCRv6/rec/PP-OCRv6_rec_medium.onnx
         SHA256: eef444829dbbe18d7fea59a3f6eb75647518d2b3a9568d27c92e42940204894b
+
 mnn:
   PP-OCRv4:
     det:
@@ -419,6 +745,14 @@ mnn:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/mnn/PP-OCRv5/cls/ch_PP-LCNet_x1_0_textline_ori_cls_server.mnn
         SHA256: d6bcb91b894d1bd0c7ce525fcbd74fef25b35de16f01246a360440437f83eee7
   PP-OCRv6:
+    aliases:
+      zh: ch
+      zh_cn: ch
+      zh-cn: ch
+      zh_tw: chinese_cht
+      zh-tw: chinese_cht
+      ja: japan
+      jp: japan
     det:
       multi_PP-OCRv6_det_tiny:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/mnn/PP-OCRv6/det/PP-OCRv6_det_tiny.mnn
@@ -660,6 +994,14 @@ paddle:
         inference.pdiparams: 0de2bcf996cf553e2b848dd7b1769dafffc6917b1ccdf55c1d8efe7909fbf743
         inference.yml: 8d5120d0e1a30a9df7ed46aa9119da3796ed066777089d1c1d705f132d5e90f9
   PP-OCRv6:
+    aliases:
+      zh: ch
+      zh_cn: ch
+      zh-cn: ch
+      zh_tw: chinese_cht
+      zh-tw: chinese_cht
+      ja: japan
+      jp: japan
     det:
       multi_PP-OCRv6_det_tiny:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/paddle/PP-OCRv6/det/PP-OCRv6_det_tiny
@@ -765,8 +1107,8 @@ torch:
         dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/paddle/PP-OCRv4/rec/te_PP-OCRv4_rec_mobile/te_dict.txt
         SHA256: 0597e97b27be9298d703267ed28227abfa6c0a60c07817575b5fa7d2124e7dbc
     cls:
-      ch_ptocr_mobile_v2.0_cls_mobile:
-        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/torch/PP-OCRv4/cls/ch_ptocr_mobile_v2.0_cls_mobile.pth
+      ch_ppocr_mobile_v2.0_cls_mobile:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/torch/PP-OCRv4/cls/ch_ppocr_mobile_v2.0_cls_mobile.pth
         SHA256: bfe13860824b3365c0c7f7ccfcddc8ff11645c60051739ff18bc9913f60c98e1
   PP-OCRv5:
     det:
@@ -786,10 +1128,18 @@ torch:
         dict_url: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/paddle/PP-OCRv5/rec/ch_PP-OCRv5_rec_server/ppocrv5_dict.txt
         SHA256: 4767ddc90c1532ec01d881a980dae0a0b92679f4f82f88c4e9f92563de69e740
     cls:
-      ch_ptocr_mobile_v2.0_cls_mobile:
-        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/torch/PP-OCRv4/cls/ch_ptocr_mobile_v2.0_cls_mobile.pth
+      ch_ppocr_mobile_v2.0_cls_mobile:
+        model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/master/torch/PP-OCRv4/cls/ch_ppocr_mobile_v2.0_cls_mobile.pth
         SHA256: bfe13860824b3365c0c7f7ccfcddc8ff11645c60051739ff18bc9913f60c98e1
   PP-OCRv6:
+    aliases:
+      zh: ch
+      zh_cn: ch
+      zh-cn: ch
+      zh_tw: chinese_cht
+      zh-tw: chinese_cht
+      ja: japan
+      jp: japan
     det:
       multi_PP-OCRv6_det_tiny:
         model_dir: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/torch/PP-OCRv6/det/PP-OCRv6_det_tiny.pth
