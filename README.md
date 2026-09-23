@@ -175,6 +175,11 @@ RapidOCR is an Apache2.0-licensed open source project with its ongoing developme
       </a><br />
       <sub><a href="https://github.com/heyq02">@heyq02</a></sub>
     </td>
+    <td align="center">
+      <img src="" width="60" style="border-radius: 12px; border: none;"/>
+      <br />
+      <sub>Lucky-Li-le</sub>
+    </td>
   </tr>
 </table>
 
