@@ -53,7 +53,7 @@ class TextDetector:
             raise ValueError("img is None")
 
         ori_img_shape = img.shape[0], img.shape[1]
-        self.preprocess_op = self.get_preprocess(max(img.shape[0], img.shape[1]))
+        self.preprocess_op = self.get_preprocess()
         prepro_img = self.preprocess_op(img)
         if prepro_img is None:
             return TextDetOutput()
@@ -67,16 +67,8 @@ class TextDetector:
         elapse = time.perf_counter() - start_time
         return TextDetOutput(img, boxes, scores, elapse=elapse)
 
-    def get_preprocess(self, max_wh: int) -> DetPreProcess:
-        if self.limit_type == "min":
-            limit_side_len = self.limit_side_len
-        elif max_wh < 960:
-            limit_side_len = 960
-        elif max_wh < 1500:
-            limit_side_len = 1500
-        else:
-            limit_side_len = 2000
-        return DetPreProcess(limit_side_len, self.limit_type, self.mean, self.std)
+    def get_preprocess(self) -> DetPreProcess:
+        return DetPreProcess(self.limit_side_len, self.limit_type, self.mean, self.std)
 
     @staticmethod
     def sorted_boxes(dt_boxes: np.ndarray) -> np.ndarray:
