@@ -216,7 +216,7 @@ ch_PP-OCRv5_det_server:
     k: 50
     mode: "large"
 
-ch_ptocr_mobile_v2.0_cls_mobile:
+ch_ppocr_mobile_v2.0_cls_mobile:
   model_type: cls
   algorithm: CLS
   Transform:
