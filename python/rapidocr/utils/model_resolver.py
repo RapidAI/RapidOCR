@@ -1,160 +1,86 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
-from dataclasses import dataclass, field
 from enum import Enum
-from typing import FrozenSet, List, Mapping, Optional, Union
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+from omegaconf import OmegaConf
 
 from .typings import ModelType, OCRVersion, TaskType
 
-
-@dataclass(frozen=True)
-class ModelRoute:
-    model_key_template: str
-    supported_langs_by_model_type: Mapping[ModelType, FrozenSet[str]]
-    aliases: Mapping[str, str] = field(default_factory=dict)
-
-    def supported_langs(self, model_type: ModelType) -> FrozenSet[str]:
-        return self.supported_langs_by_model_type.get(model_type, frozenset())
+MODEL_CONFIG_PATH = Path(__file__).resolve().parents[1] / "default_models.yaml"
+_MODEL_CONFIG = OmegaConf.load(MODEL_CONFIG_PATH)
+MODEL_ROUTES = _MODEL_CONFIG.get("model_routes", {})
 
 
-COMMON_LANG_ALIASES = {
-    "zh": "ch",
-    "zh_cn": "ch",
-    "zh-cn": "ch",
-    "zh_tw": "chinese_cht",
-    "zh-tw": "chinese_cht",
-    "ja": "japan",
-    "jp": "japan",
-    "ko": "korean",
-}
-
-PP_OCRV6_LANGS = frozenset(
-    {
-        "ch",
-        "chinese_cht",
-        "en",
-        "japan",
-        "af",
-        "az",
-        "bs",
-        "ca",
-        "cs",
-        "cy",
-        "da",
-        "de",
-        "es",
-        "et",
-        "eu",
-        "fi",
-        "fr",
-        "ga",
-        "gl",
-        "hr",
-        "hu",
-        "id",
-        "is",
-        "it",
-        "ku",
-        "la",
-        "lb",
-        "lt",
-        "lv",
-        "mi",
-        "ms",
-        "mt",
-        "nl",
-        "no",
-        "oc",
-        "pl",
-        "pt",
-        "qu",
-        "rm",
-        "ro",
-        "rs_latin",
-        "sk",
-        "sl",
-        "sq",
-        "sv",
-        "sw",
-        "tl",
-        "tr",
-        "uz",
-        "vi",
-        "french",
-        "german",
-    }
-)
-PP_OCRV6_TINY_LANGS = PP_OCRV6_LANGS - {"japan"}
-PP_OCRV6_LANGS_BY_MODEL_TYPE = {
-    ModelType.TINY: PP_OCRV6_TINY_LANGS,
-    ModelType.SMALL: PP_OCRV6_LANGS,
-    ModelType.MEDIUM: PP_OCRV6_LANGS,
-}
-
-MODEL_ROUTES = {
-    TaskType.DET: {
-        OCRVersion.PPOCRV6: ModelRoute(
-            model_key_template="multi_PP-OCRv6_det_{model_type}",
-            supported_langs_by_model_type=PP_OCRV6_LANGS_BY_MODEL_TYPE,
-            aliases=COMMON_LANG_ALIASES,
-        ),
-    },
-    TaskType.REC: {
-        OCRVersion.PPOCRV6: ModelRoute(
-            model_key_template="multi_PP-OCRv6_rec_{model_type}",
-            supported_langs_by_model_type=PP_OCRV6_LANGS_BY_MODEL_TYPE,
-            aliases=COMMON_LANG_ALIASES,
-        ),
-    },
-}
-
-
-def normalize_lang(lang_type: Union[Enum, str]) -> str:
-    if isinstance(lang_type, Enum):
-        lang = lang_type.value
-    else:
-        lang = str(lang_type)
-
-    return lang.strip().lower()
-
-
-def resolve_model_key(
+def route_to_model_key(
     task_type: TaskType,
     ocr_version: OCRVersion,
     lang_type: Union[Enum, str],
     model_type: ModelType,
 ) -> Optional[str]:
-    route = MODEL_ROUTES.get(task_type, {}).get(ocr_version)
-    if route is None:
+    task_cfg = _get_task_config(task_type, ocr_version)
+    if task_cfg is None:
         return None
 
-    lang = normalize_lang(lang_type)
-    lang = route.aliases.get(lang, lang)
-    supported_langs = route.supported_langs(model_type)
+    lang_type = normalize_lang(lang_type)
+    lang = _get_aliases(task_cfg, ocr_version).get(lang_type, lang_type)
 
-    if lang not in supported_langs:
-        raise ValueError(
-            f"Unsupported {task_type.value}.lang_type={lang!r} for "
-            f"{ocr_version.value} {model_type.value} model."
-        )
+    routes = task_cfg.get(model_type.value)
+    if routes is None:
+        return None
 
-    return route.model_key_template.format(model_type=model_type.value)
+    for route in routes:
+        supported_langs = route.get("supported_langs", [])
+        if lang in supported_langs:
+            return route["model_key"]
+
+    raise ValueError(
+        f"Unsupported {task_type.value}.lang_type={lang!r} for {ocr_version.value} {model_type.value} model. "
+        f"Supported languages: {', '.join(_supported(routes))}"
+    )
 
 
 def list_supported_langs(
-    task_type: TaskType,
-    ocr_version: OCRVersion,
-    model_type: Optional[ModelType] = None,
+    task_type: TaskType, ocr_version: OCRVersion, model_type: Optional[ModelType] = None
 ) -> List[str]:
-    route = MODEL_ROUTES.get(task_type, {}).get(ocr_version)
-    if route is None:
+    task_cfg = _get_task_config(task_type, ocr_version)
+    if task_cfg is None:
         return []
 
     if model_type is not None:
-        return sorted(route.supported_langs(model_type))
+        return _supported(task_cfg.get(model_type.value))
 
-    supported_langs = set()
-    for langs in route.supported_langs_by_model_type.values():
-        supported_langs.update(langs)
-    return sorted(supported_langs)
+    values = set()
+    for key, routes in task_cfg.items():
+        if key != "aliases":
+            values.update(_supported(routes))
+
+    return sorted(values)
+
+
+def normalize_lang(lang_type: Union[Enum, str]) -> str:
+    value = lang_type.value if isinstance(lang_type, Enum) else lang_type
+    return str(value).strip().lower()
+
+
+def _get_task_config(task_type: TaskType, ocr_version: OCRVersion) -> Any:
+    version_cfg = MODEL_ROUTES.get(ocr_version.value)
+    return version_cfg.get(task_type.value) if version_cfg else None
+
+
+def _get_aliases(task_cfg: Any, ocr_version: OCRVersion) -> Dict[str, str]:
+    version_cfg = MODEL_ROUTES.get(ocr_version.value)
+    aliases = dict((version_cfg or {}).get("aliases", {}) or {})
+    aliases.update(dict((task_cfg or {}).get("aliases", {}) or {}))
+    return aliases
+
+
+def _supported(routes: Any) -> List[str]:
+    values = set()
+    for route in routes or []:
+        supported_langs = route.get("supported_langs", [])
+        values.update(str(x) for x in supported_langs)
+    return sorted(values)
+
