@@ -1602,4 +1602,120 @@ void Avx2WriteBilinearRgbToNchw(float* dst, const std::uint8_t* rgb, int image_w
   }
 }
 
+// SVTR MLP: expand 1x1, exact-style GELU, project 1x1, residual add.
+// Eight spatial lanes share each weight, matching Avx512ExpandGeluProjectAdd
+// with the AVX2 ErfPs already used by Avx2ExactGelu. The partial tail keeps
+// the scalar channel order and std::erf.
+void Avx2ExpandGeluProjectAdd(float* dst, const float* src,
+                              const float* expand_weights, const float* expand_bias,
+                              const float* project_weights, const float* project_bias,
+                              int channels, int hidden, std::size_t plane,
+                              std::size_t spatial_begin, std::size_t spatial_end) noexcept {
+  if (!dst || !src || !expand_weights || !project_weights || channels <= 0 ||
+      hidden <= 0 || spatial_begin >= spatial_end || spatial_end > plane) {
+    return;
+  }
+  const __m256 half = _mm256_set1_ps(.5F);
+  const __m256 one = _mm256_set1_ps(1.F);
+  const __m256 inv_sqrt2 = _mm256_set1_ps(0.7071067811865475244F);
+  thread_local std::vector<float> hidden_tile;
+  hidden_tile.resize(std::size_t(hidden) * 8);
+  const auto gelu = [&](__m256 x) noexcept {
+    return _mm256_mul_ps(half, _mm256_mul_ps(x,
+        _mm256_add_ps(one, ErfPs(_mm256_mul_ps(x, inv_sqrt2)))));
+  };
+  constexpr float inv_sqrt2s = 0.7071067811865475244F;
+  const auto scalar_at = [&](std::size_t spatial) {
+    for (int hidden_channel = 0; hidden_channel < hidden; ++hidden_channel) {
+      float sum = expand_bias ? expand_bias[hidden_channel] : 0.F;
+      const float* filter = expand_weights + std::size_t(hidden_channel) * channels;
+      for (int channel = 0; channel < channels; ++channel) {
+        sum += filter[channel] * src[std::size_t(channel) * plane + spatial];
+      }
+      hidden_tile[static_cast<std::size_t>(hidden_channel)] =
+          sum * .5F * (1.F + std::erf(sum * inv_sqrt2s));
+    }
+    for (int channel = 0; channel < channels; ++channel) {
+      float sum = (project_bias ? project_bias[channel] : 0.F) +
+                  src[std::size_t(channel) * plane + spatial];
+      const float* filter = project_weights + std::size_t(channel) * hidden;
+      for (int hidden_channel = 0; hidden_channel < hidden; ++hidden_channel) {
+        sum += filter[hidden_channel] * hidden_tile[static_cast<std::size_t>(hidden_channel)];
+      }
+      dst[std::size_t(channel) * plane + spatial] = sum;
+    }
+  };
+  std::size_t spatial = spatial_begin;
+  for (; spatial + 8 <= spatial_end; spatial += 8) {
+    int hidden_channel = 0;
+    for (; hidden_channel + 4 <= hidden; hidden_channel += 4) {
+      const float* e0 = expand_weights + std::size_t(hidden_channel) * channels;
+      const float* e1 = e0 + channels;
+      const float* e2 = e1 + channels;
+      const float* e3 = e2 + channels;
+      __m256 a0 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel] : 0.F);
+      __m256 a1 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel + 1] : 0.F);
+      __m256 a2 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel + 2] : 0.F);
+      __m256 a3 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel + 3] : 0.F);
+      for (int channel = 0; channel < channels; ++channel) {
+        const __m256 x = _mm256_loadu_ps(src + std::size_t(channel) * plane + spatial);
+        a0 = _mm256_fmadd_ps(_mm256_set1_ps(e0[channel]), x, a0);
+        a1 = _mm256_fmadd_ps(_mm256_set1_ps(e1[channel]), x, a1);
+        a2 = _mm256_fmadd_ps(_mm256_set1_ps(e2[channel]), x, a2);
+        a3 = _mm256_fmadd_ps(_mm256_set1_ps(e3[channel]), x, a3);
+      }
+      _mm256_storeu_ps(hidden_tile.data() + std::size_t(hidden_channel) * 8, gelu(a0));
+      _mm256_storeu_ps(hidden_tile.data() + std::size_t(hidden_channel + 1) * 8, gelu(a1));
+      _mm256_storeu_ps(hidden_tile.data() + std::size_t(hidden_channel + 2) * 8, gelu(a2));
+      _mm256_storeu_ps(hidden_tile.data() + std::size_t(hidden_channel + 3) * 8, gelu(a3));
+    }
+    for (; hidden_channel < hidden; ++hidden_channel) {
+      const float* filter = expand_weights + std::size_t(hidden_channel) * channels;
+      __m256 acc = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel] : 0.F);
+      for (int channel = 0; channel < channels; ++channel) {
+        acc = _mm256_fmadd_ps(_mm256_set1_ps(filter[channel]),
+                              _mm256_loadu_ps(src + std::size_t(channel) * plane + spatial), acc);
+      }
+      _mm256_storeu_ps(hidden_tile.data() + std::size_t(hidden_channel) * 8, gelu(acc));
+    }
+    int channel = 0;
+    for (; channel + 4 <= channels; channel += 4) {
+      const float* p0 = project_weights + std::size_t(channel) * hidden;
+      const float* p1 = p0 + hidden;
+      const float* p2 = p1 + hidden;
+      const float* p3 = p2 + hidden;
+      __m256 a0 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel] : 0.F),
+                                _mm256_loadu_ps(src + std::size_t(channel) * plane + spatial));
+      __m256 a1 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 1] : 0.F),
+                                _mm256_loadu_ps(src + std::size_t(channel + 1) * plane + spatial));
+      __m256 a2 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 2] : 0.F),
+                                _mm256_loadu_ps(src + std::size_t(channel + 2) * plane + spatial));
+      __m256 a3 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 3] : 0.F),
+                                _mm256_loadu_ps(src + std::size_t(channel + 3) * plane + spatial));
+      for (int h = 0; h < hidden; ++h) {
+        const __m256 g = _mm256_loadu_ps(hidden_tile.data() + std::size_t(h) * 8);
+        a0 = _mm256_fmadd_ps(_mm256_set1_ps(p0[h]), g, a0);
+        a1 = _mm256_fmadd_ps(_mm256_set1_ps(p1[h]), g, a1);
+        a2 = _mm256_fmadd_ps(_mm256_set1_ps(p2[h]), g, a2);
+        a3 = _mm256_fmadd_ps(_mm256_set1_ps(p3[h]), g, a3);
+      }
+      _mm256_storeu_ps(dst + std::size_t(channel) * plane + spatial, a0);
+      _mm256_storeu_ps(dst + std::size_t(channel + 1) * plane + spatial, a1);
+      _mm256_storeu_ps(dst + std::size_t(channel + 2) * plane + spatial, a2);
+      _mm256_storeu_ps(dst + std::size_t(channel + 3) * plane + spatial, a3);
+    }
+    for (; channel < channels; ++channel) {
+      const float* filter = project_weights + std::size_t(channel) * hidden;
+      __m256 acc = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel] : 0.F),
+                                 _mm256_loadu_ps(src + std::size_t(channel) * plane + spatial));
+      for (int h = 0; h < hidden; ++h) {
+        acc = _mm256_fmadd_ps(_mm256_set1_ps(filter[h]),
+                              _mm256_loadu_ps(hidden_tile.data() + std::size_t(h) * 8), acc);
+      }
+      _mm256_storeu_ps(dst + std::size_t(channel) * plane + spatial, acc);
+    }
+  }
+  for (; spatial < spatial_end; ++spatial) scalar_at(spatial);
+}
+
 }  // namespace ppocr::detail::kernels

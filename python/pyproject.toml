@@ -5,13 +5,14 @@ build-backend = "scikit_build_core.build"
 [project]
 name = "rapidocr"
 version = "5.0.0a1"
-description = "PP-OCRv6 OCR with the native RapidOCR C++ engine"
+description = "RapidOCR 5, the next major version of rapidocr: PP-OCRv6 with the native engine"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "Apache-2.0"
 authors = [{ name = "SWHL", email = "liekkaskono@163.com" }]
-keywords = ["ocr", "ppocr", "rapidocr"]
+keywords = ["ocr", "ppocr", "ppocrv6", "rapidocr"]
 classifiers = [
+    "Development Status :: 3 - Alpha",
     "Programming Language :: Python :: 3",
     "Programming Language :: C++",
 ]

@@ -114,6 +114,11 @@ void Avx2AveragePool3x2Valid(float* dst, const float* src, int first_plane,
 void Avx2LayerNormAffine(float* dst, const float* src, const float* gamma,
                          const float* beta, std::size_t width, float mean,
                          float denom) noexcept;
+void Avx2ExpandGeluProjectAdd(float* dst, const float* src, const float* expand_weights,
+                              const float* expand_bias, const float* project_weights,
+                              const float* project_bias, int channels, int hidden,
+                              std::size_t plane, std::size_t spatial_begin,
+                              std::size_t spatial_end) noexcept;
 #endif
 
 #if defined(PPOCR_HAS_AVX512_KERNELS)
@@ -1970,6 +1975,293 @@ void Avx512ExpandGeluProjectAdd(float*, const float*, const float*, const float*
                                 std::size_t, std::size_t) noexcept;
 #endif
 
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+float32x4_t NeonExpPs(float32x4_t x) noexcept {
+  const float32x4_t min_x = vdupq_n_f32(-87.F);
+  const float32x4_t max_x = vdupq_n_f32(87.F);
+  const float32x4_t inv_ln2 = vdupq_n_f32(1.4426950408889634F);
+  const float32x4_t ln2 = vdupq_n_f32(0.6931471805599453F);
+  x = vminq_f32(vmaxq_f32(x, min_x), max_x);
+  const float32x4_t n = vrndnq_f32(vmulq_f32(x, inv_ln2));
+  const float32x4_t f = vfmsq_f32(x, n, ln2);
+  float32x4_t p = vfmaq_f32(vdupq_n_f32(1.F / 6.F), f, vdupq_n_f32(1.F / 24.F));
+  p = vfmaq_f32(vdupq_n_f32(.5F), p, f);
+  p = vfmaq_f32(vdupq_n_f32(1.F), p, f);
+  p = vfmaq_f32(vdupq_n_f32(1.F), p, f);
+  const int32x4_t biased = vaddq_s32(vcvtq_s32_f32(n), vdupq_n_s32(127));
+  const int32x4_t bits = vshlq_n_s32(biased, 23);
+  return vmulq_f32(p, vreinterpretq_f32_s32(bits));
+}
+
+float32x4_t NeonErfPs(float32x4_t x) noexcept {
+  const float32x4_t one = vdupq_n_f32(1.F);
+  const float32x4_t half = vdupq_n_f32(.5F);
+  const uint32x4_t sign_mask = vdupq_n_u32(0x80000000u);
+  const float32x4_t sign = vreinterpretq_f32_u32(vorrq_u32(
+      vandq_u32(vreinterpretq_u32_f32(x), sign_mask), vreinterpretq_u32_f32(one)));
+  const float32x4_t ax = vabsq_f32(x);
+  const float32x4_t t = vdivq_f32(one, vfmaq_f32(one, half, ax));
+  float32x4_t poly = vfmaq_f32(vdupq_n_f32(-.82215223F), t, vdupq_n_f32(.17087277F));
+  poly = vfmaq_f32(vdupq_n_f32(1.48851587F), poly, t);
+  poly = vfmaq_f32(vdupq_n_f32(-1.13520398F), poly, t);
+  poly = vfmaq_f32(vdupq_n_f32(.27886807F), poly, t);
+  poly = vfmaq_f32(vdupq_n_f32(-.18628806F), poly, t);
+  poly = vfmaq_f32(vdupq_n_f32(.09678418F), poly, t);
+  poly = vfmaq_f32(vdupq_n_f32(.37409196F), poly, t);
+  poly = vfmaq_f32(vdupq_n_f32(1.00002368F), poly, t);
+  poly = vfmaq_f32(vdupq_n_f32(-1.26551223F), poly, t);
+  const float32x4_t e = NeonExpPs(vfmaq_f32(poly, vmulq_f32(ax, ax), vdupq_n_f32(-1.F)));
+  return vmulq_f32(sign, vfmsq_f32(one, t, e));
+}
+
+float32x4_t NeonGeluPs(float32x4_t x) noexcept {
+  const float32x4_t half = vdupq_n_f32(.5F);
+  const float32x4_t one = vdupq_n_f32(1.F);
+  const float32x4_t inv_sqrt2 = vdupq_n_f32(0.7071067811865475244F);
+  return vmulq_f32(half, vmulq_f32(x, vaddq_f32(one, NeonErfPs(vmulq_f32(x, inv_sqrt2)))));
+}
+
+void NeonExpandGeluProjectAdd(float* dst, const float* src, const float* expand_weights,
+                              const float* expand_bias, const float* project_weights,
+                              const float* project_bias, int channels, int hidden,
+                              std::size_t plane, std::size_t spatial_begin,
+                              std::size_t spatial_end) noexcept {
+  if (!dst || !src || !expand_weights || !project_weights || channels <= 0 || hidden <= 0 ||
+      spatial_begin >= spatial_end || spatial_end > plane) {
+    return;
+  }
+  thread_local std::vector<float> hidden_tile;
+  hidden_tile.resize(std::size_t(hidden) * 4);
+  constexpr float inv_sqrt2s = 0.7071067811865475244F;
+  const auto scalar_at = [&](std::size_t spatial) {
+    for (int hidden_channel = 0; hidden_channel < hidden; ++hidden_channel) {
+      float sum = expand_bias ? expand_bias[hidden_channel] : 0.F;
+      const float* filter = expand_weights + std::size_t(hidden_channel) * channels;
+      for (int channel = 0; channel < channels; ++channel) {
+        sum += filter[channel] * src[std::size_t(channel) * plane + spatial];
+      }
+      hidden_tile[static_cast<std::size_t>(hidden_channel)] =
+          sum * .5F * (1.F + std::erf(sum * inv_sqrt2s));
+    }
+    for (int channel = 0; channel < channels; ++channel) {
+      float sum = (project_bias ? project_bias[channel] : 0.F) +
+                  src[std::size_t(channel) * plane + spatial];
+      const float* filter = project_weights + std::size_t(channel) * hidden;
+      for (int hidden_channel = 0; hidden_channel < hidden; ++hidden_channel) {
+        sum += filter[hidden_channel] * hidden_tile[static_cast<std::size_t>(hidden_channel)];
+      }
+      dst[std::size_t(channel) * plane + spatial] = sum;
+    }
+  };
+  std::size_t spatial = spatial_begin;
+  for (; spatial + 4 <= spatial_end; spatial += 4) {
+    int hidden_channel = 0;
+    for (; hidden_channel + 4 <= hidden; hidden_channel += 4) {
+      const float* e0 = expand_weights + std::size_t(hidden_channel) * channels;
+      const float* e1 = e0 + channels;
+      const float* e2 = e1 + channels;
+      const float* e3 = e2 + channels;
+      float32x4_t a0 = vdupq_n_f32(expand_bias ? expand_bias[hidden_channel] : 0.F);
+      float32x4_t a1 = vdupq_n_f32(expand_bias ? expand_bias[hidden_channel + 1] : 0.F);
+      float32x4_t a2 = vdupq_n_f32(expand_bias ? expand_bias[hidden_channel + 2] : 0.F);
+      float32x4_t a3 = vdupq_n_f32(expand_bias ? expand_bias[hidden_channel + 3] : 0.F);
+      for (int channel = 0; channel < channels; ++channel) {
+        const float32x4_t x = vld1q_f32(src + std::size_t(channel) * plane + spatial);
+        a0 = vfmaq_f32(a0, x, vdupq_n_f32(e0[channel]));
+        a1 = vfmaq_f32(a1, x, vdupq_n_f32(e1[channel]));
+        a2 = vfmaq_f32(a2, x, vdupq_n_f32(e2[channel]));
+        a3 = vfmaq_f32(a3, x, vdupq_n_f32(e3[channel]));
+      }
+      vst1q_f32(hidden_tile.data() + std::size_t(hidden_channel) * 4, NeonGeluPs(a0));
+      vst1q_f32(hidden_tile.data() + std::size_t(hidden_channel + 1) * 4, NeonGeluPs(a1));
+      vst1q_f32(hidden_tile.data() + std::size_t(hidden_channel + 2) * 4, NeonGeluPs(a2));
+      vst1q_f32(hidden_tile.data() + std::size_t(hidden_channel + 3) * 4, NeonGeluPs(a3));
+    }
+    for (; hidden_channel < hidden; ++hidden_channel) {
+      const float* filter = expand_weights + std::size_t(hidden_channel) * channels;
+      float32x4_t acc = vdupq_n_f32(expand_bias ? expand_bias[hidden_channel] : 0.F);
+      for (int channel = 0; channel < channels; ++channel) {
+        acc = vfmaq_f32(acc, vld1q_f32(src + std::size_t(channel) * plane + spatial),
+                        vdupq_n_f32(filter[channel]));
+      }
+      vst1q_f32(hidden_tile.data() + std::size_t(hidden_channel) * 4, NeonGeluPs(acc));
+    }
+    int channel = 0;
+    for (; channel + 4 <= channels; channel += 4) {
+      const float* p0 = project_weights + std::size_t(channel) * hidden;
+      const float* p1 = p0 + hidden;
+      const float* p2 = p1 + hidden;
+      const float* p3 = p2 + hidden;
+      float32x4_t a0 = vaddq_f32(vdupq_n_f32(project_bias ? project_bias[channel] : 0.F),
+                                 vld1q_f32(src + std::size_t(channel) * plane + spatial));
+      float32x4_t a1 = vaddq_f32(vdupq_n_f32(project_bias ? project_bias[channel + 1] : 0.F),
+                                 vld1q_f32(src + std::size_t(channel + 1) * plane + spatial));
+      float32x4_t a2 = vaddq_f32(vdupq_n_f32(project_bias ? project_bias[channel + 2] : 0.F),
+                                 vld1q_f32(src + std::size_t(channel + 2) * plane + spatial));
+      float32x4_t a3 = vaddq_f32(vdupq_n_f32(project_bias ? project_bias[channel + 3] : 0.F),
+                                 vld1q_f32(src + std::size_t(channel + 3) * plane + spatial));
+      for (int h = 0; h < hidden; ++h) {
+        const float32x4_t g = vld1q_f32(hidden_tile.data() + std::size_t(h) * 4);
+        a0 = vfmaq_f32(a0, g, vdupq_n_f32(p0[h]));
+        a1 = vfmaq_f32(a1, g, vdupq_n_f32(p1[h]));
+        a2 = vfmaq_f32(a2, g, vdupq_n_f32(p2[h]));
+        a3 = vfmaq_f32(a3, g, vdupq_n_f32(p3[h]));
+      }
+      vst1q_f32(dst + std::size_t(channel) * plane + spatial, a0);
+      vst1q_f32(dst + std::size_t(channel + 1) * plane + spatial, a1);
+      vst1q_f32(dst + std::size_t(channel + 2) * plane + spatial, a2);
+      vst1q_f32(dst + std::size_t(channel + 3) * plane + spatial, a3);
+    }
+    for (; channel < channels; ++channel) {
+      const float* filter = project_weights + std::size_t(channel) * hidden;
+      float32x4_t acc = vaddq_f32(vdupq_n_f32(project_bias ? project_bias[channel] : 0.F),
+                                  vld1q_f32(src + std::size_t(channel) * plane + spatial));
+      for (int h = 0; h < hidden; ++h) {
+        acc = vfmaq_f32(acc, vld1q_f32(hidden_tile.data() + std::size_t(h) * 4),
+                        vdupq_n_f32(filter[h]));
+      }
+      vst1q_f32(dst + std::size_t(channel) * plane + spatial, acc);
+    }
+  }
+  for (; spatial < spatial_end; ++spatial) scalar_at(spatial);
+}
+
+void NeonConv2d(float* dst, const float* src, const float* weights, const float* bias,
+                int first_output, int last_output, int input_channels, int input_h,
+                int input_w, int output_h, int output_w, int kernel_h, int kernel_w,
+                int pad_top, int pad_left) noexcept {
+  const std::size_t input_plane = std::size_t(input_h) * input_w;
+  const std::size_t output_plane = std::size_t(output_h) * output_w;
+  const std::size_t filter_plane = std::size_t(kernel_h) * kernel_w;
+  const int first_y = std::max(0, pad_top);
+  const int first_x = std::max(0, pad_left);
+  const int last_y = std::min(output_h, input_h + pad_top - kernel_h + 1);
+  const int last_x = std::min(output_w, input_w + pad_left - kernel_w + 1);
+  for (int output = first_output; output < last_output; ++output) {
+    float* out = dst + std::size_t(output) * output_plane;
+    const float* filter = weights + std::size_t(output) * input_channels * filter_plane;
+    const float base = bias ? bias[output] : 0.F;
+    for (int y = 0; y < output_h; ++y) {
+      const int iy0 = y - pad_top;
+      int x = 0;
+      const int interior_begin = y >= first_y && y < last_y ? first_x : 0;
+      const int interior_end = y >= first_y && y < last_y ? last_x : 0;
+      for (; x < interior_begin; ++x) {
+        float sum = base;
+        const int ix0 = x - pad_left;
+        for (int input = 0; input < input_channels; ++input) {
+          const float* plane = src + std::size_t(input) * input_plane;
+          const float* kernel = filter + std::size_t(input) * filter_plane;
+          for (int ky = 0; ky < kernel_h; ++ky) {
+            const int iy = iy0 + ky;
+            if (iy < 0 || iy >= input_h) continue;
+            for (int kx = 0; kx < kernel_w; ++kx) {
+              const int ix = ix0 + kx;
+              if (ix >= 0 && ix < input_w) sum += plane[std::size_t(iy) * input_w + ix] * kernel[ky * kernel_w + kx];
+            }
+          }
+        }
+        out[std::size_t(y) * output_w + x] = sum;
+      }
+      for (; x + 4 <= interior_end; x += 4) {
+        float32x4_t sum = vdupq_n_f32(base);
+        for (int input = 0; input < input_channels; ++input) {
+          const float* plane = src + std::size_t(input) * input_plane + std::size_t(iy0) * input_w + x - pad_left;
+          const float* kernel = filter + std::size_t(input) * filter_plane;
+          for (int ky = 0; ky < kernel_h; ++ky) {
+            const float* row = plane + std::size_t(ky) * input_w;
+            const float* krow = kernel + ky * kernel_w;
+            for (int kx = 0; kx < kernel_w; ++kx) {
+              sum = vfmaq_f32(sum, vld1q_f32(row + kx), vdupq_n_f32(krow[kx]));
+            }
+          }
+        }
+        vst1q_f32(out + std::size_t(y) * output_w + x, sum);
+      }
+      for (; x < output_w; ++x) {
+        float sum = base;
+        const int ix0 = x - pad_left;
+        for (int input = 0; input < input_channels; ++input) {
+          const float* plane = src + std::size_t(input) * input_plane;
+          const float* kernel = filter + std::size_t(input) * filter_plane;
+          for (int ky = 0; ky < kernel_h; ++ky) {
+            const int iy = iy0 + ky;
+            if (iy < 0 || iy >= input_h) continue;
+            for (int kx = 0; kx < kernel_w; ++kx) {
+              const int ix = ix0 + kx;
+              if (ix >= 0 && ix < input_w) sum += plane[std::size_t(iy) * input_w + ix] * kernel[ky * kernel_w + kx];
+            }
+          }
+        }
+        out[std::size_t(y) * output_w + x] = sum;
+      }
+    }
+  }
+}
+
+void NeonDepthwiseConv(float* dst, const float* src, const float* weights, const float* bias,
+                       int first_channel, int last_channel, int input_h, int input_w,
+                       int output_h, int output_w, int kernel_h, int kernel_w, int pad_top,
+                       int pad_left) noexcept {
+  const std::size_t input_plane = std::size_t(input_h) * input_w;
+  const std::size_t output_plane = std::size_t(output_h) * output_w;
+  const std::size_t kernel_plane = std::size_t(kernel_h) * kernel_w;
+  const int first_y = std::max(0, pad_top);
+  const int first_x = std::max(0, pad_left);
+  const int last_y = std::min(output_h, input_h + pad_top - kernel_h + 1);
+  const int last_x = std::min(output_w, input_w + pad_left - kernel_w + 1);
+  for (int channel = first_channel; channel < last_channel; ++channel) {
+    const float* in = src + std::size_t(channel) * input_plane;
+    const float* filter = weights + std::size_t(channel) * kernel_plane;
+    float* out = dst + std::size_t(channel) * output_plane;
+    const float base = bias ? bias[channel] : 0.F;
+    for (int y = 0; y < output_h; ++y) {
+      const int iy0 = y - pad_top;
+      int x = 0;
+      const int interior_begin = y >= first_y && y < last_y ? first_x : 0;
+      const int interior_end = y >= first_y && y < last_y ? last_x : 0;
+      for (; x < interior_begin; ++x) {
+        float sum = base;
+        const int ix0 = x - pad_left;
+        for (int ky = 0; ky < kernel_h; ++ky) {
+          const int iy = iy0 + ky;
+          if (iy < 0 || iy >= input_h) continue;
+          for (int kx = 0; kx < kernel_w; ++kx) {
+            const int ix = ix0 + kx;
+            if (ix >= 0 && ix < input_w) sum += in[std::size_t(iy) * input_w + ix] * filter[ky * kernel_w + kx];
+          }
+        }
+        out[std::size_t(y) * output_w + x] = sum;
+      }
+      for (; x + 4 <= interior_end; x += 4) {
+        float32x4_t sum = vdupq_n_f32(base);
+        for (int ky = 0; ky < kernel_h; ++ky) {
+          const float* row = in + std::size_t(iy0 + ky) * input_w + x - pad_left;
+          const float* kernel = filter + ky * kernel_w;
+          for (int kx = 0; kx < kernel_w; ++kx) {
+            sum = vfmaq_f32(sum, vld1q_f32(row + kx), vdupq_n_f32(kernel[kx]));
+          }
+        }
+        vst1q_f32(out + std::size_t(y) * output_w + x, sum);
+      }
+      for (; x < output_w; ++x) {
+        float sum = base;
+        const int ix0 = x - pad_left;
+        for (int ky = 0; ky < kernel_h; ++ky) {
+          const int iy = iy0 + ky;
+          if (iy < 0 || iy >= input_h) continue;
+          for (int kx = 0; kx < kernel_w; ++kx) {
+            const int ix = ix0 + kx;
+            if (ix >= 0 && ix < input_w) sum += in[std::size_t(iy) * input_w + ix] * filter[ky * kernel_w + kx];
+          }
+        }
+        out[std::size_t(y) * output_w + x] = sum;
+      }
+    }
+  }
+}
+#endif
+
 void ExpandGeluProjectAdd(float* dst, const float* src, const float* expand_weights,
                           const float* expand_bias, const float* project_weights,
                           const float* project_bias, int channels, int hidden,
@@ -1985,6 +2277,38 @@ void ExpandGeluProjectAdd(float* dst, const float* src, const float* expand_weig
       const std::size_t end = std::min(plane, std::size_t(last) * 16);
       Avx512ExpandGeluProjectAdd(dst, src, expand_weights, expand_bias, project_weights,
                                  project_bias, channels, hidden, plane, begin, end);
+    };
+    if (work >= std::int64_t{3000000} && tiles > 2) ParallelFor(tiles, body);
+    else body(0, tiles);
+    return;
+  }
+#endif
+#if defined(PPOCR_HAS_AVX2_KERNELS)
+  static const bool avx2_expand = std::getenv("PPOCR_DISABLE_AVX2_EXPAND_GELU") == nullptr;
+  if (HasAvx2() && avx2_expand) {
+    const int tiles = static_cast<int>((plane + 7) / 8);
+    const auto work = std::int64_t(channels) * hidden * static_cast<std::int64_t>(plane);
+    const auto body = [&](int first, int last) {
+      const std::size_t begin = std::size_t(first) * 8;
+      const std::size_t end = std::min(plane, std::size_t(last) * 8);
+      Avx2ExpandGeluProjectAdd(dst, src, expand_weights, expand_bias, project_weights,
+                               project_bias, channels, hidden, plane, begin, end);
+    };
+    if (work >= std::int64_t{3000000} && tiles > 2) ParallelFor(tiles, body);
+    else body(0, tiles);
+    return;
+  }
+#endif
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+  static const bool neon_expand = std::getenv("PPOCR_DISABLE_NEON_EXPAND_GELU") == nullptr;
+  if (HasNeon() && neon_expand) {
+    const int tiles = static_cast<int>((plane + 3) / 4);
+    const auto work = std::int64_t(channels) * hidden * static_cast<std::int64_t>(plane);
+    const auto body = [&](int first, int last) {
+      const std::size_t begin = std::size_t(first) * 4;
+      const std::size_t end = std::min(plane, std::size_t(last) * 4);
+      NeonExpandGeluProjectAdd(dst, src, expand_weights, expand_bias, project_weights,
+                               project_bias, channels, hidden, plane, begin, end);
     };
     if (work >= std::int64_t{3000000} && tiles > 2) ParallelFor(tiles, body);
     else body(0, tiles);
@@ -3076,6 +3400,23 @@ void Conv2d(float* dst, const float* src, const float* weights, const float* bia
       }
     };
     if (parallel) ParallelFor(output_channels, avx); else avx(0, output_channels);
+    return;
+  }
+#endif
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+  static const bool neon_conv = std::getenv("PPOCR_DISABLE_NEON_CONV") == nullptr;
+  if (HasNeon() && neon_conv && stride_h == 1 && stride_w == 1 && simd_kernel) {
+    const auto neon = [&](int first, int last) {
+      NeonConv2d(dst, src, weights, bias, first, last, input_channels, input_h, input_w,
+                 output_h, output_w, kernel_h, kernel_w, pad_top, pad_left);
+      if (relu) {
+        for (int output = first; output < last; ++output) {
+          float* values = dst + std::size_t(output) * out_plane;
+          Relu(values, values, out_plane);
+        }
+      }
+    };
+    if (parallel) ParallelFor(output_channels, neon); else neon(0, output_channels);
     return;
   }
 #endif
@@ -4232,6 +4573,19 @@ void DepthwiseConv(float* dst, const float* src, const float* weights,
                         output_h, output_w, kernel_h, kernel_w, pad_top, pad_left);
     };
     if (parallel) ParallelFor(channels, avx); else avx(0, channels);
+    return;
+  }
+#endif
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+  static const bool neon_dw = std::getenv("PPOCR_DISABLE_NEON_DW") == nullptr;
+  if (HasNeon() && neon_dw && stride_h == 1 && stride_w == 1 &&
+      (kernel_h == 3 || kernel_h == 5 || kernel_h == 7 || kernel_h == 9) &&
+      kernel_h == kernel_w) {
+    const auto neon = [&](int first, int last) {
+      NeonDepthwiseConv(dst, src, weights, bias, first, last, input_h, input_w, output_h,
+                        output_w, kernel_h, kernel_w, pad_top, pad_left);
+    };
+    if (parallel) ParallelFor(channels, neon); else neon(0, channels);
     return;
   }
 #endif

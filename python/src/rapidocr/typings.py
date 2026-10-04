@@ -1,6 +1,7 @@
-"""Enums mirrored from the RapidOCR Python package on ``main``.
+"""Enums carried forward from rapidocr 3.x on ``main``.
 
-``EngineType.ONNXRUNTIME`` selects this branch's built-in ONNX interpreter.
+This module is part of rapidocr 5. ``EngineType.ONNXRUNTIME`` selects this
+line's built-in ONNX interpreter.
 The other engine names are accepted by the type system so existing imports
 keep working; constructing an engine with them raises ``NotImplementedError``.
 """

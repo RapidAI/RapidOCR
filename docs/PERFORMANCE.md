@@ -37,6 +37,13 @@ On AArch64 the GEMM used to reload and store C on every K step (four-wide
 NEON). It now keeps a 2×16 register tile, which is the same idea as the x86
 kernels. `PPOCR_DISABLE_NEON_GEMM_BLOCK` restores the scalar loop.
 
+The recognizer MLP (`ExpandGeluProjectAdd`) was scalar unless the CPU had
+AVX-512. AVX2 now runs an 8-wide FMA tile, and AArch64 runs a 4-wide NEON
+tile. Unit-stride convolutions and depthwise layers on AArch64 use a 4-wide
+interior as well. `PPOCR_DISABLE_AVX2_EXPAND_GELU`,
+`PPOCR_DISABLE_NEON_EXPAND_GELU`, `PPOCR_DISABLE_NEON_CONV`, and
+`PPOCR_DISABLE_NEON_DW` restore the previous loops.
+
 `tools/bench_cpu.sh` and `ppocr_isa_bench` print the active ISA and time a
 32×256×256 GEMM, the matching accumulate, a 960×544 identity RGB normalize,
 and optionally a full OCR.
@@ -70,15 +77,27 @@ of a 960×544 page was about 0.6–0.7 ms on every path; it is not the bottlenec
 | ISA | mean |
 | --- | --- |
 | AVX-512 | 17.3 ms |
-| AVX2 (`PPOCR_FORCE_ISA=avx2`) | 136 ms |
+| AVX2, before this change (`PPOCR_FORCE_ISA=avx2`) | 136–142 ms |
+| AVX2, after the expand-GELU kernel | 31.0 ms |
 | scalar | 233 ms |
 
-Turning the two-row accumulate off changed this page by about 1 ms, inside
-the run-to-run spread. The page is convolution-bound. The accumulate win
-shows up on the GEMM shape above, which is the attention/GEMM kernel, not on
-this one short line. The large AVX-512 versus AVX2 gap is the existing
-AVX-512 convolution kernels, selected at runtime; it is not a claim that the
-two-row accumulate produced an 8× end-to-end speedup.
+The spatial 3×3 and 2×2 AVX2 convolution kernels were already vectorized.
+A per-op profile of this page showed they were only a few milliseconds.
+About 80% of the AVX2 time was `ExpandGeluProjectAdd`, the recognizer MLP
+(1×1 expand, GELU, 1×1 project, residual add), which fell through to a
+scalar triple loop whenever AVX-512 was off. That kernel is now an 8-wide
+AVX2+FMA tile using the same `ErfPs` approximation as `Avx2ExactGelu`, split
+across the persistent thread pool. `PPOCR_DISABLE_AVX2_EXPAND_GELU=1`
+restores the scalar loop (142 ms, 1 warmup + 3 runs). The new kernel on
+the same binary is 31.0 ms mean over 1 warmup + 5 runs (29–34 ms).
+
+Decoded text, score, and box on this image match the AVX-512 and scalar
+runs: `Hello RapidOCR 123`, confidence 0.9766, box `23,73,672,86`.
+
+Turning the two-row accumulate off still changes this page by about 1 ms.
+The accumulate win shows up on the GEMM shape above. The remaining AVX-512
+versus AVX2 gap (17.3 ms versus 31 ms) is the wider AVX-512 tiles on
+convolution and this MLP, not an 8× end-to-end claim.
 
 ### AArch64 NEON
 
@@ -96,6 +115,29 @@ No ARM CPU was available. `src/kernels.cpp` cross-compiles with
   than NEON, so the scalar number is not a wall-clock result for a Cortex or
   Neoverse core.
 
-qemu-user is not cycle-accurate. It does execute the NEON instructions, and
-the NEON-versus-NEON ratio matches the drop in C-matrix traffic. Full OCR was
-not run under qemu.
+The same cross-compile covers the convolution and MLP paths that were scalar
+on AArch64. `NeonConv2d` and `NeonDepthwiseConv` are 4-wide FMA interiors for
+unit-stride 2/3/5/7 convolutions and 3/5/7/9 depthwise layers.
+`NeonExpandGeluProjectAdd` is the 4-wide form of the MLP kernel above, with
+the same erf polynomial as AVX2. `PPOCR_DISABLE_NEON_CONV`,
+`PPOCR_DISABLE_NEON_DW`, and `PPOCR_DISABLE_NEON_EXPAND_GELU` restore the
+scalar loops.
+
+Under `qemu-aarch64-static` (not cycle-accurate), in-tree kernels versus
+those scalar fallbacks:
+
+| Kernel | NEON | scalar fallback |
+| --- | --- | --- |
+| Expand-GELU 32×64, plane 1536 | 16.3 ms | 58.2 ms |
+| 3×3 stride-1 conv, 8→8, 18×20, pad 1 | 1.70 ms | 2.09 ms |
+| 5×5 depthwise, 8 channels, 18×20, pad 2 | 0.48 ms | 0.82 ms |
+
+Convolution and depthwise sums matched the scalar fallback exactly
+(`1008.004807` and `1007.901022`). Expand-GELU versus a `std::erf` reference
+had max abs error `2.98e-6` (the scalar fallback itself was `1.19e-7` under
+`-ffast-math`). Full OCR was not run under qemu.
+
+qemu-user is not cycle-accurate. It does execute the NEON instructions. The
+GEMM NEON-versus-NEON ratio matches the drop in C-matrix traffic. The small
+convolution shapes above are too short for qemu to show a large ratio; the
+sums are the correctness check.

@@ -6,10 +6,12 @@ Paddle Inference, OpenCV, or Python.
 
 The library is also a C and C++ API (`include/ppocr/ppocr.hpp`,
 `include/ppocr/ppocr.h`) with static and shared builds, CMake package
-exports, and a Python package whose `RapidOCR` class follows the interface
-on `main`. Usage, the stable C ABI, and the CPU dispatch rules are in
-[`docs/API.md`](docs/API.md). Measured AVX2 / AVX-512 / NEON notes are in
-[`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
+exports, and the Python package `rapidocr` 5.0.0a1. That package is the
+next major version of RapidOCR: the import name is still `rapidocr`, and
+the `RapidOCR` call shape follows the 3.x API on `main`. Usage, the stable
+C ABI, and the breaks versus 3.x are in [`docs/API.md`](docs/API.md) and
+[`python/README.md`](python/README.md). Measured AVX2 / AVX-512 / NEON notes
+are in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
 
 The embedded executor is intentionally not a general ONNX Runtime.  It only
 implements the operator set exercised by the official PP-OCRv6 tiny/small/

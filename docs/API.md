@@ -81,7 +81,12 @@ Exceptions use `std::runtime_error`. The C ABI catches them.
 
 ## Python package
 
-The package name and call shape follow `main`:
+This is **rapidocr 5.0.0a1**, the next major version of the PyPI package
+`rapidocr`. The import name stays `rapidocr`. The 3.x line (through tag
+`v3.9.2`) remains on `main`. There is no 4.x tag in this repository. A
+migration note is in `python/README.md`.
+
+The call shape follows 3.x:
 
 ```python
 from rapidocr import RapidOCR, EngineType, ModelType, OCRVersion
