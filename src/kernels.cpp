@@ -207,6 +207,23 @@ void Avx512LayerNormAffine(float*, const float*, const float*, const float*,
 
 namespace {
 
+enum class ForcedIsa { automatic, scalar, avx2, avx512, neon };
+
+ForcedIsa ForcedIsaSelection() noexcept {
+  // Read once. The variable selects a legal path only: requesting AVX-512 on
+  // a CPU that failed the CPUID/XCR0 check below stays on AVX2 or scalar.
+  static const ForcedIsa forced = [] {
+    const char* text = std::getenv("PPOCR_FORCE_ISA");
+    if (!text || !*text) return ForcedIsa::automatic;
+    if (std::strcmp(text, "scalar") == 0) return ForcedIsa::scalar;
+    if (std::strcmp(text, "avx2") == 0) return ForcedIsa::avx2;
+    if (std::strcmp(text, "avx512") == 0) return ForcedIsa::avx512;
+    if (std::strcmp(text, "neon") == 0) return ForcedIsa::neon;
+    return ForcedIsa::automatic;
+  }();
+  return forced;
+}
+
 bool HasAvx2() noexcept {
 #if defined(PPOCR_HAS_AVX2_KERNELS)
   // ISA availability and OS XSAVE state are process-invariant. PP-OCR's
@@ -224,7 +241,9 @@ bool HasAvx2() noexcept {
   return false;
 #endif
   }();
-  return available;
+  if (!available) return false;
+  const ForcedIsa forced = ForcedIsaSelection();
+  return forced != ForcedIsa::scalar && forced != ForcedIsa::neon;
 #else
   return false;
 #endif
@@ -234,20 +253,38 @@ bool HasAvx512() noexcept {
 #if defined(PPOCR_HAS_AVX512_KERNELS)
   // Allow a deployment to opt out while preserving the same binary and the
   // AVX2/scalar fallback.  This is useful on CPUs where AVX-512 downclocks.
+  // PPOCR_FORCE_ISA=avx2/scalar/neon also refuses the AVX-512 object file.
+  // The hardware check stays first so an AVX2-only machine never enters it,
+  // even if PPOCR_FORCE_ISA=avx512 is set.
   static const bool available = [] {
   if (std::getenv("PPOCR_DISABLE_AVX512") != nullptr) return false;
 #if defined(_MSC_VER)
   int info[4]{}; __cpuidex(info, 1, 0);
   if ((info[2] & (1 << 27)) == 0 || (info[2] & (1 << 28)) == 0) return false;
   if ((_xgetbv(0) & 0xe6) != 0xe6) return false;
-  __cpuidex(info, 7, 0); return (info[1] & (1 << 16)) != 0 && (info[1] & (1 << 5)) != 0;
+  __cpuidex(info, 7, 0);
+  const unsigned ebx = static_cast<unsigned>(info[1]);
+  const bool avx2 = (ebx & (1u << 5)) != 0;
+  const bool avx512f = (ebx & (1u << 16)) != 0;
+  const bool avx512dq = (ebx & (1u << 17)) != 0;
+  const bool avx512bw = (ebx & (1u << 30)) != 0;
+  const bool avx512vl = (ebx & (1u << 31)) != 0;
+  const bool bmi = (ebx & (1u << 3)) != 0;
+  const bool bmi2 = (ebx & (1u << 8)) != 0;
+  return avx512f && avx512dq && avx512bw && avx512vl && avx2 && bmi && bmi2;
 #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
-  return __builtin_cpu_supports("avx512f") && __builtin_cpu_supports("avx2") && __builtin_cpu_supports("fma");
+  return __builtin_cpu_supports("avx512f") && __builtin_cpu_supports("avx512dq") &&
+         __builtin_cpu_supports("avx512bw") && __builtin_cpu_supports("avx512vl") &&
+         __builtin_cpu_supports("avx2") && __builtin_cpu_supports("fma") &&
+         __builtin_cpu_supports("bmi") && __builtin_cpu_supports("bmi2");
 #else
   return false;
 #endif
   }();
-  return available;
+  if (!available) return false;
+  const ForcedIsa forced = ForcedIsaSelection();
+  return forced != ForcedIsa::scalar && forced != ForcedIsa::avx2 &&
+         forced != ForcedIsa::neon;
 #else
   return false;
 #endif
@@ -492,9 +529,11 @@ bool UseAvx512ConvWideTile8(int output_channels, int input_channels,
 #endif
 }
 
-constexpr bool HasNeon() noexcept {
+bool HasNeon() noexcept {
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
-  return true;
+  const ForcedIsa forced = ForcedIsaSelection();
+  return forced != ForcedIsa::scalar && forced != ForcedIsa::avx2 &&
+         forced != ForcedIsa::avx512;
 #else
   return false;
 #endif
@@ -691,47 +730,241 @@ void ParallelFor(int count, Fn&& fn) {
   ParallelExecutor().Run(count, std::forward<Fn>(fn));
 }
 
-void ScalarOrNeonGemmRows(float* dst, const float* a, const float* b, const float* bias,
-                          int first_row, int last_row, int cols, int depth) noexcept {
+void ScalarGemmRows(float* dst, const float* a, const float* b, const float* bias,
+                    int first_row, int last_row, int cols, int depth) noexcept {
   for (int row = first_row; row < last_row; ++row) {
     float* out = dst + std::size_t(row) * cols;
-    // Bias is a column vector shared by every row.  The previous scalar/NEON
-    // fallback accidentally broadcast `bias[row]`, which is both incorrect
-    // for ARM deployments and prevents this path from being a valid oracle
-    // for the x86 SIMD implementations.
+    // Bias is a column vector shared by every row.
     if (bias) std::copy_n(bias, cols, out);
     else std::fill_n(out, cols, 0.F);
     const float* lhs = a + std::size_t(row) * depth;
     for (int k = 0; k < depth; ++k) {
-      const float alpha = lhs[k]; const float* rhs = b + std::size_t(k) * cols;
-      int col = 0;
-#if defined(__ARM_NEON) || defined(__ARM_NEON__)
-      if (HasNeon()) { const auto scale = vdupq_n_f32(alpha); for (; col + 4 <= cols; col += 4)
-        vst1q_f32(out + col, vmlaq_f32(vld1q_f32(out + col), scale, vld1q_f32(rhs + col))); }
-#endif
-      for (; col < cols; ++col) out[col] += alpha * rhs[col];
+      const float alpha = lhs[k];
+      const float* rhs = b + std::size_t(k) * cols;
+      for (int col = 0; col < cols; ++col) out[col] += alpha * rhs[col];
     }
   }
 }
 
+void ScalarGemmAccumulateRows(float* dst, const float* a, const float* b,
+                              int first_row, int last_row, int cols, int depth) noexcept {
+  for (int row = first_row; row < last_row; ++row) {
+    float* out = dst + std::size_t(row) * cols;
+    const float* lhs = a + std::size_t(row) * depth;
+    for (int k = 0; k < depth; ++k) {
+      const float alpha = lhs[k];
+      const float* rhs = b + std::size_t(k) * cols;
+      for (int col = 0; col < cols; ++col) out[col] += alpha * rhs[col];
+    }
+  }
+}
+
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+// Register-blocked NEON GEMM. The previous kernel reloaded and stored C on
+// every K, which is memory-bound for the recognizer vocabulary GEMM. This
+// keeps a 2x16 accumulator tile in q registers and applies the same vmla
+// order per output element. PPOCR_DISABLE_NEON_GEMM_BLOCK falls back to
+// ScalarGemmRows for A/B.
+bool NeonGemmBlocked() noexcept {
+  static const bool enabled = std::getenv("PPOCR_DISABLE_NEON_GEMM_BLOCK") == nullptr;
+  return enabled;
+}
+
+void NeonGemmRows(float* dst, const float* a, const float* b, const float* bias,
+                  int first_row, int last_row, int cols, int depth) noexcept {
+  int row = first_row;
+  for (; row + 1 < last_row; row += 2) {
+    float* out0 = dst + std::size_t(row) * cols;
+    float* out1 = out0 + cols;
+    const float* left0 = a + std::size_t(row) * depth;
+    const float* left1 = left0 + depth;
+    int col = 0;
+    for (; col + 16 <= cols; col += 16) {
+      float32x4_t a0 = bias ? vld1q_f32(bias + col) : vdupq_n_f32(0);
+      float32x4_t a1 = bias ? vld1q_f32(bias + col + 4) : vdupq_n_f32(0);
+      float32x4_t a2 = bias ? vld1q_f32(bias + col + 8) : vdupq_n_f32(0);
+      float32x4_t a3 = bias ? vld1q_f32(bias + col + 12) : vdupq_n_f32(0);
+      float32x4_t b0 = a0, b1 = a1, b2 = a2, b3 = a3;
+      for (int k = 0; k < depth; ++k) {
+        const float32x4_t l0 = vdupq_n_f32(left0[k]);
+        const float32x4_t l1 = vdupq_n_f32(left1[k]);
+        const float* right = b + std::size_t(k) * cols + col;
+        const float32x4_t r0 = vld1q_f32(right);
+        const float32x4_t r1 = vld1q_f32(right + 4);
+        const float32x4_t r2 = vld1q_f32(right + 8);
+        const float32x4_t r3 = vld1q_f32(right + 12);
+        a0 = vmlaq_f32(a0, l0, r0); b0 = vmlaq_f32(b0, l1, r0);
+        a1 = vmlaq_f32(a1, l0, r1); b1 = vmlaq_f32(b1, l1, r1);
+        a2 = vmlaq_f32(a2, l0, r2); b2 = vmlaq_f32(b2, l1, r2);
+        a3 = vmlaq_f32(a3, l0, r3); b3 = vmlaq_f32(b3, l1, r3);
+      }
+      vst1q_f32(out0 + col, a0); vst1q_f32(out0 + col + 4, a1);
+      vst1q_f32(out0 + col + 8, a2); vst1q_f32(out0 + col + 12, a3);
+      vst1q_f32(out1 + col, b0); vst1q_f32(out1 + col + 4, b1);
+      vst1q_f32(out1 + col + 8, b2); vst1q_f32(out1 + col + 12, b3);
+    }
+    for (; col < cols; ++col) {
+      float v0 = bias ? bias[col] : 0.F;
+      float v1 = v0;
+      for (int k = 0; k < depth; ++k) {
+        const float weight = b[std::size_t(k) * cols + col];
+        v0 += left0[k] * weight;
+        v1 += left1[k] * weight;
+      }
+      out0[col] = v0;
+      out1[col] = v1;
+    }
+  }
+  for (; row < last_row; ++row) {
+    float* out = dst + std::size_t(row) * cols;
+    const float* left = a + std::size_t(row) * depth;
+    int col = 0;
+    for (; col + 16 <= cols; col += 16) {
+      float32x4_t c0 = bias ? vld1q_f32(bias + col) : vdupq_n_f32(0);
+      float32x4_t c1 = bias ? vld1q_f32(bias + col + 4) : vdupq_n_f32(0);
+      float32x4_t c2 = bias ? vld1q_f32(bias + col + 8) : vdupq_n_f32(0);
+      float32x4_t c3 = bias ? vld1q_f32(bias + col + 12) : vdupq_n_f32(0);
+      for (int k = 0; k < depth; ++k) {
+        const float32x4_t av = vdupq_n_f32(left[k]);
+        const float* right = b + std::size_t(k) * cols + col;
+        c0 = vmlaq_f32(c0, av, vld1q_f32(right));
+        c1 = vmlaq_f32(c1, av, vld1q_f32(right + 4));
+        c2 = vmlaq_f32(c2, av, vld1q_f32(right + 8));
+        c3 = vmlaq_f32(c3, av, vld1q_f32(right + 12));
+      }
+      vst1q_f32(out + col, c0); vst1q_f32(out + col + 4, c1);
+      vst1q_f32(out + col + 8, c2); vst1q_f32(out + col + 12, c3);
+    }
+    for (; col < cols; ++col) {
+      float value = bias ? bias[col] : 0.F;
+      for (int k = 0; k < depth; ++k) value += left[k] * b[std::size_t(k) * cols + col];
+      out[col] = value;
+    }
+  }
+}
+
+void NeonGemmAccumulateRows(float* dst, const float* a, const float* b,
+                            int first_row, int last_row, int cols, int depth) noexcept {
+  int row = first_row;
+  for (; row + 1 < last_row; row += 2) {
+    float* out0 = dst + std::size_t(row) * cols;
+    float* out1 = out0 + cols;
+    const float* left0 = a + std::size_t(row) * depth;
+    const float* left1 = left0 + depth;
+    int col = 0;
+    for (; col + 16 <= cols; col += 16) {
+      float32x4_t a0 = vld1q_f32(out0 + col);
+      float32x4_t a1 = vld1q_f32(out0 + col + 4);
+      float32x4_t a2 = vld1q_f32(out0 + col + 8);
+      float32x4_t a3 = vld1q_f32(out0 + col + 12);
+      float32x4_t b0 = vld1q_f32(out1 + col);
+      float32x4_t b1 = vld1q_f32(out1 + col + 4);
+      float32x4_t b2 = vld1q_f32(out1 + col + 8);
+      float32x4_t b3 = vld1q_f32(out1 + col + 12);
+      for (int k = 0; k < depth; ++k) {
+        const float32x4_t l0 = vdupq_n_f32(left0[k]);
+        const float32x4_t l1 = vdupq_n_f32(left1[k]);
+        const float* right = b + std::size_t(k) * cols + col;
+        const float32x4_t r0 = vld1q_f32(right);
+        const float32x4_t r1 = vld1q_f32(right + 4);
+        const float32x4_t r2 = vld1q_f32(right + 8);
+        const float32x4_t r3 = vld1q_f32(right + 12);
+        a0 = vmlaq_f32(a0, l0, r0); b0 = vmlaq_f32(b0, l1, r0);
+        a1 = vmlaq_f32(a1, l0, r1); b1 = vmlaq_f32(b1, l1, r1);
+        a2 = vmlaq_f32(a2, l0, r2); b2 = vmlaq_f32(b2, l1, r2);
+        a3 = vmlaq_f32(a3, l0, r3); b3 = vmlaq_f32(b3, l1, r3);
+      }
+      vst1q_f32(out0 + col, a0); vst1q_f32(out0 + col + 4, a1);
+      vst1q_f32(out0 + col + 8, a2); vst1q_f32(out0 + col + 12, a3);
+      vst1q_f32(out1 + col, b0); vst1q_f32(out1 + col + 4, b1);
+      vst1q_f32(out1 + col + 8, b2); vst1q_f32(out1 + col + 12, b3);
+    }
+    for (; col < cols; ++col) {
+      float v0 = out0[col];
+      float v1 = out1[col];
+      for (int k = 0; k < depth; ++k) {
+        const float weight = b[std::size_t(k) * cols + col];
+        v0 += left0[k] * weight;
+        v1 += left1[k] * weight;
+      }
+      out0[col] = v0;
+      out1[col] = v1;
+    }
+  }
+  for (; row < last_row; ++row) {
+    float* out = dst + std::size_t(row) * cols;
+    const float* left = a + std::size_t(row) * depth;
+    int col = 0;
+    for (; col + 16 <= cols; col += 16) {
+      float32x4_t c0 = vld1q_f32(out + col);
+      float32x4_t c1 = vld1q_f32(out + col + 4);
+      float32x4_t c2 = vld1q_f32(out + col + 8);
+      float32x4_t c3 = vld1q_f32(out + col + 12);
+      for (int k = 0; k < depth; ++k) {
+        const float32x4_t av = vdupq_n_f32(left[k]);
+        const float* right = b + std::size_t(k) * cols + col;
+        c0 = vmlaq_f32(c0, av, vld1q_f32(right));
+        c1 = vmlaq_f32(c1, av, vld1q_f32(right + 4));
+        c2 = vmlaq_f32(c2, av, vld1q_f32(right + 8));
+        c3 = vmlaq_f32(c3, av, vld1q_f32(right + 12));
+      }
+      vst1q_f32(out + col, c0); vst1q_f32(out + col + 4, c1);
+      vst1q_f32(out + col + 8, c2); vst1q_f32(out + col + 12, c3);
+    }
+    for (; col < cols; ++col) {
+      float value = out[col];
+      for (int k = 0; k < depth; ++k) value += left[k] * b[std::size_t(k) * cols + col];
+      out[col] = value;
+    }
+  }
+}
+#endif
+
+void ScalarOrNeonGemmRows(float* dst, const float* a, const float* b, const float* bias,
+                          int first_row, int last_row, int cols, int depth) noexcept {
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+  if (HasNeon() && NeonGemmBlocked()) {
+    NeonGemmRows(dst, a, b, bias, first_row, last_row, cols, depth);
+    return;
+  }
+#endif
+  ScalarGemmRows(dst, a, b, bias, first_row, last_row, cols, depth);
+}
 
 void ScalarOrNeonGemmAccumulateRows(float* dst, const float* a, const float* b,
                                     int first_row, int last_row, int cols, int depth) noexcept {
-  for (int row = first_row; row < last_row; ++row) {
-    float* out = dst + std::size_t(row) * cols; const float* lhs = a + std::size_t(row) * depth;
-    for (int k = 0; k < depth; ++k) {
-      const float alpha = lhs[k]; const float* rhs = b + std::size_t(k) * cols;
-      int col = 0;
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
-      if (HasNeon()) { const auto scale = vdupq_n_f32(alpha); for (; col + 4 <= cols; col += 4)
-        vst1q_f32(out + col, vmlaq_f32(vld1q_f32(out + col), scale, vld1q_f32(rhs + col))); }
-#endif
-      for (; col < cols; ++col) out[col] += alpha * rhs[col];
-    }
+  if (HasNeon() && NeonGemmBlocked()) {
+    NeonGemmAccumulateRows(dst, a, b, first_row, last_row, cols, depth);
+    return;
   }
+#endif
+  ScalarGemmAccumulateRows(dst, a, b, first_row, last_row, cols, depth);
 }
 
 }  // namespace
+
+IsaDispatch QueryIsa() noexcept {
+  IsaDispatch info{};
+#if defined(PPOCR_HAS_AVX2_KERNELS)
+  info.avx2_compiled = true;
+#endif
+#if defined(PPOCR_HAS_AVX512_KERNELS)
+  info.avx512_compiled = true;
+#endif
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+  info.neon_compiled = true;
+#endif
+  info.avx2 = HasAvx2();
+  info.avx512 = HasAvx512();
+  info.neon = HasNeon();
+  info.threads = RequestedParallelism();
+  if (info.avx512) info.active = "avx512";
+  else if (info.avx2) info.active = "avx2";
+  else if (info.neon) info.active = "neon";
+  else info.active = "scalar";
+  return info;
+}
 
 void ParallelForRange(int count, const std::function<void(int, int)>& fn) {
   ParallelFor(count, fn);
@@ -1117,7 +1350,7 @@ void NearestResize2xAdd(float* dst, const float* src, const float* residual,
   const std::size_t input_plane = std::size_t(input_height) * input_width;
   const std::size_t output_plane = input_plane * 4;
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
-  if (simd_enabled) if constexpr (HasNeon()) {
+  if (simd_enabled && HasNeon()) {
     for (int plane = 0; plane < batches * channels; ++plane) {
       const float* input = src + std::size_t(plane) * input_plane;
       const float* add = residual + std::size_t(plane) * output_plane;

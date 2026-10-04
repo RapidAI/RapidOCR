@@ -1552,6 +1552,19 @@ std::vector<std::vector<Box>> DetectGpuOnlyBatch(
   return result;
 }
 BackendInfo QueryBackendInfo() { return detail::QueryVulkanBackendInfo(); }
+CpuInfo QueryCpuInfo() {
+  const auto isa = detail::kernels::QueryIsa();
+  CpuInfo info;
+  info.avx2_compiled = isa.avx2_compiled;
+  info.avx512_compiled = isa.avx512_compiled;
+  info.neon_compiled = isa.neon_compiled;
+  info.avx2 = isa.avx2;
+  info.avx512 = isa.avx512;
+  info.neon = isa.neon;
+  info.active_isa = isa.active ? isa.active : "scalar";
+  info.threads = isa.threads;
+  return info;
+}
 OCR::OCR(const std::string& det_model,const std::string& rec_model,std::string dictionary_path,Options options) {
   impl_=std::make_unique<Impl>(det_model,rec_model,options);
   if (options.backend == Backend::gpu_only &&
@@ -1562,6 +1575,17 @@ OCR::OCR(const std::string& det_model,const std::string& rec_model,std::string d
   impl_->dict=ReadDict(dictionary_path);
 }
 OCR::~OCR()=default;OCR::OCR(OCR&&) noexcept=default;OCR& OCR::operator=(OCR&&) noexcept=default;
+void OCR::SetDetectionThresholds(float det_threshold, float det_box_threshold,
+                                 float det_unclip_ratio) {
+  if (!(det_threshold > 0.F && det_threshold < 1.F) ||
+      !(det_box_threshold > 0.F && det_box_threshold < 1.F) ||
+      !(det_unclip_ratio > 0.F)) {
+    Fail("detection thresholds out of range");
+  }
+  impl_->opt.det_threshold = det_threshold;
+  impl_->opt.det_box_threshold = det_box_threshold;
+  impl_->opt.det_unclip_ratio = det_unclip_ratio;
+}
 std::vector<Result> OCR::Recognize(const Image& image) const {
   if(image.empty()) Fail("invalid RGB image");
   if(impl_->det.outputs().empty()) Fail("detector has no output");

@@ -379,4 +379,19 @@ void GemmCtcTop1(int* indices, float* probabilities, const float* left,
 void CtcTop1Scalar(int* indices, float* probabilities, const float* logits,
                    std::size_t rows, int steps, int vocab) noexcept;
 
+// Runtime ISA actually selected. `active` is "avx512", "avx2", "neon", or
+// "scalar". Hardware bits are true only when that object file may be entered.
+struct IsaDispatch {
+  bool avx2_compiled{};
+  bool avx512_compiled{};
+  bool neon_compiled{};
+  bool avx2{};
+  bool avx512{};
+  bool neon{};
+  const char* active{"scalar"};
+  int threads{};
+};
+
+[[nodiscard]] IsaDispatch QueryIsa() noexcept;
+
 }  // namespace ppocr::detail::kernels

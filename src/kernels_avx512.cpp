@@ -2030,7 +2030,71 @@ void Avx512GemmRows(float* dst, const float* a, const float* b, const float* bia
 
 void Avx512GemmAccumulateRows(float* dst, const float* a, const float* b,
                               int first_row, int last_row, int cols, int depth) noexcept {
-  for (int row = first_row; row < last_row; ++row) {
+  // Pair rows so each immutable B vector feeds two accumulators. Each row
+  // still applies K in ascending order, matching the one-row FMA sequence.
+  // PPOCR_DISABLE_AVX512_GEMM_ACC2 restores the one-row kernel.
+  static const bool pair_rows =
+      std::getenv("PPOCR_DISABLE_AVX512_GEMM_ACC2") == nullptr;
+  int row = first_row;
+  if (pair_rows) {
+    for (; row + 1 < last_row; row += 2) {
+      float* out0 = dst + std::size_t(row) * cols;
+      float* out1 = out0 + cols;
+      const float* left0 = a + std::size_t(row) * depth;
+      const float* left1 = left0 + depth;
+      int col = 0;
+      for (; col + 64 <= cols; col += 64) {
+        __m512 a0 = _mm512_loadu_ps(out0 + col);
+        __m512 a1 = _mm512_loadu_ps(out0 + col + 16);
+        __m512 a2 = _mm512_loadu_ps(out0 + col + 32);
+        __m512 a3 = _mm512_loadu_ps(out0 + col + 48);
+        __m512 b0 = _mm512_loadu_ps(out1 + col);
+        __m512 b1 = _mm512_loadu_ps(out1 + col + 16);
+        __m512 b2 = _mm512_loadu_ps(out1 + col + 32);
+        __m512 b3 = _mm512_loadu_ps(out1 + col + 48);
+        for (int k = 0; k < depth; ++k) {
+          const __m512 l0 = _mm512_set1_ps(left0[k]);
+          const __m512 l1 = _mm512_set1_ps(left1[k]);
+          const float* right = b + std::size_t(k) * cols + col;
+          const __m512 r0 = _mm512_loadu_ps(right);
+          const __m512 r1 = _mm512_loadu_ps(right + 16);
+          const __m512 r2 = _mm512_loadu_ps(right + 32);
+          const __m512 r3 = _mm512_loadu_ps(right + 48);
+          a0 = _mm512_fmadd_ps(l0, r0, a0); b0 = _mm512_fmadd_ps(l1, r0, b0);
+          a1 = _mm512_fmadd_ps(l0, r1, a1); b1 = _mm512_fmadd_ps(l1, r1, b1);
+          a2 = _mm512_fmadd_ps(l0, r2, a2); b2 = _mm512_fmadd_ps(l1, r2, b2);
+          a3 = _mm512_fmadd_ps(l0, r3, a3); b3 = _mm512_fmadd_ps(l1, r3, b3);
+        }
+        _mm512_storeu_ps(out0 + col, a0); _mm512_storeu_ps(out0 + col + 16, a1);
+        _mm512_storeu_ps(out0 + col + 32, a2); _mm512_storeu_ps(out0 + col + 48, a3);
+        _mm512_storeu_ps(out1 + col, b0); _mm512_storeu_ps(out1 + col + 16, b1);
+        _mm512_storeu_ps(out1 + col + 32, b2); _mm512_storeu_ps(out1 + col + 48, b3);
+      }
+      for (; col + 16 <= cols; col += 16) {
+        __m512 v0 = _mm512_loadu_ps(out0 + col);
+        __m512 v1 = _mm512_loadu_ps(out1 + col);
+        for (int k = 0; k < depth; ++k) {
+          const __m512 right = _mm512_loadu_ps(b + std::size_t(k) * cols + col);
+          v0 = _mm512_fmadd_ps(_mm512_set1_ps(left0[k]), right, v0);
+          v1 = _mm512_fmadd_ps(_mm512_set1_ps(left1[k]), right, v1);
+        }
+        _mm512_storeu_ps(out0 + col, v0);
+        _mm512_storeu_ps(out1 + col, v1);
+      }
+      for (; col < cols; ++col) {
+        float v0 = out0[col];
+        float v1 = out1[col];
+        for (int k = 0; k < depth; ++k) {
+          const float weight = b[std::size_t(k) * cols + col];
+          v0 += left0[k] * weight;
+          v1 += left1[k] * weight;
+        }
+        out0[col] = v0;
+        out1[col] = v1;
+      }
+    }
+  }
+  for (; row < last_row; ++row) {
     float* out = dst + std::size_t(row) * cols;
     const float* left = a + std::size_t(row) * depth;
     int col = 0;

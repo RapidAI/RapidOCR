@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ppocr/export.h"
+
 #include <array>
 #include <cstdint>
 #include <memory>
@@ -52,7 +54,25 @@ struct BackendInfo {
   std::uint64_t vulkan_runtime_generation{};
 };
 
-[[nodiscard]] BackendInfo QueryBackendInfo();
+[[nodiscard]] PPOCR_API BackendInfo QueryBackendInfo();
+
+// Which SIMD path the process will actually enter. active_isa is one of
+// "avx512", "avx2", "neon", or "scalar". AVX-512 is reported only when the
+// CPU and OS have enabled it; PPOCR_FORCE_ISA=avx2 (or scalar) keeps an
+// AVX-512 capable host on the narrower path. An AVX2-only CPU never reports
+// avx512, and the AVX-512 object file is not entered.
+struct CpuInfo {
+  bool avx2_compiled{};
+  bool avx512_compiled{};
+  bool neon_compiled{};
+  bool avx2{};
+  bool avx512{};
+  bool neon{};
+  std::string active_isa;
+  int threads{};
+};
+
+[[nodiscard]] PPOCR_API CpuInfo QueryCpuInfo();
 
 struct Options {
   Backend backend = Backend::hybrid;
@@ -117,7 +137,7 @@ struct Options {
 // PP-OCRv6 detector + recognizer with a deliberately narrow built-in ONNX
 // interpreter.  It does not link against ONNX Runtime, Paddle Inference, or
 // any other inference engine.
-class OCR {
+class PPOCR_API OCR {
  public:
   OCR(const std::string& det_model, const std::string& rec_model,
       std::string dictionary_path, Options options = {});
@@ -126,6 +146,11 @@ class OCR {
   OCR& operator=(OCR&&) noexcept;
   OCR(const OCR&) = delete;
   OCR& operator=(const OCR&) = delete;
+
+  // Replaces detector post-process thresholds without reloading models.
+  // The handle is not safe to mutate concurrently with Recognize.
+  void SetDetectionThresholds(float det_threshold, float det_box_threshold,
+                              float det_unclip_ratio);
 
   [[nodiscard]] std::vector<Result> Recognize(const Image& image) const;
   // Runs a batch of independent page images. Results preserve input order;
@@ -144,6 +169,6 @@ class OCR {
 // Small no-dependency input helper for the portable P6 PPM format.  The OCR
 // core accepts Image directly, so applications may use their own PNG/JPEG
 // decoder without coupling it to this library.
-[[nodiscard]] Image LoadPPM(const std::string& path);
+[[nodiscard]] PPOCR_API Image LoadPPM(const std::string& path);
 
 }  // namespace ppocr

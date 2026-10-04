@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <bit>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <immintrin.h>
 #include <vector>
@@ -699,7 +700,71 @@ void Avx2GemmRows(float* dst, const float* a, const float* b, const float* bias,
 
 void Avx2GemmAccumulateRows(float* dst, const float* a, const float* b,
                             int first_row, int last_row, int cols, int depth) noexcept {
-  for (int row = first_row; row < last_row; ++row) {
+  // Same two-row B reuse as Avx2GemmRows. PPOCR_DISABLE_AVX2_GEMM_ACC2
+  // restores the one-row walk. This TU is compiled without AVX-512 so an
+  // AVX2-only machine can execute it.
+  static const bool pair_rows =
+      std::getenv("PPOCR_DISABLE_AVX2_GEMM_ACC2") == nullptr;
+  int row = first_row;
+  if (pair_rows) {
+    for (; row + 1 < last_row; row += 2) {
+      float* out0 = dst + std::size_t(row) * cols;
+      float* out1 = out0 + cols;
+      const float* left0 = a + std::size_t(row) * depth;
+      const float* left1 = left0 + depth;
+      int col = 0;
+      for (; col + 32 <= cols; col += 32) {
+        __m256 a0 = _mm256_loadu_ps(out0 + col);
+        __m256 a1 = _mm256_loadu_ps(out0 + col + 8);
+        __m256 a2 = _mm256_loadu_ps(out0 + col + 16);
+        __m256 a3 = _mm256_loadu_ps(out0 + col + 24);
+        __m256 b0 = _mm256_loadu_ps(out1 + col);
+        __m256 b1 = _mm256_loadu_ps(out1 + col + 8);
+        __m256 b2 = _mm256_loadu_ps(out1 + col + 16);
+        __m256 b3 = _mm256_loadu_ps(out1 + col + 24);
+        for (int k = 0; k < depth; ++k) {
+          const __m256 l0 = _mm256_set1_ps(left0[k]);
+          const __m256 l1 = _mm256_set1_ps(left1[k]);
+          const float* right = b + std::size_t(k) * cols + col;
+          const __m256 r0 = _mm256_loadu_ps(right);
+          const __m256 r1 = _mm256_loadu_ps(right + 8);
+          const __m256 r2 = _mm256_loadu_ps(right + 16);
+          const __m256 r3 = _mm256_loadu_ps(right + 24);
+          a0 = _mm256_fmadd_ps(l0, r0, a0); b0 = _mm256_fmadd_ps(l1, r0, b0);
+          a1 = _mm256_fmadd_ps(l0, r1, a1); b1 = _mm256_fmadd_ps(l1, r1, b1);
+          a2 = _mm256_fmadd_ps(l0, r2, a2); b2 = _mm256_fmadd_ps(l1, r2, b2);
+          a3 = _mm256_fmadd_ps(l0, r3, a3); b3 = _mm256_fmadd_ps(l1, r3, b3);
+        }
+        _mm256_storeu_ps(out0 + col, a0); _mm256_storeu_ps(out0 + col + 8, a1);
+        _mm256_storeu_ps(out0 + col + 16, a2); _mm256_storeu_ps(out0 + col + 24, a3);
+        _mm256_storeu_ps(out1 + col, b0); _mm256_storeu_ps(out1 + col + 8, b1);
+        _mm256_storeu_ps(out1 + col + 16, b2); _mm256_storeu_ps(out1 + col + 24, b3);
+      }
+      for (; col + 8 <= cols; col += 8) {
+        __m256 v0 = _mm256_loadu_ps(out0 + col);
+        __m256 v1 = _mm256_loadu_ps(out1 + col);
+        for (int k = 0; k < depth; ++k) {
+          const __m256 right = _mm256_loadu_ps(b + std::size_t(k) * cols + col);
+          v0 = _mm256_fmadd_ps(_mm256_set1_ps(left0[k]), right, v0);
+          v1 = _mm256_fmadd_ps(_mm256_set1_ps(left1[k]), right, v1);
+        }
+        _mm256_storeu_ps(out0 + col, v0);
+        _mm256_storeu_ps(out1 + col, v1);
+      }
+      for (; col < cols; ++col) {
+        float v0 = out0[col];
+        float v1 = out1[col];
+        for (int k = 0; k < depth; ++k) {
+          const float weight = b[std::size_t(k) * cols + col];
+          v0 += left0[k] * weight;
+          v1 += left1[k] * weight;
+        }
+        out0[col] = v0;
+        out1[col] = v1;
+      }
+    }
+  }
+  for (; row < last_row; ++row) {
     float* out = dst + std::size_t(row) * cols;
     const float* left = a + std::size_t(row) * depth;
     int col = 0;

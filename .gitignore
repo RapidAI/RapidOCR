@@ -1,6 +1,12 @@
 # Local build products and generated analysis output
 /build*/
 /bench/
+__pycache__/
+*.pyc
+/python/dist/
+/python/*.egg-info/
+/python/src/*.egg-info/
+/python/.pytest_cache/
 /**/graphify-out/
 /build-msvc-env.txt
 
