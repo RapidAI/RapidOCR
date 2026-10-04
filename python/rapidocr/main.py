@@ -203,6 +203,8 @@ class RapidOCR:
             ratio_w = op_record["preprocess"]["ratio_w"]
             cropped_img_list = map_img_to_original(cropped_img_list, ratio_h, ratio_w)
 
+        rotated_180 = self.get_rotated_180_flags(cls_res)
+
         # 过滤识别结果为空的值
         if (
             rec_res.txts is not None
@@ -220,6 +222,8 @@ class RapidOCR:
             rec_res.scores = filter_by_indices(rec_res.scores, valid_ids)
 
             cropped_img_list = filter_by_indices(cropped_img_list, valid_ids)
+            if rotated_180 is not None:
+                rotated_180 = filter_by_indices(rotated_180, valid_ids)
 
         # 仅分类结果
         if (
@@ -247,7 +251,7 @@ class RapidOCR:
             and all(rec_res.word_results)
         ):
             rec_res.word_results = self.calc_word_boxes(
-                cropped_img_list, det_res.boxes, rec_res
+                cropped_img_list, det_res.boxes, rec_res, rotated_180
             )
 
         ocr_res = RapidOCROutput(
@@ -267,11 +271,25 @@ class RapidOCR:
         ocr_res = self.filter_by_text_score(ocr_res)
         return ocr_res if len(ocr_res) > 0 else RapidOCROutput()
 
+    def get_rotated_180_flags(self, cls_res: TextClsOutput) -> Optional[List[bool]]:
+        """Which crops the text classifier turned by 180 degrees before recognition."""
+        if cls_res.cls_res is None:
+            return None
+
+        cls_thresh = self.cfg.Cls.cls_thresh
+        return [
+            "180" in label and score > cls_thresh for label, score in cls_res.cls_res
+        ]
+
     def calc_word_boxes(
-        self, img: List[np.ndarray], dt_boxes: np.ndarray, rec_res: TextRecOutput
+        self,
+        img: List[np.ndarray],
+        dt_boxes: np.ndarray,
+        rec_res: TextRecOutput,
+        rotated_180: Optional[List[bool]] = None,
     ) -> Any:
         rec_res = self.cal_rec_boxes(
-            img, dt_boxes, rec_res, self.return_single_char_box
+            img, dt_boxes, rec_res, self.return_single_char_box, rotated_180
         )
 
         origin_words = []
