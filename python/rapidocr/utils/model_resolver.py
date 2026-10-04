@@ -14,6 +14,29 @@ _MODEL_CONFIG = OmegaConf.load(MODEL_CONFIG_PATH)
 MODEL_ROUTES = _MODEL_CONFIG.get("model_routes", {})
 
 
+def load_lang_mapping(lang_mapping: Dict[str, Any]) -> Dict[str, Any]:
+    flat_map = {}
+    for main_code, info in lang_mapping.items():
+        cn = info["cn"]
+        en = info["en"]
+        aliases = info.get("aliases", [])
+
+        if main_code in flat_map:
+            raise ValueError(f"Duplicate definition for main code {main_code}!")
+
+        flat_map[main_code] = {"cn": cn, "en": en}
+
+        for alias in aliases:
+            if alias in flat_map:
+                raise ValueError(f"Conflict: alias {alias} already exists!")
+
+            flat_map[alias] = {"cn": cn, "en": en}
+    return flat_map
+
+
+LANG_MAPPING = load_lang_mapping(_MODEL_CONFIG.get("lang_mapping", {}))
+
+
 def route_to_model_key(
     task_type: TaskType,
     ocr_version: OCRVersion,
@@ -36,9 +59,12 @@ def route_to_model_key(
         if lang in supported_langs:
             return route["model_key"]
 
+    supported_langs = [
+        f"{x} ({LANG_MAPPING.get(x, {}).get('en', x)})" for x in _supported(routes)
+    ]
     raise ValueError(
         f"Unsupported {task_type.value}.lang_type={lang!r} for {ocr_version.value} {model_type.value} model. "
-        f"Supported languages: {', '.join(_supported(routes))}"
+        f"Supported languages: {', '.join(supported_langs)}"
     )
 
 
@@ -83,4 +109,3 @@ def _supported(routes: Any) -> List[str]:
         supported_langs = route.get("supported_langs", [])
         values.update(str(x) for x in supported_langs)
     return sorted(values)
-

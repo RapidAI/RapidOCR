@@ -1213,3 +1213,366 @@ fonts:
   el:
     path: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/resources/fonts/el.ttf
     SHA256: 892e6c81071fc85923f8d0ff925edab6049dd4495a2fdedffddc04753bf348b3
+
+
+lang_mapping:
+  latin:
+    cn: "拉丁语"
+    en: "Latin"
+    aliases: []
+  eslav:
+    cn: "斯拉夫语"
+    en: "Slavic"
+    aliases: []
+  devanagari:
+    cn: "天城文"
+    en: "Devanagari"
+    aliases: []
+  abq:
+    cn: "阿布哈兹语"
+    en: "Abkhaz"
+    aliases: []
+  af:
+    cn: "南非荷兰语"
+    en: "Afrikaans"
+    aliases: []
+  ang:
+    cn: "古英语"
+    en: "Old English"
+    aliases: []
+  ar:
+    cn: "阿拉伯语"
+    en: "Arabic"
+    aliases: []
+  ava:
+    cn: "阿瓦尔语"
+    en: "Avaric"
+    aliases: []
+  az:
+    cn: "阿塞拜疆语"
+    en: "Azerbaijani"
+    aliases: []
+  be:
+    cn: "白俄罗斯语"
+    en: "Belarusian"
+    aliases: []
+  bg:
+    cn: "保加利亚语"
+    en: "Bulgarian"
+    aliases: []
+  bgc:
+    cn: "哈里亚纳语"
+    en: "Haryanvi"
+    aliases: []
+  bh:
+    cn: "比哈尔语"
+    en: "Bihari"
+    aliases: []
+  bho:
+    cn: "博杰普尔语"
+    en: "Bhojpuri"
+    aliases: []
+  bs:
+    cn: "波斯尼亚语"
+    en: "Bosnian"
+    aliases: []
+  ca:
+    cn: "加泰罗尼亚语"
+    en: "Catalan"
+    aliases: []
+  ch:
+    cn: "简体中文"
+    en: "Chinese (Simplified)"
+    aliases: []
+  che:
+    cn: "车臣语"
+    en: "Chechen"
+    aliases: []
+  chinese_cht:
+    cn: "繁体中文"
+    en: "Chinese (Traditional)"
+    aliases: []
+  cs:
+    cn: "捷克语"
+    en: "Czech"
+    aliases: []
+  cy:
+    cn: "威尔士语"
+    en: "Welsh"
+    aliases: []
+  da:
+    cn: "丹麦语"
+    en: "Danish"
+    aliases: []
+  dar:
+    cn: "达尔格瓦语"
+    en: "Dargwa"
+    aliases: []
+  de:
+    cn: "德语"
+    en: "German"
+    aliases: ["german"]
+  el:
+    cn: "希腊语"
+    en: "Greek"
+    aliases: []
+  en:
+    cn: "英语"
+    en: "English"
+    aliases: []
+  es:
+    cn: "西班牙语"
+    en: "Spanish"
+    aliases: []
+  et:
+    cn: "爱沙尼亚语"
+    en: "Estonian"
+    aliases: []
+  fa:
+    cn: "波斯语"
+    en: "Persian"
+    aliases: []
+  fr:
+    cn: "法语"
+    en: "French"
+    aliases: ["french"]
+  ga:
+    cn: "爱尔兰语"
+    en: "Irish"
+    aliases: []
+  gom:
+    cn: "孔卡尼语"
+    en: "Konkani"
+    aliases: []
+  hi:
+    cn: "印地语"
+    en: "Hindi"
+    aliases: []
+  hr:
+    cn: "克罗地亚语"
+    en: "Croatian"
+    aliases: []
+  hu:
+    cn: "匈牙利语"
+    en: "Hungarian"
+    aliases: []
+  id:
+    cn: "印尼语"
+    en: "Indonesian"
+    aliases: []
+  inh:
+    cn: "印古什语"
+    en: "Ingush"
+    aliases: []
+  is:
+    cn: "冰岛语"
+    en: "Icelandic"
+    aliases: []
+  it:
+    cn: "意大利语"
+    en: "Italian"
+    aliases: []
+  japan:
+    cn: "日语"
+    en: "Japanese"
+    aliases: []
+  ka:
+    cn: "格鲁吉亚语"
+    en: "Georgian"
+    aliases: []
+  kbd:
+    cn: "卡巴尔达语"
+    en: "Kabardian"
+    aliases: []
+  korean:
+    cn: "韩语"
+    en: "Korean"
+    aliases: []
+  ku:
+    cn: "库尔德语"
+    en: "Kurdish"
+    aliases: []
+  la:
+    cn: "拉丁语"
+    en: "Latin"
+    aliases: []
+  lbe:
+    cn: "拉克语"
+    en: "Lak"
+    aliases: []
+  lez:
+    cn: "列兹金语"
+    en: "Lezgi"
+    aliases: []
+  lt:
+    cn: "立陶宛语"
+    en: "Lithuanian"
+    aliases: []
+  lv:
+    cn: "拉脱维亚语"
+    en: "Latvian"
+    aliases: []
+  mah:
+    cn: "马加希语"
+    en: "Magahi"
+    aliases: []
+  mai:
+    cn: "迈蒂利语"
+    en: "Maithili"
+    aliases: []
+  mi:
+    cn: "毛利语"
+    en: "Māori"
+    aliases: []
+  mn:
+    cn: "蒙古语"
+    en: "Mongolian"
+    aliases: []
+  mr:
+    cn: "马拉地语"
+    en: "Marathi"
+    aliases: []
+  ms:
+    cn: "马来语"
+    en: "Malay"
+    aliases: []
+  mt:
+    cn: "马耳他语"
+    en: "Maltese"
+    aliases: []
+  ne:
+    cn: "尼泊尔语"
+    en: "Nepali"
+    aliases: []
+  new:
+    cn: "尼瓦尔语"
+    en: "Newar"
+    aliases: []
+  nl:
+    cn: "荷兰语"
+    en: "Dutch"
+    aliases: []
+  "no":
+    cn: "挪威语"
+    en: "Norwegian"
+    aliases: []
+  oc:
+    cn: "奥克语"
+    en: "Occitan"
+    aliases: []
+  pi:
+    cn: "巴利语"
+    en: "Pali"
+    aliases: []
+  pl:
+    cn: "波兰语"
+    en: "Polish"
+    aliases: []
+  pt:
+    cn: "葡萄牙语"
+    en: "Portuguese"
+    aliases: []
+  ro:
+    cn: "罗马尼亚语"
+    en: "Romanian"
+    aliases: []
+  rs_cyrillic:
+    cn: "塞尔维亚语（西里尔字母）"
+    en: "Serbian (Cyrillic)"
+    aliases: []
+  rs_latin:
+    cn: "塞尔维亚语（拉丁字母）"
+    en: "Serbian (Latin)"
+    aliases: []
+  ru:
+    cn: "俄语"
+    en: "Russian"
+    aliases: []
+  sa:
+    cn: "梵语"
+    en: "Sanskrit"
+    aliases: []
+  sck:
+    cn: "萨达里语"
+    en: "Sadri"
+    aliases: []
+  sk:
+    cn: "斯洛伐克语"
+    en: "Slovak"
+    aliases: []
+  sl:
+    cn: "斯洛文尼亚语"
+    en: "Slovenian"
+    aliases: []
+  sq:
+    cn: "阿尔巴尼亚语"
+    en: "Albanian"
+    aliases: []
+  sv:
+    cn: "瑞典语"
+    en: "Swedish"
+    aliases: []
+  sw:
+    cn: "斯瓦希里语"
+    en: "Swahili"
+    aliases: []
+  tab:
+    cn: "塔巴萨兰语"
+    en: "Tabassaran"
+    aliases: []
+  ta:
+    cn: "泰米尔语"
+    en: "Tamil"
+    aliases: []
+  te:
+    cn: "泰卢固语"
+    en: "Telugu"
+    aliases: []
+  th:
+    cn: "泰语"
+    en: "Thai"
+    aliases: []
+  tl:
+    cn: "他加禄语"
+    en: "Tagalog"
+    aliases: []
+  tr:
+    cn: "土耳其语"
+    en: "Turkish"
+    aliases: []
+  ug:
+    cn: "维吾尔语"
+    en: "Uyghur"
+    aliases: []
+  uk:
+    cn: "乌克兰语"
+    en: "Ukrainian"
+    aliases: []
+  ur:
+    cn: "乌尔都语"
+    en: "Urdu"
+    aliases: []
+  uz:
+    cn: "乌兹别克语"
+    en: "Uzbek"
+    aliases: []
+  vi:
+    cn: "越南语"
+    en: "Vietnamese"
+    aliases: []
+  qu:
+    cn: "克丘亚语"
+    en: "Quechua"
+    aliases: []
+  rm:
+    cn: "罗曼什语"
+    en: "Romansh"
+    aliases: []
+  eu:
+    cn: "巴斯克语"
+    en: "Basque"
+    aliases: []
+  fi:
+    cn: "芬兰语"
+    en: "Finnish"
+    aliases: []
