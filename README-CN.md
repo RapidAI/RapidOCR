@@ -67,18 +67,18 @@ RapidOCR 是面向小模型、离线部署的开源 OCR。5.x 保留 3.x 应用�
 | hello | 960×240 | 一行：`Hello RapidOCR 123`（`python/tests/data/hello.png`） |
 | page | 1700×2200 | 45 行。该页是本地测速图，没有提交进本仓库。 |
 
-**x86。** 4 vCPU Intel Xeon（family 6，model 207），具备 AVX2 与 AVX-512F/DQ/BW/VL。`g++` 13.3。默认线程池为 4（`min(16, hardware_concurrency)`）。AVX2 行是在同一颗 CPU 上设置 `PPOCR_FORCE_ISA=avx2`。hello 为 7 次均值，page 为 5 次均值；1 线程的 page 行为 3 次均值。
+**x86。** 4 vCPU Intel Xeon（family 6，model 207），具备 AVX2 与 AVX-512F/DQ/BW/VL。`g++` 13.3。默认线程池为 4（`min(16, hardware_concurrency)`）。AVX2 行是在同一颗 CPU 上设置 `PPOCR_FORCE_ISA=avx2`。1 线程的 page 行仍是 `b71f5b7` 的 3 次均值。
 
-**ARM。** 20 核：10× Cortex-X925（最高 3.9 GHz）与 10× Cortex-A725（最高 2.8 GHz），`g++` 13.3，NEON。默认线程池为 16。板上的二进制包含该提交里的原地池化修复。hello 为 7 次均值，page 为 5 次均值，1 线程 hello 为 3 次均值。
+**ARM。** 20 核：10× Cortex-X925（最高 3.9 GHz）与 10× Cortex-A725（最高 2.8 GHz），`g++` 13.3，NEON。默认线程池为 16。1 线程的 hello 行仍是 `b71f5b7` 的 3 次均值。
 
 C++ 选项默认值：长边限制 960，检测器使用 ImageNet mean/std，不做膨胀。
 
 | ISA | 线程 | hello | page |
 | --- | --- | --- | --- |
-| AVX-512 | 4 | 22.9 ms | 222.8 ms |
-| AVX2 | 4 | 23.5 ms | 378.4 ms |
+| AVX-512 | 4 | 19.3 ms | 232.0 ms |
+| AVX2 | 4 | 25.0 ms | 326.0 ms |
 | AVX-512 | 1 | 35.14 ms | 387.6 ms |
-| NEON | 16 | 33.7 ms | 231.4 ms |
+| NEON | 16 | 33.0 ms | 232.3 ms |
 | NEON | 1 | 68.52 ms | — |
 
 这些运行的文本、置信度和框与同一二进制的单线程结果按位一致（确定性检查做的是逐位比较）。更早的算子记录（含 GEMM 形状）在 [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md)，早于本表。
@@ -93,17 +93,17 @@ C++ 选项默认值：长边限制 960，检测器使用 ImageNet mean/std，不
 
 | 包 | hello | page |
 | --- | --- | --- |
-| rapidocr 5.0.0a1，AVX-512 | 121.0 ms（103.5–156.3） | 410.6 ms（391.7–441.2） |
-| rapidocr 5.0.0a1，AVX2 | 161.7 ms（152.6–164.4） | 587.4 ms（573.7–611.5） |
-| rapidocr 3.9.2（ORT AVX-512） | 205.8 ms（174.8–257.0） | 514.4 ms（434.1–551.6） |
+| rapidocr 5.0.0a1，AVX-512 | 100.7 ms（99.5–109.2） | 400.8 ms（390.5–417.5） |
+| rapidocr 5.0.0a1，AVX2 | 128.8 ms（122.3–132.4） | 500.7 ms（480.5–518.5） |
+| rapidocr 3.9.2（ORT AVX-512） | 193.0 ms（155.7–224.6） | 508.3 ms（452.8–542.1） |
 
-相对 3.9.2 的中位数，AVX-512 的 hello 快 41%，整页快 20%（均值分别是 122.1 ms、412.1 ms，对比 211.1 ms、509.0 ms；整页均值快 19%，因为 3.9.2 自身的极差很大）。强制 AVX2 的 hello 快 21%。强制 AVX2 的整页比这台机器上的 AVX-512 ORT 慢 14%：识别器里的 expand-GELU GEMM 已经接近 AVX2 与 AVX-512 的位宽比（约 1.8 倍），而 ORT 没有被关掉 AVX-512。三行的整页文本都是同样的 45 句。Hello 都是 `Hello RapidOCR 123`。相对改内核之前的 5.0.0a1，两张图的框 IoU 都是 1.0。3.9.2 在这页上的框和 5.0.0a1 本来就不完全重合（最小 IoU 约 0.85），这是这批内核之前就有的检测差异。
+相对这次 3.9.2 的中位数，AVX-512 的 hello 快 48%，整页快 21%（均值分别是 102.1 ms、402.1 ms，对比 191.7 ms、501.8 ms；整页均值快 20%）。强制 AVX2 的 hello 快 33%。强制 AVX2 的整页中位数比这次 ORT 快 1.5%（500.7 ms 对 508.3 ms；均值 500.0 ms 对 501.8 ms，基本持平）。它没有快 20%：识别器里的 expand-GELU GEMM 已经接近 AVX2 的峰值，大约只有 AVX-512 一半的 FMA 位宽，而 ORT 没有被关掉 AVX-512。三行的整页文本都是同样的 45 句。Hello 都是 `Hello RapidOCR 123`。相对改内核之前的 5.0.0a1，两张图的框 IoU 都是 1.0。3.9.2 在这页上的框和 5.0.0a1 本来就不完全重合（最小 IoU 约 0.85），这是这批内核之前就有的检测差异。
 
 **套用 C++ 检测默认**（长边限制 960，ImageNet mean/std，关闭膨胀，阈值 0.20 / 0.45，unclip 1.40）。5.x 的 C++ 行就是上一张表。Python 与 3.9.2 行是墙钟；`elapse` 是包自己的计时。
 
 | 运行方式 | hello | page |
 | --- | --- | --- |
-| 5.0.0a1 C++ | 22.9 ms | 222.8 ms |
+| 5.0.0a1 C++ | 19.3 ms | 232.0 ms |
 | 5.0.0a1 Python | 20.07 ms（18.61–21.78） | 339.1 ms（332.9–348.5） |
 | 3.9.2 Python | 28.73 ms（引擎 `elapse` 20.2 ms） | 548.2 ms（引擎 `elapse` 521.3 ms） |
 

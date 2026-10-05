@@ -67,18 +67,18 @@ Two images, pixel-identical between PNG and PPM:
 | hello | 960×240 | one line, `Hello RapidOCR 123` (`python/tests/data/hello.png`) |
 | page | 1700×2200 | 45 lines. The page file is a local measurement image and is not committed in this repository. |
 
-**x86.** 4 vCPU Intel Xeon (family 6, model 207) with AVX2 and AVX-512F/DQ/BW/VL. `g++` 13.3. Default pool is 4 threads (`min(16, hardware_concurrency)`). AVX2 is `PPOCR_FORCE_ISA=avx2` on that same CPU. Hello is the mean of 7 runs, the page is the mean of 5 runs, except the 1-thread page row which is the mean of 3 runs.
+**x86.** 4 vCPU Intel Xeon (family 6, model 207) with AVX2 and AVX-512F/DQ/BW/VL. `g++` 13.3. Default pool is 4 threads (`min(16, hardware_concurrency)`). AVX2 is `PPOCR_FORCE_ISA=avx2` on that same CPU. The 1-thread page row is still the mean of 3 runs from `b71f5b7`.
 
-**ARM.** 20 cores: 10× Cortex-X925 (up to 3.9 GHz) and 10× Cortex-A725 (up to 2.8 GHz), `g++` 13.3, NEON. Default pool is 16 threads. The board binary contains the in-place pool fix from that commit. Hello is the mean of 7 runs, the page is the mean of 5 runs, and the 1-thread hello row is the mean of 3 runs.
+**ARM.** 20 cores: 10× Cortex-X925 (up to 3.9 GHz) and 10× Cortex-A725 (up to 2.8 GHz), `g++` 13.3, NEON. Default pool is 16 threads. The 1-thread hello row is still the mean of 3 runs from `b71f5b7`.
 
 C++ option defaults: long-side limit 960, ImageNet detector mean/std, dilation off.
 
 | ISA | Threads | hello | page |
 | --- | --- | --- | --- |
-| AVX-512 | 4 | 22.9 ms | 222.8 ms |
-| AVX2 | 4 | 23.5 ms | 378.4 ms |
+| AVX-512 | 4 | 19.3 ms | 232.0 ms |
+| AVX2 | 4 | 25.0 ms | 326.0 ms |
 | AVX-512 | 1 | 35.14 ms | 387.6 ms |
-| NEON | 16 | 33.7 ms | 231.4 ms |
+| NEON | 16 | 33.0 ms | 232.3 ms |
 | NEON | 1 | 68.52 ms | — |
 
 Text, scores, and boxes on these runs matched the 1-thread result of the same binary (the determinism check compares them bit for bit). Earlier kernel notes, including GEMM shapes, live in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) and are older than this table.
@@ -93,17 +93,17 @@ Wall clock below is the median of 8 calls after one warmup. The range is min–m
 
 | Package | hello | page |
 | --- | --- | --- |
-| rapidocr 5.0.0a1, AVX-512 | 121.0 ms (103.5–156.3) | 410.6 ms (391.7–441.2) |
-| rapidocr 5.0.0a1, AVX2 | 161.7 ms (152.6–164.4) | 587.4 ms (573.7–611.5) |
-| rapidocr 3.9.2 (ORT AVX-512) | 205.8 ms (174.8–257.0) | 514.4 ms (434.1–551.6) |
+| rapidocr 5.0.0a1, AVX-512 | 100.7 ms (99.5–109.2) | 400.8 ms (390.5–417.5) |
+| rapidocr 5.0.0a1, AVX2 | 128.8 ms (122.3–132.4) | 500.7 ms (480.5–518.5) |
+| rapidocr 3.9.2 (ORT AVX-512) | 193.0 ms (155.7–224.6) | 508.3 ms (452.8–542.1) |
 
-Against that 3.9.2 median, AVX-512 hello is 41% faster and the page is 20% faster (means 122.1 ms and 412.1 ms versus 211.1 ms and 509.0 ms, which is 19% on the page because 3.9.2's own range is wide). Forced AVX2 hello is 21% faster. The forced-AVX2 page is 14% slower than this AVX-512 ORT: the recognizer expand-GELU GEMMs already sit near the AVX2/AVX-512 width ratio (about 1.8×), and ORT is not forced off AVX-512. The page text is the same 45 strings on all three rows. Hello is `Hello RapidOCR 123` on all three. Boxes versus the pre-change 5.0.0a1 binary have IoU 1.0 on both images. 3.9.2's own boxes on this page differ from 5.0.0a1 (minimum IoU about 0.85); that detection gap was already present before these kernels.
+Against that 3.9.2 median, AVX-512 hello is 48% faster and the page is 21% faster (means 102.1 ms and 402.1 ms versus 191.7 ms and 501.8 ms, which is 20% on the page). Forced AVX2 hello is 33% faster. The forced-AVX2 page median is 1.5% faster than this window's ORT (500.7 ms versus 508.3 ms; means 500.0 ms versus 501.8 ms, a tie). It is not 20% faster: the recognizer's expand-GELU GEMMs are already near the AVX2 peak, about half the AVX-512 FMA width, and ORT is not forced off AVX-512. The page text is the same 45 strings on all three rows. Hello is `Hello RapidOCR 123` on all three. Boxes versus the pre-change 5.0.0a1 binary have IoU 1.0 on both images. 3.9.2's own boxes on this page differ from 5.0.0a1 (minimum IoU about 0.85); that detection gap was already present before these kernels.
 
 **C++ detection defaults** applied on both packages (long-side limit 960, ImageNet mean/std, dilation off, thresholds 0.20 / 0.45, unclip 1.40). The 5.x C++ row is the table above. The Python and 3.9.2 rows are wall clock; `elapse` is the package's own timer.
 
 | Runner | hello | page |
 | --- | --- | --- |
-| 5.0.0a1 C++ | 22.9 ms | 222.8 ms |
+| 5.0.0a1 C++ | 19.3 ms | 232.0 ms |
 | 5.0.0a1 Python | 20.07 ms (18.61–21.78) | 339.1 ms (332.9–348.5) |
 | 3.9.2 Python | 28.73 ms (engine `elapse` 20.2 ms) | 548.2 ms (engine `elapse` 521.3 ms) |
 

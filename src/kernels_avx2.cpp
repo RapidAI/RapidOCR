@@ -1452,9 +1452,15 @@ void Avx2Conv3x3Stride1x4(float* dst, const float* src, const float* weights,
                           const float* bias, int first_output, int last_output,
                           int input_channels, int input_h, int input_w,
                           int output_h, int output_w, int pad_top,
-                          int pad_left, bool relu) noexcept {
+                          int pad_left, bool relu, int row_begin, int row_end,
+                          bool accumulate) noexcept {
   const std::size_t input_plane = std::size_t(input_h) * input_w;
   const std::size_t output_plane = std::size_t(output_h) * output_w;
+  int y0 = row_begin < 0 ? 0 : row_begin;
+  int y1 = row_end < 0 ? output_h : row_end;
+  if (y0 < 0) y0 = 0;
+  if (y1 > output_h) y1 = output_h;
+  if (y0 >= y1) return;
   const int first_y = std::max(0, pad_top);
   const int first_x = std::max(0, pad_left);
   const int last_y = std::min(output_h, input_h + pad_top - 2);
@@ -1484,6 +1490,10 @@ void Avx2Conv3x3Stride1x4(float* dst, const float* src, const float* weights,
       }
     }
     const auto index = std::size_t(y) * output_w + x;
+    if (accumulate) {
+      s0 += out0[index]; s1 += out1[index];
+      s2 += out2[index]; s3 += out3[index];
+    }
     out0[index] = relu ? std::max(s0, 0.F) : s0;
     out1[index] = relu ? std::max(s1, 0.F) : s1;
     out2[index] = relu ? std::max(s2, 0.F) : s2;
@@ -1501,7 +1511,7 @@ void Avx2Conv3x3Stride1x4(float* dst, const float* src, const float* weights,
     const float* f3 = f2 + std::size_t(input_channels) * 9;
     const float b0 = bias ? bias[output] : 0.F, b1 = bias ? bias[output + 1] : 0.F;
     const float b2 = bias ? bias[output + 2] : 0.F, b3 = bias ? bias[output + 3] : 0.F;
-    for (int y = 0; y < output_h; ++y) {
+    for (int y = y0; y < y1; ++y) {
       const int iy0 = y - pad_top;
       const bool interior_y = y >= first_y && y < last_y;
       int x = 0;
@@ -1510,6 +1520,7 @@ void Avx2Conv3x3Stride1x4(float* dst, const float* src, const float* weights,
         scalar4(out0, out1, out2, out3, f0, f1, f2, f3, b0, b1, b2, b3, y, x);
       }
       for (; x + 8 <= last_x; x += 8) {
+        const auto index = std::size_t(y) * output_w + x;
         __m256 s0 = _mm256_set1_ps(b0), s1 = _mm256_set1_ps(b1);
         __m256 s2 = _mm256_set1_ps(b2), s3 = _mm256_set1_ps(b3);
         for (int input = 0; input < input_channels; ++input) {
@@ -1530,7 +1541,12 @@ void Avx2Conv3x3Stride1x4(float* dst, const float* src, const float* weights,
             }
           }
         }
-        const auto index = std::size_t(y) * output_w + x;
+        if (accumulate) {
+          s0 = _mm256_add_ps(s0, _mm256_loadu_ps(out0 + index));
+          s1 = _mm256_add_ps(s1, _mm256_loadu_ps(out1 + index));
+          s2 = _mm256_add_ps(s2, _mm256_loadu_ps(out2 + index));
+          s3 = _mm256_add_ps(s3, _mm256_loadu_ps(out3 + index));
+        }
         if (relu) { const __m256 zero = _mm256_setzero_ps(); s0 = _mm256_max_ps(s0, zero); s1 = _mm256_max_ps(s1, zero); s2 = _mm256_max_ps(s2, zero); s3 = _mm256_max_ps(s3, zero); }
         _mm256_storeu_ps(out0 + index, s0); _mm256_storeu_ps(out1 + index, s1);
         _mm256_storeu_ps(out2 + index, s2); _mm256_storeu_ps(out3 + index, s3);
@@ -1539,7 +1555,8 @@ void Avx2Conv3x3Stride1x4(float* dst, const float* src, const float* weights,
                                           b0, b1, b2, b3, y, x);
     }
   }
-  if (output < last_output) {
+  const bool full_rows = row_begin <= 0 && (row_end < 0 || row_end >= output_h);
+  if (output < last_output && !accumulate && full_rows) {
     Avx2Conv2d(dst, src, weights, bias, output, last_output, input_channels,
                input_h, input_w, output_h, output_w, 3, 3, pad_top, pad_left);
     // Keep the incomplete four-channel Conv+ReLU tail semantically identical
@@ -1555,6 +1572,7 @@ void Avx2Conv3x3Stride1x4(float* dst, const float* src, const float* weights,
     }
   }
 }
+
 
 // Interior stride-2 3x3 outputs map to every second input element.  Handle
 // the short scalar border separately, then use AVX2 gathers over eight output
@@ -1638,9 +1656,15 @@ void Avx2Conv3x3Stride2x4(float* dst, const float* src, const float* weights,
                            const float* bias, int first_output, int last_output,
                            int input_channels, int input_h, int input_w,
                            int output_h, int output_w, int pad_top,
-                           int pad_left, bool relu) noexcept {
+                           int pad_left, bool relu, int row_begin, int row_end,
+                           bool accumulate) noexcept {
   const std::size_t input_plane = std::size_t(input_h) * input_w;
   const std::size_t output_plane = std::size_t(output_h) * output_w;
+  int y0 = row_begin < 0 ? 0 : row_begin;
+  int y1 = row_end < 0 ? output_h : row_end;
+  if (y0 < 0) y0 = 0;
+  if (y1 > output_h) y1 = output_h;
+  if (y0 >= y1) return;
   const int first_y = std::max(0, (pad_top + 1) / 2);
   const int first_x = std::max(0, (pad_left + 1) / 2);
   const int max_y = input_h + pad_top - 3;
@@ -1682,6 +1706,10 @@ void Avx2Conv3x3Stride2x4(float* dst, const float* src, const float* weights,
       }
     }
     const auto index = std::size_t(y) * output_w + x;
+    if (accumulate) {
+      s0 += o0[index]; s1 += o1[index];
+      s2 += o2[index]; s3 += o3[index];
+    }
     o0[index] = relu ? std::max(s0, 0.F) : s0;
     o1[index] = relu ? std::max(s1, 0.F) : s1;
     o2[index] = relu ? std::max(s2, 0.F) : s2;
@@ -1701,7 +1729,7 @@ void Avx2Conv3x3Stride2x4(float* dst, const float* src, const float* weights,
     const float b1 = bias ? bias[output + 1] : 0.F;
     const float b2 = bias ? bias[output + 2] : 0.F;
     const float b3 = bias ? bias[output + 3] : 0.F;
-    for (int y = 0; y < output_h; ++y) {
+    for (int y = y0; y < y1; ++y) {
       const int iy0 = y * 2 - pad_top;
       const bool interior_y = y >= first_y && y < last_y;
       int x = 0;
@@ -1733,6 +1761,12 @@ void Avx2Conv3x3Stride2x4(float* dst, const float* src, const float* weights,
           }
         }
         const auto index = std::size_t(y) * output_w + x;
+        if (accumulate) {
+          s0 = _mm256_add_ps(s0, _mm256_loadu_ps(out0 + index));
+          s1 = _mm256_add_ps(s1, _mm256_loadu_ps(out1 + index));
+          s2 = _mm256_add_ps(s2, _mm256_loadu_ps(out2 + index));
+          s3 = _mm256_add_ps(s3, _mm256_loadu_ps(out3 + index));
+        }
         if (relu) {
           const __m256 zero = _mm256_setzero_ps();
           s0 = _mm256_max_ps(s0, zero);
@@ -1750,7 +1784,8 @@ void Avx2Conv3x3Stride2x4(float* dst, const float* src, const float* weights,
       }
     }
   }
-  if (output < last_output) {
+  const bool full_rows = row_begin <= 0 && (row_end < 0 || row_end >= output_h);
+  if (output < last_output && !accumulate && full_rows) {
     Avx2Conv3x3Stride2(dst, src, weights, bias, output, last_output, input_channels,
                        input_h, input_w, output_h, output_w, pad_top, pad_left, relu);
   }
@@ -1760,9 +1795,15 @@ void Avx2Conv3x3Stride2x8(float* dst, const float* src, const float* weights,
                            const float* bias, int first_output, int last_output,
                            int input_channels, int input_h, int input_w,
                            int output_h, int output_w, int pad_top,
-                           int pad_left, bool relu) noexcept {
+                           int pad_left, bool relu, int row_begin, int row_end,
+                           bool accumulate) noexcept {
   const std::size_t input_plane = std::size_t(input_h) * input_w;
   const std::size_t output_plane = std::size_t(output_h) * output_w;
+  int y0 = row_begin < 0 ? 0 : row_begin;
+  int y1 = row_end < 0 ? output_h : row_end;
+  if (y0 < 0) y0 = 0;
+  if (y1 > output_h) y1 = output_h;
+  if (y0 >= y1) return;
   const int first_y = std::max(0, (pad_top + 1) / 2);
   const int first_x = std::max(0, (pad_left + 1) / 2);
   const int max_y = input_h + pad_top - 3;
@@ -1807,10 +1848,12 @@ void Avx2Conv3x3Stride2x8(float* dst, const float* src, const float* weights,
         }
       }
       const auto index = std::size_t(y) * output_w + x;
-      for (int q = 0; q < 8; ++q)
+      for (int q = 0; q < 8; ++q) {
+        if (accumulate) sum[q] += out[q][index];
         out[q][index] = relu ? std::max(sum[q], 0.F) : sum[q];
+      }
     };
-    for (int y = 0; y < output_h; ++y) {
+    for (int y = y0; y < y1; ++y) {
       const int iy0 = y * 2 - pad_top;
       const bool interior_y = y >= first_y && y < last_y;
       int x = 0;
@@ -1856,6 +1899,16 @@ void Avx2Conv3x3Stride2x8(float* dst, const float* src, const float* weights,
           }
         }
         const auto index = std::size_t(y) * output_w + x;
+        if (accumulate) {
+          s0 = _mm256_add_ps(s0, _mm256_loadu_ps(out[0] + index));
+          s1 = _mm256_add_ps(s1, _mm256_loadu_ps(out[1] + index));
+          s2 = _mm256_add_ps(s2, _mm256_loadu_ps(out[2] + index));
+          s3 = _mm256_add_ps(s3, _mm256_loadu_ps(out[3] + index));
+          s4 = _mm256_add_ps(s4, _mm256_loadu_ps(out[4] + index));
+          s5 = _mm256_add_ps(s5, _mm256_loadu_ps(out[5] + index));
+          s6 = _mm256_add_ps(s6, _mm256_loadu_ps(out[6] + index));
+          s7 = _mm256_add_ps(s7, _mm256_loadu_ps(out[7] + index));
+        }
         if (relu) {
           const __m256 zero = _mm256_setzero_ps();
           s0 = _mm256_max_ps(s0, zero);
@@ -1879,9 +1932,11 @@ void Avx2Conv3x3Stride2x8(float* dst, const float* src, const float* weights,
       for (; x < output_w; ++x) scalar8(y, x);
     }
   }
-  if (output < last_output) {
+  const bool full_rows = row_begin <= 0 && (row_end < 0 || row_end >= output_h);
+  if (output < last_output && !accumulate && full_rows) {
     Avx2Conv3x3Stride2x4(dst, src, weights, bias, output, last_output, input_channels,
-                         input_h, input_w, output_h, output_w, pad_top, pad_left, relu);
+                         input_h, input_w, output_h, output_w, pad_top, pad_left, relu,
+                         0, -1, false);
   }
 }
 
@@ -2205,6 +2260,59 @@ void Avx2ExpandGeluProjectAdd(float* dst, const float* src,
     }
     const float* act = packed_act.data();
     int hidden_channel = 0;
+    // Four ymm accumulators leave AVX2 FMA latency exposed (4 cycles, 2/cycle).
+    // Eight outputs keep each channel's FMA order identical and fill the pipes.
+    // `PPOCR_DISABLE_AVX2_EXPAND8` restores the four-output tile.
+    static const bool unroll8 =
+        std::getenv("PPOCR_DISABLE_AVX2_EXPAND8") == nullptr;
+    if (unroll8) {
+      for (; hidden_channel + 8 <= hidden; hidden_channel += 8) {
+        const float* e0 = expand_weights + std::size_t(hidden_channel) * channels;
+        const float* e1 = e0 + channels;
+        const float* e2 = e1 + channels;
+        const float* e3 = e2 + channels;
+        const float* e4 = e3 + channels;
+        const float* e5 = e4 + channels;
+        const float* e6 = e5 + channels;
+        const float* e7 = e6 + channels;
+        __m256 a0 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel] : 0.F);
+        __m256 a1 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel + 1] : 0.F);
+        __m256 a2 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel + 2] : 0.F);
+        __m256 a3 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel + 3] : 0.F);
+        __m256 a4 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel + 4] : 0.F);
+        __m256 a5 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel + 5] : 0.F);
+        __m256 a6 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel + 6] : 0.F);
+        __m256 a7 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel + 7] : 0.F);
+        for (int channel = 0; channel < channels; ++channel) {
+          const __m256 x = _mm256_loadu_ps(act + std::size_t(channel) * 8);
+          a0 = _mm256_fmadd_ps(_mm256_set1_ps(e0[channel]), x, a0);
+          a1 = _mm256_fmadd_ps(_mm256_set1_ps(e1[channel]), x, a1);
+          a2 = _mm256_fmadd_ps(_mm256_set1_ps(e2[channel]), x, a2);
+          a3 = _mm256_fmadd_ps(_mm256_set1_ps(e3[channel]), x, a3);
+          a4 = _mm256_fmadd_ps(_mm256_set1_ps(e4[channel]), x, a4);
+          a5 = _mm256_fmadd_ps(_mm256_set1_ps(e5[channel]), x, a5);
+          a6 = _mm256_fmadd_ps(_mm256_set1_ps(e6[channel]), x, a6);
+          a7 = _mm256_fmadd_ps(_mm256_set1_ps(e7[channel]), x, a7);
+        }
+        float* slot = hidden_tile.data() + std::size_t(hidden_channel) * 8;
+        _mm256_storeu_ps(slot, a0);
+        _mm256_storeu_ps(slot + 8, a1);
+        _mm256_storeu_ps(slot + 16, a2);
+        _mm256_storeu_ps(slot + 24, a3);
+        _mm256_storeu_ps(slot + 32, a4);
+        _mm256_storeu_ps(slot + 40, a5);
+        _mm256_storeu_ps(slot + 48, a6);
+        _mm256_storeu_ps(slot + 56, a7);
+        _mm256_storeu_ps(slot, gelu(_mm256_loadu_ps(slot)));
+        _mm256_storeu_ps(slot + 8, gelu(_mm256_loadu_ps(slot + 8)));
+        _mm256_storeu_ps(slot + 16, gelu(_mm256_loadu_ps(slot + 16)));
+        _mm256_storeu_ps(slot + 24, gelu(_mm256_loadu_ps(slot + 24)));
+        _mm256_storeu_ps(slot + 32, gelu(_mm256_loadu_ps(slot + 32)));
+        _mm256_storeu_ps(slot + 40, gelu(_mm256_loadu_ps(slot + 40)));
+        _mm256_storeu_ps(slot + 48, gelu(_mm256_loadu_ps(slot + 48)));
+        _mm256_storeu_ps(slot + 56, gelu(_mm256_loadu_ps(slot + 56)));
+      }
+    }
     for (; hidden_channel + 4 <= hidden; hidden_channel += 4) {
       const float* e0 = expand_weights + std::size_t(hidden_channel) * channels;
       const float* e1 = e0 + channels;
@@ -2236,6 +2344,53 @@ void Avx2ExpandGeluProjectAdd(float* dst, const float* src,
       _mm256_storeu_ps(hidden_tile.data() + std::size_t(hidden_channel) * 8, gelu(acc));
     }
     int channel = 0;
+    if (unroll8) {
+      for (; channel + 8 <= channels; channel += 8) {
+        const float* p0 = project_weights + std::size_t(channel) * hidden;
+        const float* p1 = p0 + hidden;
+        const float* p2 = p1 + hidden;
+        const float* p3 = p2 + hidden;
+        const float* p4 = p3 + hidden;
+        const float* p5 = p4 + hidden;
+        const float* p6 = p5 + hidden;
+        const float* p7 = p6 + hidden;
+        __m256 a0 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel] : 0.F),
+                                  _mm256_loadu_ps(act + std::size_t(channel) * 8));
+        __m256 a1 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 1] : 0.F),
+                                  _mm256_loadu_ps(act + std::size_t(channel + 1) * 8));
+        __m256 a2 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 2] : 0.F),
+                                  _mm256_loadu_ps(act + std::size_t(channel + 2) * 8));
+        __m256 a3 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 3] : 0.F),
+                                  _mm256_loadu_ps(act + std::size_t(channel + 3) * 8));
+        __m256 a4 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 4] : 0.F),
+                                  _mm256_loadu_ps(act + std::size_t(channel + 4) * 8));
+        __m256 a5 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 5] : 0.F),
+                                  _mm256_loadu_ps(act + std::size_t(channel + 5) * 8));
+        __m256 a6 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 6] : 0.F),
+                                  _mm256_loadu_ps(act + std::size_t(channel + 6) * 8));
+        __m256 a7 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 7] : 0.F),
+                                  _mm256_loadu_ps(act + std::size_t(channel + 7) * 8));
+        for (int h = 0; h < hidden; ++h) {
+          const __m256 g = _mm256_loadu_ps(hidden_tile.data() + std::size_t(h) * 8);
+          a0 = _mm256_fmadd_ps(_mm256_set1_ps(p0[h]), g, a0);
+          a1 = _mm256_fmadd_ps(_mm256_set1_ps(p1[h]), g, a1);
+          a2 = _mm256_fmadd_ps(_mm256_set1_ps(p2[h]), g, a2);
+          a3 = _mm256_fmadd_ps(_mm256_set1_ps(p3[h]), g, a3);
+          a4 = _mm256_fmadd_ps(_mm256_set1_ps(p4[h]), g, a4);
+          a5 = _mm256_fmadd_ps(_mm256_set1_ps(p5[h]), g, a5);
+          a6 = _mm256_fmadd_ps(_mm256_set1_ps(p6[h]), g, a6);
+          a7 = _mm256_fmadd_ps(_mm256_set1_ps(p7[h]), g, a7);
+        }
+        _mm256_storeu_ps(dst + std::size_t(channel) * plane + spatial, a0);
+        _mm256_storeu_ps(dst + std::size_t(channel + 1) * plane + spatial, a1);
+        _mm256_storeu_ps(dst + std::size_t(channel + 2) * plane + spatial, a2);
+        _mm256_storeu_ps(dst + std::size_t(channel + 3) * plane + spatial, a3);
+        _mm256_storeu_ps(dst + std::size_t(channel + 4) * plane + spatial, a4);
+        _mm256_storeu_ps(dst + std::size_t(channel + 5) * plane + spatial, a5);
+        _mm256_storeu_ps(dst + std::size_t(channel + 6) * plane + spatial, a6);
+        _mm256_storeu_ps(dst + std::size_t(channel + 7) * plane + spatial, a7);
+      }
+    }
     for (; channel + 4 <= channels; channel += 4) {
       const float* p0 = project_weights + std::size_t(channel) * hidden;
       const float* p1 = p0 + hidden;

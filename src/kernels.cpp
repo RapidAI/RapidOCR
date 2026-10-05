@@ -108,7 +108,8 @@ void Avx2Conv3x3Stride1x4(float* dst, const float* src, const float* weights,
                           const float* bias, int first_output, int last_output,
                           int input_channels, int input_h, int input_w,
                           int output_h, int output_w, int pad_top,
-                          int pad_left, bool relu) noexcept;
+                          int pad_left, bool relu, int row_begin = 0,
+                          int row_end = -1, bool accumulate = false) noexcept;
 void Avx2Conv3x3Stride2(float* dst, const float* src, const float* weights,
                          const float* bias, int first_output, int last_output,
                          int input_channels, int input_h, int input_w,
@@ -118,12 +119,14 @@ void Avx2Conv3x3Stride2x4(float* dst, const float* src, const float* weights,
                            const float* bias, int first_output, int last_output,
                            int input_channels, int input_h, int input_w,
                            int output_h, int output_w, int pad_top,
-                           int pad_left, bool relu) noexcept;
+                           int pad_left, bool relu, int row_begin = 0,
+                           int row_end = -1, bool accumulate = false) noexcept;
 void Avx2Conv3x3Stride2x8(float* dst, const float* src, const float* weights,
                            const float* bias, int first_output, int last_output,
                            int input_channels, int input_h, int input_w,
                            int output_h, int output_w, int pad_top,
-                           int pad_left, bool relu) noexcept;
+                           int pad_left, bool relu, int row_begin = 0,
+                           int row_end = -1, bool accumulate = false) noexcept;
 void Avx2WriteIdentityRgbToNchw(float* dst, const std::uint8_t* rgb, int width,
                                 int height, int source_width, int left, int top,
                                 const float* scale, const float* shift,
@@ -1432,6 +1435,26 @@ void NearestResize2xAdd(float* dst, const float* src, const float* residual,
 #endif
 #if defined(PPOCR_HAS_AVX2_KERNELS)
   if (simd_enabled && HasAvx2()) {
+    const int planes = batches * channels;
+    const std::size_t input_plane = std::size_t(input_height) * input_width;
+    const std::size_t output_plane = input_plane * 4;
+    // Page FPN Resize.2 is 64x248x192. The serial plane walk left three cores
+    // idle. Same predicate as the AVX-512 path. `PPOCR_DISABLE_AVX2_RESIZE2X_PF`
+    // restores the single-thread kernel.
+    static const bool plane_pf =
+        std::getenv("PPOCR_DISABLE_AVX2_RESIZE2X_PF") == nullptr;
+    if (plane_pf && planes >= 16 && input_height >= 16 && input_width >= 64) {
+      ParallelFor(planes, [&](int first, int last) {
+        for (int plane = first; plane < last; ++plane) {
+          Avx2NearestResize2xAdd(
+              dst + std::size_t(plane) * output_plane,
+              src + std::size_t(plane) * input_plane,
+              residual + std::size_t(plane) * output_plane, 1, 1, input_height,
+              input_width);
+        }
+      });
+      return;
+    }
     Avx2NearestResize2xAdd(dst, src, residual, batches, channels, input_height, input_width);
     return;
   }
@@ -4278,6 +4301,87 @@ void ConcatChannelConv2d(float* dst, const float* const* sources,
     if (split) ParallelFor(groups, body);
     else body(0, groups);
     return;
+  }
+#endif
+#if defined(PPOCR_HAS_AVX2_KERNELS)
+  // Forced AVX2 misses the AVX-512 source-hot row split above and falls
+  // through to one full-image Conv2d plus a partial buffer per extra source.
+  // On the page stem that re-reads two ~48 MB maps from DRAM for every
+  // four-output tile. Even 16-channel sources pack once, then each worker
+  // owns a few output rows and accumulates every source into those rows.
+  // Per-pixel FMA order matches Avx2Conv3x3Stride*x4; the extra source is
+  // added after its own reduction, same as BinaryInplace. ReLU stays on the
+  // last source only. `PPOCR_DISABLE_AVX2_CONCAT_SPLIT` restores the partials.
+  if (!HasAvx512() && HasAvx2() && kernel_h == 3 && kernel_w == 3 &&
+      stride_h == stride_w && (stride_h == 1 || stride_h == 2) &&
+      output_channels >= 4 && (output_channels % 4) == 0 &&
+      std::getenv("PPOCR_DISABLE_AVX2_CONCAT_SPLIT") == nullptr) {
+    bool even16 = source_count >= 2;
+    for (int source = 0; source < source_count; ++source) {
+      if (source_channels[source] != 16) even16 = false;
+    }
+    if (even16 && output_h >= 8 && output_w >= 8) {
+      const int ic = 16;
+      const std::size_t w_src = std::size_t(output_channels) * ic * 9;
+      std::vector<float> wpacks(static_cast<std::size_t>(source_count) * w_src);
+      int channel0 = 0;
+      for (int source = 0; source < source_count; ++source) {
+        float* wsrc = wpacks.data() + std::size_t(source) * w_src;
+        for (int output = 0; output < output_channels; ++output) {
+          std::memcpy(wsrc + std::size_t(output) * ic * 9,
+                      weights + (std::size_t(output) * total_channels + channel0) * 9,
+                      std::size_t(ic) * 9 * sizeof(float));
+        }
+        channel0 += ic;
+      }
+      const auto run_rows = [&](int y0, int y1) {
+        // Four-output tiles match Avx2Conv3x3Stride*x4. An eight-output tile
+        // spilled on this host and slowed the page (542 ms vs 499 ms).
+        for (int output = 0; output < output_channels; output += 4) {
+          for (int source = 0; source < source_count; ++source) {
+            const float* wsrc = wpacks.data() + std::size_t(source) * w_src;
+            const float* source_bias = source == 0 ? bias : nullptr;
+            const bool last_relu = relu && source + 1 == source_count;
+            const bool accumulate = source > 0;
+            if (stride_h == 1) {
+              Avx2Conv3x3Stride1x4(
+                  dst, sources[source], wsrc, source_bias, output, output + 4, ic,
+                  input_h, input_w, output_h, output_w, pad_top, pad_left, last_relu,
+                  y0, y1, accumulate);
+            } else {
+              Avx2Conv3x3Stride2x4(
+                  dst, sources[source], wsrc, source_bias, output, output + 4, ic,
+                  input_h, input_w, output_h, output_w, pad_top, pad_left, last_relu,
+                  y0, y1, accumulate);
+            }
+          }
+        }
+      };
+      // Python's 3.x page (output height around 496) is faster with one
+      // task per row (median 502 ms vs 522 ms). The long-side-960 page is
+      // shorter and prefers four-row tiles. `PPOCR_ENABLE_AVX2_CONCAT_ROW4`
+      // forces four-row tiles on the tall maps too.
+      static const bool force_row4 =
+          std::getenv("PPOCR_ENABLE_AVX2_CONCAT_ROW4") != nullptr &&
+          std::getenv("PPOCR_DISABLE_AVX2_CONCAT_ROW4") == nullptr;
+      const bool row4 = force_row4 || output_h < 384;
+      if (output_h >= 32) {
+        if (row4) {
+          const int tiles = (output_h + 3) / 4;
+          ParallelFor(tiles, [&](int first, int last) {
+            for (int tile = first; tile < last; ++tile) {
+              const int y0 = tile * 4;
+              run_rows(y0, std::min(output_h, y0 + 4));
+            }
+          });
+        } else {
+          ParallelFor(output_h, run_rows);
+        }
+      } else {
+        run_rows(0, output_h);
+      }
+      return;
+    }
   }
 #endif
   const int filter_plane = kernel_h * kernel_w;
