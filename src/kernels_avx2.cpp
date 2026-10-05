@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <immintrin.h>
+#include <limits>
 #include <vector>
 
 namespace ppocr::detail::kernels {
@@ -562,15 +563,84 @@ void Avx2PointwiseConvAddRelu4(float* dst, const float* src, const float* weight
 
 void Avx2ConvTranspose2x2(float* dst, const float* src, const float* weights,
                            const float* bias, int first_output, int last_output,
-                           int input_channels, int output_channels, int input_h, int input_w) noexcept {
+                           int input_channels, int output_channels, int input_h, int input_w,
+                           int first_y, int last_y) noexcept {
   const int output_w = input_w * 2;
   const std::size_t input_plane = std::size_t(input_h) * input_w;
   const std::size_t output_plane = std::size_t(input_h * 2) * output_w;
+  if (last_y < 0) last_y = input_h;
+  if (first_y < 0) first_y = 0;
+  if (last_y > input_h) last_y = input_h;
+  if (first_y >= last_y) return;
   const __m256i duplicate_low = _mm256_setr_epi32(0, 0, 1, 1, 2, 2, 3, 3);
   const __m256i duplicate_high = _mm256_setr_epi32(4, 4, 5, 5, 6, 6, 7, 7);
+  // Page-scale FPN maps spill L2. Accumulating across input channels keeps
+  // one store per output instead of rewriting the plane once per channel.
+  // Small maps stay on the RMW loop. `PPOCR_DISABLE_AVX2_TRANSPOSE_ACC`
+  // restores that loop at every size.
+  static const bool acc_disabled =
+      std::getenv("PPOCR_DISABLE_AVX2_TRANSPOSE_ACC") != nullptr;
+  if (!acc_disabled && output_plane >= 65536) {
+    for (int output = first_output; output < last_output; ++output) {
+      float* out = dst + std::size_t(output) * output_plane;
+      const float base = bias ? bias[output] : 0.F;
+      const __m256 biasv = _mm256_set1_ps(base);
+      for (int y = first_y; y < last_y; ++y) {
+        float* out0 = out + std::size_t(2 * y) * output_w;
+        float* out1 = out0 + output_w;
+        int x = 0;
+        for (; x + 8 <= input_w; x += 8) {
+          __m256 top_lo = biasv, top_hi = biasv, bot_lo = biasv, bot_hi = biasv;
+          for (int input = 0; input < input_channels; ++input) {
+            const float* row = src + std::size_t(input) * input_plane +
+                               std::size_t(y) * input_w + x;
+            const float* weight =
+                weights + (std::size_t(input) * output_channels + output) * 4;
+            const __m256 top = _mm256_setr_ps(weight[0], weight[1], weight[0], weight[1],
+                                               weight[0], weight[1], weight[0], weight[1]);
+            const __m256 bottom = _mm256_setr_ps(weight[2], weight[3], weight[2], weight[3],
+                                                  weight[2], weight[3], weight[2], weight[3]);
+            const __m256 input_values = _mm256_loadu_ps(row);
+            const __m256 lo = _mm256_permutevar8x32_ps(input_values, duplicate_low);
+            const __m256 hi = _mm256_permutevar8x32_ps(input_values, duplicate_high);
+            top_lo = _mm256_fmadd_ps(lo, top, top_lo);
+            top_hi = _mm256_fmadd_ps(hi, top, top_hi);
+            bot_lo = _mm256_fmadd_ps(lo, bottom, bot_lo);
+            bot_hi = _mm256_fmadd_ps(hi, bottom, bot_hi);
+          }
+          const int xx = x * 2;
+          _mm256_storeu_ps(out0 + xx, top_lo);
+          _mm256_storeu_ps(out0 + xx + 8, top_hi);
+          _mm256_storeu_ps(out1 + xx, bot_lo);
+          _mm256_storeu_ps(out1 + xx + 8, bot_hi);
+        }
+        for (; x < input_w; ++x) {
+          float t0 = base, t1 = base, b0 = base, b1 = base;
+          for (int input = 0; input < input_channels; ++input) {
+            const float value =
+                src[std::size_t(input) * input_plane + std::size_t(y) * input_w + x];
+            const float* weight =
+                weights + (std::size_t(input) * output_channels + output) * 4;
+            t0 += value * weight[0];
+            t1 += value * weight[1];
+            b0 += value * weight[2];
+            b1 += value * weight[3];
+          }
+          const int xx = x * 2;
+          out0[xx] = t0;
+          out0[xx + 1] = t1;
+          out1[xx] = b0;
+          out1[xx + 1] = b1;
+        }
+      }
+    }
+    return;
+  }
   for (int output = first_output; output < last_output; ++output) {
     float* out = dst + std::size_t(output) * output_plane;
-    std::fill_n(out, output_plane, bias ? bias[output] : 0.F);
+    const int row_pairs = last_y - first_y;
+    std::fill_n(out + std::size_t(first_y * 2) * output_w,
+                std::size_t(row_pairs) * 2 * output_w, bias ? bias[output] : 0.F);
     for (int input = 0; input < input_channels; ++input) {
       const float* values = src + std::size_t(input) * input_plane;
       const float* weight = weights + (std::size_t(input) * output_channels + output) * 4;
@@ -578,7 +648,7 @@ void Avx2ConvTranspose2x2(float* dst, const float* src, const float* weights,
                                          weight[0], weight[1], weight[0], weight[1]);
       const __m256 bottom = _mm256_setr_ps(weight[2], weight[3], weight[2], weight[3],
                                             weight[2], weight[3], weight[2], weight[3]);
-      for (int y = 0; y < input_h; ++y) {
+      for (int y = first_y; y < last_y; ++y) {
         const float* row = values + std::size_t(y) * input_w;
         float* out0 = out + std::size_t(2 * y) * output_w;
         float* out1 = out0 + output_w;
@@ -819,8 +889,9 @@ void Avx2DepthwiseConv(float* dst, const float* src, const float* weights,
     for (int y = 0; y < output_h; ++y) {
       const int iy0 = y - pad_top;
       int x = 0;
-      const int interior_begin = y >= first_y && y < last_y ? first_x : 0;
-      const int interior_end = y >= first_y && y < last_y ? last_x : 0;
+      const bool row_interior = y >= first_y && y < last_y;
+      const int interior_begin = first_x;
+      const int interior_end = last_x;
       for (; x < interior_begin; ++x) {
         float sum = base; const int ix0 = x - pad_left;
         for (int ky = 0; ky < kernel_h; ++ky) { const int iy = iy0 + ky; if (iy < 0 || iy >= input_h) continue;
@@ -828,14 +899,28 @@ void Avx2DepthwiseConv(float* dst, const float* src, const float* weights,
         }
         out[std::size_t(y) * output_w + x] = sum;
       }
-      for (; x + 8 <= interior_end; x += 8) {
-        __m256 sum = _mm256_set1_ps(base);
-        for (int ky = 0; ky < kernel_h; ++ky) {
-          const float* row = in + std::size_t(iy0 + ky) * input_w + x - pad_left;
-          const float* kernel = filter + ky * kernel_w;
-          for (int kx = 0; kx < kernel_w; ++kx) sum = _mm256_fmadd_ps(_mm256_set1_ps(kernel[kx]), _mm256_loadu_ps(row + kx), sum);
+      if (row_interior) {
+        for (; x + 8 <= interior_end; x += 8) {
+          __m256 sum = _mm256_set1_ps(base);
+          for (int ky = 0; ky < kernel_h; ++ky) {
+            const float* row = in + std::size_t(iy0 + ky) * input_w + x - pad_left;
+            const float* kernel = filter + ky * kernel_w;
+            for (int kx = 0; kx < kernel_w; ++kx) sum = _mm256_fmadd_ps(_mm256_set1_ps(kernel[kx]), _mm256_loadu_ps(row + kx), sum);
+          }
+          _mm256_storeu_ps(out + std::size_t(y) * output_w + x, sum);
         }
-        _mm256_storeu_ps(out + std::size_t(y) * output_w + x, sum);
+      } else {
+        for (; x + 8 <= interior_end; x += 8) {
+          __m256 sum = _mm256_set1_ps(base);
+          for (int ky = 0; ky < kernel_h; ++ky) {
+            const int iy = iy0 + ky;
+            if (iy < 0 || iy >= input_h) continue;
+            const float* row = in + std::size_t(iy) * input_w + x - pad_left;
+            const float* kernel = filter + ky * kernel_w;
+            for (int kx = 0; kx < kernel_w; ++kx) sum = _mm256_fmadd_ps(_mm256_set1_ps(kernel[kx]), _mm256_loadu_ps(row + kx), sum);
+          }
+          _mm256_storeu_ps(out + std::size_t(y) * output_w + x, sum);
+        }
       }
       for (; x < output_w; ++x) {
         float sum = base; const int ix0 = x - pad_left;
@@ -2084,7 +2169,9 @@ void Avx2ExpandGeluProjectAdd(float* dst, const float* src,
   const __m256 one = _mm256_set1_ps(1.F);
   const __m256 inv_sqrt2 = _mm256_set1_ps(0.7071067811865475244F);
   thread_local std::vector<float> hidden_tile;
+  thread_local std::vector<float> packed_act;
   hidden_tile.resize(std::size_t(hidden) * 8);
+  packed_act.resize(std::size_t(channels) * 8);
   const auto gelu = [&](__m256 x) noexcept {
     return _mm256_mul_ps(half, _mm256_mul_ps(x,
         _mm256_add_ps(one, ErfPs(_mm256_mul_ps(x, inv_sqrt2)))));
@@ -2112,6 +2199,11 @@ void Avx2ExpandGeluProjectAdd(float* dst, const float* src,
   };
   std::size_t spatial = spatial_begin;
   for (; spatial + 8 <= spatial_end; spatial += 8) {
+    for (int channel = 0; channel < channels; ++channel) {
+      _mm256_storeu_ps(packed_act.data() + std::size_t(channel) * 8,
+                       _mm256_loadu_ps(src + std::size_t(channel) * plane + spatial));
+    }
+    const float* act = packed_act.data();
     int hidden_channel = 0;
     for (; hidden_channel + 4 <= hidden; hidden_channel += 4) {
       const float* e0 = expand_weights + std::size_t(hidden_channel) * channels;
@@ -2123,7 +2215,7 @@ void Avx2ExpandGeluProjectAdd(float* dst, const float* src,
       __m256 a2 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel + 2] : 0.F);
       __m256 a3 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel + 3] : 0.F);
       for (int channel = 0; channel < channels; ++channel) {
-        const __m256 x = _mm256_loadu_ps(src + std::size_t(channel) * plane + spatial);
+        const __m256 x = _mm256_loadu_ps(act + std::size_t(channel) * 8);
         a0 = _mm256_fmadd_ps(_mm256_set1_ps(e0[channel]), x, a0);
         a1 = _mm256_fmadd_ps(_mm256_set1_ps(e1[channel]), x, a1);
         a2 = _mm256_fmadd_ps(_mm256_set1_ps(e2[channel]), x, a2);
@@ -2139,7 +2231,7 @@ void Avx2ExpandGeluProjectAdd(float* dst, const float* src,
       __m256 acc = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel] : 0.F);
       for (int channel = 0; channel < channels; ++channel) {
         acc = _mm256_fmadd_ps(_mm256_set1_ps(filter[channel]),
-                              _mm256_loadu_ps(src + std::size_t(channel) * plane + spatial), acc);
+                              _mm256_loadu_ps(act + std::size_t(channel) * 8), acc);
       }
       _mm256_storeu_ps(hidden_tile.data() + std::size_t(hidden_channel) * 8, gelu(acc));
     }
@@ -2150,13 +2242,13 @@ void Avx2ExpandGeluProjectAdd(float* dst, const float* src,
       const float* p2 = p1 + hidden;
       const float* p3 = p2 + hidden;
       __m256 a0 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel] : 0.F),
-                                _mm256_loadu_ps(src + std::size_t(channel) * plane + spatial));
+                                _mm256_loadu_ps(act + std::size_t(channel) * 8));
       __m256 a1 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 1] : 0.F),
-                                _mm256_loadu_ps(src + std::size_t(channel + 1) * plane + spatial));
+                                _mm256_loadu_ps(act + std::size_t(channel + 1) * 8));
       __m256 a2 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 2] : 0.F),
-                                _mm256_loadu_ps(src + std::size_t(channel + 2) * plane + spatial));
+                                _mm256_loadu_ps(act + std::size_t(channel + 2) * 8));
       __m256 a3 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 3] : 0.F),
-                                _mm256_loadu_ps(src + std::size_t(channel + 3) * plane + spatial));
+                                _mm256_loadu_ps(act + std::size_t(channel + 3) * 8));
       for (int h = 0; h < hidden; ++h) {
         const __m256 g = _mm256_loadu_ps(hidden_tile.data() + std::size_t(h) * 8);
         a0 = _mm256_fmadd_ps(_mm256_set1_ps(p0[h]), g, a0);
@@ -2172,7 +2264,7 @@ void Avx2ExpandGeluProjectAdd(float* dst, const float* src,
     for (; channel < channels; ++channel) {
       const float* filter = project_weights + std::size_t(channel) * hidden;
       __m256 acc = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel] : 0.F),
-                                 _mm256_loadu_ps(src + std::size_t(channel) * plane + spatial));
+                                 _mm256_loadu_ps(act + std::size_t(channel) * 8));
       for (int h = 0; h < hidden; ++h) {
         acc = _mm256_fmadd_ps(_mm256_set1_ps(filter[h]),
                               _mm256_loadu_ps(hidden_tile.data() + std::size_t(h) * 8), acc);
@@ -2346,9 +2438,195 @@ void Avx2DepthwisePointwiseConv5x5S1(float* dst, const float* src,
 
 // K-contiguous 32-column panels of the CTC vocabulary matrix. Each output
 // element is bias plus K in ascending order, matching Avx2GemmRows.
+namespace {
+float Avx2ReduceMaxPs(__m256 v) noexcept {
+  __m128 lo = _mm256_castps256_ps128(v);
+  __m128 hi = _mm256_extractf128_ps(v, 1);
+  __m128 m = _mm_max_ps(lo, hi);
+  m = _mm_max_ps(m, _mm_movehl_ps(m, m));
+  m = _mm_max_ps(m, _mm_shuffle_ps(m, m, 0x1));
+  return _mm_cvtss_f32(m);
+}
+float Avx2ReduceAddPs(__m256 v) noexcept {
+  __m128 lo = _mm256_castps256_ps128(v);
+  __m128 hi = _mm256_extractf128_ps(v, 1);
+  __m128 s = _mm_add_ps(lo, hi);
+  s = _mm_hadd_ps(s, s);
+  s = _mm_hadd_ps(s, s);
+  return _mm_cvtss_f32(s);
+}
+}  // namespace
+
+void Avx2Depthwise3x3Stride2x1(float* dst, const float* src, const float* weights,
+                               const float* bias, int first_channel, int last_channel,
+                               int input_h, int input_w, int output_h,
+                               int output_w) noexcept {
+  if (!dst || !src || !weights || output_h <= 0 || output_w <= 0) return;
+  const std::size_t input_plane = std::size_t(input_h) * input_w;
+  const std::size_t output_plane = std::size_t(output_h) * output_w;
+  const int first_x = 1;
+  const int last_x = std::max(first_x, output_w - 1);
+  for (int channel = first_channel; channel < last_channel; ++channel) {
+    const float* in = src + std::size_t(channel) * input_plane;
+    const float* filter = weights + std::size_t(channel) * 9;
+    float* out = dst + std::size_t(channel) * output_plane;
+    const float base = bias ? bias[channel] : 0.F;
+    for (int oy = 0; oy < output_h; ++oy) {
+      const int iy0 = oy * 2 - 1;
+      int ox = 0;
+      for (; ox < first_x && ox < output_w; ++ox) {
+        float sum = base;
+        const int ix0 = ox - 1;
+        for (int ky = 0; ky < 3; ++ky) {
+          const int iy = iy0 + ky;
+          if (iy < 0 || iy >= input_h) continue;
+          for (int kx = 0; kx < 3; ++kx) {
+            const int ix = ix0 + kx;
+            if (ix >= 0 && ix < input_w)
+              sum += in[std::size_t(iy) * input_w + ix] * filter[ky * 3 + kx];
+          }
+        }
+        out[std::size_t(oy) * output_w + ox] = sum;
+      }
+      for (; ox + 8 <= last_x; ox += 8) {
+        __m256 sum = _mm256_set1_ps(base);
+        for (int ky = 0; ky < 3; ++ky) {
+          const int iy = iy0 + ky;
+          if (iy < 0 || iy >= input_h) continue;
+          const float* row = in + std::size_t(iy) * input_w + ox - 1;
+          const float* kernel = filter + ky * 3;
+          sum = _mm256_fmadd_ps(_mm256_set1_ps(kernel[0]), _mm256_loadu_ps(row), sum);
+          sum = _mm256_fmadd_ps(_mm256_set1_ps(kernel[1]), _mm256_loadu_ps(row + 1), sum);
+          sum = _mm256_fmadd_ps(_mm256_set1_ps(kernel[2]), _mm256_loadu_ps(row + 2), sum);
+        }
+        _mm256_storeu_ps(out + std::size_t(oy) * output_w + ox, sum);
+      }
+      for (; ox < output_w; ++ox) {
+        float sum = base;
+        const int ix0 = ox - 1;
+        for (int ky = 0; ky < 3; ++ky) {
+          const int iy = iy0 + ky;
+          if (iy < 0 || iy >= input_h) continue;
+          for (int kx = 0; kx < 3; ++kx) {
+            const int ix = ix0 + kx;
+            if (ix >= 0 && ix < input_w)
+              sum += in[std::size_t(iy) * input_w + ix] * filter[ky * 3 + kx];
+          }
+        }
+        out[std::size_t(oy) * output_w + ox] = sum;
+      }
+    }
+  }
+}
+
 void Avx2GemmPacked32(float* dst, const float* a, const float* packed_b,
-                      const float* bias, int rows, int cols, int depth) noexcept {
-  if (!dst || !a || !packed_b || rows <= 0 || cols <= 0 || depth <= 0) return;
+                      const float* bias, int rows, int cols, int depth,
+                      int* ctc_arg, float* ctc_max, float* ctc_sum) noexcept {
+  const bool fuse_ctc = ctc_arg && ctc_max && ctc_sum;
+  if ((!dst && !fuse_ctc) || !a || !packed_b || rows <= 0 || cols <= 0 || depth <= 0) return;
+  if (fuse_ctc) {
+    const float ninf_s = -std::numeric_limits<float>::infinity();
+    for (int row = 0; row < rows; ++row) {
+      ctc_arg[row] = 0;
+      ctc_max[row] = ninf_s;
+      ctc_sum[row] = 0.F;
+    }
+    const int panels = (cols + 31) / 32;
+    const auto update_row = [&](__m256 v, int n0, int n_len, int row) noexcept {
+      if (n_len < 8) {
+        alignas(32) float tmp[8];
+        _mm256_store_ps(tmp, v);
+        for (int lane = n_len; lane < 8; ++lane) tmp[lane] = ninf_s;
+        v = _mm256_load_ps(tmp);
+      }
+      const float pmax = Avx2ReduceMaxPs(v);
+      const __m256 eq = _mm256_cmp_ps(v, _mm256_set1_ps(pmax), _CMP_EQ_OQ);
+      const int bits = _mm256_movemask_ps(eq);
+      const int lane = bits ? __builtin_ctz(bits) : 0;
+      float& mx = ctc_max[row];
+      float& sm = ctc_sum[row];
+      if (pmax > mx) {
+        if (std::isfinite(mx)) {
+          sm *= std::exp(mx - pmax);
+        } else {
+          sm = 0.F;
+        }
+        mx = pmax;
+        ctc_arg[row] = n0 + lane;
+      }
+      __m256 e = ExpPs(_mm256_sub_ps(v, _mm256_set1_ps(mx)));
+      if (n_len < 8) {
+        alignas(32) float tmp[8];
+        _mm256_store_ps(tmp, e);
+        for (int i = n_len; i < 8; ++i) tmp[i] = 0.F;
+        e = _mm256_load_ps(tmp);
+      }
+      sm += Avx2ReduceAddPs(e);
+    };
+    // Eight rows share each 16-wide half of a 32-col packed panel, so B is
+    // reread four times less often than the 2-row store-logits kernel.
+    for (int panel = 0; panel < panels; ++panel) {
+      const float* pb = packed_b + std::size_t(panel) * depth * 32;
+      for (int half = 0; half < 2; ++half) {
+        const int n0 = panel * 32 + half * 16;
+        if (n0 >= cols) break;
+        const int n_len = std::min(16, cols - n0);
+        alignas(32) float btmp[16] = {};
+        if (bias) {
+          std::memcpy(btmp, bias + n0, std::size_t(n_len) * sizeof(float));
+        }
+        const __m256 bias0 = _mm256_load_ps(btmp);
+        const __m256 bias1 = _mm256_load_ps(btmp + 8);
+        const int low_len = std::min(8, n_len);
+        const int high_len = n_len > 8 ? n_len - 8 : 0;
+        // One 8-wide half at a time keeps eight accumulators in ymm registers.
+        const auto accumulate8 = [&](const __m256 bias_v, int right_offset,
+                                     int col0, int len) {
+          if (len <= 0) return;
+          int row = 0;
+          for (; row + 8 <= rows; row += 8) {
+            const float* left0 = a + std::size_t(row) * depth;
+            __m256 a0 = bias_v, b0 = bias_v, c0 = bias_v, d0 = bias_v;
+            __m256 e0 = bias_v, f0 = bias_v, g0 = bias_v, h0 = bias_v;
+            for (int k = 0; k < depth; ++k) {
+              const __m256 r = _mm256_loadu_ps(
+                  pb + std::size_t(k) * 32 + half * 16 + right_offset);
+              a0 = _mm256_fmadd_ps(_mm256_set1_ps(left0[k]), r, a0);
+              b0 = _mm256_fmadd_ps(_mm256_set1_ps(left0[depth + k]), r, b0);
+              c0 = _mm256_fmadd_ps(_mm256_set1_ps(left0[2 * depth + k]), r, c0);
+              d0 = _mm256_fmadd_ps(_mm256_set1_ps(left0[3 * depth + k]), r, d0);
+              e0 = _mm256_fmadd_ps(_mm256_set1_ps(left0[4 * depth + k]), r, e0);
+              f0 = _mm256_fmadd_ps(_mm256_set1_ps(left0[5 * depth + k]), r, f0);
+              g0 = _mm256_fmadd_ps(_mm256_set1_ps(left0[6 * depth + k]), r, g0);
+              h0 = _mm256_fmadd_ps(_mm256_set1_ps(left0[7 * depth + k]), r, h0);
+            }
+            update_row(a0, col0, len, row);
+            update_row(b0, col0, len, row + 1);
+            update_row(c0, col0, len, row + 2);
+            update_row(d0, col0, len, row + 3);
+            update_row(e0, col0, len, row + 4);
+            update_row(f0, col0, len, row + 5);
+            update_row(g0, col0, len, row + 6);
+            update_row(h0, col0, len, row + 7);
+          }
+          for (; row < rows; ++row) {
+            const float* left = a + std::size_t(row) * depth;
+            __m256 acc = bias_v;
+            for (int k = 0; k < depth; ++k) {
+              const __m256 r = _mm256_loadu_ps(
+                  pb + std::size_t(k) * 32 + half * 16 + right_offset);
+              acc = _mm256_fmadd_ps(_mm256_set1_ps(left[k]), r, acc);
+            }
+            update_row(acc, col0, len, row);
+          }
+        };
+        accumulate8(bias0, 0, n0, low_len);
+        accumulate8(bias1, 8, n0 + 8, high_len);
+      }
+    }
+    return;
+  }
+  if (!dst) return;
   const int panels = (cols + 31) / 32;
   const auto panel_rows = [&](int row, int row_count) noexcept {
     const float* left0 = a + std::size_t(row) * depth;
@@ -2407,6 +2685,62 @@ void Avx2GemmPacked32(float* dst, const float* a, const float* packed_b,
   int row = 0;
   for (; row + 2 <= rows; row += 2) panel_rows(row, 2);
   if (row < rows) panel_rows(row, 1);
+}
+
+void Avx2ThresholdRows(std::uint8_t* mask, const float* probability, int width,
+                       int first_y, int last_y, float threshold) noexcept {
+  const __m256 thresh = _mm256_set1_ps(threshold);
+  for (int y = first_y; y < last_y; ++y) {
+    const float* row = probability + std::size_t(y) * width;
+    std::uint8_t* out = mask + std::size_t(y) * width;
+    int x = 0;
+    for (; x + 8 <= width; x += 8) {
+      const int bits = _mm256_movemask_ps(
+          _mm256_cmp_ps(_mm256_loadu_ps(row + x), thresh, _CMP_GT_OQ));
+      for (int lane = 0; lane < 8; ++lane)
+        out[x + lane] = static_cast<std::uint8_t>((bits >> lane) & 1);
+    }
+    for (; x < width; ++x) out[x] = row[x] > threshold ? 1 : 0;
+  }
+}
+
+void Avx2HorizontalOrLeft(std::uint8_t* dst, const std::uint8_t* src, int width,
+                          int first_y, int last_y) noexcept {
+  for (int y = first_y; y < last_y; ++y) {
+    const std::uint8_t* row = src + std::size_t(y) * width;
+    std::uint8_t* out = dst + std::size_t(y) * width;
+    __m128i previous = _mm_setzero_si128();
+    int x = 0;
+    for (; x + 16 <= width; x += 16) {
+      const __m128i values = _mm_loadu_si128(reinterpret_cast<const __m128i*>(row + x));
+      const __m128i shifted = _mm_alignr_epi8(values, previous, 15);
+      _mm_storeu_si128(reinterpret_cast<__m128i*>(out + x), _mm_or_si128(values, shifted));
+      previous = values;
+    }
+    if (x == 0) out[0] = row[0];
+    for (; x < width; ++x)
+      out[x] = static_cast<std::uint8_t>(row[x] | (x > 0 ? row[x - 1] : 0));
+  }
+}
+
+void Avx2VerticalOr(std::uint8_t* dst, const std::uint8_t* src, int width,
+                    int first_y, int last_y) noexcept {
+  for (int y = first_y; y < last_y; ++y) {
+    const std::uint8_t* row = src + std::size_t(y) * width;
+    std::uint8_t* out = dst + std::size_t(y) * width;
+    if (y == 0) {
+      std::memcpy(out, row, static_cast<std::size_t>(width));
+      continue;
+    }
+    const std::uint8_t* up = src + std::size_t(y - 1) * width;
+    int x = 0;
+    for (; x + 16 <= width; x += 16) {
+      const __m128i values = _mm_loadu_si128(reinterpret_cast<const __m128i*>(row + x));
+      const __m128i above = _mm_loadu_si128(reinterpret_cast<const __m128i*>(up + x));
+      _mm_storeu_si128(reinterpret_cast<__m128i*>(out + x), _mm_or_si128(values, above));
+    }
+    for (; x < width; ++x) out[x] = static_cast<std::uint8_t>(row[x] | up[x]);
+  }
 }
 
 }  // namespace ppocr::detail::kernels

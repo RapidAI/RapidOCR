@@ -58,7 +58,7 @@ The animation is the RapidOCR 3.x web demo. On this branch the checked line samp
 
 ### ⚡ Performance
 
-Numbers below were measured on commit `b71f5b7` (the determinism fix). The first call of each series is warmup and is excluded. Models are PP-OCRv6 **tiny** ONNX. The C++ tool is `ppocr_determinism` with `Backend::cpu_only`.
+The 4-thread x86 rows and the 16-thread NEON row were remeasured on this tree with `ppocr_determinism` (`Backend::cpu_only`). Each figure is the mean of 4 calls after that tool's warmup. The 1-thread rows are still the `b71f5b7` means. Models are PP-OCRv6 **tiny** ONNX.
 
 Two images, pixel-identical between PNG and PPM:
 
@@ -75,10 +75,10 @@ C++ option defaults: long-side limit 960, ImageNet detector mean/std, dilation o
 
 | ISA | Threads | hello | page |
 | --- | --- | --- | --- |
-| AVX-512 | 4 | 22.05 ms | 314.3 ms |
-| AVX2 | 4 | 28.83 ms | 461.0 ms |
+| AVX-512 | 4 | 22.9 ms | 222.8 ms |
+| AVX2 | 4 | 23.5 ms | 378.4 ms |
 | AVX-512 | 1 | 35.14 ms | 387.6 ms |
-| NEON | 16 | 32.49 ms | 241.7 ms |
+| NEON | 16 | 33.7 ms | 231.4 ms |
 | NEON | 1 | 68.52 ms | — |
 
 Text, scores, and boxes on these runs matched the 1-thread result of the same binary (the determinism check compares them bit for bit). Earlier kernel notes, including GEMM shapes, live in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) and are older than this table.
@@ -87,22 +87,23 @@ Text, scores, and boxes on these runs matched the 1-thread result of the same bi
 
 Same machine as the x86 rows, same tiny ONNX files, Python 3.12. `rapidocr==3.9.2` used ONNX Runtime 1.30.0. `use_cls=False` on both sides, so the 3.9.2 angle classifier did not run. 3.9.2's own published default is PP-OCRv6 **small** with the classifier left on; that configuration was not timed here.
 
-Wall clock is the mean of 5 hello calls or 3 page calls after one warmup. The range is min–max of those calls.
+Wall clock below is the median of 8 calls after one warmup. The range is min–max of those calls. Both packages ran back to back on the 4-thread Xeon above. AVX2 is `PPOCR_FORCE_ISA=avx2` in the 5.0.0a1 process only; ONNX Runtime 1.30.0 keeps AVX-512 on this CPU.
 
 **Shared Python defaults** (`config.yaml` on both 5.0.0a1 and 3.9.2: short-side limit 736, mean/std 0.5, dilation on). A short 960×240 line is enlarged until the short side reaches 736, which is why these times are higher than the C++ defaults above.
 
 | Package | hello | page |
 | --- | --- | --- |
-| rapidocr 5.0.0a1 | 143.5 ms (133.2–162.1) | 540.4 ms (521.6–554.0) |
-| rapidocr 3.9.2 | 180.8 ms (171.1–188.5) | 518.2 ms (505.8–541.0) |
+| rapidocr 5.0.0a1, AVX-512 | 121.0 ms (103.5–156.3) | 410.6 ms (391.7–441.2) |
+| rapidocr 5.0.0a1, AVX2 | 161.7 ms (152.6–164.4) | 587.4 ms (573.7–611.5) |
+| rapidocr 3.9.2 (ORT AVX-512) | 205.8 ms (174.8–257.0) | 514.4 ms (434.1–551.6) |
 
-The page text is the same 45 strings on both packages. Hello is `Hello RapidOCR 123` on both (scores differ: about 0.981 on 5.0.0a1 and 0.997 on 3.9.2).
+Against that 3.9.2 median, AVX-512 hello is 41% faster and the page is 20% faster (means 122.1 ms and 412.1 ms versus 211.1 ms and 509.0 ms, which is 19% on the page because 3.9.2's own range is wide). Forced AVX2 hello is 21% faster. The forced-AVX2 page is 14% slower than this AVX-512 ORT: the recognizer expand-GELU GEMMs already sit near the AVX2/AVX-512 width ratio (about 1.8×), and ORT is not forced off AVX-512. The page text is the same 45 strings on all three rows. Hello is `Hello RapidOCR 123` on all three. Boxes versus the pre-change 5.0.0a1 binary have IoU 1.0 on both images. 3.9.2's own boxes on this page differ from 5.0.0a1 (minimum IoU about 0.85); that detection gap was already present before these kernels.
 
 **C++ detection defaults** applied on both packages (long-side limit 960, ImageNet mean/std, dilation off, thresholds 0.20 / 0.45, unclip 1.40). The 5.x C++ row is the table above. The Python and 3.9.2 rows are wall clock; `elapse` is the package's own timer.
 
 | Runner | hello | page |
 | --- | --- | --- |
-| 5.0.0a1 C++ | 22.05 ms | 314.3 ms |
+| 5.0.0a1 C++ | 22.9 ms | 222.8 ms |
 | 5.0.0a1 Python | 20.07 ms (18.61–21.78) | 339.1 ms (332.9–348.5) |
 | 3.9.2 Python | 28.73 ms (engine `elapse` 20.2 ms) | 548.2 ms (engine `elapse` 521.3 ms) |
 

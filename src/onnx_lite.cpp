@@ -84,9 +84,17 @@ void ResizeUninitialized(std::vector<float>& values, std::size_t count) {
   reinterpret_cast<std::vector<Raw>&>(values).resize(count);
 }
 
+thread_local std::vector<float> g_large_activation;
+
 std::vector<float> PooledActivation(std::size_t count) {
   static const bool disabled = std::getenv("PPOCR_DISABLE_ACTIVATION_POOL") != nullptr;
   std::vector<float> values;
+  constexpr std::size_t kLargeMinFloats = 4 * 1024 * 1024;
+  if (!disabled && count >= kLargeMinFloats && g_large_activation.capacity() >= count) {
+    values = std::move(g_large_activation);
+    if (values.size() != count) ResizeUninitialized(values, count);
+    return values;
+  }
   if (!disabled && !g_activation_pool.empty()) {
     std::size_t best = g_activation_pool.size();
     std::size_t best_capacity = std::numeric_limits<std::size_t>::max();
@@ -116,6 +124,10 @@ std::vector<float> PooledActivation(std::size_t count) {
   return values;
 }
 
+// One detector-scale map (FPN laterals are ~48 MB). Recognition crops stay
+// under the small-pool cap, so this slot is not pinned on every crop worker
+// unless that worker actually built a page-sized tensor. A smaller buffer
+// must not evict the page map.
 void RecycleActivation(std::vector<float>& values) {
   static const bool disabled = std::getenv("PPOCR_DISABLE_ACTIVATION_POOL") != nullptr;
   if (disabled) return;
@@ -123,6 +135,12 @@ void RecycleActivation(std::vector<float>& values) {
   // 24-slot pool evict useful cache and raise RSS without helping reuse.
   constexpr std::size_t kMinFloats = 4096;
   constexpr std::size_t kMaxFloats = 2 * 1024 * 1024;
+  constexpr std::size_t kLargeMinFloats = 4 * 1024 * 1024;
+  if (values.capacity() >= kLargeMinFloats) {
+    if (g_large_activation.capacity() <= values.capacity())
+      g_large_activation = std::move(values);
+    return;
+  }
   const std::size_t limit = ActivationPoolLimitFloats();
   if (values.capacity() >= kMinFloats && values.capacity() <= kMaxFloats &&
       values.capacity() <= limit) {
@@ -2119,11 +2137,11 @@ void FusePointwiseDepthwise(GraphData& graph) {
 
 // Rec neck: Conv (optionally Squeeze of a unit axis) then
 // FusedBatchNormHardSwish. Fold the affine into W/B and emit HardSwish on
-// the convolution store. Same-host 8-run was not a stable e2e win on GPU
-// rec maps, so this stays ENABLE-only (`PPOCR_ENABLE_CONV_BN_HSWISH`).
+// the convolution store. The affine fold matches the separate Conv+BN, and
+// the fused store matches HardSwish. `PPOCR_DISABLE_CONV_BN_HSWISH` restores
+// the two-op chain.
 void FuseConvBatchNormHardSwish(GraphData& graph) {
-  if (std::getenv("PPOCR_ENABLE_CONV_BN_HSWISH") == nullptr ||
-      std::getenv("PPOCR_DISABLE_CONV_BN_HSWISH") != nullptr) return;
+  if (std::getenv("PPOCR_DISABLE_CONV_BN_HSWISH") != nullptr) return;
   std::unordered_map<std::string, std::size_t> consumers;
   std::unordered_set<std::string> outputs(graph.outputs.begin(), graph.outputs.end());
   for (const auto& node : graph.nodes) for (const auto& input : node.in) {
@@ -4850,7 +4868,7 @@ Tensor NearestResizeAdd(const Node& n, const std::vector<const Tensor*>& in,
     const int channels = int(source.shape[1]);
     const int input_height = int(source.shape[2]);
     const int input_width = int(source.shape[3]);
-    Tensor output{residual.shape, std::vector<float>(residual.data.size())};
+    Tensor output{residual.shape, PooledActivation(residual.data.size())};
     // The device path is a real fused batch primitive: source and residual
     // cross the boundary once, nearest expansion stays in the shader, and
     // the completed sum is read back once.  Hybrid only selects it after the

@@ -61,7 +61,9 @@ void Avx2GemmRows(float* dst, const float* a, const float* b, const float* bias,
 void Avx2GemmAccumulateRows(float* dst, const float* a, const float* b,
                             int first_row, int last_row, int cols, int depth) noexcept;
 void Avx2GemmPacked32(float* dst, const float* a, const float* packed_b,
-                      const float* bias, int rows, int cols, int depth) noexcept;
+                      const float* bias, int rows, int cols, int depth,
+                      int* ctc_arg = nullptr, float* ctc_max = nullptr,
+                      float* ctc_sum = nullptr) noexcept;
 void Avx2BinaryScalar(float* dst, const float* src, std::size_t n, float scalar,
                       BinaryOp op, bool scalar_left) noexcept;
 void Avx2Square(float* dst, const float* src, std::size_t n) noexcept;
@@ -69,6 +71,9 @@ void Avx2DepthwiseConv(float* dst, const float* src, const float* weights,
                        const float* bias, int first_channel, int last_channel,
                        int input_h, int input_w, int output_h, int output_w,
                        int kernel_h, int kernel_w, int pad_top, int pad_left) noexcept;
+void Avx2Depthwise3x3Stride2x1(float* dst, const float* src, const float* weights,
+                               const float* bias, int first_channel, int last_channel,
+                               int input_h, int input_w, int output_h, int output_w) noexcept;
 void Avx2DepthwisePointwiseConv5x5S1(float* dst, const float* src,
                                      const float* dw_weights, const float* dw_bias,
                                      const float* pw_weights, const float* pw_bias,
@@ -82,7 +87,11 @@ void Avx2MaxPool2x2Valid(float* dst, const float* src, int first_plane,
                          int last_plane, int height, int width) noexcept;
 void Avx2ConvTranspose2x2(float* dst, const float* src, const float* weights, const float* bias,
                            int first_output, int last_output, int input_channels,
-                           int output_channels, int input_h, int input_w) noexcept;
+                           int output_channels, int input_h, int input_w,
+                           int first_y = 0, int last_y = -1) noexcept;
+void Avx2ThresholdRows(std::uint8_t*, const float*, int, int, int, float) noexcept;
+void Avx2HorizontalOrLeft(std::uint8_t*, const std::uint8_t*, int, int, int) noexcept;
+void Avx2VerticalOr(std::uint8_t*, const std::uint8_t*, int, int, int) noexcept;
 void Avx2Conv2d(float* dst, const float* src, const float* weights,
                 const float* bias, int first_output, int last_output,
                 int input_channels, int input_h, int input_w, int output_h,
@@ -164,7 +173,9 @@ void Avx512PointwiseConvAddRelu4(float*, const float*, const float*, const float
 void Avx512PointwiseConvAddRelu8(float*, const float*, const float*, const float*, const float*, int, int, int, std::size_t) noexcept;
 void Avx512PointwiseConvRelu4(float*, const float*, const float*, const float*, int, int, int, std::size_t) noexcept;
 void Avx512PointwiseConvRelu8(float*, const float*, const float*, const float*, int, int, int, std::size_t) noexcept;
-void Avx512ConvTranspose2x2(float*, const float*, const float*, const float*, int, int, int, int, int, int) noexcept;
+void Avx512ConvTranspose2x2(float*, const float*, const float*, const float*, int, int, int, int, int, int,
+                            int first_y = 0, int last_y = -1) noexcept;
+void Avx512ThresholdRows(std::uint8_t*, const float*, int, int, int, float) noexcept;
 void Avx512ConvTranspose2x2x4(float*, const float*, const float*, const float*, int, int, int, int, int, int) noexcept;
 void Avx512ConvTranspose2x2Chain16x16x1(float*, const float*, const float*, const float*,
                                         const float*, const float*, int, int) noexcept;
@@ -175,6 +186,7 @@ void Avx512GemmPacked32(float*, const float*, const float*, const float*, int, i
 float Avx512SoftmaxDenom(const float*, int, float) noexcept;
 void Avx512GemmAccumulateRows(float*, const float*, const float*, int, int, int, int) noexcept;
 void Avx512DepthwiseConv(float*, const float*, const float*, const float*, int, int, int, int, int, int, int, int, int, int) noexcept;
+void Avx512Depthwise3x3Stride2x1(float*, const float*, const float*, const float*, int, int, int, int, int, int) noexcept;
 void Avx512DepthwisePointwiseConv3x3S1(float*, const float*, const float*, const float*,
                                        const float*, const float*, int, int, int, int, int,
                                        bool) noexcept;
@@ -4696,6 +4708,33 @@ void ConvTranspose2x2(float* dst, const float* src, const float* weights, const 
   const int output_h = input_h * 2, output_w = input_w * 2;
   const std::size_t input_plane = std::size_t(input_h) * input_w;
   const std::size_t output_plane = std::size_t(output_h) * output_w;
+  // The DB head's last transpose is one channel of a full-page map. Channel
+  // parallelism has nothing to split, and the RMW/acc kernel would otherwise
+  // walk every input channel on one thread. Rows of a 2x2 stride-2 transpose
+  // do not overlap, so split those when the plane spills L2.
+#if defined(PPOCR_HAS_AVX512_KERNELS)
+  if (HasAvx512() && output_channels == 1 && input_h >= 64 && output_plane >= 65536 &&
+      std::getenv("PPOCR_DISABLE_AVX512_TRANSPOSE_ROWPF") == nullptr) {
+    ParallelFor(input_h, [&](int y0, int y1) {
+      Avx512ConvTranspose2x2(dst, src, weights, bias, 0, output_channels,
+                             input_channels, output_channels, input_h, input_w, y0, y1);
+    });
+    if (act) ApplyConvTransposeAct(dst, output_plane, act);
+    return;
+  }
+#endif
+#if defined(PPOCR_HAS_AVX2_KERNELS)
+  if (!HasAvx512() && HasAvx2() && output_channels == 1 && input_h >= 64 &&
+      output_plane >= 65536 &&
+      std::getenv("PPOCR_DISABLE_AVX2_TRANSPOSE_ROWPF") == nullptr) {
+    ParallelFor(input_h, [&](int y0, int y1) {
+      Avx2ConvTranspose2x2(dst, src, weights, bias, 0, output_channels,
+                           input_channels, output_channels, input_h, input_w, y0, y1);
+    });
+    if (act) ApplyConvTransposeAct(dst, output_plane, act);
+    return;
+  }
+#endif
 #if defined(PPOCR_HAS_AVX512_KERNELS)
   const bool tile4 = HasAvx512() &&
       UseAvx512ConvTransposeTile4(output_channels, input_h, input_w);
@@ -5051,6 +5090,15 @@ void DepthwiseConv(float* dst, const float* src, const float* weights,
     if (parallel) ParallelFor(channels, avx); else avx(0, channels);
     return;
   }
+  if (HasAvx512() && stride_h == 2 && stride_w == 1 && kernel_h == 3 && kernel_w == 3 &&
+      pad_top == 1 && pad_left == 1) {
+    const auto avx = [&](int first, int last) {
+      Avx512Depthwise3x3Stride2x1(dst, src, weights, bias, first, last, input_h,
+                                  input_w, output_h, output_w);
+    };
+    if (parallel) ParallelFor(channels, avx); else avx(0, channels);
+    return;
+  }
 #endif
 #if defined(PPOCR_HAS_AVX2_KERNELS)
   if (HasAvx2() && stride_h == 1 && stride_w == 1 &&
@@ -5059,6 +5107,15 @@ void DepthwiseConv(float* dst, const float* src, const float* weights,
     const auto avx = [&](int first, int last) {
       Avx2DepthwiseConv(dst, src, weights, bias, first, last, input_h, input_w,
                         output_h, output_w, kernel_h, kernel_w, pad_top, pad_left);
+    };
+    if (parallel) ParallelFor(channels, avx); else avx(0, channels);
+    return;
+  }
+  if (HasAvx2() && stride_h == 2 && stride_w == 1 && kernel_h == 3 && kernel_w == 3 &&
+      pad_top == 1 && pad_left == 1) {
+    const auto avx = [&](int first, int last) {
+      Avx2Depthwise3x3Stride2x1(dst, src, weights, bias, first, last, input_h,
+                                input_w, output_h, output_w);
     };
     if (parallel) ParallelFor(channels, avx); else avx(0, channels);
     return;
@@ -5840,6 +5897,33 @@ void GemmCtcTop1(int* indices, float* probabilities, const float* left,
 #if defined(PPOCR_HAS_AVX2_KERNELS)
       if (HasAvx2()) {
         const auto packed = PackedCtcB32(right, depth, vocab);
+        // Online argmax+softmax matches the AVX-512 CTC head: the 80x6906
+        // logit matrix is never stored. `PPOCR_DISABLE_AVX2_CTC_ONLINE`
+        // restores the full-logit tile.
+        static const bool online =
+            std::getenv("PPOCR_DISABLE_AVX2_CTC_ONLINE") == nullptr;
+        if (online) {
+          std::vector<int> args(static_cast<std::size_t>(steps));
+          std::vector<float> maxima(static_cast<std::size_t>(steps));
+          std::vector<float> sums(static_cast<std::size_t>(steps));
+          for (int sequence = first; sequence < last; ++sequence) {
+            Avx2GemmPacked32(nullptr,
+                             left + std::size_t(sequence) * steps * depth,
+                             packed->data(), bias, steps, vocab, depth,
+                             args.data(), maxima.data(), sums.data());
+            int previous = -1;
+            for (int step = 0; step < steps; ++step) {
+              const int row = sequence * steps + step;
+              const int best = args[static_cast<std::size_t>(step)];
+              indices[row] = best;
+              const float denom = sums[static_cast<std::size_t>(step)];
+              probabilities[row] = (best != 0 && best != previous && denom > 0.F)
+                  ? 1.F / denom : 0.F;
+              previous = best;
+            }
+          }
+          return;
+        }
         std::vector<float> logits(std::size_t(steps) * vocab);
         for (int sequence = first; sequence < last; ++sequence) {
           Avx2GemmPacked32(logits.data(),
@@ -5946,6 +6030,106 @@ void CtcTop1Scalar(int* indices, float* probabilities, const float* logits,
       previous = best;
     }
   }
+}
+
+void BuildDetectorMask(std::uint8_t* mask, const float* probability, int height,
+                       int width, float threshold, bool dilate) noexcept {
+  if (!mask || !probability || height <= 0 || width <= 0) return;
+  const std::size_t count = std::size_t(height) * width;
+  static const bool simd = std::getenv("PPOCR_DISABLE_DB_MASK_SIMD") == nullptr;
+  const auto scalar_rows = [&](int y0, int y1) {
+    for (int y = y0; y < y1; ++y) {
+      const float* row = probability + std::size_t(y) * width;
+      std::uint8_t* out = mask + std::size_t(y) * width;
+      for (int x = 0; x < width; ++x) out[x] = row[x] > threshold ? 1 : 0;
+    }
+  };
+#if defined(PPOCR_HAS_AVX512_KERNELS)
+  if (simd && HasAvx512() && width >= 16) {
+    if (height >= 32) {
+      ParallelFor(height, [&](int y0, int y1) {
+        Avx512ThresholdRows(mask, probability, width, y0, y1, threshold);
+      });
+    } else {
+      Avx512ThresholdRows(mask, probability, width, 0, height, threshold);
+    }
+  } else
+#endif
+#if defined(PPOCR_HAS_AVX2_KERNELS)
+  if (simd && HasAvx2() && width >= 8) {
+    if (height >= 32) {
+      ParallelFor(height, [&](int y0, int y1) {
+        Avx2ThresholdRows(mask, probability, width, y0, y1, threshold);
+      });
+    } else {
+      Avx2ThresholdRows(mask, probability, width, 0, height, threshold);
+    }
+  } else
+#endif
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+  if (simd && HasNeon() && width >= 4) {
+    const float32x4_t thresh = vdupq_n_f32(threshold);
+    const auto body = [&](int y0, int y1) {
+      for (int y = y0; y < y1; ++y) {
+        const float* row = probability + std::size_t(y) * width;
+        std::uint8_t* out = mask + std::size_t(y) * width;
+        int x = 0;
+        for (; x + 4 <= width; x += 4) {
+          const uint32x4_t bits = vcgtq_f32(vld1q_f32(row + x), thresh);
+          out[x] = static_cast<std::uint8_t>(vgetq_lane_u32(bits, 0) & 1u);
+          out[x + 1] = static_cast<std::uint8_t>(vgetq_lane_u32(bits, 1) & 1u);
+          out[x + 2] = static_cast<std::uint8_t>(vgetq_lane_u32(bits, 2) & 1u);
+          out[x + 3] = static_cast<std::uint8_t>(vgetq_lane_u32(bits, 3) & 1u);
+        }
+        for (; x < width; ++x) out[x] = row[x] > threshold ? 1 : 0;
+      }
+    };
+    if (height >= 32) ParallelFor(height, body);
+    else body(0, height);
+  } else
+#endif
+  {
+    if (count >= 1000000 && height >= 32) ParallelFor(height, scalar_rows);
+    else scalar_rows(0, height);
+  }
+  if (!dilate) return;
+  std::vector<std::uint8_t> horizontal(count);
+  std::vector<std::uint8_t> dilated(count);
+#if defined(PPOCR_HAS_AVX2_KERNELS)
+  if (simd && HasAvx2() && width >= 16) {
+    if (height >= 32) {
+      ParallelFor(height, [&](int y0, int y1) {
+        Avx2HorizontalOrLeft(horizontal.data(), mask, width, y0, y1);
+      });
+      ParallelFor(height, [&](int y0, int y1) {
+        Avx2VerticalOr(dilated.data(), horizontal.data(), width, y0, y1);
+      });
+    } else {
+      Avx2HorizontalOrLeft(horizontal.data(), mask, width, 0, height);
+      Avx2VerticalOr(dilated.data(), horizontal.data(), width, 0, height);
+    }
+    std::memcpy(mask, dilated.data(), count);
+    return;
+  }
+#endif
+  for (int y = 0; y < height; ++y) {
+    const std::uint8_t* row = mask + std::size_t(y) * width;
+    std::uint8_t* out = horizontal.data() + std::size_t(y) * width;
+    out[0] = row[0];
+    for (int x = 1; x < width; ++x)
+      out[x] = static_cast<std::uint8_t>(row[x] | row[x - 1]);
+  }
+  for (int y = 0; y < height; ++y) {
+    const std::uint8_t* row = horizontal.data() + std::size_t(y) * width;
+    std::uint8_t* out = dilated.data() + std::size_t(y) * width;
+    if (y == 0) {
+      std::memcpy(out, row, static_cast<std::size_t>(width));
+      continue;
+    }
+    const std::uint8_t* up = horizontal.data() + std::size_t(y - 1) * width;
+    for (int x = 0; x < width; ++x) out[x] = static_cast<std::uint8_t>(row[x] | up[x]);
+  }
+  std::memcpy(mask, dilated.data(), count);
 }
 
 }  // namespace ppocr::detail::kernels

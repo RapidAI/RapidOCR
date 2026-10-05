@@ -278,6 +278,11 @@ void MaxPool2x2Same(float* dst, const float* src, std::size_t planes,
 // Valid 2x2 stride-1 max pool used by the tiny detector stem before Concat.
 void MaxPool2x2Valid(float* dst, const float* src, std::size_t planes,
                      int height, int width) noexcept;
+// DB binarize. Optional dilation is the OpenCV 2x2 kernel anchored at (1, 1):
+// each foreground pixel also sets the pixel to its right, below, and
+// below-right. `PPOCR_DISABLE_DB_MASK_SIMD` keeps the scalar walk.
+void BuildDetectorMask(std::uint8_t* mask, const float* probability, int height,
+                       int width, float threshold, bool dilate) noexcept;
 // Exact valid NCHW average pooling with a 3x2 window and matching 3x2
 // stride. This is the PP-OCRv6 recognizer bridge between the convolutional
 // stack and transformer. Windows do not overlap, so it uses one contiguous

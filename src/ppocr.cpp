@@ -1063,22 +1063,8 @@ std::vector<Box> DBPost(const Tensor& prob, int dst_w, int dst_h, const Options&
   if (h <= 0 || w <= 0 || dst_w <= 0 || dst_h <= 0) return {};
   const auto probability = prob.data.data() + batch_index * std::size_t(h) * w;
   std::vector<std::uint8_t> mask(std::size_t(w)*h);
-  for(std::size_t i=0;i<mask.size();++i) mask[i]=probability[i]>opt.det_threshold ? 1 : 0;
-  if (opt.det_use_dilation) {
-    // OpenCV dilate with a 2x2 kernel anchors at (1, 1), so each foreground
-    // pixel also sets the pixel to its right, below, and below-right.
-    std::vector<std::uint8_t> dilated(mask.size());
-    for (int y = 0; y < h; ++y) {
-      for (int x = 0; x < w; ++x) {
-        const bool on = mask[std::size_t(y) * w + x] ||
-                        (x > 0 && mask[std::size_t(y) * w + (x - 1)]) ||
-                        (y > 0 && mask[std::size_t(y - 1) * w + x]) ||
-                        (x > 0 && y > 0 && mask[std::size_t(y - 1) * w + (x - 1)]);
-        dilated[std::size_t(y) * w + x] = on ? 1 : 0;
-      }
-    }
-    mask.swap(dilated);
-  }
+  detail::kernels::BuildDetectorMask(mask.data(), probability, h, w, opt.det_threshold,
+                                     opt.det_use_dilation != 0);
   const std::array<int,8> dx{-1,0,1,-1,1,-1,0,1},dy{-1,-1,-1,0,0,1,1,1};
   std::vector<Box> out; out.reserve(64);
   std::vector<int> queue; queue.reserve(256);
@@ -1964,6 +1950,47 @@ std::vector<Result> OCR::Recognize(const Image& image) const {
       out[result_index]=MakeResult(boxes[result_index],std::move(text),confidence);
     }
   };
+  // Width-sorted batches put every wide crop on the last worker. Each crop
+  // already owns a worker, and the inner SIMD pool runs serially there, so
+  // the page wall is the heaviest contiguous slice. Pack longest batches
+  // into the same block sizes IndexExecutor uses. Output slots stay indexed,
+  // so the decoded text does not depend on this order.
+  if (workers > 1 && batches.size() > workers &&
+      std::getenv("PPOCR_DISABLE_REC_LPT") == nullptr) {
+    const int n = static_cast<int>(batches.size());
+    const int active = static_cast<int>(workers);
+    const int block = (n + active - 1) / active;
+    std::vector<int> order(static_cast<std::size_t>(n));
+    std::iota(order.begin(), order.end(), 0);
+    std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
+      const auto& left = batches[static_cast<std::size_t>(a)];
+      const auto& right = batches[static_cast<std::size_t>(b)];
+      return left.width * static_cast<int>(left.count) >
+             right.width * static_cast<int>(right.count);
+    });
+    std::vector<int> load(static_cast<std::size_t>(active));
+    std::vector<int> fill(static_cast<std::size_t>(active));
+    std::vector<Batch> balanced(batches.size());
+    for (int index : order) {
+      int best = 0;
+      bool found = false;
+      for (int worker = 0; worker < active; ++worker) {
+        const int cap = std::min(block, n - worker * block);
+        if (cap <= 0 || fill[static_cast<std::size_t>(worker)] >= cap) continue;
+        if (!found || load[static_cast<std::size_t>(worker)] < load[static_cast<std::size_t>(best)]) {
+          best = worker;
+          found = true;
+        }
+      }
+      const int slot = best * block + fill[static_cast<std::size_t>(best)];
+      balanced[static_cast<std::size_t>(slot)] = batches[static_cast<std::size_t>(index)];
+      load[static_cast<std::size_t>(best)] +=
+          batches[static_cast<std::size_t>(index)].width *
+          static_cast<int>(batches[static_cast<std::size_t>(index)].count);
+      ++fill[static_cast<std::size_t>(best)];
+    }
+    batches.swap(balanced);
+  }
   const auto rec_begin = profile_e2e ? std::chrono::steady_clock::now()
                                      : std::chrono::steady_clock::time_point{};
   if(workers<=1) {

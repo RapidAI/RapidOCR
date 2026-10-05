@@ -1001,10 +1001,15 @@ void Avx512PointwiseConvRelu8(float* dst, const float* src, const float* weights
 }
 void Avx512ConvTranspose2x2(float* dst, const float* src, const float* weights,
                               const float* bias, int first_output, int last_output,
-                              int input_channels, int output_channels, int input_h, int input_w) noexcept {
+                              int input_channels, int output_channels, int input_h, int input_w,
+                              int first_y, int last_y) noexcept {
   const int output_w = input_w * 2;
   const std::size_t input_plane = std::size_t(input_h) * input_w;
   const std::size_t output_plane = std::size_t(input_h * 2) * output_w;
+  if (last_y < 0) last_y = input_h;
+  if (first_y < 0) first_y = 0;
+  if (last_y > input_h) last_y = input_h;
+  if (first_y >= last_y) return;
   const __m512i duplicate = _mm512_setr_epi32(0, 0, 1, 1, 2, 2, 3, 3,
                                                 4, 4, 5, 5, 6, 6, 7, 7);
   const __m512i dup_lo = _mm512_setr_epi32(0, 0, 1, 1, 2, 2, 3, 3,
@@ -1015,20 +1020,24 @@ void Avx512ConvTranspose2x2(float* dst, const float* src, const float* weights,
                                              0, 1, 0, 1, 0, 1, 0, 1);
   const __m512i bot_idx = _mm512_setr_epi32(2, 3, 2, 3, 2, 3, 2, 3,
                                              2, 3, 2, 3, 2, 3, 2, 3);
-  // FPN ConvTranspose is 16-ch 40x176 / 80x352. Register-accumulate writes
-  // each output pair once instead of RMW'ing per IC, but 8-run e2e lost to
-  // the plane-hot RMW (16.24/15.76 vs 15.29/15.46): 110 KB output stays in
-  // L2 while IC-inner src is 28 KB-strided. Keep as an explicit A/B.
-  // `PPOCR_ENABLE_AVX512_TRANSPOSE_ACC` turns it on.
-  static const bool acc =
-      std::getenv("PPOCR_ENABLE_AVX512_TRANSPOSE_ACC") != nullptr &&
-      std::getenv("PPOCR_DISABLE_AVX512_TRANSPOSE_ACC") == nullptr;
+  // Small FPN maps (40x176 → 110 KB) stay on the plane-hot RMW: that
+  // output fits in L2 and an 8-run e2e beat register accumulation. Page-scale
+  // maps do not: a 16-channel 992x768 plane is 3 MB, so RMW rewrites it once
+  // per input channel. Accumulate those in registers and store once.
+  // `PPOCR_ENABLE_AVX512_TRANSPOSE_ACC` forces accumulation on every shape.
+  // `PPOCR_DISABLE_AVX512_TRANSPOSE_ACC` restores RMW everywhere.
+  static const bool acc_forced =
+      std::getenv("PPOCR_ENABLE_AVX512_TRANSPOSE_ACC") != nullptr;
+  static const bool acc_disabled =
+      std::getenv("PPOCR_DISABLE_AVX512_TRANSPOSE_ACC") != nullptr;
+  const bool large_plane = output_plane >= 65536;
+  const bool acc = !acc_disabled && (acc_forced || large_plane);
   if (acc) {
     for (int output = first_output; output < last_output; ++output) {
       float* out = dst + std::size_t(output) * output_plane;
       const float base = bias ? bias[output] : 0.F;
       const __m512 biasv = _mm512_set1_ps(base);
-      for (int y = 0; y < input_h; ++y) {
+      for (int y = first_y; y < last_y; ++y) {
         float* out0 = out + std::size_t(2 * y) * output_w;
         float* out1 = out0 + output_w;
         int x = 0;
@@ -1100,7 +1109,9 @@ void Avx512ConvTranspose2x2(float* dst, const float* src, const float* weights,
   }
   for (int output = first_output; output < last_output; ++output) {
     float* out = dst + std::size_t(output) * output_plane;
-    std::fill_n(out, output_plane, bias ? bias[output] : 0.F);
+    const int row_pairs = last_y - first_y;
+    std::fill_n(out + std::size_t(first_y * 2) * output_w,
+                std::size_t(row_pairs) * 2 * output_w, bias ? bias[output] : 0.F);
     for (int input = 0; input < input_channels; ++input) {
       const float* values = src + std::size_t(input) * input_plane;
       const float* weight = weights + (std::size_t(input) * output_channels + output) * 4;
@@ -1112,7 +1123,7 @@ void Avx512ConvTranspose2x2(float* dst, const float* src, const float* weights,
                                             weight[2], weight[3], weight[2], weight[3],
                                             weight[2], weight[3], weight[2], weight[3],
                                             weight[2], weight[3], weight[2], weight[3]);
-      for (int y = 0; y < input_h; ++y) {
+      for (int y = first_y; y < last_y; ++y) {
         const float* row = values + std::size_t(y) * input_w;
         float* out0 = out + std::size_t(2 * y) * output_w;
         float* out1 = out0 + output_w;
@@ -1215,7 +1226,7 @@ void Avx512ConvTranspose2x2x4(float* dst, const float* src, const float* weights
   }
   if (output < last_output) {
     Avx512ConvTranspose2x2(dst, src, weights, bias, output, last_output,
-                            input_channels, output_channels, input_h, input_w);
+                            input_channels, output_channels, input_h, input_w, 0, input_h);
   }
 }
 
@@ -2253,9 +2264,11 @@ void Avx512DepthwiseConv(float* dst, const float* src, const float* weights,
     for (int y = 0; y < output_h; ++y) {
       const int iy0 = y - pad_top;
       int x = 0;
-      // Left border (and whole rows that touch vertical padding).
-      const int interior_begin = y >= first_y && y < last_y ? first_x : 0;
-      const int interior_end = y >= first_y && y < last_y ? last_x : 0;
+      // Vectorize the horizontal interior of pad rows. Short recognizer maps
+      // are often H=3, so a fully scalar top and bottom row is most of the plane.
+      const bool row_interior = y >= first_y && y < last_y;
+      const int interior_begin = first_x;
+      const int interior_end = last_x;
       for (; x < interior_begin; ++x) {
         float sum = base;
         const int ix0 = x - pad_left;
@@ -2269,19 +2282,36 @@ void Avx512DepthwiseConv(float* dst, const float* src, const float* weights,
         }
         out[std::size_t(y) * output_w + x] = sum;
       }
-      for (; x + 16 <= interior_end; x += 16) {
-        __m512 sum = _mm512_set1_ps(base);
-        for (int ky = 0; ky < kernel_h; ++ky) {
-          const float* row = in + std::size_t(iy0 + ky) * input_w + x - pad_left;
-          const float* kernel = filter + ky * kernel_w;
-          for (int kx = 0; kx < kernel_w; ++kx) {
-            sum = _mm512_fmadd_ps(_mm512_set1_ps(kernel[kx]),
-                                  _mm512_loadu_ps(row + kx), sum);
+      if (row_interior) {
+        for (; x + 16 <= interior_end; x += 16) {
+          __m512 sum = _mm512_set1_ps(base);
+          for (int ky = 0; ky < kernel_h; ++ky) {
+            const float* row = in + std::size_t(iy0 + ky) * input_w + x - pad_left;
+            const float* kernel = filter + ky * kernel_w;
+            for (int kx = 0; kx < kernel_w; ++kx) {
+              sum = _mm512_fmadd_ps(_mm512_set1_ps(kernel[kx]),
+                                    _mm512_loadu_ps(row + kx), sum);
+            }
           }
+          _mm512_storeu_ps(out + std::size_t(y) * output_w + x, sum);
         }
-        _mm512_storeu_ps(out + std::size_t(y) * output_w + x, sum);
+      } else {
+        for (; x + 16 <= interior_end; x += 16) {
+          __m512 sum = _mm512_set1_ps(base);
+          for (int ky = 0; ky < kernel_h; ++ky) {
+            const int iy = iy0 + ky;
+            if (iy < 0 || iy >= input_h) continue;
+            const float* row = in + std::size_t(iy) * input_w + x - pad_left;
+            const float* kernel = filter + ky * kernel_w;
+            for (int kx = 0; kx < kernel_w; ++kx) {
+              sum = _mm512_fmadd_ps(_mm512_set1_ps(kernel[kx]),
+                                    _mm512_loadu_ps(row + kx), sum);
+            }
+          }
+          _mm512_storeu_ps(out + std::size_t(y) * output_w + x, sum);
+        }
       }
-      if (Avx512MaskTailEnabled() && y >= first_y && y < last_y && x < output_w &&
+      if (Avx512MaskTailEnabled() && row_interior && x < output_w &&
           output_w - x <= 16) {
         const int remain = output_w - x;
         const __mmask16 omask = Avx512CountMask(remain);
@@ -5285,13 +5315,60 @@ void Avx512ExpandGeluProjectAdd(float* dst, const float* src,
   const __m512 one = _mm512_set1_ps(1.F);
   const __m512 inv_sqrt2 = _mm512_set1_ps(0.7071067811865475244F);
   thread_local std::vector<float> hidden_tile;
+  thread_local std::vector<float> packed_act;
   hidden_tile.resize(std::size_t(hidden) * 16);
+  packed_act.resize(std::size_t(channels) * 16);
   const auto exact_gelu = [&](__m512 x) noexcept {
     return _mm512_mul_ps(half, _mm512_mul_ps(x,
         _mm512_add_ps(one, ErfPs512(_mm512_mul_ps(x, inv_sqrt2)))));
   };
   const auto expand_tile = [&](std::size_t spatial, __mmask16 mask) noexcept {
+    // Gather the NCHW tile once. Expand rereads every channel for each hidden
+    // group; a strided gather on every pass misses L1 on wide text lines.
+    for (int channel = 0; channel < channels; ++channel) {
+      _mm512_storeu_ps(packed_act.data() + std::size_t(channel) * 16,
+          _mm512_maskz_loadu_ps(mask, src + std::size_t(channel) * plane + spatial));
+    }
+    const float* act = packed_act.data();
     int hidden_channel = 0;
+    for (; hidden_channel + 8 <= hidden; hidden_channel += 8) {
+      const float* e0 = expand_weights + std::size_t(hidden_channel) * channels;
+      const float* e1 = e0 + channels;
+      const float* e2 = e1 + channels;
+      const float* e3 = e2 + channels;
+      const float* e4 = e3 + channels;
+      const float* e5 = e4 + channels;
+      const float* e6 = e5 + channels;
+      const float* e7 = e6 + channels;
+      __m512 a0 = _mm512_set1_ps(expand_bias ? expand_bias[hidden_channel] : 0.F);
+      __m512 a1 = _mm512_set1_ps(expand_bias ? expand_bias[hidden_channel + 1] : 0.F);
+      __m512 a2 = _mm512_set1_ps(expand_bias ? expand_bias[hidden_channel + 2] : 0.F);
+      __m512 a3 = _mm512_set1_ps(expand_bias ? expand_bias[hidden_channel + 3] : 0.F);
+      __m512 a4 = _mm512_set1_ps(expand_bias ? expand_bias[hidden_channel + 4] : 0.F);
+      __m512 a5 = _mm512_set1_ps(expand_bias ? expand_bias[hidden_channel + 5] : 0.F);
+      __m512 a6 = _mm512_set1_ps(expand_bias ? expand_bias[hidden_channel + 6] : 0.F);
+      __m512 a7 = _mm512_set1_ps(expand_bias ? expand_bias[hidden_channel + 7] : 0.F);
+      for (int channel = 0; channel < channels; ++channel) {
+        const __m512 x = _mm512_loadu_ps(act + std::size_t(channel) * 16);
+        a0 = _mm512_fmadd_ps(_mm512_set1_ps(e0[channel]), x, a0);
+        a1 = _mm512_fmadd_ps(_mm512_set1_ps(e1[channel]), x, a1);
+        a2 = _mm512_fmadd_ps(_mm512_set1_ps(e2[channel]), x, a2);
+        a3 = _mm512_fmadd_ps(_mm512_set1_ps(e3[channel]), x, a3);
+        a4 = _mm512_fmadd_ps(_mm512_set1_ps(e4[channel]), x, a4);
+        a5 = _mm512_fmadd_ps(_mm512_set1_ps(e5[channel]), x, a5);
+        a6 = _mm512_fmadd_ps(_mm512_set1_ps(e6[channel]), x, a6);
+        a7 = _mm512_fmadd_ps(_mm512_set1_ps(e7[channel]), x, a7);
+      }
+      alignas(64) float raw[128];
+      _mm512_store_ps(raw + 0, a0); _mm512_store_ps(raw + 16, a1);
+      _mm512_store_ps(raw + 32, a2); _mm512_store_ps(raw + 48, a3);
+      _mm512_store_ps(raw + 64, a4); _mm512_store_ps(raw + 80, a5);
+      _mm512_store_ps(raw + 96, a6); _mm512_store_ps(raw + 112, a7);
+      for (int lane = 0; lane < 8; ++lane) {
+        _mm512_storeu_ps(hidden_tile.data() + std::size_t(hidden_channel + lane) * 16,
+                         exact_gelu(_mm512_load_ps(raw + lane * 16)));
+      }
+    }
     for (; hidden_channel + 4 <= hidden; hidden_channel += 4) {
       const float* e0 = expand_weights + std::size_t(hidden_channel) * channels;
       const float* e1 = e0 + channels;
@@ -5302,8 +5379,7 @@ void Avx512ExpandGeluProjectAdd(float* dst, const float* src,
       __m512 a2 = _mm512_set1_ps(expand_bias ? expand_bias[hidden_channel + 2] : 0.F);
       __m512 a3 = _mm512_set1_ps(expand_bias ? expand_bias[hidden_channel + 3] : 0.F);
       for (int channel = 0; channel < channels; ++channel) {
-        const __m512 x = _mm512_maskz_loadu_ps(
-            mask, src + std::size_t(channel) * plane + spatial);
+        const __m512 x = _mm512_loadu_ps(act + std::size_t(channel) * 16);
         a0 = _mm512_fmadd_ps(_mm512_set1_ps(e0[channel]), x, a0);
         a1 = _mm512_fmadd_ps(_mm512_set1_ps(e1[channel]), x, a1);
         a2 = _mm512_fmadd_ps(_mm512_set1_ps(e2[channel]), x, a2);
@@ -5319,7 +5395,7 @@ void Avx512ExpandGeluProjectAdd(float* dst, const float* src,
       __m512 acc = _mm512_set1_ps(expand_bias ? expand_bias[hidden_channel] : 0.F);
       for (int channel = 0; channel < channels; ++channel) {
         acc = _mm512_fmadd_ps(_mm512_set1_ps(filter[channel]),
-            _mm512_maskz_loadu_ps(mask, src + std::size_t(channel) * plane + spatial), acc);
+            _mm512_loadu_ps(act + std::size_t(channel) * 16), acc);
       }
       _mm512_storeu_ps(hidden_tile.data() + std::size_t(hidden_channel) * 16, exact_gelu(acc));
     }
@@ -5331,16 +5407,16 @@ void Avx512ExpandGeluProjectAdd(float* dst, const float* src,
       const float* p3 = p2 + hidden;
       __m512 a0 = _mm512_add_ps(
           _mm512_set1_ps(project_bias ? project_bias[channel] : 0.F),
-          _mm512_maskz_loadu_ps(mask, src + std::size_t(channel) * plane + spatial));
+          _mm512_loadu_ps(act + std::size_t(channel) * 16));
       __m512 a1 = _mm512_add_ps(
           _mm512_set1_ps(project_bias ? project_bias[channel + 1] : 0.F),
-          _mm512_maskz_loadu_ps(mask, src + std::size_t(channel + 1) * plane + spatial));
+          _mm512_loadu_ps(act + std::size_t(channel + 1) * 16));
       __m512 a2 = _mm512_add_ps(
           _mm512_set1_ps(project_bias ? project_bias[channel + 2] : 0.F),
-          _mm512_maskz_loadu_ps(mask, src + std::size_t(channel + 2) * plane + spatial));
+          _mm512_loadu_ps(act + std::size_t(channel + 2) * 16));
       __m512 a3 = _mm512_add_ps(
           _mm512_set1_ps(project_bias ? project_bias[channel + 3] : 0.F),
-          _mm512_maskz_loadu_ps(mask, src + std::size_t(channel + 3) * plane + spatial));
+          _mm512_loadu_ps(act + std::size_t(channel + 3) * 16));
       for (int h = 0; h < hidden; ++h) {
         const __m512 g = _mm512_loadu_ps(hidden_tile.data() + std::size_t(h) * 16);
         a0 = _mm512_fmadd_ps(_mm512_set1_ps(p0[h]), g, a0);
@@ -5357,7 +5433,7 @@ void Avx512ExpandGeluProjectAdd(float* dst, const float* src,
       const float* filter = project_weights + std::size_t(channel) * hidden;
       __m512 acc = _mm512_add_ps(
           _mm512_set1_ps(project_bias ? project_bias[channel] : 0.F),
-          _mm512_maskz_loadu_ps(mask, src + std::size_t(channel) * plane + spatial));
+          _mm512_loadu_ps(act + std::size_t(channel) * 16));
       for (int h = 0; h < hidden; ++h) {
         acc = _mm512_fmadd_ps(_mm512_set1_ps(filter[h]),
             _mm512_loadu_ps(hidden_tile.data() + std::size_t(h) * 16), acc);
@@ -5388,6 +5464,85 @@ void Avx512LayerNormAffine(float* dst, const float* src, const float* gamma,
   }
   for (; column < width; ++column) {
     dst[column] = ((src[column] - mean) / denom) * gamma[column] + beta[column];
+  }
+}
+
+// 3x3 depthwise, stride 2x1, pad 1. Recognizer blocks Conv.10 / Conv.21 use
+// this shape; the stride-1 kernel does not apply, so they used to be scalar.
+void Avx512Depthwise3x3Stride2x1(float* dst, const float* src, const float* weights,
+                                 const float* bias, int first_channel, int last_channel,
+                                 int input_h, int input_w, int output_h,
+                                 int output_w) noexcept {
+  if (!dst || !src || !weights || output_h <= 0 || output_w <= 0) return;
+  const std::size_t input_plane = std::size_t(input_h) * input_w;
+  const std::size_t output_plane = std::size_t(output_h) * output_w;
+  const int first_x = 1;
+  const int last_x = std::max(first_x, output_w - 1);
+  for (int channel = first_channel; channel < last_channel; ++channel) {
+    const float* in = src + std::size_t(channel) * input_plane;
+    const float* filter = weights + std::size_t(channel) * 9;
+    float* out = dst + std::size_t(channel) * output_plane;
+    const float base = bias ? bias[channel] : 0.F;
+    for (int oy = 0; oy < output_h; ++oy) {
+      const int iy0 = oy * 2 - 1;
+      int ox = 0;
+      for (; ox < first_x && ox < output_w; ++ox) {
+        float sum = base;
+        const int ix0 = ox - 1;
+        for (int ky = 0; ky < 3; ++ky) {
+          const int iy = iy0 + ky;
+          if (iy < 0 || iy >= input_h) continue;
+          for (int kx = 0; kx < 3; ++kx) {
+            const int ix = ix0 + kx;
+            if (ix >= 0 && ix < input_w)
+              sum += in[std::size_t(iy) * input_w + ix] * filter[ky * 3 + kx];
+          }
+        }
+        out[std::size_t(oy) * output_w + ox] = sum;
+      }
+      for (; ox + 16 <= last_x; ox += 16) {
+        __m512 sum = _mm512_set1_ps(base);
+        for (int ky = 0; ky < 3; ++ky) {
+          const int iy = iy0 + ky;
+          if (iy < 0 || iy >= input_h) continue;
+          const float* row = in + std::size_t(iy) * input_w + ox - 1;
+          const float* kernel = filter + ky * 3;
+          sum = _mm512_fmadd_ps(_mm512_set1_ps(kernel[0]), _mm512_loadu_ps(row), sum);
+          sum = _mm512_fmadd_ps(_mm512_set1_ps(kernel[1]), _mm512_loadu_ps(row + 1), sum);
+          sum = _mm512_fmadd_ps(_mm512_set1_ps(kernel[2]), _mm512_loadu_ps(row + 2), sum);
+        }
+        _mm512_storeu_ps(out + std::size_t(oy) * output_w + ox, sum);
+      }
+      for (; ox < output_w; ++ox) {
+        float sum = base;
+        const int ix0 = ox - 1;
+        for (int ky = 0; ky < 3; ++ky) {
+          const int iy = iy0 + ky;
+          if (iy < 0 || iy >= input_h) continue;
+          for (int kx = 0; kx < 3; ++kx) {
+            const int ix = ix0 + kx;
+            if (ix >= 0 && ix < input_w)
+              sum += in[std::size_t(iy) * input_w + ix] * filter[ky * 3 + kx];
+          }
+        }
+        out[std::size_t(oy) * output_w + ox] = sum;
+      }
+    }
+  }
+}
+
+void Avx512ThresholdRows(std::uint8_t* mask, const float* probability, int width,
+                         int first_y, int last_y, float threshold) noexcept {
+  const __m512 thresh = _mm512_set1_ps(threshold);
+  for (int y = first_y; y < last_y; ++y) {
+    const float* row = probability + std::size_t(y) * width;
+    std::uint8_t* out = mask + std::size_t(y) * width;
+    int x = 0;
+    for (; x + 16 <= width; x += 16) {
+      const __mmask16 bits = _mm512_cmp_ps_mask(_mm512_loadu_ps(row + x), thresh, _CMP_GT_OQ);
+      _mm_storeu_si128(reinterpret_cast<__m128i*>(out + x), _mm_maskz_set1_epi8(bits, 1));
+    }
+    for (; x < width; ++x) out[x] = row[x] > threshold ? 1 : 0;
   }
 }
 
