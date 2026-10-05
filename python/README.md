@@ -21,8 +21,13 @@ print(result.txts, result.scores)
 print(result.to_json())
 ```
 
-If model paths are omitted, the package downloads the PP-OCRv6 ONNX bundle
-for `Det.model_type` / `Rec.model_type` (`tiny`, `small`, or `medium`).
+If model paths are omitted, `RapidOCR()` downloads the same files as 3.x:
+`default_models.yaml` selects the URL, the file is saved under
+`Global.model_root_dir` (the package `models/` directory when that is null)
+using the URL filename, and the SHA256 is checked. `download_models()` and
+`download_models(config_yaml)` follow 3.x and return `None`. PP-OCRv6 ONNX
+recognizers also download the dictionary published next to the MNN bundles
+(`ppocrv6_tiny_dict.txt` / `ppocrv6_dict.txt`).
 
 Build a wheel from a checkout that already has the Vulkan-Headers submodule:
 
@@ -49,7 +54,7 @@ What does not carry over from 3.x:
 | --- | --- |
 | ONNX Runtime, OpenVINO, Paddle, PyTorch, TensorRT, MNN | Built-in PP-OCRv6 interpreter. `EngineType.ONNXRUNTIME` and `EngineType.PPOCR_CPP` both select it. The other engine names raise `NotImplementedError`. |
 | PP-OCRv4 and PP-OCRv5 model zoo | PP-OCRv6 ONNX detector and recognizer only. |
-| Angle classifier (`use_cls=True` by default) | The flag is accepted and ignored, with one warning. No cls model is downloaded. |
+| Angle classifier (`use_cls=True` by default) | The cls file is downloaded like 3.x. The native engine does not run it, and logs one warning. |
 | `use_det=False` or `use_rec=False` | Raises `RapidOCRError`. Detection and recognition always run together. |
 | Word and character boxes | `return_word_box` / `return_single_char_box` warn. `word_results` is empty. |
 | `elapse_list` is `[det, cls, rec]` | `[None, None, total]`. The native call is one timed region. An empty page is `RapidOCROutput()` (`boxes`/`txts`/`img` are `None`), same as 3.x. |

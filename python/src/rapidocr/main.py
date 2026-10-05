@@ -11,12 +11,13 @@ from __future__ import annotations
 
 import logging
 import time
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 import numpy as np
 
 from . import _native
-from .download import download_models
+from .inference_engine.base import FileInfo, InferSession
 from .output import RapidOCROutput, filter_by_score
 from .typings import EngineType, OCRVersion
 from .utils.load_image import LoadImage, LoadImageError
@@ -24,6 +25,7 @@ from .utils.parse_parameters import ConfigNode, ParseParams
 from .utils.process_img import apply_vertical_padding, map_boxes_to_original, resize_image_within_bounds
 
 logger = logging.getLogger("rapidocr")
+_PACKAGE_DIR = Path(__file__).resolve().parent
 
 _NATIVE_ENGINES = {EngineType.ONNXRUNTIME.value, EngineType.PPOCR_CPP.value, "onnxruntime", "ppocr_cpp"}
 
@@ -227,7 +229,19 @@ def _load_config(config_path: Optional[str], params: Optional[Dict[str, Any]]) -
     cfg = ParseParams.load(config_path)
     if params:
         ParseParams.update_batch(cfg, params)
+    if cfg.Global.get("model_root_dir") is None:
+        cfg.Global.model_root_dir = _PACKAGE_DIR / "models"
     return cfg
+
+
+def _section_info(section: ConfigNode) -> FileInfo:
+    return FileInfo(
+        section.engine_type,
+        section.ocr_version,
+        section.task_type,
+        section.lang_type,
+        section.model_type,
+    )
 
 
 def _prepare_image(engine: RapidOCR, original: np.ndarray):
@@ -246,17 +260,53 @@ def _prepare_image(engine: RapidOCR, original: np.ndarray):
 
 
 def _resolve_models(cfg: ConfigNode) -> tuple:
+    """Download missing det/rec/dict the way 3.x InferSession does.
+
+    Files land in ``Global.model_root_dir`` under the URL filename. A cls
+    model is downloaded when ``use_cls`` is set, matching 3.x, and is not
+    passed to the native engine.
+    """
+
+    from .utils.download_file import DownloadFile, DownloadFileInput
+    from .utils.download_models import download_task
+    from .utils.log import logger as download_logger
+
+    root = Path(cfg.Global.model_root_dir).expanduser().resolve()
+    root.mkdir(parents=True, exist_ok=True)
     det = cfg.Det.get("model_path")
     rec = cfg.Rec.get("model_path")
     dictionary = cfg.Rec.get("rec_keys_path")
-    if det and rec and dictionary:
-        return str(det), str(rec), str(dictionary)
-    model_type = _enum_value(cfg.Rec.get("model_type") or cfg.Det.get("model_type") or "small")
-    if model_type == "mobile":
-        model_type = "small"
-    root = cfg.Global.get("model_root_dir")
-    fetched = download_models(str(model_type), str(root) if root else None)
-    return det or fetched["det"], rec or fetched["rec"], dictionary or fetched["dict"]
+
+    if not det:
+        info = _section_info(cfg.Det)
+        download_task(root, info)
+        det = root / Path(InferSession.get_model_url(info)["model_dir"]).name
+
+    if not rec or not dictionary:
+        info = _section_info(cfg.Rec)
+        url_info = InferSession.get_model_url(info)
+        if not rec:
+            download_task(root, info)
+            rec = root / Path(url_info["model_dir"]).name
+        if not dictionary:
+            dict_url = url_info.get("dict_url")
+            if not dict_url:
+                raise ValueError("recognizer model has no dict_url in default_models.yaml")
+            dictionary = root / Path(dict_url).name
+            if not dictionary.is_file():
+                DownloadFile.run(
+                    DownloadFileInput(
+                        file_url=dict_url,
+                        save_path=dictionary,
+                        logger=download_logger,
+                        sha256=None,
+                    )
+                )
+
+    if bool(cfg.Global.get("use_cls", True)) and not cfg.Cls.get("model_path"):
+        download_task(root, _section_info(cfg.Cls))
+
+    return str(det), str(rec), str(dictionary)
 
 
 def main() -> None:

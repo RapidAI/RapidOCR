@@ -20,6 +20,8 @@ dependencies = [
     "numpy>=1.21",
     "Pillow>=9.0",
     "PyYAML>=6.0",
+    "requests",
+    "tqdm",
 ]
 
 [project.urls]
