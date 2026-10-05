@@ -64,7 +64,9 @@ jobs:
           fi
 
       - name: Install Python test dependencies
-        run: python -m pip install -r python/tests/ci-constraints.txt pytest
+        run: |
+          python -m pip install -r python/tests/ci-constraints.txt \
+            pytest PyYAML requests tqdm
 
       - name: Lavapipe hello, kernels, and fallback
         env:
