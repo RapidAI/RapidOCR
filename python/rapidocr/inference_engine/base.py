@@ -140,15 +140,6 @@ class InferSession(abc.ABC):
             if model_key in model_dict:
                 return model_dict[model_key]
 
-            # Keep legacy Torch classification registry naming compatible with
-            # the engine-neutral route key used by the shared model registry.
-            legacy_keys = {
-                "ch_ppocr_mobile_v2.0_cls_mobile": "ch_ptocr_mobile_v2.0_cls_mobile",
-            }
-            legacy_key = legacy_keys.get(model_key)
-            if legacy_key in model_dict:
-                return model_dict[legacy_key]
-
             raise ValueError(
                 f"Unsupported configuration: {engine_type}.{ocr_version}.{task_type}.{lang_type}.{model_type}"
             )

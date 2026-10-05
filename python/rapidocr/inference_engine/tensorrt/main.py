@@ -234,15 +234,18 @@ class TRTInferSession(InferSession):
         if cfg.get("model_path"):
             return Path(cfg["model_path"]).stem
 
-        task_type = cfg.task_type.value
-        lang_type = normalize_lang(cfg.lang_type)
-        ocr_version = cfg.ocr_version.value
-        model_type = cfg.model_type.value
-        # Cache names identify the requested configuration.  Some PP-OCRv4
-        # routes intentionally reuse PP-OCRv3 assets (for example English
-        # detection), but their TensorRT cache must remain scoped to the
-        # configured OCR version to avoid collisions.
-        return f"{lang_type}_{ocr_version}_{task_type}_{model_type}"
+        model_key = route_to_model_key(
+            cfg.task_type,
+            cfg.ocr_version,
+            cfg.lang_type,
+            cfg.model_type,
+        )
+        if model_key is None:
+            task_type = cfg.task_type.value
+            lang_type = normalize_lang(cfg.lang_type)
+            model_key = f"{lang_type}_{task_type}_{cfg.model_type.value}"
+
+        return model_key
 
     def _get_gpu_arch(self) -> str:
         """Get GPU architecture string for cache key (e.g., 'sm87')."""

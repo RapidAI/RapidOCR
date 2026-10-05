@@ -2,8 +2,8 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import pytest
-
 from rapidocr import ModelType, OCRVersion
+from rapidocr.inference_engine.base import InferSession
 from rapidocr.utils.model_resolver import (
     MODEL_ROUTES,
     list_supported_langs,
@@ -15,6 +15,37 @@ from tools.validate_model_routes import validate_model_routes
 
 def test_model_routes_schema_is_valid():
     validate_model_routes(MODEL_ROUTES)
+
+
+def test_every_route_resolves_and_exists_in_a_model_registry():
+    registries = InferSession.model_info
+    for version, version_cfg in MODEL_ROUTES.items():
+        if version == "_defs":
+            continue
+        for task, task_cfg in version_cfg.items():
+            if task == "aliases":
+                continue
+            for model_type, routes in task_cfg.items():
+                if model_type == "aliases":
+                    continue
+
+                task_enum = TaskType(task)
+                version_enum = OCRVersion(version)
+                model_enum = ModelType(model_type)
+                for route in routes:
+                    model_key = route["model_key"]
+                    assert any(
+                        model_key in (registry.get(version, {}).get(task, {}) or {})
+                        for engine, registry in registries.items()
+                        if engine != "model_routes"
+                    ), model_key
+                    for lang in route["supported_langs"]:
+                        assert (
+                            route_to_model_key(
+                                task_enum, version_enum, lang, model_enum
+                            )
+                            == model_key
+                        )
 
 
 @pytest.mark.parametrize(
