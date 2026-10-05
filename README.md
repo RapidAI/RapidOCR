@@ -93,11 +93,13 @@ Wall clock below is the median of 8 calls after one warmup. The range is min–m
 
 | Package | hello | page |
 | --- | --- | --- |
-| rapidocr 5.0.0a1, AVX-512 | 100.7 ms (99.5–109.2) | 400.8 ms (390.5–417.5) |
-| rapidocr 5.0.0a1, AVX2 | 128.8 ms (122.3–132.4) | 500.7 ms (480.5–518.5) |
+| rapidocr 5.0.0a1, AVX-512 | 104.0 ms (96.0–112.0) | 355.6 ms (346.8–376.5) |
+| rapidocr 5.0.0a1, AVX2 | 131.8 ms (128.7–133.6) | 481.6 ms (468.1–485.3) |
 | rapidocr 3.9.2 (ORT AVX-512) | 193.0 ms (155.7–224.6) | 508.3 ms (452.8–542.1) |
 
-Against that 3.9.2 median, AVX-512 hello is 48% faster and the page is 21% faster (means 102.1 ms and 402.1 ms versus 191.7 ms and 501.8 ms, which is 20% on the page). Forced AVX2 hello is 33% faster. The forced-AVX2 page median is 1.5% faster than this window's ORT (500.7 ms versus 508.3 ms; means 500.0 ms versus 501.8 ms, a tie). It is not 20% faster: the recognizer's expand-GELU GEMMs are already near the AVX2 peak, about half the AVX-512 FMA width, and ORT is not forced off AVX-512. The page text is the same 45 strings on all three rows. Hello is `Hello RapidOCR 123` on all three. Boxes versus the pre-change 5.0.0a1 binary have IoU 1.0 on both images. 3.9.2's own boxes on this page differ from 5.0.0a1 (minimum IoU about 0.85); that detection gap was already present before these kernels.
+Against that 3.9.2 median, AVX-512 hello is 46% faster and the page is 30% faster (means 103.1 ms and 358.1 ms versus 191.7 ms and 501.8 ms, which is 29% on the page). Forced AVX2 hello is 32% faster. The forced-AVX2 page median is 5% faster than this window's ORT (481.6 ms versus 508.3 ms; means 479.1 ms versus 501.8 ms). The remaining AVX2 page time sits on the recognizer's expand-GELU GEMMs and the CTC head, which already run near the AVX2 FMA peak, about half the AVX-512 width, while ORT on this CPU stays on AVX-512. 3.9.2 was not remeasured for this row; its numbers are the same run as the previous table. The page text is the same 45 strings on all three rows. Hello is `Hello RapidOCR 123` on all three. Boxes versus the previous 5.0.0a1 binary have IoU 1.0 on both images. 3.9.2's own boxes on this page differ from 5.0.0a1 (minimum IoU about 0.85); that detection gap was already present before these kernels.
+
+The x86 C++ rows above were not remeasured. On the ARM board, this tree keeps exact recognition widths: a 16-thread NEON `ppocr_determinism` run was hello 32.7 ms and page 222.9 ms, with determinism passing on both images (the table's 33.0 ms and 232.3 ms).
 
 **C++ detection defaults** applied on both packages (long-side limit 960, ImageNet mean/std, dilation off, thresholds 0.20 / 0.45, unclip 1.40). The 5.x C++ row is the table above. The Python and 3.9.2 rows are wall clock; `elapse` is the package's own timer.
 

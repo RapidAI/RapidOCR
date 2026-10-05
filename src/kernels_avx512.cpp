@@ -5301,6 +5301,173 @@ void Avx512AveragePool3x2Valid(float* dst, const float* src, int first_plane,
   }
 }
 
+namespace {
+
+// Two contiguous 16-wide spatial halves share each weight broadcast.
+// Four hidden outputs keep eight zmm accumulators, the same count as the
+// 16-wide tile, so the inner loop does not spill. Weights stay in their
+// original [row][K] layout; this is not an 8-wide packed broadcast.
+[[gnu::noinline]] void Avx512ExpandProjectSpatial32(
+    float* __restrict__ dst, const float* __restrict__ src,
+    const float* __restrict__ expand_weights, const float* expand_bias,
+    const float* __restrict__ project_weights, const float* project_bias,
+    int channels, int hidden, std::size_t plane, std::size_t spatial,
+    float* __restrict__ packed_act, float* __restrict__ hidden_tile) noexcept {
+  for (int channel = 0; channel < channels; ++channel) {
+    const float* in = src + std::size_t(channel) * plane + spatial;
+    float* out = packed_act + std::size_t(channel) * 32;
+    _mm512_storeu_ps(out, _mm512_loadu_ps(in));
+    _mm512_storeu_ps(out + 16, _mm512_loadu_ps(in + 16));
+  }
+  const __m512 half = _mm512_set1_ps(.5F);
+  const __m512 one = _mm512_set1_ps(1.F);
+  const __m512 inv_sqrt2 = _mm512_set1_ps(0.7071067811865475244F);
+  const auto gelu_pair = [&](float* slot) noexcept {
+    _mm512_storeu_ps(slot, _mm512_mul_ps(half, _mm512_mul_ps(
+        _mm512_loadu_ps(slot),
+        _mm512_add_ps(one, ErfPs512(_mm512_mul_ps(_mm512_loadu_ps(slot), inv_sqrt2))))));
+    _mm512_storeu_ps(slot + 16, _mm512_mul_ps(half, _mm512_mul_ps(
+        _mm512_loadu_ps(slot + 16),
+        _mm512_add_ps(one, ErfPs512(_mm512_mul_ps(_mm512_loadu_ps(slot + 16), inv_sqrt2))))));
+  };
+  int hidden_channel = 0;
+  for (; hidden_channel + 4 <= hidden; hidden_channel += 4) {
+    const float* e0 = expand_weights + std::size_t(hidden_channel) * channels;
+    const float* e1 = e0 + channels;
+    const float* e2 = e1 + channels;
+    const float* e3 = e2 + channels;
+    __m512 a0 = _mm512_set1_ps(expand_bias ? expand_bias[hidden_channel] : 0.F);
+    __m512 b0 = a0;
+    __m512 a1 = _mm512_set1_ps(expand_bias ? expand_bias[hidden_channel + 1] : 0.F);
+    __m512 b1 = a1;
+    __m512 a2 = _mm512_set1_ps(expand_bias ? expand_bias[hidden_channel + 2] : 0.F);
+    __m512 b2 = a2;
+    __m512 a3 = _mm512_set1_ps(expand_bias ? expand_bias[hidden_channel + 3] : 0.F);
+    __m512 b3 = a3;
+    const float* act = packed_act;
+    for (int channel = 0; channel < channels; ++channel) {
+      const __m512 x0 = _mm512_loadu_ps(act);
+      const __m512 x1 = _mm512_loadu_ps(act + 16);
+      act += 32;
+      const __m512 w0 = _mm512_set1_ps(e0[channel]);
+      const __m512 w1 = _mm512_set1_ps(e1[channel]);
+      const __m512 w2 = _mm512_set1_ps(e2[channel]);
+      const __m512 w3 = _mm512_set1_ps(e3[channel]);
+      a0 = _mm512_fmadd_ps(w0, x0, a0);
+      b0 = _mm512_fmadd_ps(w0, x1, b0);
+      a1 = _mm512_fmadd_ps(w1, x0, a1);
+      b1 = _mm512_fmadd_ps(w1, x1, b1);
+      a2 = _mm512_fmadd_ps(w2, x0, a2);
+      b2 = _mm512_fmadd_ps(w2, x1, b2);
+      a3 = _mm512_fmadd_ps(w3, x0, a3);
+      b3 = _mm512_fmadd_ps(w3, x1, b3);
+    }
+    float* slot = hidden_tile + std::size_t(hidden_channel) * 32;
+    _mm512_storeu_ps(slot, a0);
+    _mm512_storeu_ps(slot + 16, b0);
+    _mm512_storeu_ps(slot + 32, a1);
+    _mm512_storeu_ps(slot + 48, b1);
+    _mm512_storeu_ps(slot + 64, a2);
+    _mm512_storeu_ps(slot + 80, b2);
+    _mm512_storeu_ps(slot + 96, a3);
+    _mm512_storeu_ps(slot + 112, b3);
+    gelu_pair(slot);
+    gelu_pair(slot + 32);
+    gelu_pair(slot + 64);
+    gelu_pair(slot + 96);
+  }
+  for (; hidden_channel < hidden; ++hidden_channel) {
+    const float* filter = expand_weights + std::size_t(hidden_channel) * channels;
+    __m512 a = _mm512_set1_ps(expand_bias ? expand_bias[hidden_channel] : 0.F);
+    __m512 b = a;
+    const float* act = packed_act;
+    for (int channel = 0; channel < channels; ++channel) {
+      const __m512 x0 = _mm512_loadu_ps(act);
+      const __m512 x1 = _mm512_loadu_ps(act + 16);
+      act += 32;
+      const __m512 w = _mm512_set1_ps(filter[channel]);
+      a = _mm512_fmadd_ps(w, x0, a);
+      b = _mm512_fmadd_ps(w, x1, b);
+    }
+    float* slot = hidden_tile + std::size_t(hidden_channel) * 32;
+    _mm512_storeu_ps(slot, a);
+    _mm512_storeu_ps(slot + 16, b);
+    gelu_pair(slot);
+  }
+  int channel = 0;
+  for (; channel + 4 <= channels; channel += 4) {
+    const float* p0 = project_weights + std::size_t(channel) * hidden;
+    const float* p1 = p0 + hidden;
+    const float* p2 = p1 + hidden;
+    const float* p3 = p2 + hidden;
+    const float* act0 = packed_act + std::size_t(channel) * 32;
+    __m512 a0 = _mm512_add_ps(_mm512_set1_ps(project_bias ? project_bias[channel] : 0.F),
+                              _mm512_loadu_ps(act0));
+    __m512 b0 = _mm512_add_ps(_mm512_set1_ps(project_bias ? project_bias[channel] : 0.F),
+                              _mm512_loadu_ps(act0 + 16));
+    const float* act1 = act0 + 32;
+    __m512 a1 = _mm512_add_ps(_mm512_set1_ps(project_bias ? project_bias[channel + 1] : 0.F),
+                              _mm512_loadu_ps(act1));
+    __m512 b1 = _mm512_add_ps(_mm512_set1_ps(project_bias ? project_bias[channel + 1] : 0.F),
+                              _mm512_loadu_ps(act1 + 16));
+    const float* act2 = act1 + 32;
+    __m512 a2 = _mm512_add_ps(_mm512_set1_ps(project_bias ? project_bias[channel + 2] : 0.F),
+                              _mm512_loadu_ps(act2));
+    __m512 b2 = _mm512_add_ps(_mm512_set1_ps(project_bias ? project_bias[channel + 2] : 0.F),
+                              _mm512_loadu_ps(act2 + 16));
+    const float* act3 = act2 + 32;
+    __m512 a3 = _mm512_add_ps(_mm512_set1_ps(project_bias ? project_bias[channel + 3] : 0.F),
+                              _mm512_loadu_ps(act3));
+    __m512 b3 = _mm512_add_ps(_mm512_set1_ps(project_bias ? project_bias[channel + 3] : 0.F),
+                              _mm512_loadu_ps(act3 + 16));
+    const float* gelu = hidden_tile;
+    for (int h = 0; h < hidden; ++h) {
+      const __m512 g0 = _mm512_loadu_ps(gelu);
+      const __m512 g1 = _mm512_loadu_ps(gelu + 16);
+      gelu += 32;
+      const __m512 w0 = _mm512_set1_ps(p0[h]);
+      const __m512 w1 = _mm512_set1_ps(p1[h]);
+      const __m512 w2 = _mm512_set1_ps(p2[h]);
+      const __m512 w3 = _mm512_set1_ps(p3[h]);
+      a0 = _mm512_fmadd_ps(w0, g0, a0);
+      b0 = _mm512_fmadd_ps(w0, g1, b0);
+      a1 = _mm512_fmadd_ps(w1, g0, a1);
+      b1 = _mm512_fmadd_ps(w1, g1, b1);
+      a2 = _mm512_fmadd_ps(w2, g0, a2);
+      b2 = _mm512_fmadd_ps(w2, g1, b2);
+      a3 = _mm512_fmadd_ps(w3, g0, a3);
+      b3 = _mm512_fmadd_ps(w3, g1, b3);
+    }
+    _mm512_storeu_ps(dst + std::size_t(channel) * plane + spatial, a0);
+    _mm512_storeu_ps(dst + std::size_t(channel) * plane + spatial + 16, b0);
+    _mm512_storeu_ps(dst + std::size_t(channel + 1) * plane + spatial, a1);
+    _mm512_storeu_ps(dst + std::size_t(channel + 1) * plane + spatial + 16, b1);
+    _mm512_storeu_ps(dst + std::size_t(channel + 2) * plane + spatial, a2);
+    _mm512_storeu_ps(dst + std::size_t(channel + 2) * plane + spatial + 16, b2);
+    _mm512_storeu_ps(dst + std::size_t(channel + 3) * plane + spatial, a3);
+    _mm512_storeu_ps(dst + std::size_t(channel + 3) * plane + spatial + 16, b3);
+  }
+  for (; channel < channels; ++channel) {
+    const float* filter = project_weights + std::size_t(channel) * hidden;
+    const float* act = packed_act + std::size_t(channel) * 32;
+    __m512 a = _mm512_add_ps(_mm512_set1_ps(project_bias ? project_bias[channel] : 0.F),
+                             _mm512_loadu_ps(act));
+    __m512 b = _mm512_add_ps(_mm512_set1_ps(project_bias ? project_bias[channel] : 0.F),
+                             _mm512_loadu_ps(act + 16));
+    const float* gelu = hidden_tile;
+    for (int h = 0; h < hidden; ++h) {
+      const __m512 w = _mm512_set1_ps(filter[h]);
+      a = _mm512_fmadd_ps(w, _mm512_loadu_ps(gelu), a);
+      b = _mm512_fmadd_ps(w, _mm512_loadu_ps(gelu + 16), b);
+      gelu += 32;
+    }
+    _mm512_storeu_ps(dst + std::size_t(channel) * plane + spatial, a);
+    _mm512_storeu_ps(dst + std::size_t(channel) * plane + spatial + 16, b);
+  }
+}
+
+}  // namespace
+
 void Avx512ExpandGeluProjectAdd(float* dst, const float* src,
                                 const float* expand_weights, const float* expand_bias,
                                 const float* project_weights, const float* project_bias,
@@ -5316,8 +5483,14 @@ void Avx512ExpandGeluProjectAdd(float* dst, const float* src,
   const __m512 inv_sqrt2 = _mm512_set1_ps(0.7071067811865475244F);
   thread_local std::vector<float> hidden_tile;
   thread_local std::vector<float> packed_act;
-  hidden_tile.resize(std::size_t(hidden) * 16);
-  packed_act.resize(std::size_t(channels) * 16);
+  // `PPOCR_DISABLE_EXPAND_SPATIAL2` restores the 16-wide tile. The 32-wide
+  // path reuses one broadcast across two spatial halves and does not pack
+  // weights.
+  static const bool spatial2 =
+      std::getenv("PPOCR_DISABLE_EXPAND_SPATIAL2") == nullptr;
+  const std::size_t pack_stride = spatial2 ? 32 : 16;
+  hidden_tile.resize(std::size_t(hidden) * pack_stride);
+  packed_act.resize(std::size_t(channels) * pack_stride);
   const auto exact_gelu = [&](__m512 x) noexcept {
     return _mm512_mul_ps(half, _mm512_mul_ps(x,
         _mm512_add_ps(one, ErfPs512(_mm512_mul_ps(x, inv_sqrt2)))));
@@ -5442,6 +5615,13 @@ void Avx512ExpandGeluProjectAdd(float* dst, const float* src,
     }
   };
   std::size_t spatial = spatial_begin;
+  if (spatial2) {
+    for (; spatial + 32 <= spatial_end; spatial += 32) {
+      Avx512ExpandProjectSpatial32(
+          dst, src, expand_weights, expand_bias, project_weights, project_bias,
+          channels, hidden, plane, spatial, packed_act.data(), hidden_tile.data());
+    }
+  }
   for (; spatial + 16 <= spatial_end; spatial += 16) expand_tile(spatial, 0xFFFF);
   if (spatial < spatial_end) {
     const unsigned width = static_cast<unsigned>(spatial_end - spatial);

@@ -1853,10 +1853,35 @@ std::vector<Result> OCR::Recognize(const Image& image) const {
     for (std::size_t i = 0; i < boxes.size(); ++i)
       page_pad_width = std::max(page_pad_width, RecInputWidth(CropBoundsFor(image, boxes[i]), impl_->opt));
   }
+  // Round natural widths up to a multiple of 32 so nearby lines share one
+  // NCHW batch. Right columns stay zero. 64 changed a decoded line on the
+  // gating page; 32 did not. The same packing slowed the 16-thread NEON
+  // page, so AArch64 keeps exact widths unless PPOCR_REC_WIDTH_ALIGN is set.
+  // `PPOCR_DISABLE_REC_WIDTH_ALIGN` restores exact widths.
+  static const int width_align = [] {
+    if (std::getenv("PPOCR_DISABLE_REC_WIDTH_ALIGN") != nullptr) return 0;
+    const char* configured = std::getenv("PPOCR_REC_WIDTH_ALIGN");
+    if (configured && *configured) {
+      char* end = nullptr;
+      const long parsed = std::strtol(configured, &end, 10);
+      if (end != configured && *end == '\0' && parsed >= 0 && parsed <= 4096)
+        return static_cast<int>(parsed);
+    }
+#if defined(__aarch64__)
+    return 0;
+#else
+    return 32;
+#endif
+  }();
   for(std::size_t i=0;i<boxes.size();++i) {
     const auto crop=CropBoundsFor(image,boxes[i]);
     const int natural_width = RecInputWidth(crop,impl_->opt);
-    auto& bucket = buckets[pad_max ? page_pad_width : natural_width];
+    int bucket_width = natural_width;
+    if (!pad_max && width_align > 1 && natural_width < impl_->opt.rec_max_width) {
+      bucket_width = std::min((natural_width + width_align - 1) / width_align * width_align,
+                              impl_->opt.rec_max_width);
+    }
+    auto& bucket = buckets[pad_max ? page_pad_width : bucket_width];
     bucket.indices.push_back(i);
     bucket.crops.push_back(crop);
   }

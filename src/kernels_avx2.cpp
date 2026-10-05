@@ -1672,11 +1672,12 @@ void Avx2Conv3x3Stride2x4(float* dst, const float* src, const float* weights,
   const int last_y = max_y < 0 ? 0 : std::min(output_h, max_y / 2 + 1);
   const int last_x = max_x < 0 ? 0 : std::min(output_w, max_x / 2 + 1);
   const auto load_stride2 = [](const float* row) {
-    const __m128 a = _mm_loadu_ps(row);
-    const __m128 b = _mm_loadu_ps(row + 4);
-    const __m128 c = _mm_loadu_ps(row + 8);
-    const __m128 d = _mm_loadu_ps(row + 12);
-    return _mm256_set_m128(_mm_shuffle_ps(c, d, 0x88), _mm_shuffle_ps(a, b, 0x88));
+    // Even lanes of 16 contiguous floats. Two ymm loads match the old four
+    // xmm loads (through row+15) and the same 0,2,4,6,8,10,12,14 order.
+    const __m256 lo = _mm256_loadu_ps(row);
+    const __m256 hi = _mm256_loadu_ps(row + 8);
+    const __m256 sh = _mm256_shuffle_ps(lo, hi, 0x88);
+    return _mm256_castpd_ps(_mm256_permute4x64_pd(_mm256_castps_pd(sh), 0xD8));
   };
   const auto scalar4 = [&](float* o0, float* o1, float* o2, float* o3,
                            const float* f0, const float* f1, const float* f2, const float* f3,
@@ -1811,11 +1812,12 @@ void Avx2Conv3x3Stride2x8(float* dst, const float* src, const float* weights,
   const int last_y = max_y < 0 ? 0 : std::min(output_h, max_y / 2 + 1);
   const int last_x = max_x < 0 ? 0 : std::min(output_w, max_x / 2 + 1);
   const auto load_stride2 = [](const float* row) {
-    const __m128 a = _mm_loadu_ps(row);
-    const __m128 b = _mm_loadu_ps(row + 4);
-    const __m128 c = _mm_loadu_ps(row + 8);
-    const __m128 d = _mm_loadu_ps(row + 12);
-    return _mm256_set_m128(_mm_shuffle_ps(c, d, 0x88), _mm_shuffle_ps(a, b, 0x88));
+    // Even lanes of 16 contiguous floats. Two ymm loads match the old four
+    // xmm loads (through row+15) and the same 0,2,4,6,8,10,12,14 order.
+    const __m256 lo = _mm256_loadu_ps(row);
+    const __m256 hi = _mm256_loadu_ps(row + 8);
+    const __m256 sh = _mm256_shuffle_ps(lo, hi, 0x88);
+    return _mm256_castpd_ps(_mm256_permute4x64_pd(_mm256_castps_pd(sh), 0xD8));
   };
   int output = first_output;
   for (; output + 8 <= last_output; output += 8) {
@@ -2211,6 +2213,173 @@ void Avx2WriteBilinearRgbToNchw(float* dst, const std::uint8_t* rgb, int image_w
   }
 }
 
+namespace {
+
+// Two ymm spatial halves share each weight. Four outputs fill eight ymm
+// accumulators (AVX2's latency product) without a ninth live vector that
+// would spill. Weights stay in [row][K]; this is not an 8-wide packed
+// broadcast.
+[[gnu::noinline]] void Avx2ExpandProjectSpatial16(
+    float* __restrict__ dst, const float* __restrict__ src,
+    const float* __restrict__ expand_weights, const float* expand_bias,
+    const float* __restrict__ project_weights, const float* project_bias,
+    int channels, int hidden, std::size_t plane, std::size_t spatial,
+    float* __restrict__ packed_act, float* __restrict__ hidden_tile) noexcept {
+  for (int channel = 0; channel < channels; ++channel) {
+    const float* in = src + std::size_t(channel) * plane + spatial;
+    float* out = packed_act + std::size_t(channel) * 16;
+    _mm256_storeu_ps(out, _mm256_loadu_ps(in));
+    _mm256_storeu_ps(out + 8, _mm256_loadu_ps(in + 8));
+  }
+  const __m256 half = _mm256_set1_ps(.5F);
+  const __m256 one = _mm256_set1_ps(1.F);
+  const __m256 inv_sqrt2 = _mm256_set1_ps(0.7071067811865475244F);
+  const auto gelu_pair = [&](float* slot) noexcept {
+    const __m256 x0 = _mm256_loadu_ps(slot);
+    const __m256 x1 = _mm256_loadu_ps(slot + 8);
+    _mm256_storeu_ps(slot, _mm256_mul_ps(half, _mm256_mul_ps(
+        x0, _mm256_add_ps(one, ErfPs(_mm256_mul_ps(x0, inv_sqrt2))))));
+    _mm256_storeu_ps(slot + 8, _mm256_mul_ps(half, _mm256_mul_ps(
+        x1, _mm256_add_ps(one, ErfPs(_mm256_mul_ps(x1, inv_sqrt2))))));
+  };
+  int hidden_channel = 0;
+  for (; hidden_channel + 4 <= hidden; hidden_channel += 4) {
+    const float* e0 = expand_weights + std::size_t(hidden_channel) * channels;
+    const float* e1 = e0 + channels;
+    const float* e2 = e1 + channels;
+    const float* e3 = e2 + channels;
+    __m256 a0 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel] : 0.F);
+    __m256 b0 = a0;
+    __m256 a1 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel + 1] : 0.F);
+    __m256 b1 = a1;
+    __m256 a2 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel + 2] : 0.F);
+    __m256 b2 = a2;
+    __m256 a3 = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel + 3] : 0.F);
+    __m256 b3 = a3;
+    const float* act = packed_act;
+    for (int channel = 0; channel < channels; ++channel) {
+      const __m256 x0 = _mm256_loadu_ps(act);
+      const __m256 x1 = _mm256_loadu_ps(act + 8);
+      act += 16;
+      const __m256 w0 = _mm256_set1_ps(e0[channel]);
+      const __m256 w1 = _mm256_set1_ps(e1[channel]);
+      const __m256 w2 = _mm256_set1_ps(e2[channel]);
+      const __m256 w3 = _mm256_set1_ps(e3[channel]);
+      a0 = _mm256_fmadd_ps(w0, x0, a0);
+      b0 = _mm256_fmadd_ps(w0, x1, b0);
+      a1 = _mm256_fmadd_ps(w1, x0, a1);
+      b1 = _mm256_fmadd_ps(w1, x1, b1);
+      a2 = _mm256_fmadd_ps(w2, x0, a2);
+      b2 = _mm256_fmadd_ps(w2, x1, b2);
+      a3 = _mm256_fmadd_ps(w3, x0, a3);
+      b3 = _mm256_fmadd_ps(w3, x1, b3);
+    }
+    float* slot = hidden_tile + std::size_t(hidden_channel) * 16;
+    _mm256_storeu_ps(slot, a0);
+    _mm256_storeu_ps(slot + 8, b0);
+    _mm256_storeu_ps(slot + 16, a1);
+    _mm256_storeu_ps(slot + 24, b1);
+    _mm256_storeu_ps(slot + 32, a2);
+    _mm256_storeu_ps(slot + 40, b2);
+    _mm256_storeu_ps(slot + 48, a3);
+    _mm256_storeu_ps(slot + 56, b3);
+    gelu_pair(slot);
+    gelu_pair(slot + 16);
+    gelu_pair(slot + 32);
+    gelu_pair(slot + 48);
+  }
+  for (; hidden_channel < hidden; ++hidden_channel) {
+    const float* filter = expand_weights + std::size_t(hidden_channel) * channels;
+    __m256 a = _mm256_set1_ps(expand_bias ? expand_bias[hidden_channel] : 0.F);
+    __m256 b = a;
+    const float* act = packed_act;
+    for (int channel = 0; channel < channels; ++channel) {
+      const __m256 x0 = _mm256_loadu_ps(act);
+      const __m256 x1 = _mm256_loadu_ps(act + 8);
+      act += 16;
+      const __m256 w = _mm256_set1_ps(filter[channel]);
+      a = _mm256_fmadd_ps(w, x0, a);
+      b = _mm256_fmadd_ps(w, x1, b);
+    }
+    float* slot = hidden_tile + std::size_t(hidden_channel) * 16;
+    _mm256_storeu_ps(slot, a);
+    _mm256_storeu_ps(slot + 8, b);
+    gelu_pair(slot);
+  }
+  int channel = 0;
+  for (; channel + 4 <= channels; channel += 4) {
+    const float* p0 = project_weights + std::size_t(channel) * hidden;
+    const float* p1 = p0 + hidden;
+    const float* p2 = p1 + hidden;
+    const float* p3 = p2 + hidden;
+    const float* act0 = packed_act + std::size_t(channel) * 16;
+    __m256 a0 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel] : 0.F),
+                              _mm256_loadu_ps(act0));
+    __m256 b0 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel] : 0.F),
+                              _mm256_loadu_ps(act0 + 8));
+    const float* act1 = act0 + 16;
+    __m256 a1 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 1] : 0.F),
+                              _mm256_loadu_ps(act1));
+    __m256 b1 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 1] : 0.F),
+                              _mm256_loadu_ps(act1 + 8));
+    const float* act2 = act1 + 16;
+    __m256 a2 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 2] : 0.F),
+                              _mm256_loadu_ps(act2));
+    __m256 b2 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 2] : 0.F),
+                              _mm256_loadu_ps(act2 + 8));
+    const float* act3 = act2 + 16;
+    __m256 a3 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 3] : 0.F),
+                              _mm256_loadu_ps(act3));
+    __m256 b3 = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel + 3] : 0.F),
+                              _mm256_loadu_ps(act3 + 8));
+    const float* gelu = hidden_tile;
+    for (int h = 0; h < hidden; ++h) {
+      const __m256 g0 = _mm256_loadu_ps(gelu);
+      const __m256 g1 = _mm256_loadu_ps(gelu + 8);
+      gelu += 16;
+      const __m256 w0 = _mm256_set1_ps(p0[h]);
+      const __m256 w1 = _mm256_set1_ps(p1[h]);
+      const __m256 w2 = _mm256_set1_ps(p2[h]);
+      const __m256 w3 = _mm256_set1_ps(p3[h]);
+      a0 = _mm256_fmadd_ps(w0, g0, a0);
+      b0 = _mm256_fmadd_ps(w0, g1, b0);
+      a1 = _mm256_fmadd_ps(w1, g0, a1);
+      b1 = _mm256_fmadd_ps(w1, g1, b1);
+      a2 = _mm256_fmadd_ps(w2, g0, a2);
+      b2 = _mm256_fmadd_ps(w2, g1, b2);
+      a3 = _mm256_fmadd_ps(w3, g0, a3);
+      b3 = _mm256_fmadd_ps(w3, g1, b3);
+    }
+    _mm256_storeu_ps(dst + std::size_t(channel) * plane + spatial, a0);
+    _mm256_storeu_ps(dst + std::size_t(channel) * plane + spatial + 8, b0);
+    _mm256_storeu_ps(dst + std::size_t(channel + 1) * plane + spatial, a1);
+    _mm256_storeu_ps(dst + std::size_t(channel + 1) * plane + spatial + 8, b1);
+    _mm256_storeu_ps(dst + std::size_t(channel + 2) * plane + spatial, a2);
+    _mm256_storeu_ps(dst + std::size_t(channel + 2) * plane + spatial + 8, b2);
+    _mm256_storeu_ps(dst + std::size_t(channel + 3) * plane + spatial, a3);
+    _mm256_storeu_ps(dst + std::size_t(channel + 3) * plane + spatial + 8, b3);
+  }
+  for (; channel < channels; ++channel) {
+    const float* filter = project_weights + std::size_t(channel) * hidden;
+    const float* act = packed_act + std::size_t(channel) * 16;
+    __m256 a = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel] : 0.F),
+                             _mm256_loadu_ps(act));
+    __m256 b = _mm256_add_ps(_mm256_set1_ps(project_bias ? project_bias[channel] : 0.F),
+                             _mm256_loadu_ps(act + 8));
+    const float* gelu = hidden_tile;
+    for (int h = 0; h < hidden; ++h) {
+      const __m256 w = _mm256_set1_ps(filter[h]);
+      a = _mm256_fmadd_ps(w, _mm256_loadu_ps(gelu), a);
+      b = _mm256_fmadd_ps(w, _mm256_loadu_ps(gelu + 8), b);
+      gelu += 16;
+    }
+    _mm256_storeu_ps(dst + std::size_t(channel) * plane + spatial, a);
+    _mm256_storeu_ps(dst + std::size_t(channel) * plane + spatial + 8, b);
+  }
+}
+
+}  // namespace
+
 // SVTR MLP: expand 1x1, exact-style GELU, project 1x1, residual add.
 // Eight spatial lanes share each weight, matching Avx512ExpandGeluProjectAdd
 // with the AVX2 ErfPs already used by Avx2ExactGelu. The partial tail keeps
@@ -2229,8 +2398,12 @@ void Avx2ExpandGeluProjectAdd(float* dst, const float* src,
   const __m256 inv_sqrt2 = _mm256_set1_ps(0.7071067811865475244F);
   thread_local std::vector<float> hidden_tile;
   thread_local std::vector<float> packed_act;
-  hidden_tile.resize(std::size_t(hidden) * 8);
-  packed_act.resize(std::size_t(channels) * 8);
+  // `PPOCR_DISABLE_EXPAND_SPATIAL2` restores the 8-wide tile.
+  static const bool spatial2 =
+      std::getenv("PPOCR_DISABLE_EXPAND_SPATIAL2") == nullptr;
+  const std::size_t pack_stride = spatial2 ? 16 : 8;
+  hidden_tile.resize(std::size_t(hidden) * pack_stride);
+  packed_act.resize(std::size_t(channels) * pack_stride);
   const auto gelu = [&](__m256 x) noexcept {
     return _mm256_mul_ps(half, _mm256_mul_ps(x,
         _mm256_add_ps(one, ErfPs(_mm256_mul_ps(x, inv_sqrt2)))));
@@ -2257,6 +2430,13 @@ void Avx2ExpandGeluProjectAdd(float* dst, const float* src,
     }
   };
   std::size_t spatial = spatial_begin;
+  if (spatial2) {
+    for (; spatial + 16 <= spatial_end; spatial += 16) {
+      Avx2ExpandProjectSpatial16(
+          dst, src, expand_weights, expand_bias, project_weights, project_bias,
+          channels, hidden, plane, spatial, packed_act.data(), hidden_tile.data());
+    }
+  }
   for (; spatial + 8 <= spatial_end; spatial += 8) {
     for (int channel = 0; channel < channels; ++channel) {
       _mm256_storeu_ps(packed_act.data() + std::size_t(channel) * 8,
@@ -2913,11 +3093,12 @@ void Avx2DetStemTailRows(float* dst, const float* conv0, const float* conv1_w,
   constexpr int kSpan = 16;
   const std::size_t out_plane = std::size_t(out_h) * out_w;
   const auto load_stride2 = [](const float* row) {
-    const __m128 a = _mm_loadu_ps(row);
-    const __m128 b = _mm_loadu_ps(row + 4);
-    const __m128 c = _mm_loadu_ps(row + 8);
-    const __m128 d = _mm_loadu_ps(row + 12);
-    return _mm256_set_m128(_mm_shuffle_ps(c, d, 0x88), _mm_shuffle_ps(a, b, 0x88));
+    // Even lanes of 16 contiguous floats. Two ymm loads match the old four
+    // xmm loads (through row+15) and the same 0,2,4,6,8,10,12,14 order.
+    const __m256 lo = _mm256_loadu_ps(row);
+    const __m256 hi = _mm256_loadu_ps(row + 8);
+    const __m256 sh = _mm256_shuffle_ps(lo, hi, 0x88);
+    return _mm256_castpd_ps(_mm256_permute4x64_pd(_mm256_castps_pd(sh), 0xD8));
   };
   const auto c0_row = [&](int ch, int y) {
     return conv0 + (std::size_t(ch) * height + y) * width;
