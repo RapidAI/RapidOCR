@@ -1,0 +1,229 @@
+name: build wheels
+
+on:
+  push:
+    branches:
+      - V5_NG
+    tags:
+      - "v5*"
+  pull_request:
+    branches:
+      - V5_NG
+  workflow_dispatch:
+
+concurrency:
+  group: wheels-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  sdist:
+    name: sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build sdist
+        run: |
+          python -m pip install -U build
+          python -m build --sdist
+          (cd dist && sha256sum ./*.tar.gz > SHA256SUMS)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rapidocr-sdist
+          path: |
+            dist/*.tar.gz
+            dist/SHA256SUMS
+          if-no-files-found: error
+
+  wheels-x86_64:
+    name: wheels x86_64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache tiny models
+        uses: actions/cache@v4
+        with:
+          path: ci-models
+          key: rapidocr-ci-models-tiny-v1
+
+      - name: Download tiny models when the cache is empty
+        run: python python/tests/fetch_ci_models.py
+
+      - name: Build manylinux2014 wheels
+        uses: pypa/cibuildwheel@v2.23.3
+        env:
+          CIBW_ARCHS: x86_64
+
+      - name: Check manylinux2014 / manylinux_2_17 tags
+        run: bash .github/check_manylinux_tag.sh wheelhouse
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rapidocr-wheels-x86_64
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+
+  wheels-aarch64:
+    name: wheels aarch64
+    runs-on: ubuntu-24.04-arm
+    outputs:
+      started: ${{ steps.mark.outputs.started }}
+    steps:
+      - name: Mark the native ARM runner as available
+        id: mark
+        run: echo "started=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache tiny models
+        uses: actions/cache@v4
+        with:
+          path: ci-models
+          key: rapidocr-ci-models-tiny-v1
+
+      - name: Download tiny models when the cache is empty
+        run: python python/tests/fetch_ci_models.py
+
+      - name: Build manylinux2014 wheels
+        uses: pypa/cibuildwheel@v2.23.3
+        env:
+          CIBW_ARCHS: aarch64
+
+      - name: Check manylinux2014 / manylinux_2_17 tags
+        run: bash .github/check_manylinux_tag.sh wheelhouse
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rapidocr-wheels-aarch64
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+
+  wheels-aarch64-qemu:
+    name: wheels aarch64 qemu
+    needs: wheels-aarch64
+    if: >-
+      always() &&
+      needs.wheels-aarch64.result == 'failure' &&
+      needs.wheels-aarch64.outputs.started != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: QEMU for aarch64
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Cache tiny models
+        uses: actions/cache@v4
+        with:
+          path: ci-models
+          key: rapidocr-ci-models-tiny-v1
+
+      - name: Download tiny models when the cache is empty
+        run: python python/tests/fetch_ci_models.py
+
+      - name: Build manylinux2014 wheels
+        uses: pypa/cibuildwheel@v2.23.3
+        env:
+          CIBW_ARCHS: aarch64
+
+      - name: Check manylinux2014 / manylinux_2_17 tags
+        run: bash .github/check_manylinux_tag.sh wheelhouse
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rapidocr-wheels-aarch64
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+
+  dist:
+    name: SHA256SUMS
+    needs: [sdist, wheels-x86_64, wheels-aarch64, wheels-aarch64-qemu]
+    if: >-
+      always() &&
+      needs.sdist.result == 'success' &&
+      needs.wheels-x86_64.result == 'success' &&
+      (needs.wheels-aarch64.result == 'success' || needs.wheels-aarch64-qemu.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: rapidocr-*
+          merge-multiple: true
+          path: dist
+
+      - name: Write SHA256SUMS
+        run: |
+          rm -f dist/SHA256SUMS
+          (cd dist && sha256sum ./*.whl ./*.tar.gz | tee SHA256SUMS)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rapidocr-dist
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/SHA256SUMS
+          if-no-files-found: error
+
+  publish:
+    name: PyPI and GitHub Release
+    needs: dist
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v5')
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: rapidocr-dist
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+          skip-existing: true
+          attestations: false
+          verbose: true
+
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/SHA256SUMS
+          generate_release_notes: true

@@ -70,3 +70,18 @@ A call that only reads `txts`, `scores`, and `boxes` from a PP-OCRv6 model
 can switch by installing this package and leaving `use_cls` at its default.
 Set `use_cls=False` to skip the warning. Do not pass `use_det=False` or an
 older OCR version.
+
+## Wheels and publishing
+
+`.github/workflows/build-wheels.yml` builds the manylinux2014 wheels and the
+sdist. It runs on pushes and pull requests to `V5_NG`, on tags named `v5*`,
+and from the Actions “Run workflow” button. A normal push does not upload
+anything to PyPI. Publishing happens only when a `v5*` tag is pushed.
+
+`5.0.0a1` is a pre-release. `pip install rapidocr` keeps installing the 3.x
+release on `main`. The 5.x file is installed with an explicit version, for
+example `pip install rapidocr==5.0.0a1`.
+
+How to turn on PyPI Trusted Publishing, which tag to push, and the Actions
+permission the GitHub Release step needs are in
+[`docs/RELEASING.md`](../docs/RELEASING.md).

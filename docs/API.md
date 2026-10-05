@@ -26,6 +26,9 @@ target_link_libraries(app PRIVATE ppocr::ppocr)   # shared
 # or ppocr::static
 ```
 
+Wheels and the sdist are built by `.github/workflows/build-wheels.yml`.
+Publishing to PyPI is tag-only; see [`RELEASING.md`](RELEASING.md).
+
 `PPOCR_BUILD_SHARED` and `PPOCR_BUILD_STATIC` both default to `ON`.
 Vulkan shaders are embedded only when a host `glslangValidator` (or the
 vendored Windows `glslang.exe` on Windows) is available. The CPU engine does

@@ -53,17 +53,21 @@ exclude = [
     "build*/**",
     ".git/**",
     "python/.pytest_cache/**",
+    "ci-models/**",
+    "wheelhouse/**",
+    "dist/**",
 ]
 
-# Official PyPA manylinux2014 (glibc 2.17, devtoolset GCC). The native library
-# is ctypes-loaded, so each CPython wheel is a retag of the same build.
+# Official PyPA manylinux2014 (glibc 2.17, devtoolset GCC 10). The native
+# library is ctypes-loaded, so each CPython wheel is a retag of the same build.
 [tool.cibuildwheel]
 build = "cp39-* cp310-* cp311-* cp312-* cp313-*"
 skip = "pp* *-musllinux_* *i686 *-win32 *-win_amd64 *-macosx_*"
 archs = ["x86_64", "aarch64"]
 manylinux-x86_64-image = "manylinux2014"
 manylinux-aarch64-image = "manylinux2014"
-test-command = "python -c \"import rapidocr; info = rapidocr.cpu_info(); assert info['active_isa'] in {'scalar', 'avx2', 'avx512', 'neon'}, info; print(rapidocr.__version__, info['active_isa'])\""
+test-requires = ["pytest"]
+test-command = "bash {project}/python/tests/ci_wheel_check.sh"
 
 [tool.cibuildwheel.linux]
-environment = { CMAKE_ARGS = "-DPPOCR_BUILD_EXAMPLES=OFF -DPPOCR_BUILD_TESTS=OFF -DPPOCR_BUILD_STATIC=OFF -DPPOCR_BUILD_SHARED=ON" }
+environment = { CMAKE_ARGS = "-DPPOCR_BUILD_EXAMPLES=OFF -DPPOCR_BUILD_TESTS=OFF -DPPOCR_BUILD_STATIC=OFF -DPPOCR_BUILD_SHARED=ON", CMAKE_BUILD_PARALLEL_LEVEL = "4", PIP_CONSTRAINT = "/project/python/tests/ci-constraints.txt" }

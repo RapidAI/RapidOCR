@@ -7,6 +7,9 @@ __pycache__/
 /python/*.egg-info/
 /python/src/*.egg-info/
 /python/.pytest_cache/
+/ci-models/
+/wheelhouse/
+/dist/
 /python/src/rapidocr/models/*
 !/python/src/rapidocr/models/.gitkeep
 /**/graphify-out/

@@ -230,6 +230,64 @@ namespace {
 
 enum class ForcedIsa { automatic, scalar, avx2, avx512, neon };
 
+#if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
+struct HostIsa {
+  bool fma = false;
+  bool avx2 = false;
+  bool avx512 = false;
+  bool bmi = false;
+  bool bmi2 = false;
+};
+
+// Read CPUID/XCR0 directly. GCC's __builtin_cpu_supports() consults libgcc's
+// __cpu_model, which stays uninitialized for FMA when CPython dlopens this
+// hidden-visibility library on the manylinux2014 image. The probe then
+// reports scalar on an AVX2/AVX-512 host. These bits match the features
+// __builtin_cpu_supports("fma"/"avx2"/"avx512*"/"bmi"/"bmi2") is supposed to
+// report, including the OS XSAVE state check.
+HostIsa DetectHostIsa() noexcept {
+  HostIsa bits;
+  unsigned max_leaf = 0, ebx = 0, ecx = 0, edx = 0;
+  __asm__ volatile("cpuid"
+                   : "=a"(max_leaf), "=b"(ebx), "=c"(ecx), "=d"(edx)
+                   : "a"(0u), "c"(0u));
+  if (max_leaf < 1) return bits;
+  unsigned eax = 0;
+  __asm__ volatile("cpuid"
+                   : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+                   : "a"(1u), "c"(0u));
+  const bool osxsave = (ecx & (1u << 27)) != 0;
+  const bool avx = (ecx & (1u << 28)) != 0;
+  const bool fma = (ecx & (1u << 12)) != 0;
+  if (!osxsave || !avx) return bits;
+  unsigned xcr_lo = 0, xcr_hi = 0;
+  __asm__ volatile("xgetbv" : "=a"(xcr_lo), "=d"(xcr_hi) : "c"(0u));
+  const unsigned long long xcr0 =
+      (static_cast<unsigned long long>(xcr_hi) << 32) | xcr_lo;
+  if ((xcr0 & 0x6ull) != 0x6ull) return bits;
+  bits.fma = fma;
+  if (max_leaf < 7) return bits;
+  __asm__ volatile("cpuid"
+                   : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+                   : "a"(7u), "c"(0u));
+  bits.avx2 = (ebx & (1u << 5)) != 0;
+  bits.bmi = (ebx & (1u << 3)) != 0;
+  bits.bmi2 = (ebx & (1u << 8)) != 0;
+  const bool avx512f = (ebx & (1u << 16)) != 0;
+  const bool avx512dq = (ebx & (1u << 17)) != 0;
+  const bool avx512bw = (ebx & (1u << 30)) != 0;
+  const bool avx512vl = (ebx & (1u << 31)) != 0;
+  bits.avx512 = avx512f && avx512dq && avx512bw && avx512vl &&
+                (xcr0 & 0xe6ull) == 0xe6ull;
+  return bits;
+}
+
+const HostIsa& CachedHostIsa() noexcept {
+  static const HostIsa bits = DetectHostIsa();
+  return bits;
+}
+#endif
+
 ForcedIsa ForcedIsaSelection() noexcept {
   // Read once. The variable selects a legal path only: requesting AVX-512 on
   // a CPU that failed the CPUID/XCR0 check below stays on AVX2 or scalar.
@@ -257,7 +315,8 @@ bool HasAvx2() noexcept {
   if ((_xgetbv(0) & 0x6) != 0x6) return false;
   __cpuidex(info, 7, 0); return (info[1] & (1 << 5)) != 0;
 #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
-  return __builtin_cpu_supports("avx2") && __builtin_cpu_supports("fma");
+  const HostIsa& bits = CachedHostIsa();
+  return bits.avx2 && bits.fma;
 #else
   return false;
 #endif
@@ -294,10 +353,8 @@ bool HasAvx512() noexcept {
   const bool bmi2 = (ebx & (1u << 8)) != 0;
   return avx512f && avx512dq && avx512bw && avx512vl && avx2 && bmi && bmi2;
 #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
-  return __builtin_cpu_supports("avx512f") && __builtin_cpu_supports("avx512dq") &&
-         __builtin_cpu_supports("avx512bw") && __builtin_cpu_supports("avx512vl") &&
-         __builtin_cpu_supports("avx2") && __builtin_cpu_supports("fma") &&
-         __builtin_cpu_supports("bmi") && __builtin_cpu_supports("bmi2");
+  const HostIsa& bits = CachedHostIsa();
+  return bits.avx512 && bits.avx2 && bits.fma && bits.bmi && bits.bmi2;
 #else
   return false;
 #endif

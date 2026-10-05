@@ -1,0 +1,6 @@
+# The cibuildwheel test venv is the manylinux2014 image. Some current
+# releases publish no manylinux_2_17 wheel and then fail to build from
+# source (numpy 2.3+ needs GCC >= 10.3; Pillow 12.3.0 has no 2.17 wheel).
+# These caps apply only to that test install.
+numpy>=1.21,<2.3
+Pillow>=9.0,<12.3
