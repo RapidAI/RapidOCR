@@ -159,6 +159,17 @@ tiny-line figures above are the same host on an earlier run; absolute
 times move a few milliseconds between sessions, and the paired table is
 the comparison for this change.
 
+A later DB unclip change uses rapidocr 3.x's `area * unclip_ratio / perimeter`
+instead of `unclip_ratio * sqrt(area) * 0.15`, and the Python package now
+passes `limit_type`, `mean`, and `std` into that engine. Re-measured on
+this 4-vCPU host with `PPOCR_BACKEND=cpu`, 1 warmup + 5 runs, C++ option
+defaults (long-side limit 960, ImageNet norm): hello 19.4 ms AVX-512 and
+24.2 ms AVX2. The same page is 292 ms AVX-512 and 432 ms AVX2. The detector
+map is unchanged; the tighter boxes are wider recognition crops, so the
+page recognizer does more work. The rapidocr 3.x config (short-side limit
+736, mean/std 0.5) keeps the page near its original resolution and measured
+495 ms AVX-512 and 732 ms AVX2, with the same text as rapidocr 3.9.2.
+
 Thread sweep on this tree (`PPOCR_BENCH_THREADS`, 4 vCPU). Four threads is
 the fastest. The default cap is already `hardware_concurrency`.
 

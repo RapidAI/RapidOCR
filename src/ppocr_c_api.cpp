@@ -50,6 +50,15 @@ ppocr::Options ToOptions(const ppocr_options* options) {
   out.det_batch_size = local.det_batch_size;
   out.batch_preprocess_parallelism = local.batch_preprocess_parallelism;
   out.image_batch_parallelism = local.image_batch_parallelism;
+  out.det_limit_type = local.det_limit_type;
+  for (int channel = 0; channel < 3; ++channel) {
+    out.det_mean[static_cast<std::size_t>(channel)] = local.det_mean[channel];
+    out.det_std[static_cast<std::size_t>(channel)] = local.det_std[channel];
+    out.rec_mean[static_cast<std::size_t>(channel)] = local.rec_mean[channel];
+    out.rec_std[static_cast<std::size_t>(channel)] = local.rec_std[channel];
+  }
+  out.det_use_dilation = local.det_use_dilation;
+  out.det_max_candidates = local.det_max_candidates;
   return out;
 }
 
@@ -127,6 +136,15 @@ void ppocr_options_init(ppocr_options* options) {
   options->det_batch_size = defaults.det_batch_size;
   options->batch_preprocess_parallelism = defaults.batch_preprocess_parallelism;
   options->image_batch_parallelism = defaults.image_batch_parallelism;
+  options->det_limit_type = defaults.det_limit_type;
+  for (int channel = 0; channel < 3; ++channel) {
+    options->det_mean[channel] = defaults.det_mean[static_cast<std::size_t>(channel)];
+    options->det_std[channel] = defaults.det_std[static_cast<std::size_t>(channel)];
+    options->rec_mean[channel] = defaults.rec_mean[static_cast<std::size_t>(channel)];
+    options->rec_std[channel] = defaults.rec_std[static_cast<std::size_t>(channel)];
+  }
+  options->det_use_dilation = defaults.det_use_dilation;
+  options->det_max_candidates = defaults.det_max_candidates;
 }
 
 const char* ppocr_last_error(void) { return g_error.c_str(); }

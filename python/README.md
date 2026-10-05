@@ -55,8 +55,8 @@ What does not carry over from 3.x:
 | `elapse_list` is `[det, cls, rec]` | `[None, None, total]`. The native call is one timed region. An empty page is `RapidOCROutput()` (`boxes`/`txts`/`img` are `None`), same as 3.x. |
 | `vis()` draws with OpenCV in BGR | `vis()` draws with Pillow and returns RGB. |
 | `EngineConfig` (CUDA, OpenVINO, TensorRT, MNN, …) | The keys load and can be read. They are not applied. |
-| Detector `mean`/`std` of 0.5 | The native detector uses ImageNet mean/std. The same ONNX file can disagree with 3.x on boxes and scores. |
-| `Global.min_height`, vertical padding, `max_side_len` | Applied before the native call, and boxes are mapped back. `limit_side_len` is still the detector's own limit. |
+| Detector `mean`/`std`, `limit_type`, `limit_side_len`, `use_dilation` | Passed through the C ABI and applied. `mean`/`std` are B, G, R, the same order as an OpenCV image. Recognizer normalization defaults to 0.5/0.5, matching 3.x. |
+| `Global.min_height`, vertical padding, `max_side_len` | Applied before the native call, and boxes are mapped back. |
 
 A call that only reads `txts`, `scores`, and `boxes` from a PP-OCRv6 model
 can switch by installing this package and leaving `use_cls` at its default.

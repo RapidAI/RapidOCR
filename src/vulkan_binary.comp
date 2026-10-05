@@ -204,15 +204,21 @@ void main() {
       // traversal even on dense detector maps with many independent blobs.
       for (uint item = 0u; item < tail; ++item) b[uint(b[elements + item])] = 0.0;
       if (pixels == 0u) continue;
-      const float score = sum / float(pixels);
-      if (score < box_threshold) continue;
       const float bw = float(max_x - min_x + 1u), bh = float(max_y - min_y + 1u);
-      const float expand = max(1.0, unclip_ratio * sqrt(bw * bh) * 0.15);
-      const float x0 = clamp(float(min_x) - expand, 0.0, float(width - 1u));
-      const float x1 = clamp(float(max_x) + expand, 0.0, float(width - 1u));
-      const float y0 = clamp(float(min_y) - expand, 0.0, float(height - 1u));
-      const float y1 = clamp(float(max_y) + expand, 0.0, float(height - 1u));
-      if (min(x1 - x0, y1 - y0) < 3.0 || result_count >= capacity) continue;
+      if (min(bw, bh) < 3.0) continue;
+      float box_sum = 0.0;
+      for (uint yy = min_y; yy <= max_y; ++yy) {
+        for (uint xx = min_x; xx <= max_x; ++xx) box_sum += a[yy * width + xx];
+      }
+      const float score = box_sum / (bw * bh);
+      if (score < box_threshold) continue;
+      const float perimeter = 2.0 * (bw + bh);
+      const float expand = perimeter > 0.0 ? unclip_ratio * bw * bh / perimeter : 0.0;
+      const float x0 = float(min_x) - expand;
+      const float x1 = float(max_x) + expand;
+      const float y0 = float(min_y) - expand;
+      const float y1 = float(max_y) + expand;
+      if (min(x1 - x0, y1 - y0) < 5.0 || result_count >= capacity) continue;
       const uint base = 1u + result_count * 5u;
       c[base] = x0 * float(image_width) / float(width);
       c[base + 1u] = y0 * float(image_height) / float(height);

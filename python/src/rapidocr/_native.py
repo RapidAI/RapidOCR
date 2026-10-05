@@ -32,6 +32,13 @@ class Options(ctypes.Structure):
         ("det_batch_size", ctypes.c_int),
         ("batch_preprocess_parallelism", ctypes.c_int),
         ("image_batch_parallelism", ctypes.c_int),
+        ("det_limit_type", ctypes.c_int),
+        ("det_mean", ctypes.c_float * 3),
+        ("det_std", ctypes.c_float * 3),
+        ("rec_mean", ctypes.c_float * 3),
+        ("rec_std", ctypes.c_float * 3),
+        ("det_use_dilation", ctypes.c_int),
+        ("det_max_candidates", ctypes.c_int),
     ]
 
 

@@ -128,6 +128,34 @@ const std::array<float, 256>& RecognitionNormalizeLut() {
   return table;
 }
 
+struct ChannelNorm {
+  std::array<float, 3> scale{};
+  std::array<float, 3> offset{};
+};
+
+ChannelNorm ChannelNormFrom(const std::array<float, 3>& mean,
+                            const std::array<float, 3>& deviation) {
+  ChannelNorm out;
+  for (std::size_t channel = 0; channel < 3; ++channel) {
+    const float dev = deviation[channel] > 0.F ? deviation[channel] : 1.F;
+    out.scale[channel] = 1.F / (255.F * dev);
+    out.offset[channel] = -mean[channel] / dev;
+  }
+  return out;
+}
+
+bool IsDefaultDetectorNorm(const Options& opt) {
+  constexpr std::array<float, 3> mean{0.485F, 0.456F, 0.406F};
+  constexpr std::array<float, 3> deviation{0.229F, 0.224F, 0.225F};
+  return opt.det_mean == mean && opt.det_std == deviation;
+}
+
+bool IsDefaultRecognizerNorm(const Options& opt) {
+  constexpr std::array<float, 3> mean{0.5F, 0.5F, 0.5F};
+  constexpr std::array<float, 3> deviation{0.5F, 0.5F, 0.5F};
+  return opt.rec_mean == mean && opt.rec_std == deviation;
+}
+
 // Keep front-end parallelism bounded just like graph execution.  A real NCHW
 // batch consists of disjoint image planes, so resize/normalization can run in
 // parallel without locks; the caller supplies a budget that has already been
@@ -407,13 +435,23 @@ Tensor ResizeRegionToNchw(const Image& src, int left, int top, int source_width,
 }
 
 std::pair<int, int> DetInputSize(const Image& image, const Options& opt) {
-  const int max_side = std::max(image.width, image.height);
-  float ratio = max_side > opt.det_limit_side_len ? float(opt.det_limit_side_len) / max_side : 1.F;
-  // Paddle's DetResizeForTest first chooses the scale, then snaps each side
-  // to the nearest multiple of 32 (Python round uses half-to-even).
-  int h = std::max(32, int(std::nearbyint(std::floor(image.height * ratio) / 32.F) * 32));
-  int w = std::max(32, int(std::nearbyint(std::floor(image.width * ratio) / 32.F) * 32));
-  return {w, h};
+  // rapidocr 3.x: limit_type "min" grows the short side up to limit_side_len;
+  // "max" shrinks the long side. Each side is then snapped with half-to-even
+  // rounding onto a multiple of 32, matching numpy.round / nearbyint.
+  const int limit = std::max(32, opt.det_limit_side_len);
+  float ratio = 1.F;
+  if (opt.det_limit_type == 1) {
+    const int min_side = std::min(image.width, image.height);
+    if (min_side > 0 && min_side < limit) ratio = float(limit) / float(min_side);
+  } else {
+    const int max_side = std::max(image.width, image.height);
+    if (max_side > limit) ratio = float(limit) / float(max_side);
+  }
+  const auto snap = [ratio](int side) {
+    const int resized = static_cast<int>(side * ratio);
+    return std::max(32, int(std::nearbyint(static_cast<float>(resized) / 32.F) * 32));
+  };
+  return {snap(image.width), snap(image.height)};
 }
 
 Tensor DetInput(const Image& image, const Options& opt);
@@ -872,15 +910,10 @@ bool TryHybridVulkanRecRgbConv0(const Image& image, const CropBounds& crop,
 
 Tensor DetInput(const Image& image, const Options& opt) {
   const auto [w, h] = DetInputSize(image, opt);
-  if (!PreprocessNormalizeLutEnabled()) {
-    constexpr std::array<float, 3> mean{.485F, .456F, .406F};
-    constexpr std::array<float, 3> deviation{.229F, .224F, .225F};
-    constexpr std::array<float, 3> scale{1.F / (255.F * deviation[0]),
-                                         1.F / (255.F * deviation[1]),
-                                         1.F / (255.F * deviation[2])};
-    constexpr std::array<float, 3> offset{-mean[0] / deviation[0],
-                                          -mean[1] / deviation[1],
-                                          -mean[2] / deviation[2]};
+  const auto norm = ChannelNormFrom(opt.det_mean, opt.det_std);
+  if (!PreprocessNormalizeLutEnabled() || !IsDefaultDetectorNorm(opt)) {
+    const auto& scale = norm.scale;
+    const auto& offset = norm.offset;
     if (IdentityResizeFastPathEnabled() && image.width == w && image.height == h) {
       Tensor output{{1, 3, h, w},
                     std::vector<float>(std::size_t(3) * h * w)};
@@ -943,9 +976,10 @@ Tensor RecInputBatch(const Image& image, const CropBounds* crops,
                 // column instead of changing its receptive field.
                 std::vector<float>(crop_count * std::size_t(3) * opt.rec_height * width, 0.F)};
   const std::size_t image_stride = std::size_t(3) * opt.rec_height * width;
-  if (!PreprocessNormalizeLutEnabled()) {
-    constexpr std::array<float, 3> scale{2.F / 255.F, 2.F / 255.F, 2.F / 255.F};
-    constexpr std::array<float, 3> offset{-1.F, -1.F, -1.F};
+  const auto norm = ChannelNormFrom(opt.rec_mean, opt.rec_std);
+  if (!PreprocessNormalizeLutEnabled() || !IsDefaultRecognizerNorm(opt)) {
+    const auto& scale = norm.scale;
+    const auto& offset = norm.offset;
     RunIndexed(crop_count, preprocess_workers, [&](std::size_t i) {
       const auto& crop = crops[i];
       const int natural_width = RecInputWidth(crop, opt);
@@ -979,38 +1013,115 @@ Tensor RecInputBatch(const Image& image, const CropBounds* crops,
   return output;
 }
 
-// A dependency-free DB postprocessor.  PP-OCRv6 probability maps consist of
-// compact text blobs; component extraction plus DB's score/unclip criteria
-// provides stable quads without bringing OpenCV into the executable.
+// rapidocr 3.x DBPostProcess: threshold, optional 2x2 dilation, component
+// box, mean score inside that box, unclip by area*ratio/perimeter, then
+// half-to-even scaling back to the source image.
+float ScaleDbCoord(float value, int src, int dst) {
+  if (src <= 0 || dst <= 0) return 0.F;
+  double rounded = std::nearbyint(static_cast<double>(value) / src * dst);
+  if (rounded < 0.0) rounded = 0.0;
+  if (rounded > dst) rounded = dst;
+  if (rounded > dst - 1) rounded = static_cast<double>(dst - 1);
+  return static_cast<float>(rounded);
+}
+
+void SortBoxesLikeRapidocr(std::vector<Box>& boxes) {
+  std::stable_sort(boxes.begin(), boxes.end(), [](const Box& a, const Box& b) {
+    return a.p[0].y < b.p[0].y;
+  });
+  std::vector<int> line(boxes.size());
+  for (std::size_t i = 1; i < boxes.size(); ++i) {
+    const float dy = boxes[i].p[0].y - boxes[i - 1].p[0].y;
+    line[i] = line[i - 1] + (dy >= 10.F ? 1 : 0);
+  }
+  std::vector<std::size_t> order(boxes.size());
+  std::iota(order.begin(), order.end(), 0);
+  std::stable_sort(order.begin(), order.end(), [&](std::size_t a, std::size_t b) {
+    if (line[a] != line[b]) return line[a] < line[b];
+    return boxes[a].p[0].x < boxes[b].p[0].x;
+  });
+  std::vector<Box> sorted;
+  sorted.reserve(boxes.size());
+  for (const std::size_t index : order) sorted.push_back(std::move(boxes[index]));
+  boxes.swap(sorted);
+}
+
 std::vector<Box> DBPost(const Tensor& prob, int dst_w, int dst_h, const Options& opt,
                         std::size_t batch_index = 0) {
   if (prob.shape.size()!=4 || prob.shape[0] <= 0 || prob.shape[1]!=1 ||
       batch_index >= static_cast<std::size_t>(prob.shape[0])) Fail("unexpected detector output shape");
   const int h=int(prob.shape[2]),w=int(prob.shape[3]);
+  if (h <= 0 || w <= 0 || dst_w <= 0 || dst_h <= 0) return {};
   const auto probability = prob.data.data() + batch_index * std::size_t(h) * w;
-  // One byte per pixel is enough for both threshold membership and visited
-  // state: 0 = background, 1 = unvisited foreground, 2 = visited. Large
-  // screenshots therefore avoid a second probability-map-sized allocation.
   std::vector<std::uint8_t> mask(std::size_t(w)*h);
   for(std::size_t i=0;i<mask.size();++i) mask[i]=probability[i]>opt.det_threshold ? 1 : 0;
+  if (opt.det_use_dilation) {
+    // OpenCV dilate with a 2x2 kernel anchors at (1, 1), so each foreground
+    // pixel also sets the pixel to its right, below, and below-right.
+    std::vector<std::uint8_t> dilated(mask.size());
+    for (int y = 0; y < h; ++y) {
+      for (int x = 0; x < w; ++x) {
+        const bool on = mask[std::size_t(y) * w + x] ||
+                        (x > 0 && mask[std::size_t(y) * w + (x - 1)]) ||
+                        (y > 0 && mask[std::size_t(y - 1) * w + x]) ||
+                        (x > 0 && y > 0 && mask[std::size_t(y - 1) * w + (x - 1)]);
+        dilated[std::size_t(y) * w + x] = on ? 1 : 0;
+      }
+    }
+    mask.swap(dilated);
+  }
   const std::array<int,8> dx{-1,0,1,-1,1,-1,0,1},dy{-1,-1,-1,0,0,1,1,1};
   std::vector<Box> out; out.reserve(64);
-  // Dense UIs can yield hundreds of small blobs. Reusing one FIFO avoids a
-  // heap allocation/growth sequence for every connected component while not
-  // retaining a full probability-map-sized integer buffer for simple pages.
   std::vector<int> queue; queue.reserve(256);
-  for(int sy=0;sy<h;++sy)for(int sx=0;sx<w;++sx){const auto start=std::size_t(sy)*w+sx;if(mask[start]!=1)continue;queue.clear();queue.push_back(int(start));mask[start]=2;std::size_t head{};int minx=sx,maxx=sx,miny=sy,maxy=sy;double sum{};int count{};while(head<queue.size()){int v=queue[head++],y=v/w,x=v%w;minx=std::min(minx,x);maxx=std::max(maxx,x);miny=std::min(miny,y);maxy=std::max(maxy,y);sum+=probability[v];++count;for(int k=0;k<8;++k){int nx=x+dx[k],ny=y+dy[k];if(nx>=0&&nx<w&&ny>=0&&ny<h){auto ni=std::size_t(ny)*w+nx;if(mask[ni]==1){mask[ni]=2;queue.push_back(int(ni));}}}}
-    const float score=float(sum/count);if(score<opt.det_box_threshold)continue;
-    // The DB unclip expansion is based on area/perimeter.  This rectangular
-    // equivalent is exact for axis-aligned components and robust for text.
-    const float bw=maxx-minx+1.F,bh=maxy-miny+1.F,expand=std::max(1.F,opt.det_unclip_ratio*std::sqrt(bw*bh)*.15F);
-    const float x0=std::clamp(minx-expand,0.F,float(w-1)),x1=std::clamp(maxx+expand,0.F,float(w-1)),y0=std::clamp(miny-expand,0.F,float(h-1)),y1=std::clamp(maxy+expand,0.F,float(h-1));
-    if(std::min(x1-x0,y1-y0)<3) continue;
-    const float xs=float(dst_w)/w,ys=float(dst_h)/h;
-    Box b; b.p={Point{x0*xs,y0*ys},Point{x1*xs,y0*ys},Point{x1*xs,y1*ys},Point{x0*xs,y1*ys}}; b.score=score;
+  int examined = 0;
+  const int candidate_limit = opt.det_max_candidates > 0 ? opt.det_max_candidates : 1000000000;
+  for(int sy=0;sy<h && examined<candidate_limit;++sy)for(int sx=0;sx<w && examined<candidate_limit;++sx){
+    const auto start=std::size_t(sy)*w+sx;
+    if(mask[start]!=1) continue;
+    ++examined;
+    queue.clear();
+    queue.push_back(int(start));
+    mask[start]=2;
+    std::size_t head{};
+    int minx=sx,maxx=sx,miny=sy,maxy=sy;
+    while(head<queue.size()){
+      const int v=queue[head++], y=v/w, x=v%w;
+      minx=std::min(minx,x); maxx=std::max(maxx,x);
+      miny=std::min(miny,y); maxy=std::max(maxy,y);
+      for(int k=0;k<8;++k){
+        const int nx=x+dx[k], ny=y+dy[k];
+        if(nx>=0&&nx<w&&ny>=0&&ny<h){
+          const auto ni=std::size_t(ny)*w+nx;
+          if(mask[ni]==1){mask[ni]=2; queue.push_back(int(ni));}
+        }
+      }
+    }
+    const float bw=float(maxx-minx+1), bh=float(maxy-miny+1);
+    if (std::min(bw, bh) < 3.F) continue;
+    double sum = 0.0;
+    const int box_pixels = int(bw) * int(bh);
+    for (int y = miny; y <= maxy; ++y) {
+      const float* row = probability + std::size_t(y) * w + minx;
+      for (int x = 0; x < int(bw); ++x) sum += row[x];
+    }
+    const float score = float(sum / box_pixels);
+    if (score < opt.det_box_threshold) continue;
+    const float perimeter = 2.F * (bw + bh);
+    const float distance = perimeter > 0.F ? opt.det_unclip_ratio * bw * bh / perimeter : 0.F;
+    const float x0 = float(minx) - distance, x1 = float(maxx) + distance;
+    const float y0 = float(miny) - distance, y1 = float(maxy) + distance;
+    if (std::min(x1 - x0, y1 - y0) < 5.F) continue;
+    const float sx0 = ScaleDbCoord(x0, w, dst_w), sx1 = ScaleDbCoord(x1, w, dst_w);
+    const float sy0 = ScaleDbCoord(y0, h, dst_h), sy1 = ScaleDbCoord(y1, h, dst_h);
+    if (static_cast<int>(std::fabs(sx1 - sx0)) <= 3 ||
+        static_cast<int>(std::fabs(sy1 - sy0)) <= 3) continue;
+    Box b;
+    b.p = {Point{sx0, sy0}, Point{sx1, sy0}, Point{sx1, sy1}, Point{sx0, sy1}};
+    b.score = score;
     out.push_back(b);
   }
-  std::stable_sort(out.begin(),out.end(),[](const Box&a,const Box&b){return std::abs(a.p[0].y-b.p[0].y)<10? a.p[0].x<b.p[0].x:a.p[0].y<b.p[0].y;});return out;
+  SortBoxesLikeRapidocr(out);
+  return out;
 }
 
 
@@ -1165,6 +1276,7 @@ bool GpuKeepPageRgb() {
 detail::OnnxLite::GpuTensor GpuOnlyRecRgb(detail::OnnxLite& rec, const Options& opt,
                                           const std::vector<GpuCropJob>& jobs, int width,
                                           const detail::VulkanTensorSlot* page_rgb) {
+  const auto rec_norm = ChannelNormFrom(opt.rec_mean, opt.rec_std);
   const std::size_t count = jobs.size();
   const std::size_t plane = std::size_t(3) * opt.rec_height * width;
   auto& arena = rec.gpu_arena();
@@ -1220,8 +1332,8 @@ detail::OnnxLite::GpuTensor GpuOnlyRecRgb(detail::OnnxLite& rec, const Options& 
       resized = resized && arena.ResizeRgbToNchwAt(
           rgb, input, item * plane, source.image->width, source.image->height,
           job.crop.x, job.crop.y, job.crop.width, job.crop.height, width,
-          opt.rec_height, 2.F / 255.F, -1.F, 2.F / 255.F,
-          -1.F, 2.F / 255.F, -1.F, content_width);
+          opt.rec_height, rec_norm.scale[0], rec_norm.offset[0], rec_norm.scale[1],
+          rec_norm.offset[1], rec_norm.scale[2], rec_norm.offset[2], content_width);
       if (!resized) break;
     }
     if (!reuse_page) arena.Release(rgb);
@@ -2040,7 +2152,7 @@ std::vector<std::vector<Result>> OCR::RecognizeBatch(
     Tensor input{{static_cast<std::int64_t>(batch.count), 3, batch.height, batch.width},
                  std::vector<float>(batch.count * std::size_t(3) * batch.height * batch.width)};
     const auto stride = std::size_t(3) * batch.height * batch.width;
-    const auto& normalize = DetectorNormalizeLut();
+    const auto det_norm = ChannelNormFrom(impl_->opt.det_mean, impl_->opt.det_std);
     // There is only one detector graph dispatch for a same-shape NCHW
     // batch.  Parallelize the independent resizes before it; otherwise the
     // GPU (and the CPU's SIMD batch kernels) wait for a serial front end on
@@ -2053,8 +2165,8 @@ std::vector<std::vector<Result>> OCR::RecognizeBatch(
       WriteResizeRegionToNchw(input.data.data() + item * stride, images[page], 0, 0,
                               images[page].width, images[page].height, batch.width, batch.height,
                               [&](int channel, float value) {
-                                return normalize[static_cast<std::size_t>(channel)]
-                                                [static_cast<unsigned>(value)];
+                                const auto index = static_cast<std::size_t>(channel);
+                                return value * det_norm.scale[index] + det_norm.offset[index];
                               });
     });
     std::unordered_map<std::string, Tensor> det_input;
@@ -2124,15 +2236,16 @@ std::vector<std::vector<Result>> OCR::RecognizeBatch(
                  std::vector<float>(batch.count * std::size_t(3) * impl_->opt.rec_height *
                                     batch.width, 0.F)};
     const std::size_t stride = std::size_t(3) * impl_->opt.rec_height * batch.width;
-    const auto& normalize = RecognitionNormalizeLut();
+    const auto rec_norm = ChannelNormFrom(impl_->opt.rec_mean, impl_->opt.rec_std);
     run_indexed(batch.count, std::min(batch.count, rec_preprocess_workers),
                 [&](std::size_t i) {
       const auto& item = batch.crops[i];
       WriteResizeRegionToNchw(input.data.data() + i * stride, images[item.page_index],
                               item.crop.x, item.crop.y, item.crop.width, item.crop.height,
                               batch.width, impl_->opt.rec_height,
-                              [&normalize](int, float value) {
-                                return normalize[static_cast<unsigned>(value)];
+                              [&rec_norm](int channel, float value) {
+                                const auto index = static_cast<std::size_t>(channel);
+                                return value * rec_norm.scale[index] + rec_norm.offset[index];
                               }, batch.width);
     });
     std::unordered_map<std::string, Tensor> rec_input;

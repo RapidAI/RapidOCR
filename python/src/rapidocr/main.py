@@ -181,11 +181,46 @@ class RapidOCR:
         limit = self.cfg["Det"].get("limit_side_len")
         if limit:
             options.det_limit_side_len = int(limit)
+        limit_type = str(self.cfg["Det"].get("limit_type", "max")).lower()
+        options.det_limit_type = 1 if limit_type == "min" else 0
+        _copy_norm(options.det_mean, options.det_std, self.cfg["Det"].get("mean"), self.cfg["Det"].get("std"))
+        _copy_norm(
+            options.rec_mean,
+            options.rec_std,
+            self.cfg["Rec"].get("mean"),
+            self.cfg["Rec"].get("std"),
+            default=(0.5, 0.5, 0.5),
+        )
+        options.det_use_dilation = 1 if bool(self.cfg["Det"].get("use_dilation", False)) else 0
+        candidates = self.cfg["Det"].get("max_candidates")
+        if candidates:
+            options.det_max_candidates = int(candidates)
+        shape = self.cfg["Rec"].get("rec_img_shape")
+        if shape and len(shape) >= 2:
+            options.rec_height = int(shape[1])
         batch = self.cfg["Rec"].get("rec_batch_num")
         if batch:
             options.rec_batch_size = int(batch)
         self._engine = _native.NativeOCR(det, rec, dictionary, options)
         return self._engine
+
+
+def _copy_norm(mean_out, std_out, mean, std, default=None) -> None:
+    """Copy a length-3 mean/std into the C options. Missing values stay at the ABI default."""
+
+    def take(slot, value):
+        if value is None:
+            if default is None:
+                return
+            value = default
+        values = list(value)
+        if len(values) != 3:
+            return
+        for index, item in enumerate(values):
+            slot[index] = float(item)
+
+    take(mean_out, mean)
+    take(std_out, std)
 
 
 def _load_config(config_path: Optional[str], params: Optional[Dict[str, Any]]) -> ConfigNode:

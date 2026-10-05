@@ -42,7 +42,6 @@ REMAINING_INCOMPATIBILITIES = (
     "EngineConfig is stored and not applied (no CUDA, OpenVINO, Paddle, Torch, TensorRT, MNN)",
     "elapse_list is [None, None, total], not separate det/cls/rec times",
     "vis() returns Pillow RGB, not OpenCV BGR",
-    "detector normalization is ImageNet mean/std, not the 3.x mean/std of 0.5",
     "only the PP-OCRv6 ch det/rec bundles are downloaded; other languages are not",
 )
 

@@ -132,6 +132,19 @@ struct Options {
   // CPU SIMD and Vulkan's batch dimension both see useful work without
   // padding detector pages to a common size.
   int image_batch_parallelism = 1;
+  // 0 shrinks on the long side (historical C++ default). 1 grows on the
+  // short side, which is rapidocr 3.x limit_type "min".
+  int det_limit_type = 0;
+  // B, G, R plane order. Defaults reproduce the previous ImageNet detector
+  // coefficients. rapidocr 3.x passes 0.5/0.5 through the C ABI.
+  std::array<float, 3> det_mean{0.485F, 0.456F, 0.406F};
+  std::array<float, 3> det_std{0.229F, 0.224F, 0.225F};
+  std::array<float, 3> rec_mean{0.5F, 0.5F, 0.5F};
+  std::array<float, 3> rec_std{0.5F, 0.5F, 0.5F};
+  // rapidocr 3.x config enables a 2x2 dilation. The C++ default stays off so
+  // existing callers keep the previous component mask.
+  int det_use_dilation = 0;
+  int det_max_candidates = 1000;
 };
 
 // PP-OCRv6 detector + recognizer with a deliberately narrow built-in ONNX

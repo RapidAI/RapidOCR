@@ -50,6 +50,16 @@ typedef struct ppocr_options {
   int det_batch_size;
   int batch_preprocess_parallelism;
   int image_batch_parallelism;
+  /* 0: shrink when the long side exceeds det_limit_side_len (C++ default).
+     1: grow when the short side is below det_limit_side_len (rapidocr 3.x "min"). */
+  int det_limit_type;
+  /* Plane order is B, G, R, matching an OpenCV image and rapidocr 3.x. */
+  float det_mean[3];
+  float det_std[3];
+  float rec_mean[3];
+  float rec_std[3];
+  int det_use_dilation; /* 1: 2x2 dilation before DB components */
+  int det_max_candidates;
 } ppocr_options;
 
 typedef struct ppocr_image {
