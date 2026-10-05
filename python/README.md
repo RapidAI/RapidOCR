@@ -49,11 +49,14 @@ What does not carry over from 3.x:
 | --- | --- |
 | ONNX Runtime, OpenVINO, Paddle, PyTorch, TensorRT, MNN | Built-in PP-OCRv6 interpreter. `EngineType.ONNXRUNTIME` and `EngineType.PPOCR_CPP` both select it. The other engine names raise `NotImplementedError`. |
 | PP-OCRv4 and PP-OCRv5 model zoo | PP-OCRv6 ONNX detector and recognizer only. |
-| Angle classifier (`use_cls=True` by default) | The flag is accepted and ignored, with one warning. |
+| Angle classifier (`use_cls=True` by default) | The flag is accepted and ignored, with one warning. No cls model is downloaded. |
 | `use_det=False` or `use_rec=False` | Raises `RapidOCRError`. Detection and recognition always run together. |
-| Word and character boxes | `return_word_box` / `return_single_char_box` warn. `word_results` is empty tuples. |
-| `elapse_list` is `[det, cls, rec]` | `[None, None, total]`. The native call is one timed region. |
-| `vis()` draws with OpenCV | `vis()` draws with Pillow. |
+| Word and character boxes | `return_word_box` / `return_single_char_box` warn. `word_results` is empty. |
+| `elapse_list` is `[det, cls, rec]` | `[None, None, total]`. The native call is one timed region. An empty page is `RapidOCROutput()` (`boxes`/`txts`/`img` are `None`), same as 3.x. |
+| `vis()` draws with OpenCV in BGR | `vis()` draws with Pillow and returns RGB. |
+| `EngineConfig` (CUDA, OpenVINO, TensorRT, MNN, …) | The keys load and can be read. They are not applied. |
+| Detector `mean`/`std` of 0.5 | The native detector uses ImageNet mean/std. The same ONNX file can disagree with 3.x on boxes and scores. |
+| `Global.min_height`, vertical padding, `max_side_len` | Applied before the native call, and boxes are mapped back. `limit_side_len` is still the detector's own limit. |
 
 A call that only reads `txts`, `scores`, and `boxes` from a PP-OCRv6 model
 can switch by installing this package and leaving `use_cls` at its default.

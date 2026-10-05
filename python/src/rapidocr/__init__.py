@@ -8,8 +8,10 @@ for what changed.
 __version__ = "5.0.0a1"
 
 from .download import download_models
-from .main import LoadImageError, RapidOCR, RapidOCRError
+from .main import RapidOCR, RapidOCRError
 from .typings import EngineType, LangCls, LangDet, LangRec, ModelType, OCRVersion
+from .utils.load_image import LoadImageError
+from .utils.vis_res import VisRes
 from ._native import cpu_info
 
 __all__ = [
@@ -17,6 +19,7 @@ __all__ = [
     "RapidOCR",
     "RapidOCRError",
     "LoadImageError",
+    "VisRes",
     "EngineType",
     "LangCls",
     "LangDet",

@@ -11,68 +11,21 @@ from __future__ import annotations
 
 import logging
 import time
-from io import BytesIO
-from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Union
-from urllib.request import urlopen
+from typing import Any, Dict, Optional
 
 import numpy as np
-import yaml
-from PIL import Image, ImageOps, UnidentifiedImageError
 
 from . import _native
 from .download import download_models
 from .output import RapidOCROutput, filter_by_score
-from .typings import EngineType, ModelType, OCRVersion
+from .typings import EngineType, OCRVersion
+from .utils.load_image import LoadImage, LoadImageError
+from .utils.parse_parameters import ConfigNode, ParseParams
+from .utils.process_img import apply_vertical_padding, map_boxes_to_original, resize_image_within_bounds
 
 logger = logging.getLogger("rapidocr")
 
 _NATIVE_ENGINES = {EngineType.ONNXRUNTIME.value, EngineType.PPOCR_CPP.value, "onnxruntime", "ppocr_cpp"}
-_SECTIONS = {"Global", "Det", "Rec", "Cls", "EngineConfig"}
-
-_DEFAULTS: Dict[str, Any] = {
-    "Global": {
-        "text_score": 0.5,
-        "use_det": True,
-        "use_cls": True,
-        "use_rec": True,
-        "log_level": "info",
-        "model_root_dir": None,
-        "max_side_len": 2000,
-        "min_side_len": 30,
-    },
-    "Det": {
-        "engine_type": "onnxruntime",
-        "lang_type": "ch",
-        "model_type": "small",
-        "ocr_version": "PP-OCRv6",
-        "model_path": None,
-        "thresh": 0.3,
-        "box_thresh": 0.5,
-        "unclip_ratio": 1.6,
-        "limit_side_len": 736,
-        "limit_type": "min",
-    },
-    "Rec": {
-        "engine_type": "onnxruntime",
-        "lang_type": "ch",
-        "model_type": "small",
-        "ocr_version": "PP-OCRv6",
-        "model_path": None,
-        "rec_keys_path": None,
-        "rec_batch_num": 6,
-    },
-    "Cls": {
-        "engine_type": "onnxruntime",
-        "model_path": None,
-        "cls_thresh": 0.9,
-    },
-    "EngineConfig": {},
-}
-
-
-class LoadImageError(Exception):
-    pass
 
 
 class RapidOCRError(Exception):
@@ -86,16 +39,62 @@ def _enum_value(value: Any) -> Any:
 class RapidOCR:
     def __init__(self, config_path: Optional[str] = None, params: Optional[Dict[str, Any]] = None):
         self.cfg = _load_config(config_path, params)
-        level = str(self.cfg["Global"].get("log_level", "info")).upper()
+        level = str(self.cfg.Global.get("log_level", "info")).upper()
         logger.setLevel(getattr(logging, level, logging.INFO))
-        self.text_score = float(self.cfg["Global"]["text_score"])
-        self.use_det = bool(self.cfg["Global"]["use_det"])
-        self.use_cls = bool(self.cfg["Global"]["use_cls"])
-        self.use_rec = bool(self.cfg["Global"]["use_rec"])
-        self.return_word_box = False
+        self.text_score = float(self.cfg.Global.text_score)
+        self.use_det = bool(self.cfg.Global.use_det)
+        self.use_cls = bool(self.cfg.Global.use_cls)
+        self.use_rec = bool(self.cfg.Global.use_rec)
+        self.return_word_box = bool(self.cfg.Global.get("return_word_box", False))
+        self.return_single_char_box = bool(self.cfg.Global.get("return_single_char_box", False))
+        self.min_side_len = self.cfg.Global.get("min_side_len", 30)
+        self.max_side_len = self.cfg.Global.get("max_side_len", 2000)
+        self.min_height = self.cfg.Global.get("min_height", 30)
+        self.width_height_ratio = self.cfg.Global.get("width_height_ratio", 8)
+        self.text_det = None
+        self.text_cls = None
+        self.text_rec = None
+        self.load_img = LoadImage()
         self._engine: Optional[_native.NativeOCR] = None
         self._warned_cls = False
         self._check_engine_choice()
+
+    def update_params(
+        self,
+        use_det: Optional[bool] = None,
+        use_cls: Optional[bool] = None,
+        use_rec: Optional[bool] = None,
+        return_word_box: Optional[bool] = None,
+        return_single_char_box: Optional[bool] = None,
+        text_score: Optional[float] = None,
+        box_thresh: Optional[float] = None,
+        unclip_ratio: Optional[float] = None,
+        **kwargs: Any,
+    ) -> None:
+        values = {
+            "use_det": use_det,
+            "use_cls": use_cls,
+            "use_rec": use_rec,
+            "return_word_box": return_word_box,
+            "return_single_char_box": return_single_char_box,
+            "text_score": text_score,
+            "box_thresh": box_thresh,
+            "unclip_ratio": unclip_ratio,
+        }
+        values.update(kwargs)
+        for key, value in values.items():
+            if value is None:
+                continue
+            if key in {"box_thresh", "unclip_ratio"}:
+                setattr(self.cfg.Det, key, value)
+                if self.text_det is not None:
+                    setattr(self.text_det.postprocess_op, key, value)
+                continue
+            if not hasattr(self, key):
+                raise ValueError(f"Unknown parameter: {key}")
+            setattr(self, key, value)
+            if key in {"use_det", "use_cls", "use_rec", "return_word_box", "return_single_char_box", "text_score"}:
+                setattr(self.cfg.Global, key if key != "text_score" else "text_score", value)
 
     def __call__(
         self,
@@ -109,14 +108,16 @@ class RapidOCR:
         box_thresh: Optional[float] = None,
         unclip_ratio: Optional[float] = None,
     ) -> RapidOCROutput:
-        if use_det is not None:
-            self.use_det = use_det
-        if use_cls is not None:
-            self.use_cls = use_cls
-        if use_rec is not None:
-            self.use_rec = use_rec
-        if text_score is not None:
-            self.text_score = float(text_score)
+        self.update_params(
+            use_det=use_det,
+            use_cls=use_cls,
+            use_rec=use_rec,
+            return_word_box=return_word_box,
+            return_single_char_box=return_single_char_box,
+            text_score=text_score,
+            box_thresh=box_thresh,
+            unclip_ratio=unclip_ratio,
+        )
         if return_word_box:
             logger.warning("return_word_box is not implemented by the native PP-OCRv6 engine")
         if return_single_char_box:
@@ -131,23 +132,26 @@ class RapidOCR:
             self._warned_cls = True
 
         started = time.perf_counter()
-        rgb = _load_image(img_content)
+        original = self.load_img(img_content)
+        prepared, ratio_w, ratio_h, pad_top = _prepare_image(self, original)
         engine = self._ensure_engine()
-        det_threshold = float(self.cfg["Det"].get("thresh", 0.3))
-        box_threshold = float(box_thresh if box_thresh is not None else self.cfg["Det"].get("box_thresh", 0.5))
-        unclip = float(unclip_ratio if unclip_ratio is not None else self.cfg["Det"].get("unclip_ratio", 1.6))
+        det_threshold = float(self.cfg.Det.get("thresh", 0.3))
+        box_threshold = float(self.cfg.Det.get("box_thresh", 0.5))
+        unclip = float(self.cfg.Det.get("unclip_ratio", 1.6))
         engine.set_det_thresholds(det_threshold, box_threshold, unclip)
-        boxes, txts, scores = engine.recognize(rgb)
+        boxes, txts, scores = engine.recognize(prepared)
         kept_boxes, kept_txts, kept_scores = filter_by_score(boxes, txts, scores, self.text_score)
         elapsed = time.perf_counter() - started
         if len(kept_txts) == 0:
-            return RapidOCROutput(img=rgb, elapse_list=[None, None, elapsed])
+            return RapidOCROutput()
+        ori_h, ori_w = original.shape[:2]
+        kept_boxes = map_boxes_to_original(kept_boxes, ratio_w, ratio_h, pad_top, ori_w, ori_h)
         return RapidOCROutput(
-            img=rgb,
+            img=original,
             boxes=kept_boxes,
             txts=kept_txts,
             scores=kept_scores,
-            word_results=tuple(() for _ in kept_txts),
+            word_results=(),
             elapse_list=[None, None, elapsed],
         )
 
@@ -184,117 +188,40 @@ class RapidOCR:
         return self._engine
 
 
-def _load_config(config_path: Optional[str], params: Optional[Mapping[str, Any]]) -> Dict[str, Any]:
-    cfg = {key: dict(value) if isinstance(value, dict) else value for key, value in _DEFAULTS.items()}
-    if config_path:
-        path = Path(config_path)
-        if not path.is_file():
-            raise FileNotFoundError(config_path)
-        loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-        if not isinstance(loaded, dict):
-            raise ValueError("config root must be a mapping")
-        for section, values in loaded.items():
-            if section not in cfg or not isinstance(values, dict):
-                cfg[section] = values
-                continue
-            cfg[section].update(values)
+def _load_config(config_path: Optional[str], params: Optional[Dict[str, Any]]) -> ConfigNode:
+    cfg = ParseParams.load(config_path)
     if params:
-        _apply_params(cfg, params)
+        ParseParams.update_batch(cfg, params)
     return cfg
 
 
-def _apply_params(cfg: Dict[str, Any], params: Mapping[str, Any]) -> None:
-    for key, value in params.items():
-        parts = str(key).split(".")
-        if len(parts) < 2 or not all(parts):
-            raise ValueError(f"{key} is not a valid key.")
-        if parts[0] not in _SECTIONS and parts[0] not in cfg:
-            raise ValueError(f"{key} is not a valid key.")
-        node = cfg.setdefault(parts[0], {})
-        if not isinstance(node, dict):
-            raise ValueError(f"{key} is not a valid key.")
-        for part in parts[1:-1]:
-            child = node.setdefault(part, {})
-            if not isinstance(child, dict):
-                raise ValueError(f"{key} is not a valid key.")
-            node = child
-        node[parts[-1]] = _enum_value(value)
+def _prepare_image(engine: RapidOCR, original: np.ndarray):
+    image = original
+    ratio_w = ratio_h = 1.0
+    pad_top = 0
+    if bool(engine.cfg.Global.get("use_preprocess_img", True)):
+        image, ratio_h, ratio_w = resize_image_within_bounds(
+            image, float(engine.min_side_len), float(engine.max_side_len)
+        )
+    if bool(engine.cfg.Global.get("use_vertical_padding", True)):
+        image, pad_top = apply_vertical_padding(
+            image, float(engine.width_height_ratio), float(engine.min_height)
+        )
+    return image, ratio_w, ratio_h, pad_top
 
 
-def _resolve_models(cfg: Dict[str, Any]) -> tuple:
-    det = cfg["Det"].get("model_path")
-    rec = cfg["Rec"].get("model_path")
-    dictionary = cfg["Rec"].get("rec_keys_path")
+def _resolve_models(cfg: ConfigNode) -> tuple:
+    det = cfg.Det.get("model_path")
+    rec = cfg.Rec.get("model_path")
+    dictionary = cfg.Rec.get("rec_keys_path")
     if det and rec and dictionary:
         return str(det), str(rec), str(dictionary)
-    model_type = _enum_value(cfg["Rec"].get("model_type") or cfg["Det"].get("model_type") or "small")
-    if model_type == ModelType.MOBILE.value:
+    model_type = _enum_value(cfg.Rec.get("model_type") or cfg.Det.get("model_type") or "small")
+    if model_type == "mobile":
         model_type = "small"
-    root = cfg["Global"].get("model_root_dir")
+    root = cfg.Global.get("model_root_dir")
     fetched = download_models(str(model_type), str(root) if root else None)
     return det or fetched["det"], rec or fetched["rec"], dictionary or fetched["dict"]
-
-
-def _load_image(img: Any) -> np.ndarray:
-    origin = type(img)
-    array = _to_array(img)
-    return _to_rgb(array, origin)
-
-
-def _to_array(img: Any) -> np.ndarray:
-    if isinstance(img, np.ndarray):
-        return img
-    if isinstance(img, Image.Image):
-        return np.asarray(ImageOps.exif_transpose(img) or img)
-    if isinstance(img, (str, Path)):
-        text = str(img)
-        if text.startswith("http://") or text.startswith("https://"):
-            with urlopen(text, timeout=60) as response:
-                data = response.read()
-            return _decode_bytes(data)
-        path = Path(text)
-        if not path.is_file():
-            raise LoadImageError(f"{path} does not exist.")
-        return _decode_bytes(path.read_bytes())
-    if isinstance(img, (bytes, bytearray)):
-        return _decode_bytes(bytes(img))
-    raise LoadImageError(f"The img type {type(img)} is not supported")
-
-
-def _decode_bytes(data: bytes) -> np.ndarray:
-    try:
-        image = Image.open(BytesIO(data))
-        image = ImageOps.exif_transpose(image) or image
-        return np.asarray(image)
-    except UnidentifiedImageError as exc:
-        raise LoadImageError("cannot identify image file") from exc
-
-
-def _to_rgb(img: np.ndarray, origin: type) -> np.ndarray:
-    if img.ndim == 2:
-        return np.stack([img, img, img], axis=-1)
-    if img.ndim != 3:
-        raise LoadImageError(f"The ndim({img.ndim}) of the img is not in [2, 3]")
-    channels = img.shape[2]
-    from_array = issubclass(origin, np.ndarray)
-    if channels == 1:
-        plane = img[:, :, 0]
-        return np.stack([plane, plane, plane], axis=-1)
-    if channels == 4:
-        rgb = img[:, :, :3]
-        if from_array:
-            rgb = rgb[:, :, ::-1]
-        alpha = img[:, :, 3:4].astype(np.float32) / 255.0
-        composited = rgb.astype(np.float32) * alpha + 255.0 * (1.0 - alpha)
-        return np.clip(composited, 0, 255).astype(np.uint8)
-    if channels != 3:
-        raise LoadImageError(f"The channel({channels}) of the img is not in [1, 2, 3, 4]")
-    if from_array:
-        # OpenCV-style ndarrays are BGR on main. The native engine wants RGB.
-        return np.ascontiguousarray(img[:, :, ::-1])
-    if img.dtype != np.uint8:
-        return np.clip(img, 0, 255).astype(np.uint8)
-    return np.ascontiguousarray(img)
 
 
 def main() -> None:

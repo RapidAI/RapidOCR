@@ -56,12 +56,20 @@ _MODELS = {
 }
 
 
-def download_models(model_type: str = "small", dest: Optional[str] = None) -> dict:
-    """Download detector, recognizer, and dictionary. Returns their paths."""
+def download_models(config_path: Optional[str] = None, dest: Optional[str] = None) -> dict:
+    """Download the PP-OCRv6 detector, recognizer, and dictionary.
 
-    key = str(model_type).lower()
+    ``download_models()`` and ``download_models(config_yaml)`` follow 3.x:
+    the recognizer ``model_type`` in the config selects the bundle. A size
+    name (``tiny``, ``small``, ``medium``) is also accepted. The angle
+    classifier is not part of this bundle.
+    """
+
+    key = _model_key(config_path)
+    if key == "mobile":
+        key = "small"
     if key not in _MODELS:
-        raise ValueError(f"unsupported PP-OCRv6 model_type {model_type!r}")
+        raise ValueError(f"unsupported PP-OCRv6 model_type {key!r}")
     root = Path(dest) if dest else Path.home() / ".cache" / "rapidocr" / "ppocrv6" / key
     root.mkdir(parents=True, exist_ok=True)
     names = {"det": "det.onnx", "rec": "rec.onnx", "dict": "dict.txt"}
@@ -75,6 +83,21 @@ def download_models(model_type: str = "small", dest: Optional[str] = None) -> di
                 raise RuntimeError(f"checksum mismatch for {path}")
         out[role] = str(path)
     return out
+
+
+def _model_key(config_path: Optional[str]) -> str:
+    if config_path is None:
+        return "small"
+    text = str(config_path)
+    if text.lower() in _MODELS or text.lower() == "mobile":
+        candidate = Path(text)
+        if not candidate.is_file():
+            return text.lower()
+    from .utils.parse_parameters import ParseParams
+
+    cfg = ParseParams.load(text)
+    value = cfg.Rec.get("model_type") or cfg.Det.get("model_type") or "small"
+    return str(getattr(value, "value", value)).lower()
 
 
 def _matches(path: Path, digest: Optional[str]) -> bool:

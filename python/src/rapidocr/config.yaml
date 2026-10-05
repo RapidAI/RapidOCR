@@ -1,0 +1,182 @@
+Global:
+    text_score: 0.5
+
+    use_det: true
+    use_cls: true
+    use_rec: true
+
+    use_preprocess_img: true
+    min_side_len: 30
+    max_side_len: 2000
+
+    use_vertical_padding: true
+    min_height: 30
+    width_height_ratio: 8
+
+    return_word_box: false
+    return_single_char_box: false
+
+    font_path: null
+    log_level: "info" # debug / info / warning / error / critical
+
+    model_root_dir: null
+
+EngineConfig:
+    onnxruntime:
+        intra_op_num_threads: -1
+        inter_op_num_threads: -1
+        enable_cpu_mem_arena: false
+
+        cpu_ep_cfg:
+            arena_extend_strategy: "kSameAsRequested"
+
+        use_cuda: false
+        cuda_ep_cfg:
+            device_id: 0
+            arena_extend_strategy: "kNextPowerOfTwo"
+            cudnn_conv_algo_search: "EXHAUSTIVE"
+            do_copy_in_default_stream: true
+
+        use_dml: false
+        dml_ep_cfg: null
+
+        use_cann: false
+        cann_ep_cfg:
+            device_id: 0
+            arena_extend_strategy: "kNextPowerOfTwo"
+            npu_mem_limit:  21474836480 # 20 * 1024 * 1024 * 1024
+            op_select_impl_mode: "high_performance"
+            optypelist_for_implmode: "Gelu"
+            enable_cann_graph: true
+
+        use_coreml: false
+        coreml_ep_cfg:
+            ModelFormat: "MLProgram"
+            MLComputeUnits: "ALL"
+            RequireStaticInputShapes: 0
+            EnableOnSubgraphs: 0
+            SpecializationStrategy: "FastPrediction"
+            ProfileComputePlan: 0
+            AllowLowPrecisionAccumulationOnGPU: 0
+            ModelCacheDirectory: "/tmp/RapidOCR"
+
+    openvino:
+        inference_num_threads: -1
+        performance_hint: null
+        performance_num_requests: -1
+        enable_cpu_pinning: null
+        num_streams: -1
+        enable_hyper_threading: null
+        scheduling_core_type: null
+
+    paddle:
+        cpu_math_library_num_threads: -1
+
+        use_npu: false
+        npu_ep_cfg:
+            device_id: 0
+            envs:
+                FLAGS_npu_jit_compile: 0
+                FLAGS_use_stride_kernel: 0
+                FLAGS_allocator_strategy: "auto_growth"
+                CUSTOM_DEVICE_BLACK_LIST: "pad3d,pad3d_grad,set_value,set_value_with_tensor"
+                FLAGS_npu_scale_aclnn: "True"
+                FLAGS_npu_split_aclnn: "True"
+
+        use_cuda: false
+        cuda_ep_cfg:
+            device_id: 0
+            gpu_mem: 500
+
+    torch:
+        use_cuda: false
+        cuda_ep_cfg:
+            device_id: 0
+
+        use_npu: false
+        npu_ep_cfg:
+            device_id: 0
+
+        use_mps: false
+
+    tensorrt:
+        device_id: 0
+        use_fp16: true
+        use_int8: false
+        workspace_size: 1073741824  # 1GB = 1 << 30
+
+        # Engine caching
+        cache_dir: null  # null = use default models dir
+        force_rebuild: false
+
+        # Dynamic shape optimization profiles
+        det_profile:
+            min_shape: [1, 3, 32, 32]
+            opt_shape: [1, 3, 736, 736]
+            max_shape: [1, 3, 2048, 2048]
+
+        rec_profile:
+            min_shape: [1, 3, 48, 32]
+            opt_shape: [6, 3, 48, 320]
+            max_shape: [6, 3, 48, 2048]
+
+        cls_profile:
+            min_shape: [1, 3, 48, 32]
+            opt_shape: [6, 3, 48, 192]
+            max_shape: [6, 3, 48, 192]
+
+    mnn: {}
+
+Det:
+    engine_type: "onnxruntime"
+    lang_type: "ch"
+    model_type: "small"
+    ocr_version: "PP-OCRv6"
+
+    task_type: "det"
+
+    model_path: null
+    model_dir: null
+
+    limit_side_len: 736
+    limit_type: min
+    std: [ 0.5, 0.5, 0.5 ]
+    mean: [ 0.5, 0.5, 0.5 ]
+
+    thresh: 0.3
+    box_thresh: 0.5
+    max_candidates: 1000
+    unclip_ratio: 1.6
+    use_dilation: true
+    score_mode: fast
+
+Cls:
+    engine_type: "onnxruntime"
+    lang_type: "ch"
+    model_type: "mobile"
+    ocr_version: "PP-OCRv4"
+
+    task_type: "cls"
+
+    model_path: null
+    model_dir: null
+
+    cls_image_shape: [3, 48, 192]
+    cls_batch_num: 6
+    cls_thresh: 0.9
+    label_list: ["0", "180"]
+
+Rec:
+    engine_type: "onnxruntime"
+    lang_type: "ch"
+    model_type: "small"
+    ocr_version: "PP-OCRv6"
+
+    task_type: "rec"
+
+    model_path: null
+    model_dir: null
+
+    rec_keys_path: null
+    rec_img_shape: [3, 48, 320]
+    rec_batch_num: 6

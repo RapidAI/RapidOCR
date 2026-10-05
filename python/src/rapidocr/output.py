@@ -39,26 +39,112 @@ class RapidOCROutput:
         ]
 
     def to_markdown(self) -> str:
-        if not self.txts:
-            return ""
-        return "\n".join(self.txts)
+        return _markdown(self.boxes, self.txts)
 
     def vis(self, save_path: Optional[str] = None) -> Optional[np.ndarray]:
         if self.img is None or self.boxes is None:
             return None
-        from PIL import Image, ImageDraw
+        from .utils.vis_res import VisRes
 
-        image = Image.fromarray(self.img.copy())
-        draw = ImageDraw.Draw(image)
-        for box, text in zip(self.boxes, self.txts or ()):
-            polygon = [(float(p[0]), float(p[1])) for p in box]
-            draw.line(polygon + [polygon[0]], fill=(0, 180, 0), width=2)
-            if text:
-                draw.text(polygon[0], text, fill=(200, 0, 0))
-        out = np.asarray(image)
+        image = VisRes()(self.img, self.boxes, self.txts, self.scores)
         if save_path is not None:
-            image.save(save_path)
-        return out
+            from PIL import Image
+
+            Image.fromarray(image).save(save_path)
+        return image
+
+
+def _markdown(boxes: Optional[np.ndarray], txts: Optional[Tuple[str, ...]]) -> str:
+    """Line grouping from ``rapidocr.utils.to_markdown`` on ``main``."""
+
+    if boxes is None or txts is None:
+        return "没有检测到任何文本。"
+    items = []
+    for box, text in zip(boxes, txts):
+        array = np.asarray(box, dtype=np.float32)
+        top = float(np.min(array[:, 1]))
+        bottom = float(np.max(array[:, 1]))
+        left = float(np.min(array[:, 0]))
+        right = float(np.max(array[:, 0]))
+        items.append(
+            {
+                "text": text,
+                "props": {
+                    "top": top,
+                    "bottom": bottom,
+                    "left": left,
+                    "right": right,
+                    "height": bottom - top,
+                    "width": right - left,
+                    "center_y": top + (bottom - top) / 2,
+                },
+            }
+        )
+    if not items:
+        return ""
+    items.sort(key=lambda item: (item["props"]["center_y"], item["props"]["left"]))
+    lines = []
+    for item in items:
+        matched = None
+        for line in lines:
+            if _same_line(item["props"], line["props"]):
+                matched = line
+                break
+        if matched is None:
+            lines.append({"items": [item], "props": dict(item["props"])})
+            continue
+        matched["items"].append(item)
+        matched["props"] = _merge_props(matched["props"], item["props"])
+    lines.sort(key=lambda line: (line["props"]["top"], line["props"]["left"]))
+    output_lines = []
+    previous = None
+    for line in lines:
+        line["items"].sort(key=lambda item: item["props"]["left"])
+        parts = [line["items"][0]["text"]]
+        prev_props = line["items"][0]["props"]
+        for item in line["items"][1:]:
+            gap = item["props"]["left"] - prev_props["right"]
+            parts.append(_gap_text(gap, prev_props, item["props"]))
+            parts.append(item["text"])
+            prev_props = item["props"]
+        if previous is not None:
+            vertical = line["props"]["top"] - previous["bottom"]
+            if vertical > max(previous["height"], line["props"]["height"]) * 0.8:
+                output_lines.append("")
+        output_lines.append("".join(parts))
+        previous = line["props"]
+    return "\n".join(output_lines)
+
+
+def _same_line(current: dict, line: dict) -> bool:
+    overlap = max(0.0, min(line["bottom"], current["bottom"]) - max(line["top"], current["top"]))
+    min_height = max(1.0, min(current["height"], line["height"]))
+    center_diff = abs(current["center_y"] - line["center_y"])
+    return overlap / min_height > 0.5 or center_diff < min_height * 0.35
+
+
+def _merge_props(left: dict, right: dict) -> dict:
+    top = min(left["top"], right["top"])
+    bottom = max(left["bottom"], right["bottom"])
+    edge_left = min(left["left"], right["left"])
+    edge_right = max(left["right"], right["right"])
+    return {
+        "top": top,
+        "bottom": bottom,
+        "left": edge_left,
+        "right": edge_right,
+        "height": bottom - top,
+        "width": edge_right - edge_left,
+        "center_y": top + (bottom - top) / 2,
+    }
+
+
+def _gap_text(gap: float, previous: dict, current: dict) -> str:
+    if gap <= 1:
+        return ""
+    ref = max(1.0, min(previous["width"], current["width"]))
+    spaces = max(1, int(round(gap / max(1.0, ref * 0.5))))
+    return " " * min(spaces, 12)
 
 
 def filter_by_score(
