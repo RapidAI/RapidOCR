@@ -1024,6 +1024,342 @@ void Avx2Conv2x2Valid(float* dst, const float* src, const float* weights,
   }
 }
 
+// SAME_UPPER 2x2 (output size == input size, pad 0). Interior pixels share
+// four contiguous loads across four or eight output filters. The right column
+// and bottom row drop the out-of-range tap, matching the scalar reduction
+// order. `PPOCR_DISABLE_AVX2_CONV2X2_SAME8` keeps the four-output tile.
+void Avx2Conv2x2SameUpper(float* dst, const float* src, const float* weights,
+                          const float* bias, int first_output, int last_output,
+                          int input_channels, int input_h, int input_w,
+                          bool relu, int row_begin, int row_end) noexcept {
+  const std::size_t input_plane = std::size_t(input_h) * input_w;
+  const std::size_t output_plane = input_plane;
+  const int y_begin = row_begin < 0 ? 0 : std::min(input_h, row_begin);
+  const int y_end = row_end < 0 ? input_h : std::min(input_h, row_end);
+  const __m256 zero = _mm256_setzero_ps();
+  int output = first_output;
+  static const bool use_same8 =
+      std::getenv("PPOCR_DISABLE_AVX2_CONV2X2_SAME8") == nullptr;
+  if (use_same8 && first_output + 8 <= last_output) {
+    const auto store8 = [&](float* const out[8], std::size_t index, const float* s) {
+      for (int q = 0; q < 8; ++q) out[q][index] = relu ? std::max(s[q], 0.F) : s[q];
+    };
+    for (int y = y_begin; y + 1 < input_h && y < y_end; ++y) {
+      for (int oc = first_output; oc + 8 <= last_output; oc += 8) {
+        float* out[8];
+        const float* f[8];
+        float b[8];
+        for (int q = 0; q < 8; ++q) {
+          out[q] = dst + std::size_t(oc + q) * output_plane;
+          f[q] = weights + std::size_t(oc + q) * input_channels * 4;
+          b[q] = bias ? bias[oc + q] : 0.F;
+        }
+        int x = 0;
+        for (; x + 8 <= input_w - 1; x += 8) {
+          __m256 s0 = _mm256_set1_ps(b[0]), s1 = _mm256_set1_ps(b[1]);
+          __m256 s2 = _mm256_set1_ps(b[2]), s3 = _mm256_set1_ps(b[3]);
+          __m256 s4 = _mm256_set1_ps(b[4]), s5 = _mm256_set1_ps(b[5]);
+          __m256 s6 = _mm256_set1_ps(b[6]), s7 = _mm256_set1_ps(b[7]);
+          for (int input = 0; input < input_channels; ++input) {
+            const float* row0 = src + std::size_t(input) * input_plane +
+                                std::size_t(y) * input_w + x;
+            const float* row1 = row0 + input_w;
+            const __m256 v00 = _mm256_loadu_ps(row0);
+            const __m256 v01 = _mm256_loadu_ps(row0 + 1);
+            const __m256 v10 = _mm256_loadu_ps(row1);
+            const __m256 v11 = _mm256_loadu_ps(row1 + 1);
+            const auto fma4 = [&](__m256& acc, const float* k) {
+              acc = _mm256_fmadd_ps(_mm256_set1_ps(k[0]), v00, acc);
+              acc = _mm256_fmadd_ps(_mm256_set1_ps(k[1]), v01, acc);
+              acc = _mm256_fmadd_ps(_mm256_set1_ps(k[2]), v10, acc);
+              acc = _mm256_fmadd_ps(_mm256_set1_ps(k[3]), v11, acc);
+            };
+            fma4(s0, f[0] + std::size_t(input) * 4);
+            fma4(s1, f[1] + std::size_t(input) * 4);
+            fma4(s2, f[2] + std::size_t(input) * 4);
+            fma4(s3, f[3] + std::size_t(input) * 4);
+            fma4(s4, f[4] + std::size_t(input) * 4);
+            fma4(s5, f[5] + std::size_t(input) * 4);
+            fma4(s6, f[6] + std::size_t(input) * 4);
+            fma4(s7, f[7] + std::size_t(input) * 4);
+          }
+          if (relu) {
+            s0 = _mm256_max_ps(s0, zero); s1 = _mm256_max_ps(s1, zero);
+            s2 = _mm256_max_ps(s2, zero); s3 = _mm256_max_ps(s3, zero);
+            s4 = _mm256_max_ps(s4, zero); s5 = _mm256_max_ps(s5, zero);
+            s6 = _mm256_max_ps(s6, zero); s7 = _mm256_max_ps(s7, zero);
+          }
+          const std::size_t index = std::size_t(y) * input_w + x;
+          _mm256_storeu_ps(out[0] + index, s0); _mm256_storeu_ps(out[1] + index, s1);
+          _mm256_storeu_ps(out[2] + index, s2); _mm256_storeu_ps(out[3] + index, s3);
+          _mm256_storeu_ps(out[4] + index, s4); _mm256_storeu_ps(out[5] + index, s5);
+          _mm256_storeu_ps(out[6] + index, s6); _mm256_storeu_ps(out[7] + index, s7);
+        }
+        for (; x + 1 < input_w; ++x) {
+          float s[8] = {b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]};
+          for (int input = 0; input < input_channels; ++input) {
+            const float* row0 = src + std::size_t(input) * input_plane +
+                                std::size_t(y) * input_w + x;
+            for (int q = 0; q < 8; ++q) {
+              const float* k = f[q] + std::size_t(input) * 4;
+              s[q] += row0[0] * k[0] + row0[1] * k[1] +
+                      row0[input_w] * k[2] + row0[input_w + 1] * k[3];
+            }
+          }
+          store8(out, std::size_t(y) * input_w + x, s);
+        }
+        float right[8] = {b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]};
+        for (int input = 0; input < input_channels; ++input) {
+          const float* row0 = src + std::size_t(input) * input_plane +
+                              std::size_t(y) * input_w + input_w - 1;
+          for (int q = 0; q < 8; ++q) {
+            const float* k = f[q] + std::size_t(input) * 4;
+            right[q] += row0[0] * k[0] + row0[input_w] * k[2];
+          }
+        }
+        store8(out, std::size_t(y) * input_w + input_w - 1, right);
+      }
+    }
+    if (y_end >= input_h) {
+      const int y = input_h - 1;
+      for (int oc = first_output; oc + 8 <= last_output; oc += 8) {
+        float* out[8];
+        const float* f[8];
+        float b[8];
+        for (int q = 0; q < 8; ++q) {
+          out[q] = dst + std::size_t(oc + q) * output_plane;
+          f[q] = weights + std::size_t(oc + q) * input_channels * 4;
+          b[q] = bias ? bias[oc + q] : 0.F;
+        }
+        for (int x = 0; x + 1 < input_w; ++x) {
+          float s[8] = {b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]};
+          for (int input = 0; input < input_channels; ++input) {
+            const float* row = src + std::size_t(input) * input_plane +
+                               std::size_t(y) * input_w + x;
+            for (int q = 0; q < 8; ++q) {
+              const float* k = f[q] + std::size_t(input) * 4;
+              s[q] += row[0] * k[0] + row[1] * k[1];
+            }
+          }
+          store8(out, std::size_t(y) * input_w + x, s);
+        }
+        float corner[8] = {b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]};
+        for (int input = 0; input < input_channels; ++input) {
+          const float value = src[std::size_t(input) * input_plane + input_plane - 1];
+          for (int q = 0; q < 8; ++q) corner[q] += value * f[q][std::size_t(input) * 4];
+        }
+        store8(out, input_plane - 1, corner);
+      }
+    }
+    while (output + 8 <= last_output) output += 8;
+  }
+  for (int y = y_begin; y + 1 < input_h && y < y_end; ++y) {
+    for (int oc = output; oc + 4 <= last_output; oc += 4) {
+      float* out0 = dst + std::size_t(oc) * output_plane;
+      float* out1 = out0 + output_plane;
+      float* out2 = out1 + output_plane;
+      float* out3 = out2 + output_plane;
+      const float* f0 = weights + std::size_t(oc) * input_channels * 4;
+      const float* f1 = f0 + std::size_t(input_channels) * 4;
+      const float* f2 = f1 + std::size_t(input_channels) * 4;
+      const float* f3 = f2 + std::size_t(input_channels) * 4;
+      const float b0 = bias ? bias[oc] : 0.F;
+      const float b1 = bias ? bias[oc + 1] : 0.F;
+      const float b2 = bias ? bias[oc + 2] : 0.F;
+      const float b3 = bias ? bias[oc + 3] : 0.F;
+      int x = 0;
+      for (; x + 8 <= input_w - 1; x += 8) {
+        __m256 s0 = _mm256_set1_ps(b0), s1 = _mm256_set1_ps(b1);
+        __m256 s2 = _mm256_set1_ps(b2), s3 = _mm256_set1_ps(b3);
+        for (int input = 0; input < input_channels; ++input) {
+          const float* row0 = src + std::size_t(input) * input_plane +
+                              std::size_t(y) * input_w + x;
+          const float* row1 = row0 + input_w;
+          const __m256 v00 = _mm256_loadu_ps(row0);
+          const __m256 v01 = _mm256_loadu_ps(row0 + 1);
+          const __m256 v10 = _mm256_loadu_ps(row1);
+          const __m256 v11 = _mm256_loadu_ps(row1 + 1);
+          const float* k0 = f0 + std::size_t(input) * 4;
+          const float* k1 = f1 + std::size_t(input) * 4;
+          const float* k2 = f2 + std::size_t(input) * 4;
+          const float* k3 = f3 + std::size_t(input) * 4;
+          s0 = _mm256_fmadd_ps(_mm256_set1_ps(k0[0]), v00, s0);
+          s0 = _mm256_fmadd_ps(_mm256_set1_ps(k0[1]), v01, s0);
+          s0 = _mm256_fmadd_ps(_mm256_set1_ps(k0[2]), v10, s0);
+          s0 = _mm256_fmadd_ps(_mm256_set1_ps(k0[3]), v11, s0);
+          s1 = _mm256_fmadd_ps(_mm256_set1_ps(k1[0]), v00, s1);
+          s1 = _mm256_fmadd_ps(_mm256_set1_ps(k1[1]), v01, s1);
+          s1 = _mm256_fmadd_ps(_mm256_set1_ps(k1[2]), v10, s1);
+          s1 = _mm256_fmadd_ps(_mm256_set1_ps(k1[3]), v11, s1);
+          s2 = _mm256_fmadd_ps(_mm256_set1_ps(k2[0]), v00, s2);
+          s2 = _mm256_fmadd_ps(_mm256_set1_ps(k2[1]), v01, s2);
+          s2 = _mm256_fmadd_ps(_mm256_set1_ps(k2[2]), v10, s2);
+          s2 = _mm256_fmadd_ps(_mm256_set1_ps(k2[3]), v11, s2);
+          s3 = _mm256_fmadd_ps(_mm256_set1_ps(k3[0]), v00, s3);
+          s3 = _mm256_fmadd_ps(_mm256_set1_ps(k3[1]), v01, s3);
+          s3 = _mm256_fmadd_ps(_mm256_set1_ps(k3[2]), v10, s3);
+          s3 = _mm256_fmadd_ps(_mm256_set1_ps(k3[3]), v11, s3);
+        }
+        if (relu) {
+          s0 = _mm256_max_ps(s0, zero); s1 = _mm256_max_ps(s1, zero);
+          s2 = _mm256_max_ps(s2, zero); s3 = _mm256_max_ps(s3, zero);
+        }
+        const std::size_t index = std::size_t(y) * input_w + x;
+        _mm256_storeu_ps(out0 + index, s0); _mm256_storeu_ps(out1 + index, s1);
+        _mm256_storeu_ps(out2 + index, s2); _mm256_storeu_ps(out3 + index, s3);
+      }
+      for (; x + 1 < input_w; ++x) {
+        float s0 = b0, s1 = b1, s2 = b2, s3 = b3;
+        for (int input = 0; input < input_channels; ++input) {
+          const float* row0 = src + std::size_t(input) * input_plane +
+                              std::size_t(y) * input_w + x;
+          const float* k0 = f0 + std::size_t(input) * 4;
+          const float* k1 = f1 + std::size_t(input) * 4;
+          const float* k2 = f2 + std::size_t(input) * 4;
+          const float* k3 = f3 + std::size_t(input) * 4;
+          s0 += row0[0] * k0[0] + row0[1] * k0[1] + row0[input_w] * k0[2] + row0[input_w + 1] * k0[3];
+          s1 += row0[0] * k1[0] + row0[1] * k1[1] + row0[input_w] * k1[2] + row0[input_w + 1] * k1[3];
+          s2 += row0[0] * k2[0] + row0[1] * k2[1] + row0[input_w] * k2[2] + row0[input_w + 1] * k2[3];
+          s3 += row0[0] * k3[0] + row0[1] * k3[1] + row0[input_w] * k3[2] + row0[input_w + 1] * k3[3];
+        }
+        const std::size_t index = std::size_t(y) * input_w + x;
+        out0[index] = relu ? std::max(s0, 0.F) : s0;
+        out1[index] = relu ? std::max(s1, 0.F) : s1;
+        out2[index] = relu ? std::max(s2, 0.F) : s2;
+        out3[index] = relu ? std::max(s3, 0.F) : s3;
+      }
+      float s0 = b0, s1 = b1, s2 = b2, s3 = b3;
+      for (int input = 0; input < input_channels; ++input) {
+        const float* row0 = src + std::size_t(input) * input_plane +
+                            std::size_t(y) * input_w + input_w - 1;
+        const float* k0 = f0 + std::size_t(input) * 4;
+        const float* k1 = f1 + std::size_t(input) * 4;
+        const float* k2 = f2 + std::size_t(input) * 4;
+        const float* k3 = f3 + std::size_t(input) * 4;
+        s0 += row0[0] * k0[0] + row0[input_w] * k0[2];
+        s1 += row0[0] * k1[0] + row0[input_w] * k1[2];
+        s2 += row0[0] * k2[0] + row0[input_w] * k2[2];
+        s3 += row0[0] * k3[0] + row0[input_w] * k3[2];
+      }
+      const std::size_t index = std::size_t(y) * input_w + input_w - 1;
+      out0[index] = relu ? std::max(s0, 0.F) : s0;
+      out1[index] = relu ? std::max(s1, 0.F) : s1;
+      out2[index] = relu ? std::max(s2, 0.F) : s2;
+      out3[index] = relu ? std::max(s3, 0.F) : s3;
+    }
+  }
+  if (y_end >= input_h) {
+    const int y = input_h - 1;
+    for (int oc = output; oc + 4 <= last_output; oc += 4) {
+      float* out0 = dst + std::size_t(oc) * output_plane;
+      float* out1 = out0 + output_plane;
+      float* out2 = out1 + output_plane;
+      float* out3 = out2 + output_plane;
+      const float* f0 = weights + std::size_t(oc) * input_channels * 4;
+      const float* f1 = f0 + std::size_t(input_channels) * 4;
+      const float* f2 = f1 + std::size_t(input_channels) * 4;
+      const float* f3 = f2 + std::size_t(input_channels) * 4;
+      const float b0 = bias ? bias[oc] : 0.F;
+      const float b1 = bias ? bias[oc + 1] : 0.F;
+      const float b2 = bias ? bias[oc + 2] : 0.F;
+      const float b3 = bias ? bias[oc + 3] : 0.F;
+      for (int x = 0; x + 1 < input_w; ++x) {
+        float s0 = b0, s1 = b1, s2 = b2, s3 = b3;
+        for (int input = 0; input < input_channels; ++input) {
+          const float* row = src + std::size_t(input) * input_plane +
+                             std::size_t(y) * input_w + x;
+          const float* k0 = f0 + std::size_t(input) * 4;
+          const float* k1 = f1 + std::size_t(input) * 4;
+          const float* k2 = f2 + std::size_t(input) * 4;
+          const float* k3 = f3 + std::size_t(input) * 4;
+          s0 += row[0] * k0[0] + row[1] * k0[1];
+          s1 += row[0] * k1[0] + row[1] * k1[1];
+          s2 += row[0] * k2[0] + row[1] * k2[1];
+          s3 += row[0] * k3[0] + row[1] * k3[1];
+        }
+        const std::size_t index = std::size_t(y) * input_w + x;
+        out0[index] = relu ? std::max(s0, 0.F) : s0;
+        out1[index] = relu ? std::max(s1, 0.F) : s1;
+        out2[index] = relu ? std::max(s2, 0.F) : s2;
+        out3[index] = relu ? std::max(s3, 0.F) : s3;
+      }
+      float s0 = b0, s1 = b1, s2 = b2, s3 = b3;
+      for (int input = 0; input < input_channels; ++input) {
+        const float value = src[std::size_t(input) * input_plane + input_plane - 1];
+        s0 += value * f0[std::size_t(input) * 4];
+        s1 += value * f1[std::size_t(input) * 4];
+        s2 += value * f2[std::size_t(input) * 4];
+        s3 += value * f3[std::size_t(input) * 4];
+      }
+      out0[input_plane - 1] = relu ? std::max(s0, 0.F) : s0;
+      out1[input_plane - 1] = relu ? std::max(s1, 0.F) : s1;
+      out2[input_plane - 1] = relu ? std::max(s2, 0.F) : s2;
+      out3[input_plane - 1] = relu ? std::max(s3, 0.F) : s3;
+    }
+  }
+  while (output + 4 <= last_output) output += 4;
+  for (; output < last_output; ++output) {
+    float* out = dst + std::size_t(output) * output_plane;
+    const float* filter = weights + std::size_t(output) * input_channels * 4;
+    const float base = bias ? bias[output] : 0.F;
+    for (int y = y_begin; y + 1 < input_h && y < y_end; ++y) {
+      int x = 0;
+      for (; x + 8 <= input_w - 1; x += 8) {
+        __m256 sum = _mm256_set1_ps(base);
+        for (int input = 0; input < input_channels; ++input) {
+          const float* row0 = src + std::size_t(input) * input_plane +
+                              std::size_t(y) * input_w + x;
+          const float* row1 = row0 + input_w;
+          const float* k = filter + std::size_t(input) * 4;
+          sum = _mm256_fmadd_ps(_mm256_set1_ps(k[0]), _mm256_loadu_ps(row0), sum);
+          sum = _mm256_fmadd_ps(_mm256_set1_ps(k[1]), _mm256_loadu_ps(row0 + 1), sum);
+          sum = _mm256_fmadd_ps(_mm256_set1_ps(k[2]), _mm256_loadu_ps(row1), sum);
+          sum = _mm256_fmadd_ps(_mm256_set1_ps(k[3]), _mm256_loadu_ps(row1 + 1), sum);
+        }
+        if (relu) sum = _mm256_max_ps(sum, zero);
+        _mm256_storeu_ps(out + std::size_t(y) * input_w + x, sum);
+      }
+      for (; x + 1 < input_w; ++x) {
+        float sum = base;
+        for (int input = 0; input < input_channels; ++input) {
+          const float* row0 = src + std::size_t(input) * input_plane +
+                              std::size_t(y) * input_w + x;
+          const float* k = filter + std::size_t(input) * 4;
+          sum += row0[0] * k[0] + row0[1] * k[1] +
+                 row0[input_w] * k[2] + row0[input_w + 1] * k[3];
+        }
+        out[std::size_t(y) * input_w + x] = relu ? std::max(sum, 0.F) : sum;
+      }
+      float sum = base;
+      for (int input = 0; input < input_channels; ++input) {
+        const float* row0 = src + std::size_t(input) * input_plane +
+                            std::size_t(y) * input_w + input_w - 1;
+        const float* k = filter + std::size_t(input) * 4;
+        sum += row0[0] * k[0] + row0[input_w] * k[2];
+      }
+      out[std::size_t(y) * input_w + input_w - 1] = relu ? std::max(sum, 0.F) : sum;
+    }
+    if (y_end < input_h) continue;
+    const int y = input_h - 1;
+    for (int x = 0; x + 1 < input_w; ++x) {
+      float sum = base;
+      for (int input = 0; input < input_channels; ++input) {
+        const float* row = src + std::size_t(input) * input_plane +
+                           std::size_t(y) * input_w + x;
+        const float* k = filter + std::size_t(input) * 4;
+        sum += row[0] * k[0] + row[1] * k[1];
+      }
+      out[std::size_t(y) * input_w + x] = relu ? std::max(sum, 0.F) : sum;
+    }
+    float sum = base;
+    for (int input = 0; input < input_channels; ++input) {
+      const float value = src[std::size_t(input) * input_plane + input_plane - 1];
+      sum += value * filter[std::size_t(input) * 4];
+    }
+    out[input_plane - 1] = relu ? std::max(sum, 0.F) : sum;
+  }
+}
+
 // AVX2 counterpart of the AVX-512 four-output 3x3 kernel.  It keeps x86
 // machines without AVX-512 on the same input-reuse algorithm rather than
 // falling back to four separate input traversals.
@@ -1332,6 +1668,135 @@ void Avx2Conv3x3Stride2x4(float* dst, const float* src, const float* weights,
   if (output < last_output) {
     Avx2Conv3x3Stride2(dst, src, weights, bias, output, last_output, input_channels,
                        input_h, input_w, output_h, output_w, pad_top, pad_left, relu);
+  }
+}
+
+void Avx2Conv3x3Stride2x8(float* dst, const float* src, const float* weights,
+                           const float* bias, int first_output, int last_output,
+                           int input_channels, int input_h, int input_w,
+                           int output_h, int output_w, int pad_top,
+                           int pad_left, bool relu) noexcept {
+  const std::size_t input_plane = std::size_t(input_h) * input_w;
+  const std::size_t output_plane = std::size_t(output_h) * output_w;
+  const int first_y = std::max(0, (pad_top + 1) / 2);
+  const int first_x = std::max(0, (pad_left + 1) / 2);
+  const int max_y = input_h + pad_top - 3;
+  const int max_x = input_w + pad_left - 3;
+  const int last_y = max_y < 0 ? 0 : std::min(output_h, max_y / 2 + 1);
+  const int last_x = max_x < 0 ? 0 : std::min(output_w, max_x / 2 + 1);
+  const auto load_stride2 = [](const float* row) {
+    const __m128 a = _mm_loadu_ps(row);
+    const __m128 b = _mm_loadu_ps(row + 4);
+    const __m128 c = _mm_loadu_ps(row + 8);
+    const __m128 d = _mm_loadu_ps(row + 12);
+    return _mm256_set_m128(_mm_shuffle_ps(c, d, 0x88), _mm_shuffle_ps(a, b, 0x88));
+  };
+  int output = first_output;
+  for (; output + 8 <= last_output; output += 8) {
+    float* out[8];
+    const float* filter[8];
+    float base[8];
+    for (int q = 0; q < 8; ++q) {
+      out[q] = dst + std::size_t(output + q) * output_plane;
+      filter[q] = weights + std::size_t(output + q) * input_channels * 9;
+      base[q] = bias ? bias[output + q] : 0.F;
+    }
+    const auto scalar8 = [&](int y, int x) {
+      const int iy0 = y * 2 - pad_top;
+      const int ix0 = x * 2 - pad_left;
+      float sum[8] = {base[0], base[1], base[2], base[3],
+                      base[4], base[5], base[6], base[7]};
+      for (int input = 0; input < input_channels; ++input) {
+        const float* plane = src + std::size_t(input) * input_plane;
+        for (int ky = 0; ky < 3; ++ky) {
+          const int iy = iy0 + ky;
+          if (iy < 0 || iy >= input_h) continue;
+          for (int kx = 0; kx < 3; ++kx) {
+            const int ix = ix0 + kx;
+            if (ix < 0 || ix >= input_w) continue;
+            const float value = plane[std::size_t(iy) * input_w + ix];
+            const int ki = ky * 3 + kx;
+            for (int q = 0; q < 8; ++q)
+              sum[q] += value * filter[q][std::size_t(input) * 9 + ki];
+          }
+        }
+      }
+      const auto index = std::size_t(y) * output_w + x;
+      for (int q = 0; q < 8; ++q)
+        out[q][index] = relu ? std::max(sum[q], 0.F) : sum[q];
+    };
+    for (int y = 0; y < output_h; ++y) {
+      const int iy0 = y * 2 - pad_top;
+      const bool interior_y = y >= first_y && y < last_y;
+      int x = 0;
+      for (; x < output_w; ++x) {
+        if (interior_y && x >= first_x && x + 8 <= last_x) break;
+        scalar8(y, x);
+      }
+      for (; x + 8 <= last_x; x += 8) {
+        const int ix0 = x * 2 - pad_left;
+        __m256 s0 = _mm256_set1_ps(base[0]);
+        __m256 s1 = _mm256_set1_ps(base[1]);
+        __m256 s2 = _mm256_set1_ps(base[2]);
+        __m256 s3 = _mm256_set1_ps(base[3]);
+        __m256 s4 = _mm256_set1_ps(base[4]);
+        __m256 s5 = _mm256_set1_ps(base[5]);
+        __m256 s6 = _mm256_set1_ps(base[6]);
+        __m256 s7 = _mm256_set1_ps(base[7]);
+        for (int input = 0; input < input_channels; ++input) {
+          const float* plane = src + std::size_t(input) * input_plane +
+                               std::size_t(iy0) * input_w + ix0;
+          const float* k0 = filter[0] + std::size_t(input) * 9;
+          const float* k1 = filter[1] + std::size_t(input) * 9;
+          const float* k2 = filter[2] + std::size_t(input) * 9;
+          const float* k3 = filter[3] + std::size_t(input) * 9;
+          const float* k4 = filter[4] + std::size_t(input) * 9;
+          const float* k5 = filter[5] + std::size_t(input) * 9;
+          const float* k6 = filter[6] + std::size_t(input) * 9;
+          const float* k7 = filter[7] + std::size_t(input) * 9;
+          for (int ky = 0; ky < 3; ++ky) {
+            const float* row = plane + std::size_t(ky) * input_w;
+            for (int kx = 0; kx < 3; ++kx) {
+              const __m256 values = load_stride2(row + kx);
+              const int ki = ky * 3 + kx;
+              s0 = _mm256_fmadd_ps(_mm256_set1_ps(k0[ki]), values, s0);
+              s1 = _mm256_fmadd_ps(_mm256_set1_ps(k1[ki]), values, s1);
+              s2 = _mm256_fmadd_ps(_mm256_set1_ps(k2[ki]), values, s2);
+              s3 = _mm256_fmadd_ps(_mm256_set1_ps(k3[ki]), values, s3);
+              s4 = _mm256_fmadd_ps(_mm256_set1_ps(k4[ki]), values, s4);
+              s5 = _mm256_fmadd_ps(_mm256_set1_ps(k5[ki]), values, s5);
+              s6 = _mm256_fmadd_ps(_mm256_set1_ps(k6[ki]), values, s6);
+              s7 = _mm256_fmadd_ps(_mm256_set1_ps(k7[ki]), values, s7);
+            }
+          }
+        }
+        const auto index = std::size_t(y) * output_w + x;
+        if (relu) {
+          const __m256 zero = _mm256_setzero_ps();
+          s0 = _mm256_max_ps(s0, zero);
+          s1 = _mm256_max_ps(s1, zero);
+          s2 = _mm256_max_ps(s2, zero);
+          s3 = _mm256_max_ps(s3, zero);
+          s4 = _mm256_max_ps(s4, zero);
+          s5 = _mm256_max_ps(s5, zero);
+          s6 = _mm256_max_ps(s6, zero);
+          s7 = _mm256_max_ps(s7, zero);
+        }
+        _mm256_storeu_ps(out[0] + index, s0);
+        _mm256_storeu_ps(out[1] + index, s1);
+        _mm256_storeu_ps(out[2] + index, s2);
+        _mm256_storeu_ps(out[3] + index, s3);
+        _mm256_storeu_ps(out[4] + index, s4);
+        _mm256_storeu_ps(out[5] + index, s5);
+        _mm256_storeu_ps(out[6] + index, s6);
+        _mm256_storeu_ps(out[7] + index, s7);
+      }
+      for (; x < output_w; ++x) scalar8(y, x);
+    }
+  }
+  if (output < last_output) {
+    Avx2Conv3x3Stride2x4(dst, src, weights, bias, output, last_output, input_channels,
+                         input_h, input_w, output_h, output_w, pad_top, pad_left, relu);
   }
 }
 
@@ -1716,6 +2181,232 @@ void Avx2ExpandGeluProjectAdd(float* dst, const float* src,
     }
   }
   for (; spatial < spatial_end; ++spatial) scalar_at(spatial);
+}
+
+// Row-fused 5x5 depthwise plus pointwise. The depthwise row stays in a
+// per-thread buffer so the 1x1 does not reread a full NCHW depthwise plane.
+// Channel and tap order match DepthwiseConv then PointwiseConv.
+void Avx2DepthwisePointwiseConv5x5S1(float* dst, const float* src,
+                                     const float* dw_weights, const float* dw_bias,
+                                     const float* pw_weights, const float* pw_bias,
+                                     int channels, int output_channels, int height,
+                                     int width, int activation, int y0, int y1) noexcept {
+  if (!dst || !src || !dw_weights || !pw_weights || channels <= 0 ||
+      output_channels <= 0 || height <= 0 || width <= 0) {
+    return;
+  }
+  if (y0 < 0) y0 = 0;
+  if (y1 < 0 || y1 > height) y1 = height;
+  if (y0 >= y1) return;
+  const std::size_t plane = std::size_t(height) * width;
+  const int first_y = 2;
+  const int first_x = 2;
+  const int last_y = std::min(height, height - 2);
+  const int last_x = std::min(width, width - 2);
+  const __m256 zero = _mm256_setzero_ps();
+  const __m256 one = _mm256_set1_ps(1.F);
+  const __m256 half = _mm256_set1_ps(.5F);
+  const __m256 sixth = _mm256_set1_ps(1.F / 6.F);
+  const __m256 inv_sqrt2 = _mm256_set1_ps(0.7071067811865475244F);
+  const auto activate = [&](__m256 x) noexcept {
+    if (activation == 1) return _mm256_max_ps(x, zero);
+    if (activation == 2) {
+      const __m256 gate = _mm256_min_ps(one, _mm256_max_ps(zero, _mm256_fmadd_ps(x, sixth, half)));
+      return _mm256_mul_ps(x, gate);
+    }
+    if (activation == 3) {
+      return _mm256_mul_ps(half, _mm256_mul_ps(x,
+          _mm256_add_ps(one, ErfPs(_mm256_mul_ps(x, inv_sqrt2)))));
+    }
+    return x;
+  };
+  const auto activate_scalar = [&](float x) noexcept {
+    if (activation == 1) return std::max(x, 0.F);
+    if (activation == 2) return x * std::clamp(x / 6.F + .5F, 0.F, 1.F);
+    if (activation == 3) return x * .5F * (1.F + std::erf(x * 0.7071067811865475244F));
+    return x;
+  };
+  thread_local std::vector<float> dw_row;
+  dw_row.resize(std::size_t(channels) * width);
+  for (int y = y0; y < y1; ++y) {
+    const int iy0 = y - 2;
+    const int interior_begin = y >= first_y && y < last_y ? first_x : 0;
+    const int interior_end = y >= first_y && y < last_y ? last_x : 0;
+    for (int channel = 0; channel < channels; ++channel) {
+      const float* in = src + std::size_t(channel) * plane;
+      const float* filter = dw_weights + std::size_t(channel) * 25;
+      float* out = dw_row.data() + std::size_t(channel) * width;
+      const float base = dw_bias ? dw_bias[channel] : 0.F;
+      int x = 0;
+      for (; x < interior_begin; ++x) {
+        float sum = base;
+        const int ix0 = x - 2;
+        for (int ky = 0; ky < 5; ++ky) {
+          const int iy = iy0 + ky;
+          if (iy < 0 || iy >= height) continue;
+          for (int kx = 0; kx < 5; ++kx) {
+            const int ix = ix0 + kx;
+            if (ix >= 0 && ix < width) sum += in[std::size_t(iy) * width + ix] * filter[ky * 5 + kx];
+          }
+        }
+        out[x] = sum;
+      }
+      for (; x + 8 <= interior_end; x += 8) {
+        __m256 sum = _mm256_set1_ps(base);
+        const float* row0 = in + std::size_t(iy0) * width + x - 2;
+        for (int ky = 0; ky < 5; ++ky) {
+          const float* row = row0 + std::size_t(ky) * width;
+          const float* k = filter + ky * 5;
+          sum = _mm256_fmadd_ps(_mm256_set1_ps(k[0]), _mm256_loadu_ps(row), sum);
+          sum = _mm256_fmadd_ps(_mm256_set1_ps(k[1]), _mm256_loadu_ps(row + 1), sum);
+          sum = _mm256_fmadd_ps(_mm256_set1_ps(k[2]), _mm256_loadu_ps(row + 2), sum);
+          sum = _mm256_fmadd_ps(_mm256_set1_ps(k[3]), _mm256_loadu_ps(row + 3), sum);
+          sum = _mm256_fmadd_ps(_mm256_set1_ps(k[4]), _mm256_loadu_ps(row + 4), sum);
+        }
+        _mm256_storeu_ps(out + x, sum);
+      }
+      for (; x < width; ++x) {
+        float sum = base;
+        const int ix0 = x - 2;
+        for (int ky = 0; ky < 5; ++ky) {
+          const int iy = iy0 + ky;
+          if (iy < 0 || iy >= height) continue;
+          for (int kx = 0; kx < 5; ++kx) {
+            const int ix = ix0 + kx;
+            if (ix >= 0 && ix < width) sum += in[std::size_t(iy) * width + ix] * filter[ky * 5 + kx];
+          }
+        }
+        out[x] = sum;
+      }
+    }
+    const std::size_t row = std::size_t(y) * width;
+    int output = 0;
+    for (; output + 4 <= output_channels; output += 4) {
+      const float b0 = pw_bias ? pw_bias[output] : 0.F;
+      const float b1 = pw_bias ? pw_bias[output + 1] : 0.F;
+      const float b2 = pw_bias ? pw_bias[output + 2] : 0.F;
+      const float b3 = pw_bias ? pw_bias[output + 3] : 0.F;
+      const float* w0 = pw_weights + std::size_t(output) * channels;
+      const float* w1 = w0 + channels;
+      const float* w2 = w1 + channels;
+      const float* w3 = w2 + channels;
+      int x = 0;
+      for (; x + 8 <= width; x += 8) {
+        __m256 s0 = _mm256_set1_ps(b0), s1 = _mm256_set1_ps(b1);
+        __m256 s2 = _mm256_set1_ps(b2), s3 = _mm256_set1_ps(b3);
+        for (int input = 0; input < channels; ++input) {
+          const __m256 v = _mm256_loadu_ps(dw_row.data() + std::size_t(input) * width + x);
+          s0 = _mm256_fmadd_ps(_mm256_set1_ps(w0[input]), v, s0);
+          s1 = _mm256_fmadd_ps(_mm256_set1_ps(w1[input]), v, s1);
+          s2 = _mm256_fmadd_ps(_mm256_set1_ps(w2[input]), v, s2);
+          s3 = _mm256_fmadd_ps(_mm256_set1_ps(w3[input]), v, s3);
+        }
+        s0 = activate(s0); s1 = activate(s1); s2 = activate(s2); s3 = activate(s3);
+        _mm256_storeu_ps(dst + std::size_t(output) * plane + row + x, s0);
+        _mm256_storeu_ps(dst + std::size_t(output + 1) * plane + row + x, s1);
+        _mm256_storeu_ps(dst + std::size_t(output + 2) * plane + row + x, s2);
+        _mm256_storeu_ps(dst + std::size_t(output + 3) * plane + row + x, s3);
+      }
+      for (; x < width; ++x) {
+        float s0 = b0, s1 = b1, s2 = b2, s3 = b3;
+        for (int input = 0; input < channels; ++input) {
+          const float v = dw_row[std::size_t(input) * width + x];
+          s0 += w0[input] * v; s1 += w1[input] * v;
+          s2 += w2[input] * v; s3 += w3[input] * v;
+        }
+        dst[std::size_t(output) * plane + row + x] = activate_scalar(s0);
+        dst[std::size_t(output + 1) * plane + row + x] = activate_scalar(s1);
+        dst[std::size_t(output + 2) * plane + row + x] = activate_scalar(s2);
+        dst[std::size_t(output + 3) * plane + row + x] = activate_scalar(s3);
+      }
+    }
+    for (; output < output_channels; ++output) {
+      const float* filter = pw_weights + std::size_t(output) * channels;
+      const float base = pw_bias ? pw_bias[output] : 0.F;
+      float* out = dst + std::size_t(output) * plane + row;
+      int x = 0;
+      for (; x + 8 <= width; x += 8) {
+        __m256 sum = _mm256_set1_ps(base);
+        for (int input = 0; input < channels; ++input) {
+          sum = _mm256_fmadd_ps(_mm256_set1_ps(filter[input]),
+                                _mm256_loadu_ps(dw_row.data() + std::size_t(input) * width + x),
+                                sum);
+        }
+        _mm256_storeu_ps(out + x, activate(sum));
+      }
+      for (; x < width; ++x) {
+        float sum = base;
+        for (int input = 0; input < channels; ++input)
+          sum += filter[input] * dw_row[std::size_t(input) * width + x];
+        out[x] = activate_scalar(sum);
+      }
+    }
+  }
+}
+
+// K-contiguous 32-column panels of the CTC vocabulary matrix. Each output
+// element is bias plus K in ascending order, matching Avx2GemmRows.
+void Avx2GemmPacked32(float* dst, const float* a, const float* packed_b,
+                      const float* bias, int rows, int cols, int depth) noexcept {
+  if (!dst || !a || !packed_b || rows <= 0 || cols <= 0 || depth <= 0) return;
+  const int panels = (cols + 31) / 32;
+  const auto panel_rows = [&](int row, int row_count) noexcept {
+    const float* left0 = a + std::size_t(row) * depth;
+    const float* left1 = row_count == 2 ? left0 + depth : nullptr;
+    float* out0 = dst + std::size_t(row) * cols;
+    float* out1 = row_count == 2 ? out0 + cols : nullptr;
+    for (int panel = 0; panel < panels; ++panel) {
+      const int n0 = panel * 32;
+      const int n_len = std::min(32, cols - n0);
+      const float* pb = packed_b + std::size_t(panel) * depth * 32;
+      alignas(32) float btmp[32] = {};
+      if (bias) std::memcpy(btmp, bias + n0, std::size_t(n_len) * sizeof(float));
+      __m256 a0 = _mm256_load_ps(btmp);
+      __m256 a1 = _mm256_load_ps(btmp + 8);
+      __m256 a2 = _mm256_load_ps(btmp + 16);
+      __m256 a3 = _mm256_load_ps(btmp + 24);
+      __m256 b0 = a0, b1 = a1, b2 = a2, b3 = a3;
+      for (int k = 0; k < depth; ++k) {
+        const float* right = pb + std::size_t(k) * 32;
+        const __m256 r0 = _mm256_loadu_ps(right);
+        const __m256 r1 = _mm256_loadu_ps(right + 8);
+        const __m256 r2 = _mm256_loadu_ps(right + 16);
+        const __m256 r3 = _mm256_loadu_ps(right + 24);
+        const __m256 s0 = _mm256_set1_ps(left0[k]);
+        a0 = _mm256_fmadd_ps(s0, r0, a0);
+        a1 = _mm256_fmadd_ps(s0, r1, a1);
+        a2 = _mm256_fmadd_ps(s0, r2, a2);
+        a3 = _mm256_fmadd_ps(s0, r3, a3);
+        if (left1) {
+          const __m256 s1 = _mm256_set1_ps(left1[k]);
+          b0 = _mm256_fmadd_ps(s1, r0, b0);
+          b1 = _mm256_fmadd_ps(s1, r1, b1);
+          b2 = _mm256_fmadd_ps(s1, r2, b2);
+          b3 = _mm256_fmadd_ps(s1, r3, b3);
+        }
+      }
+      auto store = [&](float* out, __m256 c0, __m256 c1, __m256 c2, __m256 c3) {
+        if (n_len == 32) {
+          _mm256_storeu_ps(out + n0, c0);
+          _mm256_storeu_ps(out + n0 + 8, c1);
+          _mm256_storeu_ps(out + n0 + 16, c2);
+          _mm256_storeu_ps(out + n0 + 24, c3);
+          return;
+        }
+        alignas(32) float tmp[32];
+        _mm256_store_ps(tmp, c0);
+        _mm256_store_ps(tmp + 8, c1);
+        _mm256_store_ps(tmp + 16, c2);
+        _mm256_store_ps(tmp + 24, c3);
+        std::memcpy(out + n0, tmp, std::size_t(n_len) * sizeof(float));
+      };
+      store(out0, a0, a1, a2, a3);
+      if (out1) store(out1, b0, b1, b2, b3);
+    }
+  };
+  int row = 0;
+  for (; row + 2 <= rows; row += 2) panel_rows(row, 2);
+  if (row < rows) panel_rows(row, 1);
 }
 
 }  // namespace ppocr::detail::kernels

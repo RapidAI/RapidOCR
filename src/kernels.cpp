@@ -60,6 +60,8 @@ void Avx2GemmRows(float* dst, const float* a, const float* b, const float* bias,
                   int first_row, int last_row, int cols, int depth) noexcept;
 void Avx2GemmAccumulateRows(float* dst, const float* a, const float* b,
                             int first_row, int last_row, int cols, int depth) noexcept;
+void Avx2GemmPacked32(float* dst, const float* a, const float* packed_b,
+                      const float* bias, int rows, int cols, int depth) noexcept;
 void Avx2BinaryScalar(float* dst, const float* src, std::size_t n, float scalar,
                       BinaryOp op, bool scalar_left) noexcept;
 void Avx2Square(float* dst, const float* src, std::size_t n) noexcept;
@@ -67,6 +69,11 @@ void Avx2DepthwiseConv(float* dst, const float* src, const float* weights,
                        const float* bias, int first_channel, int last_channel,
                        int input_h, int input_w, int output_h, int output_w,
                        int kernel_h, int kernel_w, int pad_top, int pad_left) noexcept;
+void Avx2DepthwisePointwiseConv5x5S1(float* dst, const float* src,
+                                     const float* dw_weights, const float* dw_bias,
+                                     const float* pw_weights, const float* pw_bias,
+                                     int channels, int output_channels, int height,
+                                     int width, int activation, int y0, int y1) noexcept;
 void Avx2SpatialMean(float* dst, const float* src, std::size_t planes,
                      std::size_t spatial) noexcept;
 void Avx2MaxPool2x2Same(float* dst, const float* src, int first_plane,
@@ -84,6 +91,10 @@ void Avx2Conv2d(float* dst, const float* src, const float* weights,
 void Avx2Conv2x2Valid(float* dst, const float* src, const float* weights,
                       const float* bias, int first_output, int last_output,
                       int input_channels, int input_h, int input_w, bool relu) noexcept;
+void Avx2Conv2x2SameUpper(float* dst, const float* src, const float* weights,
+                          const float* bias, int first_output, int last_output,
+                          int input_channels, int input_h, int input_w,
+                          bool relu, int row_begin, int row_end) noexcept;
 void Avx2Conv3x3Stride1x4(float* dst, const float* src, const float* weights,
                           const float* bias, int first_output, int last_output,
                           int input_channels, int input_h, int input_w,
@@ -95,6 +106,11 @@ void Avx2Conv3x3Stride2(float* dst, const float* src, const float* weights,
                          int output_h, int output_w, int pad_top,
                          int pad_left, bool relu) noexcept;
 void Avx2Conv3x3Stride2x4(float* dst, const float* src, const float* weights,
+                           const float* bias, int first_output, int last_output,
+                           int input_channels, int input_h, int input_w,
+                           int output_h, int output_w, int pad_top,
+                           int pad_left, bool relu) noexcept;
+void Avx2Conv3x3Stride2x8(float* dst, const float* src, const float* weights,
                            const float* bias, int first_output, int last_output,
                            int input_channels, int input_h, int input_w,
                            int output_h, int output_w, int pad_top,
@@ -3481,6 +3497,33 @@ void Conv2d(float* dst, const float* src, const float* weights, const float* bia
     return;
   }
 #endif
+#if defined(PPOCR_HAS_AVX2_KERNELS)
+  static const bool avx2_conv2x2_same =
+      std::getenv("PPOCR_DISABLE_AVX2_CONV2X2_SAME") == nullptr;
+  if (HasAvx2() && avx2_conv2x2_same &&
+      stride_h == 1 && stride_w == 1 && kernel_h == 2 && kernel_w == 2 &&
+      pad_top == 0 && pad_left == 0 && output_h == input_h && output_w == input_w &&
+      output_channels >= 4) {
+    const bool row_parallel = input_h >= 32 &&
+        (output_channels <= 8 || (input_channels <= 8 && output_channels <= 32));
+    if (row_parallel) {
+      ParallelFor(input_h, [&](int first, int last) {
+        Avx2Conv2x2SameUpper(dst, src, weights, bias, 0, output_channels,
+                             input_channels, input_h, input_w, relu, first, last);
+      });
+      return;
+    }
+    const auto avx = [&](int first, int last) {
+      Avx2Conv2x2SameUpper(dst, src, weights, bias, first * 4,
+                           std::min(output_channels, last * 4), input_channels,
+                           input_h, input_w, relu, -1, -1);
+    };
+    const int groups = (output_channels + 3) / 4;
+    if (parallel && groups > 2) ParallelFor(groups, avx);
+    else avx(0, groups);
+    return;
+  }
+#endif
 #if defined(PPOCR_HAS_AVX512_KERNELS)
   if (HasAvx512() && stride_h == 1 && stride_w == 1 && kernel_h == 2 && kernel_w == 2 &&
       pad_top == 0 && pad_left == 0 && output_h == input_h - 1 && output_w == input_w - 1) {
@@ -3579,12 +3622,30 @@ void Conv2d(float* dst, const float* src, const float* weights, const float* bia
 #if defined(PPOCR_HAS_AVX2_KERNELS)
   if (HasAvx2() && stride_h == 2 && stride_w == 2 && kernel_h == 3 && kernel_w == 3 &&
       output_channels >= 4 && std::getenv("PPOCR_DISABLE_STRIDE2_TILE4") == nullptr) {
+    // Eight ymm accumulators spilled on the page recognizer and lost to the
+    // four-output tile (same-host page mean 366 ms vs 331 ms). Keep the
+    // eight-output body ENABLE-only. `PPOCR_ENABLE_AVX2_STRIDE2_TILE8`.
+    static const bool tile8_enabled =
+        std::getenv("PPOCR_ENABLE_AVX2_STRIDE2_TILE8") != nullptr &&
+        std::getenv("PPOCR_DISABLE_AVX2_STRIDE2_TILE8") == nullptr;
+    const bool tile8 = tile8_enabled && output_channels >= 8 &&
+        (input_channels == 3 ||
+         (input_channels >= 16 && out_plane < 4096));
+    const int tile = tile8 ? 8 : 4;
     const auto avx = [&](int first, int last) {
-      Avx2Conv3x3Stride2x4(dst, src, weights, bias, first * 4,
-                            std::min(output_channels, last * 4), input_channels,
-                            input_h, input_w, output_h, output_w, pad_top, pad_left, relu);
+      const int first_output = first * tile;
+      const int last_output = std::min(output_channels, last * tile);
+      if (tile8) {
+        Avx2Conv3x3Stride2x8(dst, src, weights, bias, first_output, last_output,
+                              input_channels, input_h, input_w, output_h, output_w,
+                              pad_top, pad_left, relu);
+      } else {
+        Avx2Conv3x3Stride2x4(dst, src, weights, bias, first_output, last_output,
+                              input_channels, input_h, input_w, output_h, output_w,
+                              pad_top, pad_left, relu);
+      }
     };
-    const int groups = (output_channels + 3) / 4;
+    const int groups = (output_channels + tile - 1) / tile;
     if (parallel) ParallelFor(groups, avx); else avx(0, groups);
     return;
   }
@@ -4366,6 +4427,8 @@ void Conv2dBatch(float* dst, const float* src, const float* weights, const float
     // The four-filter body substantially reduces source-vector traffic for
     // the shipped batch shapes.  The guard is an explicit deployment A/B
     // switch; scalar/AVX2/NEON remain unchanged on other architectures.
+    // An eight-filter batch tile was tried for the short 24→48 recognizer
+    // map and landed inside run-to-run noise against this four-filter tile.
     const bool use_output_tile =
         std::getenv("PPOCR_DISABLE_AVX512_STRIDE2_BATCH_TILE4") == nullptr;
     const int tile_width = use_output_tile ? tile : 1;
@@ -4423,15 +4486,42 @@ void Conv2dBatch(float* dst, const float* src, const float* weights, const float
     return;
   }
   if (HasAvx2() && stride_h == 2 && stride_w == 2 && kernel_h == 3 && kernel_w == 3) {
-    const int tasks = batches * output_channels;
+    // Match the single-image tile. A per-channel task called the gather
+    // kernel and reread every source row once per output, which is the
+    // recognizer batch path (N>1 crops share one Conv2dBatch).
+    static const bool tile4_enabled =
+        std::getenv("PPOCR_DISABLE_STRIDE2_TILE4") == nullptr;
+    static const bool tile8_enabled =
+        std::getenv("PPOCR_ENABLE_AVX2_STRIDE2_TILE8") != nullptr &&
+        std::getenv("PPOCR_DISABLE_AVX2_STRIDE2_TILE8") == nullptr;
+    const std::size_t output_plane = std::size_t(output_h) * output_w;
+    const bool tile8 = tile4_enabled && tile8_enabled && output_channels >= 8 &&
+        (input_channels == 3 ||
+         (input_channels >= 16 && output_plane < 4096));
+    const int tile = !tile4_enabled ? 1 : (tile8 ? 8 : (output_channels >= 4 ? 4 : 1));
+    const int groups = (output_channels + tile - 1) / tile;
+    const int tasks = batches * groups;
     const auto body = [&](int first, int last) {
       for (int task = first; task < last; ++task) {
-        const int batch = task / output_channels;
-        const int output = task - batch * output_channels;
-        Avx2Conv3x3Stride2(dst + std::size_t(batch) * output_batch,
-                            src + std::size_t(batch) * input_batch, weights, bias,
-                            output, output + 1, input_channels, input_h, input_w,
-                            output_h, output_w, pad_top, pad_left, relu);
+        const int batch = task / groups;
+        const int group = task - batch * groups;
+        const int first_output = group * tile;
+        const int last_output = std::min(output_channels, first_output + tile);
+        float* output = dst + std::size_t(batch) * output_batch;
+        const float* input = src + std::size_t(batch) * input_batch;
+        if (tile == 8) {
+          Avx2Conv3x3Stride2x8(output, input, weights, bias, first_output, last_output,
+                                input_channels, input_h, input_w, output_h, output_w,
+                                pad_top, pad_left, relu);
+        } else if (tile == 4) {
+          Avx2Conv3x3Stride2x4(output, input, weights, bias, first_output, last_output,
+                                input_channels, input_h, input_w, output_h, output_w,
+                                pad_top, pad_left, relu);
+        } else {
+          Avx2Conv3x3Stride2(output, input, weights, bias, first_output, last_output,
+                              input_channels, input_h, input_w, output_h, output_w,
+                              pad_top, pad_left, relu);
+        }
       }
     };
     if (total_work >= 1000000 && tasks > 1) ParallelFor(tasks, body); else body(0, tasks);
@@ -5049,6 +5139,25 @@ bool DepthwisePointwiseConvFused(float* dst, const float* src,
       return true;
     }
 #endif
+#if defined(PPOCR_HAS_AVX2_KERNELS)
+    if (HasAvx2() && std::getenv("PPOCR_DISABLE_AVX2_DWPW5_FUSED") == nullptr) {
+      const std::size_t in_batch = std::size_t(channels) * height * width;
+      const std::size_t out_batch = std::size_t(output_channels) * height * width;
+      for (int batch = 0; batch < batches; ++batch) {
+        float* batch_dst = dst + std::size_t(batch) * out_batch;
+        const float* batch_src = src + std::size_t(batch) * in_batch;
+        const auto body = [&](int first, int last) {
+          Avx2DepthwisePointwiseConv5x5S1(
+              batch_dst, batch_src, depthwise_weights, depthwise_bias,
+              pointwise_weights, pointwise_bias, channels, output_channels, height,
+              width, activation, first, last);
+        };
+        if (height >= 16) ParallelFor(height, body);
+        else body(0, height);
+      }
+      return true;
+    }
+#endif
     return false;
   }
   if (kernel_h != 3 || kernel_w != 3 || stride_h != 1 || stride_w != 1 ||
@@ -5646,6 +5755,23 @@ void GemmCtcTop1(int* indices, float* probabilities, const float* left,
                                     tile_logits.data() + std::size_t(tile_row) * vocab);
               }
             }
+          }
+        }
+        return;
+      }
+#endif
+#if defined(PPOCR_HAS_AVX2_KERNELS)
+      if (HasAvx2()) {
+        const auto packed = PackedCtcB32(right, depth, vocab);
+        std::vector<float> logits(std::size_t(steps) * vocab);
+        for (int sequence = first; sequence < last; ++sequence) {
+          Avx2GemmPacked32(logits.data(),
+                           left + std::size_t(sequence) * steps * depth,
+                           packed->data(), bias, steps, vocab, depth);
+          int previous = -1;
+          for (int step = 0; step < steps; ++step) {
+            previous = emit_row(sequence * steps + step, previous,
+                                logits.data() + std::size_t(step) * vocab);
           }
         }
         return;

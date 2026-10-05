@@ -1904,6 +1904,7 @@ int main() {
       !VerifyConv3x3Stride2(3, 5, 37, 35, true) ||
       !VerifyConv3x3Stride2(11, 9, 39, 41, false) ||
       !VerifyConv3x3Stride2(24, 48, 41, 39, true) ||
+      !VerifyConv3x3Stride2(16, 12, 20, 18, false) ||
       !VerifyConv3x3Stride2(32, 16, 41, 39, true)) return 1;
   if (!VerifyConcatChannelConv(4, 16, 16, 41, 39, true) ||
       !VerifyConcatChannelConv(4, 16, 16, 40, 176, true) ||
@@ -2026,6 +2027,8 @@ int main() {
     return 1;
   }
   if (!VerifyConvBatch(3, 3, 16, 41, 39, 3, 3, 2, 2, 1, 1, true) ||
+      !VerifyConvBatch(4, 24, 48, 24, 80, 3, 3, 2, 2, 1, 1, false) ||
+      !VerifyConvBatch(2, 16, 12, 20, 18, 3, 3, 2, 2, 1, 1, true) ||
       !VerifyConvBatch(3, 7, 9, 37, 35, 3, 3, 1, 1, 1, 1, false) ||
       !VerifyConvBatch(3, 32, 8, 128, 127, 3, 3, 1, 1, 1, 1, true) ||
       !VerifyConvBatch(3, 11, 13, 39, 41, 3, 3, 2, 2, 1, 1, true) ||

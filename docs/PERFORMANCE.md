@@ -111,6 +111,68 @@ The accumulate win shows up on the GEMM shape above. The remaining AVX-512
 versus AVX2 gap (17.3 ms versus 31 ms) is the wider AVX-512 tiles on
 convolution and this MLP, not an 8× end-to-end claim.
 
+### After d119de0: AVX2 convolution tiles
+
+`perf` is not installed here (`linux-tools` for kernel 6.12.94 is not in
+the package index). Hotspots came from `PPOCR_PROFILE=1` and
+`PPOCR_PROFILE_E2E=1`.
+
+On the 960×240 line, detector preprocess and DB post-process are each under
+1 ms, and recognizer preprocess is about 0.1 ms. Time is the detector
+forward pass. The AVX2-versus-AVX-512 gap on that image was a few missing
+tiles, not post-process:
+
+- SAME 2×2 convolutions (detector Conv.1 / Conv.2) had an AVX-512 kernel
+  and fell through to the generic AVX2 convolution.
+- The 5×5 depthwise+pointwise fuse (Conv.78) was AVX-512 only.
+- The recognizer vocabulary GEMM already had a packed-B kernel on AVX-512.
+
+On a 1700×2200 page (45 boxes, 18 recognition batches) the balance flips.
+Detector preprocess is about 3 ms, DB about 3 ms, detector run about 50–60 ms.
+A profiled run puts recognizer wall time at about 180 ms on AVX-512 and
+about 275 ms on AVX2 after this change (the profile itself slows the run).
+Batches of crops call `Conv2dBatch`. The AVX2 3×3
+stride-2 path there used one output channel and a gather, so the folded
+batch-norm stem (`fused_conv_batchnorm`, 24→48, and the 3-channel GELU stem)
+reread every source row once per filter. The single-image kernel already
+had a four-output shuffle tile. An eight-output AVX2 tile was slower on
+this page (register pressure) and stays off unless
+`PPOCR_ENABLE_AVX2_STRIDE2_TILE8=1`. An eight-filter AVX-512 batch tile
+was inside run-to-run noise against the existing four-filter tile, so
+AVX-512 batch scheduling is unchanged.
+
+Paired runs of `d119de0` and this tree, same host, `PPOCR_BACKEND=cpu`.
+Each cell is the mean of two rounds. Hello is 1 warmup + 5 runs. The page
+is 1 warmup + 3 runs.
+
+| Image | ISA | d119de0 | this change |
+| --- | --- | --- | --- |
+| 960×240 line | AVX-512 | 17.9 ms | 18.0 ms |
+| 960×240 line | AVX2 | 29.4 ms | 24.4 ms |
+| 1700×2200 page | AVX-512 | 204 ms | 204 ms |
+| 1700×2200 page | AVX2 | 377 ms | 293 ms |
+
+Hello mins in those rounds were 16.5–17.4 ms (AVX-512) and 23.0–26.0 ms
+(AVX2 after). Text, confidence, and boxes match `d119de0` on both images
+and both ISAs, including all 45 page lines. The published 17.3 ms / 31.0 ms
+tiny-line figures above are the same host on an earlier run; absolute
+times move a few milliseconds between sessions, and the paired table is
+the comparison for this change.
+
+Thread sweep on this tree (`PPOCR_BENCH_THREADS`, 4 vCPU). Four threads is
+the fastest. The default cap is already `hardware_concurrency`.
+
+| Threads | Hello AVX2 | Hello AVX-512 | Page AVX2 | Page AVX-512 |
+| --- | --- | --- | --- | --- |
+| 1 | 52 ms | 34 ms | 391 ms | 272 ms |
+| 2 | 38 ms | 24 ms | 337 ms | 234 ms |
+| 4 | 24 ms | 21 ms | 305 ms | 197 ms |
+
+`PPOCR_DISABLE_AVX2_CONV2X2_SAME`, `PPOCR_DISABLE_AVX2_DWPW5_FUSED`,
+`PPOCR_DISABLE_STRIDE2_TILE4`, and `PPOCR_DISABLE_CTC_PACKED_B` restore the
+previous kernels. The packed-B flag also disables the AVX-512 vocabulary
+pack.
+
 ### AArch64 NEON (Cortex-X925 / A725)
 
 Native Release build, `PPOCR_BACKEND=cpu`, PP-OCRv6 tiny, 960×240
