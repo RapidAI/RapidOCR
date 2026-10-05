@@ -58,58 +58,32 @@ RapidOCR 是面向小模型、离线部署的开源 OCR。5.x 保留 3.x 应用�
 
 ### ⚡ 性能
 
-4 线程的 x86 行和 16 线程的 NEON 行是在当前代码上用 `ppocr_determinism`（`Backend::cpu_only`）重测的，每个数字是该工具预热之后 4 次的均值。1 线程行仍是 `b71f5b7` 的均值。模型为 PP-OCRv6 **tiny** ONNX。
-
-两张图的 PNG 与 PPM 像素相同：
+模型是 PP-OCRv6 **tiny** ONNX。`use_cls=False`，方向分类器不参与计时。
 
 | 样例 | 尺寸 | 内容 |
 | --- | --- | --- |
 | hello | 960×240 | 一行：`Hello RapidOCR 123`（`python/tests/data/hello.png`） |
 | page | 1700×2200 | 45 行。该页是本地测速图，没有提交进本仓库。 |
 
-**x86。** 4 vCPU Intel Xeon（family 6，model 207），具备 AVX2 与 AVX-512F/DQ/BW/VL。`g++` 13.3。默认线程池为 4（`min(16, hardware_concurrency)`）。AVX2 行是在同一颗 CPU 上设置 `PPOCR_FORCE_ISA=avx2`。1 线程的 page 行仍是 `b71f5b7` 的 3 次均值。
-
-**ARM。** 20 核：10× Cortex-X925（最高 3.9 GHz）与 10× Cortex-A725（最高 2.8 GHz），`g++` 13.3，NEON。默认线程池为 16。1 线程的 hello 行仍是 `b71f5b7` 的 3 次均值。
-
-C++ 选项默认值：长边限制 960，检测器使用 ImageNet mean/std，不做膨胀。
-
-| ISA | 线程 | hello | page |
-| --- | --- | --- | --- |
-| AVX-512 | 4 | 19.3 ms | 232.0 ms |
-| AVX2 | 4 | 25.0 ms | 326.0 ms |
-| AVX-512 | 1 | 35.14 ms | 387.6 ms |
-| NEON | 16 | 33.0 ms | 232.3 ms |
-| NEON | 1 | 68.52 ms | — |
-
-这些运行的文本、置信度和框与同一二进制的单线程结果按位一致（确定性检查做的是逐位比较）。更早的算子记录（含 GEMM 形状）在 [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md)，早于本表。
-
-#### 与 rapidocr 3.9.2 的对比
-
-机器与上面的 x86 行相同，tiny ONNX 文件相同，Python 3.12。`rapidocr==3.9.2` 使用 ONNX Runtime 1.30.0。两边都设置 `use_cls=False`，因此 3.9.2 的方向分类器没有参与计时。3.9.2 发布包自己的默认是 PP-OCRv6 **small** 且分类器开启；那种配置这次没有计时。
-
-下表墙钟是一次预热之后 8 次调用的中位数，括号里是最小–最大。两个包在上面那台 4 线程 Xeon 上紧挨着测。AVX2 只加在 5.0.0a1 进程的 `PPOCR_FORCE_ISA=avx2` 上；这台机器上的 ONNX Runtime 1.30.0 仍走 AVX-512。
-
-**两边 Python 的共同默认**（5.0.0a1 与 3.9.2 的 `config.yaml`：短边限制 736，mean/std 0.5，开启膨胀）。960×240 的短图会被放大到短边 736，所以这组时间高于上面的 C++ 默认值。
+**x86，Python 墙钟。** 4 vCPU Intel Xeon（family 6，model 207），具备 AVX2 与 AVX-512F/DQ/BW/VL，恒定 2.4 GHz，`g++` 13.3，Python 3.12。默认线程池为 4（`min(16, hardware_concurrency)`）。强制 AVX2 只加在 5.0.0a1 进程的 `PPOCR_FORCE_ISA=avx2` 上；这台 CPU 上的 ONNX Runtime 1.30.0 仍走 AVX-512。每个数字是一次预热之后 8 次调用的中位数。两边都用 Python 的共同默认（`config.yaml`：短边限制 736，mean/std 0.5，开启膨胀）。960×240 的短行会被放大到短边 736。`rapidocr==3.9.2` 发布包自己的默认是 PP-OCRv6 **small** 且分类器开启；那种配置这次没有计时。
 
 | 包 | hello | page |
 | --- | --- | --- |
-| rapidocr 5.0.0a1，AVX-512 | 104.0 ms（96.0–112.0） | 355.6 ms（346.8–376.5） |
-| rapidocr 5.0.0a1，AVX2 | 119.1 ms（115.5–130.0） | 454.7 ms（452.4–483.0） |
-| rapidocr 3.9.2（ORT AVX-512） | 193.0 ms（155.7–224.6） | 508.3 ms（452.8–542.1） |
+| rapidocr 5.0.0a1，AVX-512 | 105.1 ms | 356.7 ms |
+| rapidocr 5.0.0a1，AVX2 | 119.1 ms | 454.7 ms |
+| rapidocr 3.9.2（ORT 1.30.0） | 193.0 ms | 508.3 ms |
 
-相对这次 3.9.2 的中位数，AVX-512 的 hello 快 46%，整页快 30%（均值分别是 103.1 ms、358.1 ms，对比 191.7 ms、501.8 ms；整页均值快 29%）。同一条 AVX-512 路径重测的整页中位数是 356.7 ms，所以这一行保持不变。强制 AVX2 的 hello 快 38%（均值 120.2 ms 对 191.7 ms）。强制 AVX2 的整页中位数比这次 ORT 快 11%（454.7 ms 对 508.3 ms；均值 459.2 ms 对 501.8 ms）。这比上一行 481.6 ms 少 27 ms，仍比 451 ms 大约多 4 ms。高分辨率 SE 和 Concat.2（3.51e9 FLOP，按 4 核 2.4 GHz 的 AVX2 峰值 307 GFLOP/s 计算是 11.4 ms）已经离这个上限只有几毫秒。识别器的 expand-GELU GEMM 和 CTC 头已经接近 AVX2 的 FMA 峰值，大约是 AVX-512 一半的位宽，而这台 CPU 上的 ORT 仍走 AVX-512。剩下的几毫秒是一次内存往返，不是空着的 FMA 槽；没有使用 INT8。3.9.2 这次没有重测，数字沿用上一张表的同一次运行。三行的整页文本都是同样的 45 句。Hello 都是 `Hello RapidOCR 123`。相对上一版 5.0.0a1，两张图的框 IoU 都是 1.0。3.9.2 在这页上的框和 5.0.0a1 本来就不完全重合（最小 IoU 约 0.85），这是这批内核之前就有的检测差异。
+相对 3.9.2 的中位数，AVX-512 的 hello 快 46%，整页快 30%。强制 AVX2 的 hello 快 38%，整页快 11%。3.9.2 这次没有重测；193.0 ms 和 508.3 ms 是早先紧挨着跑的那一次。三行的整页文本都是同样的 45 句。Hello 都是 `Hello RapidOCR 123`。相对上一版 5.0.0a1，两张图的框 IoU 都是 1.0。
 
-上面的 x86 C++ 行这次没有重测。ARM 板上这份代码的识别宽度保持精确值：16 线程 NEON 的 `ppocr_determinism` 为 hello 32.7 ms、整页 222.9 ms，两张图都通过了确定性检查（表中是 33.0 ms 和 232.3 ms）。
+**ARM，C++。** 20 核：10× Cortex-X925（最高 3.9 GHz）与 10× Cortex-A725（最高 2.8 GHz），`g++` 13.3，NEON。`ppocr_determinism`，`Backend::cpu_only`，16 线程，C++ 默认（长边限制 960，检测器 ImageNet mean/std，不做膨胀）。AArch64 的识别宽度保持精确值。
 
-**套用 C++ 检测默认**（长边限制 960，ImageNet mean/std，关闭膨胀，阈值 0.20 / 0.45，unclip 1.40）。5.x 的 C++ 行就是上一张表。Python 与 3.9.2 行是墙钟；`elapse` 是包自己的计时。
+| ISA | 线程 | hello | page |
+| --- | --- | --- | --- |
+| NEON | 16 | 32.7 ms | 222.9 ms |
 
-| 运行方式 | hello | page |
-| --- | --- | --- |
-| 5.0.0a1 C++ | 19.3 ms | 232.0 ms |
-| 5.0.0a1 Python | 20.07 ms（18.61–21.78） | 339.1 ms（332.9–348.5） |
-| 3.9.2 Python | 28.73 ms（引擎 `elapse` 20.2 ms） | 548.2 ms（引擎 `elapse` 521.3 ms） |
+两张图都通过了确定性检查（1 行和 45 行）。
 
-Hello 文本两边仍是 `Hello RapidOCR 123`。Python 里的 `RapidOCR()` 保持上面的 3.x 预处理，所以直接替换调用对应的是第一张对比表。需要 C++ 默认值时，请设置 `Det.limit_type`、`Det.limit_side_len`、`Det.mean` 和 `Det.std`。
+更早的 x86 C++ 长边 960 行和 1 线程行没有列入。当前内核之后在这台虚拟机上重跑 `ppocr_determinism`，AVX-512 整页均值在相邻几次之间大约从 203 ms 摆到 229 ms，所以那些均值不发布。Python 的 `RapidOCR()` 使用上表的短边预处理。需要 C++ 默认值时，请设置 `Det.limit_type`、`Det.limit_side_len`、`Det.mean` 和 `Det.std`。更早的算子记录在 [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md)，早于这一节。
 
 更早在具体显卡上记过的 Vulkan 整页时间没有写进本表。本机上的 lavapipe 是软件光栅器，它的毫秒数不是 GPU 性能。`Backend::gpu_only` 不会在神经网络失败时改走 CPU。
 

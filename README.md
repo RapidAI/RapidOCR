@@ -58,58 +58,32 @@ The animation is the RapidOCR 3.x web demo. On this branch the checked line samp
 
 ### ⚡ Performance
 
-The 4-thread x86 rows and the 16-thread NEON row were remeasured on this tree with `ppocr_determinism` (`Backend::cpu_only`). Each figure is the mean of 4 calls after that tool's warmup. The 1-thread rows are still the `b71f5b7` means. Models are PP-OCRv6 **tiny** ONNX.
-
-Two images, pixel-identical between PNG and PPM:
+Models are PP-OCRv6 **tiny** ONNX. `use_cls=False`, so the angle classifier does not run.
 
 | Sample | Size | What it contains |
 | --- | --- | --- |
 | hello | 960×240 | one line, `Hello RapidOCR 123` (`python/tests/data/hello.png`) |
 | page | 1700×2200 | 45 lines. The page file is a local measurement image and is not committed in this repository. |
 
-**x86.** 4 vCPU Intel Xeon (family 6, model 207) with AVX2 and AVX-512F/DQ/BW/VL. `g++` 13.3. Default pool is 4 threads (`min(16, hardware_concurrency)`). AVX2 is `PPOCR_FORCE_ISA=avx2` on that same CPU. The 1-thread page row is still the mean of 3 runs from `b71f5b7`.
-
-**ARM.** 20 cores: 10× Cortex-X925 (up to 3.9 GHz) and 10× Cortex-A725 (up to 2.8 GHz), `g++` 13.3, NEON. Default pool is 16 threads. The 1-thread hello row is still the mean of 3 runs from `b71f5b7`.
-
-C++ option defaults: long-side limit 960, ImageNet detector mean/std, dilation off.
-
-| ISA | Threads | hello | page |
-| --- | --- | --- | --- |
-| AVX-512 | 4 | 19.3 ms | 232.0 ms |
-| AVX2 | 4 | 25.0 ms | 326.0 ms |
-| AVX-512 | 1 | 35.14 ms | 387.6 ms |
-| NEON | 16 | 33.0 ms | 232.3 ms |
-| NEON | 1 | 68.52 ms | — |
-
-Text, scores, and boxes on these runs matched the 1-thread result of the same binary (the determinism check compares them bit for bit). Earlier kernel notes, including GEMM shapes, live in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) and are older than this table.
-
-#### Comparison with rapidocr 3.9.2
-
-Same machine as the x86 rows, same tiny ONNX files, Python 3.12. `rapidocr==3.9.2` used ONNX Runtime 1.30.0. `use_cls=False` on both sides, so the 3.9.2 angle classifier did not run. 3.9.2's own published default is PP-OCRv6 **small** with the classifier left on; that configuration was not timed here.
-
-Wall clock below is the median of 8 calls after one warmup. The range is min–max of those calls. Both packages ran back to back on the 4-thread Xeon above. AVX2 is `PPOCR_FORCE_ISA=avx2` in the 5.0.0a1 process only; ONNX Runtime 1.30.0 keeps AVX-512 on this CPU.
-
-**Shared Python defaults** (`config.yaml` on both 5.0.0a1 and 3.9.2: short-side limit 736, mean/std 0.5, dilation on). A short 960×240 line is enlarged until the short side reaches 736, which is why these times are higher than the C++ defaults above.
+**x86, Python wall clock.** 4 vCPU Intel Xeon (family 6, model 207) with AVX2 and AVX-512F/DQ/BW/VL, constant 2.4 GHz, `g++` 13.3, Python 3.12. The default pool is 4 threads (`min(16, hardware_concurrency)`). Forced AVX2 is `PPOCR_FORCE_ISA=avx2` in the 5.0.0a1 process; ONNX Runtime 1.30.0 on this CPU stays on AVX-512. Each figure is the median of 8 calls after one warmup. Both packages use the shared Python defaults (`config.yaml`: short-side limit 736, mean/std 0.5, dilation on). A 960×240 line is enlarged until the short side reaches 736. `rapidocr==3.9.2`'s own published default is PP-OCRv6 **small** with the classifier left on; that configuration was not timed.
 
 | Package | hello | page |
 | --- | --- | --- |
-| rapidocr 5.0.0a1, AVX-512 | 104.0 ms (96.0–112.0) | 355.6 ms (346.8–376.5) |
-| rapidocr 5.0.0a1, AVX2 | 119.1 ms (115.5–130.0) | 454.7 ms (452.4–483.0) |
-| rapidocr 3.9.2 (ORT AVX-512) | 193.0 ms (155.7–224.6) | 508.3 ms (452.8–542.1) |
+| rapidocr 5.0.0a1, AVX-512 | 105.1 ms | 356.7 ms |
+| rapidocr 5.0.0a1, AVX2 | 119.1 ms | 454.7 ms |
+| rapidocr 3.9.2 (ORT 1.30.0) | 193.0 ms | 508.3 ms |
 
-Against that 3.9.2 median, AVX-512 hello is 46% faster and the page is 30% faster (means 103.1 ms and 358.1 ms versus 191.7 ms and 501.8 ms, which is 29% on the page). A remeasure of this tree on the same AVX-512 path was a page median of 356.7 ms, so that row stays. Forced AVX2 hello is 38% faster (mean 120.2 ms versus 191.7 ms). The forced-AVX2 page median is 11% faster than this window's ORT (454.7 ms versus 508.3 ms; means 459.2 ms versus 501.8 ms). That is 27 ms under the previous 481.6 ms AVX2 page and still about 4 ms over 451 ms. The high-res SE gates and Concat.2 (3.51e9 FLOP, 11.4 ms at the 307 GFLOP/s AVX2 peak of 4 cores at 2.4 GHz) are within a couple of milliseconds of that ceiling. The recognizer expand-GELU GEMMs and the CTC head already run near the AVX2 FMA peak, about half the AVX-512 width, while ORT on this CPU stays on AVX-512. The last few milliseconds are a memory pass, not an unused FMA slot; INT8 was not used. 3.9.2 was not remeasured for this row; its numbers are the same run as the previous table. The page text is the same 45 strings on all three rows. Hello is `Hello RapidOCR 123` on all three. Boxes versus the previous 5.0.0a1 binary have IoU 1.0 on both images. 3.9.2's own boxes on this page differ from 5.0.0a1 (minimum IoU about 0.85); that detection gap was already present before these kernels.
+Against the 3.9.2 median, AVX-512 hello is 46% faster and the page is 30% faster. Forced AVX2 hello is 38% faster and the page is 11% faster. 3.9.2 was not remeasured for this table; 193.0 ms and 508.3 ms are the earlier back-to-back run. The page text is the same 45 strings on all three rows. Hello is `Hello RapidOCR 123`. Boxes versus the previous 5.0.0a1 binary have IoU 1.0 on both images.
 
-The x86 C++ rows above were not remeasured. On the ARM board, this tree keeps exact recognition widths: a 16-thread NEON `ppocr_determinism` run was hello 32.7 ms and page 222.9 ms, with determinism passing on both images (the table's 33.0 ms and 232.3 ms).
+**ARM, C++.** 20 cores: 10× Cortex-X925 (up to 3.9 GHz) and 10× Cortex-A725 (up to 2.8 GHz), `g++` 13.3, NEON. `ppocr_determinism` with `Backend::cpu_only`, 16 threads, and the C++ defaults (long-side limit 960, ImageNet detector mean/std, dilation off). AArch64 recognition widths stay exact.
 
-**C++ detection defaults** applied on both packages (long-side limit 960, ImageNet mean/std, dilation off, thresholds 0.20 / 0.45, unclip 1.40). The 5.x C++ row is the table above. The Python and 3.9.2 rows are wall clock; `elapse` is the package's own timer.
+| ISA | Threads | hello | page |
+| --- | --- | --- | --- |
+| NEON | 16 | 32.7 ms | 222.9 ms |
 
-| Runner | hello | page |
-| --- | --- | --- |
-| 5.0.0a1 C++ | 19.3 ms | 232.0 ms |
-| 5.0.0a1 Python | 20.07 ms (18.61–21.78) | 339.1 ms (332.9–348.5) |
-| 3.9.2 Python | 28.73 ms (engine `elapse` 20.2 ms) | 548.2 ms (engine `elapse` 521.3 ms) |
+Determinism passed on both images (1 line and 45 lines).
 
-Hello text is again `Hello RapidOCR 123` on both. `RapidOCR()` in Python keeps the 3.x preprocess above, so a drop-in call follows the first comparison table. Set `Det.limit_type`, `Det.limit_side_len`, `Det.mean`, and `Det.std` when you want the C++ defaults.
+The older x86 C++ long-side-960 rows and the 1-thread rows are not listed. Repeating `ppocr_determinism` on this VM after the current kernels moved the AVX-512 page mean across about 203–229 ms from one pass to the next, so those means are not published. `RapidOCR()` in Python keeps the short-side preprocess in the table above. Set `Det.limit_type`, `Det.limit_side_len`, `Det.mean`, and `Det.std` when you want the C++ defaults. Earlier kernel notes live in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) and are older than this section.
 
 Vulkan page times from earlier adapter checks are not repeated here. Lavapipe on this VM is a software rasterizer, so its milliseconds are not GPU performance. `Backend::gpu_only` does not fall back to a CPU neural graph.
 
