@@ -1,0 +1,28 @@
+name: manylinux wheels
+
+on:
+  push:
+    branches:
+      - V5_NG
+  workflow_dispatch:
+
+jobs:
+  wheels:
+    name: ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64, aarch64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build manylinux2014 wheels
+        uses: pypa/cibuildwheel@v2.23.3
+        env:
+          CIBW_ARCHS: ${{ matrix.arch }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rapidocr-manylinux2014-${{ matrix.arch }}
+          path: wheelhouse/*.whl

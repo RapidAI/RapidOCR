@@ -6,7 +6,6 @@
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
-#include <bit>
 #include <cstring>
 #include <fstream>
 #include <functional>
@@ -2787,6 +2786,10 @@ bool TryHybridVulkanPointwiseConv(
   const auto expected_input = static_cast<std::size_t>(batches) * input_channels * plane;
   const auto expected_output = static_cast<std::size_t>(batches) * output_channels * plane;
   if (input.data.size() != expected_input || output.data.size() != expected_output) return false;
+  std::uint32_t alpha_bits = 0;
+  std::uint32_t beta_bits = 0;
+  std::memcpy(&alpha_bits, &hard_sigmoid_alpha, sizeof alpha_bits);
+  std::memcpy(&beta_bits, &hard_sigmoid_beta, sizeof beta_bits);
   const auto shape_key = (static_cast<std::uint64_t>(static_cast<std::uint32_t>(batches)) << 48) ^
                    (static_cast<std::uint64_t>(plane) << 32) ^
                    (static_cast<std::uint64_t>(static_cast<std::uint32_t>(input_channels)) << 16) ^
@@ -2795,8 +2798,8 @@ bool TryHybridVulkanPointwiseConv(
                    (static_cast<std::uint64_t>(swish) << 1) ^ static_cast<std::uint64_t>(sigmoid) ^
                    (static_cast<std::uint64_t>(hard_sigmoid) << 4) ^
                    (static_cast<std::uint64_t>(hard_swish) << 63) ^
-                   (static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(hard_sigmoid_alpha)) << 5) ^
-                   (static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(hard_sigmoid_beta)) << 21);
+                   (static_cast<std::uint64_t>(alpha_bits) << 5) ^
+                   (static_cast<std::uint64_t>(beta_bits) << 21);
   const auto key = WithHybridAdmissionContext(shape_key);
   static std::mutex admission_mutex;
   static std::unordered_map<std::uint64_t, bool> admitted;

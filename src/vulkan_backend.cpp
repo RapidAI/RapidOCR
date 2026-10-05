@@ -483,12 +483,20 @@ class VulkanBinaryRuntime {
     cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &descriptor_set_, 0, nullptr);
+    // memcpy matches std::bit_cast and stays valid on the manylinux2014
+    // devtoolset libstdc++, which does not provide std::bit_cast.
+    std::uint32_t alpha_bits = 0;
+    std::uint32_t beta_bits = 0;
+    if (hard_sigmoid || hard_swish) {
+      std::memcpy(&alpha_bits, &hard_sigmoid_alpha, sizeof alpha_bits);
+      std::memcpy(&beta_bits, &hard_sigmoid_beta, sizeof beta_bits);
+    }
     struct Push {
       std::uint32_t count, batches, operation0, operation1, operation2, operation3, steps,
                     right_repeat, right_per_batch, right_batch_stride, mode;
     } push{static_cast<std::uint32_t>(out_channels * plane), static_cast<std::uint32_t>(batches),
-           (hard_sigmoid || hard_swish) ? std::bit_cast<std::uint32_t>(hard_sigmoid_alpha) : 0u,
-           (hard_sigmoid || hard_swish) ? std::bit_cast<std::uint32_t>(hard_sigmoid_beta) : 0u,
+           alpha_bits,
+           beta_bits,
            0, 0, 1, static_cast<std::uint32_t>(plane),
            static_cast<std::uint32_t>(in_channels), static_cast<std::uint32_t>(out_channels),
            residual ? (swish ? 9u : (relu ? 6u : 5u)) :
