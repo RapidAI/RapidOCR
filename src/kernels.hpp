@@ -246,6 +246,17 @@ void DetStemFromNchw(float* stem, const float* rgb, const float* conv0_w,
                      const float* conv2_b, int conv2_oc, const float* stem_w,
                      const float* stem_b, int stem_oc, int input_h, int input_w,
                      bool conv_relu, bool stem_relu);
+// True when this process will run the AVX-512 or AVX2 detector stem tail.
+// NEON and scalar builds return false so callers skip the fused allocation.
+bool HostHasAvxDetStem() noexcept;
+// Conv.1 2x2 SAME ReLU (16→8), Conv.2 2x2 SAME ReLU (8→16), MaxPool2x2 SAME
+// of Conv.0, then the 32→16 3x3 stride-2 convolution. Strips stay in L2 so
+// the 16-channel maps are not written back to DRAM. Returns false on ISAs
+// without the fused kernel. `PPOCR_DISABLE_DET_STEM_TAIL` forces the fallback.
+bool DetStemTail(float* dst, const float* conv0, const float* conv1_w,
+                 const float* conv1_b, const float* conv2_w, const float* conv2_b,
+                 const float* stem_w, const float* stem_b, int height, int width,
+                 bool stem_relu) noexcept;
 // Batched NCHW ordinary convolution. The AVX 3x3 paths flatten
 // [batch, output-channel tile] work so equal-width OCR crops share a single
 // persistent-pool submission. Unsupported geometries retain Conv2d's proven

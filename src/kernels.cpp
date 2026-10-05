@@ -127,10 +127,13 @@ void Avx2Conv3x3Stride2x8(float* dst, const float* src, const float* weights,
                            int output_h, int output_w, int pad_top,
                            int pad_left, bool relu, int row_begin = 0,
                            int row_end = -1, bool accumulate = false) noexcept;
+void Avx2DetStemTailRows(float*, const float*, const float*, const float*,
+                         const float*, const float*, const float*, const float*,
+                         int, int, int, int, int, int, bool) noexcept;
 void Avx2WriteIdentityRgbToNchw(float* dst, const std::uint8_t* rgb, int width,
                                 int height, int source_width, int left, int top,
                                 const float* scale, const float* shift,
-                                int row_width) noexcept;
+                                int row_width, int row_begin, int row_end) noexcept;
 void Avx2WriteBilinearRgbToNchw(float* dst, const std::uint8_t* rgb, int image_width,
                                 int left, int top, int source_width, int source_height,
                                 int width, int height, int row_width, const int* x0,
@@ -234,6 +237,9 @@ void Avx512ConvAsymmetricStride1x4(float*, const float*, const float*, const flo
 void Avx512Conv3x3Stride2(float*, const float*, const float*, const float*, int, int,
                            int, int, int, int, int, int, int, bool, bool,
                            const float* const* = nullptr, int = -1, int = -1) noexcept;
+void Avx512DetStemTailRows(float*, const float*, const float*, const float*,
+                           const float*, const float*, const float*, const float*,
+                           int, int, int, int, int, int, bool) noexcept;
 void Avx512WriteIdentityRgbToNchw(float*, const std::uint8_t*, int, int, int, int, int,
                                   const float*, const float*, int) noexcept;
 void Avx512AveragePool3x2Valid(float*, const float*, int, int, int, int) noexcept;
@@ -1037,6 +1043,10 @@ void ScalarOrNeonGemmAccumulateRows(float* dst, const float* a, const float* b,
 
 }  // namespace
 
+bool HostHasAvxDetStem() noexcept {
+  return HasAvx512() || HasAvx2();
+}
+
 IsaDispatch QueryIsa() noexcept {
   IsaDispatch info{};
 #if defined(PPOCR_HAS_AVX2_KERNELS)
@@ -1072,26 +1082,37 @@ void WriteIdentityRgbToNchw(float* dst, const std::uint8_t* rgb, int width,
   static const bool simd_enabled =
       std::getenv("PPOCR_DISABLE_IDENTITY_RGB_SIMD") == nullptr;
 #if defined(PPOCR_HAS_AVX2_KERNELS)
-  // Identity RGB is store-bound; the AVX2 eight-pixel path matches the
-  // scalar affine order without requiring AVX-512 VL/DQ encodings.
+  // Identity RGB is store-bound on one core. Tall detector maps split by row
+  // across the pool. The AVX2 eight-pixel path matches the scalar affine
+  // order without requiring AVX-512 VL/DQ encodings.
   if (simd_enabled && HasAvx2()) {
-    Avx2WriteIdentityRgbToNchw(dst, rgb, width, height, source_width, left, top,
-                               scale, shift, row_width);
+    const auto body = [&](int first, int last) {
+      Avx2WriteIdentityRgbToNchw(dst, rgb, width, height, source_width, left, top,
+                                 scale, shift, row_width, first, last);
+    };
+    // Python pages are ~1984 rows. Hello and the long-side-960 detector are
+    // shorter, and splitting those maps added pool overhead.
+    if (height >= 1536 && width >= 512) ParallelFor(height, body);
+    else body(0, height);
     return;
   }
 #endif
-  const std::size_t plane = std::size_t(height) * row_width;
-  for (int y = 0; y < height; ++y) {
-    const auto* src = rgb + (std::size_t(top + y) * source_width + left) * 3;
-    float* blue = dst + std::size_t(y) * row_width;
-    float* green = blue + plane;
-    float* red = green + plane;
-    for (int x = 0; x < width; ++x, src += 3) {
-      blue[x] = static_cast<float>(src[2]) * scale[0] + shift[0];
-      green[x] = static_cast<float>(src[1]) * scale[1] + shift[1];
-      red[x] = static_cast<float>(src[0]) * scale[2] + shift[2];
+  const auto scalar_rows = [&](int first, int last) {
+    const std::size_t plane = std::size_t(height) * row_width;
+    for (int y = first; y < last; ++y) {
+      const auto* src = rgb + (std::size_t(top + y) * source_width + left) * 3;
+      float* blue = dst + std::size_t(y) * row_width;
+      float* green = blue + plane;
+      float* red = green + plane;
+      for (int x = 0; x < width; ++x, src += 3) {
+        blue[x] = static_cast<float>(src[2]) * scale[0] + shift[0];
+        green[x] = static_cast<float>(src[1]) * scale[1] + shift[1];
+        red[x] = static_cast<float>(src[0]) * scale[2] + shift[2];
+      }
     }
-  }
+  };
+  if (height >= 1536 && width >= 512) ParallelFor(height, scalar_rows);
+  else scalar_rows(0, height);
 }
 
 namespace {
@@ -4448,6 +4469,42 @@ void DetStemFromNchw(float* stem, const float* rgb, const float* conv0_w,
   const int source_channels[2] = {conv0_oc, conv2_oc};
   ConcatChannelConv2d(stem, sources, source_channels, 2, stem_w, stem_b, stem_oc,
                       c0_h, c0_w, stem_height, stem_width, 3, 3, 2, 2, 1, 1, stem_relu);
+}
+
+bool DetStemTail(float* dst, const float* conv0, const float* conv1_w,
+                 const float* conv1_b, const float* conv2_w, const float* conv2_b,
+                 const float* stem_w, const float* stem_b, int height, int width,
+                 bool stem_relu) noexcept {
+  static const bool disabled = std::getenv("PPOCR_DISABLE_DET_STEM_TAIL") != nullptr;
+  if (disabled || !dst || !conv0 || !conv1_w || !conv1_b || !conv2_w || !conv2_b ||
+      !stem_w || height < 512 || width < 64) return false;
+  const int out_h = (height + 2 - 3) / 2 + 1;
+  const int out_w = (width + 2 - 3) / 2 + 1;
+  if (out_h <= 0 || out_w <= 0) return false;
+#if defined(PPOCR_HAS_AVX512_KERNELS)
+  if (HasAvx512()) {
+    ParallelFor(out_h, [&](int first, int last) {
+      Avx512DetStemTailRows(dst, conv0, conv1_w, conv1_b, conv2_w, conv2_b, stem_w,
+                            stem_b, height, width, out_h, out_w, first, last,
+                            stem_relu);
+    });
+    return true;
+  }
+#endif
+#if defined(PPOCR_HAS_AVX2_KERNELS)
+  if (HasAvx2()) {
+    ParallelFor(out_h, [&](int first, int last) {
+      Avx2DetStemTailRows(dst, conv0, conv1_w, conv1_b, conv2_w, conv2_b, stem_w,
+                          stem_b, height, width, out_h, out_w, first, last,
+                          stem_relu);
+    });
+    return true;
+  }
+#endif
+  (void)out_h;
+  (void)out_w;
+  (void)stem_relu;
+  return false;
 }
 
 void Conv2dBatch(float* dst, const float* src, const float* weights, const float* bias,

@@ -1943,7 +1943,7 @@ void Avx2Conv3x3Stride2x8(float* dst, const float* src, const float* weights,
 void Avx2WriteIdentityRgbToNchw(float* dst, const std::uint8_t* rgb, int width,
                                 int height, int source_width, int left, int top,
                                 const float* scale, const float* shift,
-                                int row_width) noexcept {
+                                int row_width, int row_begin, int row_end) noexcept {
   const std::size_t plane = std::size_t(height) * row_width;
   const __m256 scale_b = _mm256_set1_ps(scale[0]);
   const __m256 scale_g = _mm256_set1_ps(scale[1]);
@@ -1957,17 +1957,21 @@ void Avx2WriteIdentityRgbToNchw(float* dst, const std::uint8_t* rgb, int width,
                                        -1, -1, -1, -1, -1, -1, -1, -1);
   const __m128i shuf_b = _mm_setr_epi8(2, 5, 8, 11, -1, -1, -1, -1,
                                        -1, -1, -1, -1, -1, -1, -1, -1);
-  for (int y = 0; y < height; ++y) {
+  if (row_begin < 0) row_begin = 0;
+  if (row_end < 0 || row_end > height) row_end = height;
+  for (int y = row_begin; y < row_end; ++y) {
     const auto* src = rgb + (std::size_t(top + y) * source_width + left) * 3;
     float* blue = dst + std::size_t(y) * row_width;
     float* green = blue + plane;
     float* red = green + plane;
     int x = 0;
-    for (; x + 8 <= width; x += 8) {
-      alignas(16) std::uint8_t pack[32]{};
-      std::memcpy(pack, src + std::size_t(x) * 3, 24);
-      const __m128i lo = _mm_load_si128(reinterpret_cast<const __m128i*>(pack));
-      const __m128i hi = _mm_load_si128(reinterpret_cast<const __m128i*>(pack + 12));
+    // Eight pixels are 24 bytes. The second 16-byte load starts at byte 12
+    // and reads 28, so require two extra source pixels rather than clearing
+    // a stack buffer on every group.
+    for (; x + 10 <= width; x += 8) {
+      const auto* pix = src + std::size_t(x) * 3;
+      const __m128i lo = _mm_loadu_si128(reinterpret_cast<const __m128i*>(pix));
+      const __m128i hi = _mm_loadu_si128(reinterpret_cast<const __m128i*>(pix + 12));
       const __m256 vr = _mm256_set_m128(
           _mm_cvtepi32_ps(_mm_cvtepu8_epi32(_mm_shuffle_epi8(hi, shuf_r))),
           _mm_cvtepi32_ps(_mm_cvtepu8_epi32(_mm_shuffle_epi8(lo, shuf_r))));
@@ -2895,6 +2899,227 @@ void Avx2VerticalOr(std::uint8_t* dst, const std::uint8_t* src, int width,
       _mm_storeu_si128(reinterpret_cast<__m128i*>(out + x), _mm_or_si128(values, above));
     }
     for (; x < width; ++x) out[x] = static_cast<std::uint8_t>(row[x] | up[x]);
+  }
+}
+
+void Avx2DetStemTailRows(float* dst, const float* conv0, const float* conv1_w,
+                         const float* conv1_b, const float* conv2_w,
+                         const float* conv2_b, const float* stem_w,
+                         const float* stem_b, int height, int width, int out_h,
+                         int out_w, int row_begin, int row_end,
+                         bool stem_relu) noexcept {
+  if (!dst || !conv0 || row_begin >= row_end) return;
+  constexpr int kBand = 2;
+  constexpr int kSpan = 16;
+  const std::size_t out_plane = std::size_t(out_h) * out_w;
+  const auto load_stride2 = [](const float* row) {
+    const __m128 a = _mm_loadu_ps(row);
+    const __m128 b = _mm_loadu_ps(row + 4);
+    const __m128 c = _mm_loadu_ps(row + 8);
+    const __m128 d = _mm_loadu_ps(row + 12);
+    return _mm256_set_m128(_mm_shuffle_ps(c, d, 0x88), _mm_shuffle_ps(a, b, 0x88));
+  };
+  const auto c0_row = [&](int ch, int y) {
+    return conv0 + (std::size_t(ch) * height + y) * width;
+  };
+  struct Buf {
+    std::vector<float> conv1;
+    std::vector<float> conv2;
+    std::vector<float> pool;
+  };
+  static thread_local Buf buf;
+  const std::size_t span_n = std::size_t(kSpan) * width;
+  if (buf.conv1.size() < 8 * span_n) buf.conv1.resize(8 * span_n);
+  if (buf.conv2.size() < 16 * span_n) buf.conv2.resize(16 * span_n);
+  if (buf.pool.size() < 16 * span_n) buf.pool.resize(16 * span_n);
+  const __m256 zero = _mm256_setzero_ps();
+  for (int band = row_begin; band < row_end; band += kBand) {
+    const int y1 = std::min(row_end, band + kBand);
+    const int c2_r0 = std::max(0, band * 2 - 1);
+    const int c2_r1 = std::min(height, y1 * 2);
+    const int c1_r0 = c2_r0;
+    const int c1_r1 = std::min(height, c2_r1 + 1);
+    const int c2_rows = c2_r1 - c2_r0;
+    const int c1_rows = c1_r1 - c1_r0;
+    if (c2_rows <= 0 || c1_rows <= 0 || c2_rows > kSpan || c1_rows > kSpan) continue;
+    const auto conv2x2_8 = [&](float* strip, int strip_rows, int abs_r0, int ry0, int ry1,
+                               int in_ch, const float* weights, const float* bias,
+                               auto&& src_row) {
+      for (int y = ry0; y < ry1; ++y) {
+        float* outs[8];
+        const float* filt[8];
+        float base[8];
+        for (int q = 0; q < 8; ++q) {
+          outs[q] = strip + (std::size_t(q) * strip_rows + (y - abs_r0)) * width;
+          filt[q] = weights + std::size_t(q) * in_ch * 4;
+          base[q] = bias[q];
+        }
+        const bool last_row = y + 1 >= height;
+        auto scalar_at = [&](int x) {
+          float s[8] = {base[0], base[1], base[2], base[3], base[4], base[5], base[6], base[7]};
+          for (int ic = 0; ic < in_ch; ++ic) {
+            const float* row0 = src_row(ic, y);
+            const float* row1 = last_row ? nullptr : src_row(ic, y + 1);
+            for (int q = 0; q < 8; ++q) {
+              const float* k = filt[q] + ic * 4;
+              if (x + 1 < width) {
+                s[q] += row0[x] * k[0] + row0[x + 1] * k[1];
+                if (row1) s[q] += row1[x] * k[2] + row1[x + 1] * k[3];
+              } else {
+                s[q] += row0[x] * k[0];
+                if (row1) s[q] += row1[x] * k[2];
+              }
+            }
+          }
+          for (int q = 0; q < 8; ++q) outs[q][x] = std::max(s[q], 0.F);
+        };
+        int x = 0;
+        if (!last_row) {
+          for (; x + 8 <= width - 1; x += 8) {
+            __m256 s0 = _mm256_set1_ps(base[0]), s1 = _mm256_set1_ps(base[1]);
+            __m256 s2 = _mm256_set1_ps(base[2]), s3 = _mm256_set1_ps(base[3]);
+            __m256 s4 = _mm256_set1_ps(base[4]), s5 = _mm256_set1_ps(base[5]);
+            __m256 s6 = _mm256_set1_ps(base[6]), s7 = _mm256_set1_ps(base[7]);
+            for (int ic = 0; ic < in_ch; ++ic) {
+              const float* row0 = src_row(ic, y) + x;
+              const float* row1 = src_row(ic, y + 1) + x;
+              const __m256 v00 = _mm256_loadu_ps(row0);
+              const __m256 v01 = _mm256_loadu_ps(row0 + 1);
+              const __m256 v10 = _mm256_loadu_ps(row1);
+              const __m256 v11 = _mm256_loadu_ps(row1 + 1);
+              const auto fma4 = [&](__m256& acc, const float* k) {
+                acc = _mm256_fmadd_ps(_mm256_set1_ps(k[0]), v00, acc);
+                acc = _mm256_fmadd_ps(_mm256_set1_ps(k[1]), v01, acc);
+                acc = _mm256_fmadd_ps(_mm256_set1_ps(k[2]), v10, acc);
+                acc = _mm256_fmadd_ps(_mm256_set1_ps(k[3]), v11, acc);
+              };
+              fma4(s0, filt[0] + ic * 4);
+              fma4(s1, filt[1] + ic * 4);
+              fma4(s2, filt[2] + ic * 4);
+              fma4(s3, filt[3] + ic * 4);
+              fma4(s4, filt[4] + ic * 4);
+              fma4(s5, filt[5] + ic * 4);
+              fma4(s6, filt[6] + ic * 4);
+              fma4(s7, filt[7] + ic * 4);
+            }
+            s0 = _mm256_max_ps(s0, zero); s1 = _mm256_max_ps(s1, zero);
+            s2 = _mm256_max_ps(s2, zero); s3 = _mm256_max_ps(s3, zero);
+            s4 = _mm256_max_ps(s4, zero); s5 = _mm256_max_ps(s5, zero);
+            s6 = _mm256_max_ps(s6, zero); s7 = _mm256_max_ps(s7, zero);
+            _mm256_storeu_ps(outs[0] + x, s0); _mm256_storeu_ps(outs[1] + x, s1);
+            _mm256_storeu_ps(outs[2] + x, s2); _mm256_storeu_ps(outs[3] + x, s3);
+            _mm256_storeu_ps(outs[4] + x, s4); _mm256_storeu_ps(outs[5] + x, s5);
+            _mm256_storeu_ps(outs[6] + x, s6); _mm256_storeu_ps(outs[7] + x, s7);
+          }
+        }
+        for (; x < width; ++x) scalar_at(x);
+      }
+    };
+    conv2x2_8(buf.conv1.data(), c1_rows, c1_r0, c1_r0, c1_r1, 16, conv1_w, conv1_b, c0_row);
+    const auto c1_row = [&](int ch, int y) {
+      return buf.conv1.data() + (std::size_t(ch) * c1_rows + (y - c1_r0)) * width;
+    };
+    conv2x2_8(buf.conv2.data(), c2_rows, c2_r0, c2_r0, c2_r1, 8, conv2_w, conv2_b, c1_row);
+    conv2x2_8(buf.conv2.data() + 8 * std::size_t(c2_rows) * width, c2_rows, c2_r0, c2_r0,
+              c2_r1, 8, conv2_w + 8 * 8 * 4, conv2_b + 8, c1_row);
+    for (int ch = 0; ch < 16; ++ch) {
+      for (int y = c2_r0; y < c2_r1; ++y) {
+        const float* row0 = c0_row(ch, y);
+        float* out = buf.pool.data() + (std::size_t(ch) * c2_rows + (y - c2_r0)) * width;
+        if (y + 1 < height) {
+          const float* row1 = c0_row(ch, y + 1);
+          int x = 0;
+          for (; x + 8 <= width - 1; x += 8) {
+            const __m256 top = _mm256_max_ps(_mm256_loadu_ps(row0 + x), _mm256_loadu_ps(row0 + x + 1));
+            const __m256 bottom = _mm256_max_ps(_mm256_loadu_ps(row1 + x), _mm256_loadu_ps(row1 + x + 1));
+            _mm256_storeu_ps(out + x, _mm256_max_ps(top, bottom));
+          }
+          for (; x + 1 < width; ++x)
+            out[x] = std::max(std::max(row0[x], row0[x + 1]), std::max(row1[x], row1[x + 1]));
+          out[width - 1] = std::max(row0[width - 1], row1[width - 1]);
+        } else {
+          int x = 0;
+          for (; x + 8 <= width - 1; x += 8) {
+            _mm256_storeu_ps(out + x, _mm256_max_ps(_mm256_loadu_ps(row0 + x),
+                                                    _mm256_loadu_ps(row0 + x + 1)));
+          }
+          for (; x + 1 < width; ++x) out[x] = std::max(row0[x], row0[x + 1]);
+          out[width - 1] = row0[width - 1];
+        }
+      }
+    }
+    const auto sample = [&](int ic, int y, int x) -> float {
+      if (y < 0 || x < 0 || y >= height || x >= width) return 0.F;
+      if (ic < 16) return buf.pool[(std::size_t(ic) * c2_rows + (y - c2_r0)) * width + x];
+      return buf.conv2[(std::size_t(ic - 16) * c2_rows + (y - c2_r0)) * width + x];
+    };
+    for (int oc0 = 0; oc0 < 16; oc0 += 4) {
+      float* outs[4];
+      const float* filt[4];
+      float base[4];
+      for (int q = 0; q < 4; ++q) {
+        outs[q] = dst + std::size_t(oc0 + q) * out_plane;
+        filt[q] = stem_w + std::size_t(oc0 + q) * 32 * 9;
+        base[q] = stem_b ? stem_b[oc0 + q] : 0.F;
+      }
+      for (int y = band; y < y1; ++y) {
+        const int iy0 = y * 2 - 1;
+        const bool interior_y = iy0 >= 0 && iy0 + 2 < height;
+        auto scalar_at = [&](int x) {
+          const int ix0 = x * 2 - 1;
+          float s[4] = {base[0], base[1], base[2], base[3]};
+          for (int ic = 0; ic < 32; ++ic) {
+            for (int ky = 0; ky < 3; ++ky) {
+              const int iy = iy0 + ky;
+              for (int kx = 0; kx < 3; ++kx) {
+                const float value = sample(ic, iy, ix0 + kx);
+                const int ki = ky * 3 + kx;
+                for (int q = 0; q < 4; ++q) s[q] += value * filt[q][ic * 9 + ki];
+              }
+            }
+          }
+          const std::size_t index = std::size_t(y) * out_w + x;
+          for (int q = 0; q < 4; ++q)
+            outs[q][index] = stem_relu ? std::max(s[q], 0.F) : s[q];
+        };
+        int x = 0;
+        for (; x < out_w; ++x) {
+          const int ix0 = x * 2 - 1;
+          if (interior_y && ix0 >= 0 && ix0 + 17 < width) break;
+          scalar_at(x);
+        }
+        for (; x + 8 <= out_w; x += 8) {
+          const int ix0 = x * 2 - 1;
+          if (!(interior_y && ix0 >= 0 && ix0 + 17 < width)) break;
+          __m256 s0 = _mm256_set1_ps(base[0]), s1 = _mm256_set1_ps(base[1]);
+          __m256 s2 = _mm256_set1_ps(base[2]), s3 = _mm256_set1_ps(base[3]);
+          for (int ic = 0; ic < 32; ++ic) {
+            const float* row_base = ic < 16
+                ? buf.pool.data() + std::size_t(ic) * c2_rows * width
+                : buf.conv2.data() + std::size_t(ic - 16) * c2_rows * width;
+            for (int ky = 0; ky < 3; ++ky) {
+              const float* row = row_base + std::size_t(iy0 + ky - c2_r0) * width;
+              for (int kx = 0; kx < 3; ++kx) {
+                const __m256 values = load_stride2(row + ix0 + kx);
+                const int ki = ky * 3 + kx;
+                s0 = _mm256_fmadd_ps(_mm256_set1_ps(filt[0][ic * 9 + ki]), values, s0);
+                s1 = _mm256_fmadd_ps(_mm256_set1_ps(filt[1][ic * 9 + ki]), values, s1);
+                s2 = _mm256_fmadd_ps(_mm256_set1_ps(filt[2][ic * 9 + ki]), values, s2);
+                s3 = _mm256_fmadd_ps(_mm256_set1_ps(filt[3][ic * 9 + ki]), values, s3);
+              }
+            }
+          }
+          if (stem_relu) {
+            s0 = _mm256_max_ps(s0, zero); s1 = _mm256_max_ps(s1, zero);
+            s2 = _mm256_max_ps(s2, zero); s3 = _mm256_max_ps(s3, zero);
+          }
+          const std::size_t index = std::size_t(y) * out_w + x;
+          _mm256_storeu_ps(outs[0] + index, s0); _mm256_storeu_ps(outs[1] + index, s1);
+          _mm256_storeu_ps(outs[2] + index, s2); _mm256_storeu_ps(outs[3] + index, s3);
+        }
+        for (; x < out_w; ++x) scalar_at(x);
+      }
+    }
   }
 }
 

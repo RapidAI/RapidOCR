@@ -8345,6 +8345,106 @@ std::unordered_map<std::string, Tensor> OnnxLite::Run(std::unordered_map<std::st
       }
       continue;
     }
+    // Conv.1, Conv.2 and the MaxPool||Conv.2 stride-2 stem read two full-resolution
+    // maps. Fold them so only Conv.0 is read and the stride-2 output is written.
+    // `PPOCR_DISABLE_DET_STEM_TAIL` keeps the separate nodes.
+    static const bool stem_tail_disabled =
+        std::getenv("PPOCR_DISABLE_DET_STEM_TAIL") != nullptr;
+    if (!stem_tail_disabled && n.op == "FusedConvRelu" && n.out.size() == 1 &&
+        n.in.size() >= 3 && node_index + 2 < impl_->graph.nodes.size() &&
+        !impl_->graph_outputs.contains(n.out[0])) {
+      const auto& n2 = impl_->graph.nodes[node_index + 1];
+      const auto& n3 = impl_->graph.nodes[node_index + 2];
+      const auto* uses1 = use_slot(n.out[0]);
+      const auto* uses2 = n2.out.empty() ? nullptr : use_slot(n2.out[0]);
+      const bool shape_ok = n2.op == "FusedConvRelu" && n2.out.size() == 1 &&
+          n2.in.size() >= 3 && n2.in[0] == n.out[0] &&
+          !impl_->graph_outputs.contains(n2.out[0]) &&
+          (n3.op == "FusedMaxPoolConcatConv" || n3.op == "FusedMaxPoolConcatConvRelu") &&
+          n3.out.size() == 1 && n3.in.size() >= 3 && uses1 && *uses1 == 1 &&
+          uses2 && *uses2 == 1;
+      if (shape_ok) {
+        const auto same_upper_2x2 = [&](const Node& node) {
+          const auto kernel = AttrInts(node, "kernel_shape", {2, 2});
+          const auto step = AttrInts(node, "strides", {1, 1});
+          const auto pad_name = AttrStr(node, "auto_pad", "");
+          const auto node_pads = AttrInts(node, "pads", {});
+          const bool same = pad_name == "SAME_UPPER" ||
+              (node_pads.size() == 4 && node_pads[0] == 0 && node_pads[1] == 0 &&
+               node_pads[2] == 1 && node_pads[3] == 1);
+          return kernel.size() >= 2 && kernel[0] == 2 && kernel[1] == 2 &&
+              step.size() >= 2 && step[0] == 1 && step[1] == 1 && same;
+        };
+        const auto conv0_it = values.find(n.in[0]);
+        const auto w1 = impl_->graph.initializers.find(n.in[1]);
+        const auto b1 = impl_->graph.initializers.find(n.in[2]);
+        const auto w2 = impl_->graph.initializers.find(n2.in[1]);
+        const auto b2 = impl_->graph.initializers.find(n2.in[2]);
+        const bool has_bias = impl_->graph.initializers.contains(n3.in.back()) &&
+            impl_->graph.initializers.at(n3.in.back()).shape.size() == 1;
+        const auto w3 = impl_->graph.initializers.find(n3.in[n3.in.size() - (has_bias ? 2 : 1)]);
+        const auto b3 = has_bias ? impl_->graph.initializers.find(n3.in.back())
+                                 : impl_->graph.initializers.end();
+        bool saw0 = false, saw2 = false;
+        int dynamic_inputs = 0;
+        for (const auto& name : n3.in) {
+          if (name == n.in[0]) saw0 = true;
+          if (name == n2.out[0]) saw2 = true;
+          if (!name.empty() && !impl_->graph.initializers.contains(name)) ++dynamic_inputs;
+        }
+        const auto strides = AttrInts(n3, "strides", {1, 1});
+        const auto pads = AttrInts(n3, "pads", {0, 0, 0, 0});
+        const bool weights_ok = conv0_it != values.end() &&
+            conv0_it->second.shape.size() == 4 && conv0_it->second.shape[0] == 1 &&
+            conv0_it->second.shape[1] == 16 &&
+            w1 != impl_->graph.initializers.end() && b1 != impl_->graph.initializers.end() &&
+            w2 != impl_->graph.initializers.end() && b2 != impl_->graph.initializers.end() &&
+            w3 != impl_->graph.initializers.end() &&
+            w1->second.shape == std::vector<std::int64_t>({8, 16, 2, 2}) &&
+            w2->second.shape == std::vector<std::int64_t>({16, 8, 2, 2}) &&
+            w3->second.shape == std::vector<std::int64_t>({16, 32, 3, 3}) &&
+            b1->second.data.size() == 8 && b2->second.data.size() == 16 &&
+            (!has_bias || b3->second.data.size() == 16) && saw0 && saw2 && dynamic_inputs == 2 &&
+            same_upper_2x2(n) && same_upper_2x2(n2) && strides.size() >= 2 &&
+            strides[0] == 2 && strides[1] == 2 && pads.size() >= 4 && pads[0] == 1 &&
+            pads[1] == 1 && pads[2] == 1 && pads[3] == 1;
+        if (weights_ok) {
+          const int height = int(conv0_it->second.shape[2]);
+          const int width = int(conv0_it->second.shape[3]);
+          const int out_h = (height + 2 - 3) / 2 + 1;
+          const int out_w = (width + 2 - 3) / 2 + 1;
+          // Hello and the long-side-960 page stay on the separate kernels.
+          // Allocating the stem and then bailing still churns an 8 MB buffer.
+          if (out_h > 0 && out_w > 0 && height >= 512 && width >= 64 &&
+              kernels::HostHasAvxDetStem()) {
+            Tensor stem{{1, 16, out_h, out_w},
+                        PooledActivation(std::size_t(16) * out_h * out_w)};
+            const auto start = profile ? std::chrono::steady_clock::now()
+                                       : std::chrono::steady_clock::time_point{};
+            if (kernels::DetStemTail(
+                    stem.data.data(), conv0_it->second.data.data(), w1->second.data.data(),
+                    b1->second.data.data(), w2->second.data.data(), b2->second.data.data(),
+                    w3->second.data.data(),
+                    has_bias ? b3->second.data.data() : nullptr, height, width,
+                    n3.op == "FusedMaxPoolConcatConvRelu")) {
+              if (profile) {
+                elapsed_ms["FusedDetStemTail"] += std::chrono::duration<double, std::milli>(
+                    std::chrono::steady_clock::now() - start).count();
+                ++calls["FusedDetStemTail"];
+              }
+              values.insert_or_assign(n.out[0], Tensor{});
+              values.insert_or_assign(n2.out[0], Tensor{});
+              values.insert_or_assign(n3.out[0], std::move(stem));
+              for (const auto& name : n.in) {
+                if (name.empty() || impl_->graph.initializers.contains(name)) continue;
+                if (consume_use(name)) values.erase(name);
+              }
+              continue;
+            }
+          }
+        }
+      }
+    }
     // The SE source feature map is only consumed by its reduction and final
     // channel-gate multiply.  Its allocation can therefore become the final
     // output in place, removing the full broadcast-Mul destination.  The
