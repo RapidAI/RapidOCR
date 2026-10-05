@@ -21,7 +21,6 @@ if [[ -z "${VK_ICD_FILENAMES:-}" ]]; then
 fi
 export PPOCR_VULKAN_DEVICE_INDEX="${PPOCR_VULKAN_DEVICE_INDEX:-0}"
 export PPOCR_VULKAN_VALIDATION="${PPOCR_VULKAN_VALIDATION:-1}"
-export PPOCR_BENCH_THREADS="${PPOCR_BENCH_THREADS:-1}"
 
 DET="${PPOCR_TEST_DET:-"$ROOT/ci-models/PP-OCRv6_det_tiny.onnx"}"
 REC="${PPOCR_TEST_REC:-"$ROOT/ci-models/PP-OCRv6_rec_tiny.onnx"}"
@@ -51,6 +50,23 @@ run() {
 }
 
 {
+  run "$BUILD/ppocr_determinism" pool 50
+  run "$BUILD/ppocr_determinism" ocr "$DET" "$REC" "$DICT" "$HELLO_PPM" 20
+  serial_hello="$(PPOCR_BENCH_THREADS=1 "$BUILD/ppocr_determinism" fingerprint "$DET" "$REC" "$DICT" "$HELLO_PPM" 1)"
+  default_hello="$("$BUILD/ppocr_determinism" fingerprint "$DET" "$REC" "$DICT" "$HELLO_PPM" 5)"
+  if [[ "$serial_hello" != "$default_hello" ]]; then
+    echo "hello fingerprint differs between 1 thread and the default pool" >&2
+    exit 1
+  fi
+  if [[ -n "${PPOCR_PAGE_PPM:-}" && -f "${PPOCR_PAGE_PPM}" ]]; then
+    run "$BUILD/ppocr_determinism" ocr "$DET" "$REC" "$DICT" "$PPOCR_PAGE_PPM" 20
+    serial_page="$(PPOCR_BENCH_THREADS=1 "$BUILD/ppocr_determinism" fingerprint "$DET" "$REC" "$DICT" "$PPOCR_PAGE_PPM" 1)"
+    default_page="$("$BUILD/ppocr_determinism" fingerprint "$DET" "$REC" "$DICT" "$PPOCR_PAGE_PPM" 5)"
+    if [[ "$serial_page" != "$default_page" ]]; then
+      echo "page fingerprint differs between 1 thread and the default pool" >&2
+      exit 1
+    fi
+  fi
   run "$BUILD/ppocr_vulkan_smoke"
   run "$BUILD/ppocr_gpu_ocr_smoke" "$DET" "$REC" "$DICT" "$HELLO_PPM"
   if [[ -n "${PPOCR_PAGE_PPM:-}" && -f "${PPOCR_PAGE_PPM}" ]]; then
@@ -68,7 +84,6 @@ fi
 # A process with no ICD, and a nonsense device index, must stay on CPU.
 env -u PPOCR_VULKAN_DEVICE_INDEX -u PPOCR_VULKAN_DEVICE_NAME \
   VK_ICD_FILENAMES=/dev/null VK_DRIVER_FILES=/dev/null \
-  PPOCR_BENCH_THREADS="$PPOCR_BENCH_THREADS" \
   "$BUILD/ppocr_vulkan_robust" missing "$DET" "$REC" "$DICT"
 "$BUILD/ppocr_vulkan_robust" bad-index "$DET" "$REC" "$DICT"
 

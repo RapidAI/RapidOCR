@@ -4964,26 +4964,43 @@ void AveragePool3x2Valid(float* dst, const float* src, std::size_t planes,
   const int output_width = (input_width - 2) / 2 + 1;
   const std::size_t input_plane = std::size_t(input_height) * input_width;
   const std::size_t output_plane = std::size_t(output_height) * output_width;
-  static const bool simd_enabled =
-      std::getenv("PPOCR_DISABLE_AVGPOOL_SIMD") == nullptr;
   const auto work = planes * output_plane;
+  // In-place packing stores plane p at p * output_plane while plane 0's input
+  // still occupies a full H*W. A later plane's output therefore lands inside
+  // an earlier plane that another worker may still be reading. Serial raster
+  // order is safe; parallel planes must publish into a side buffer and copy
+  // back only after every input window has been consumed. Out-of-place calls
+  // already have disjoint plane ranges and stay on the direct path.
+  const bool parallel_planes = work >= 65536 && planes >= 2;
+  thread_local std::vector<float> inplace_stage;
+  float* produced = dst;
+  if (dst == src && parallel_planes) {
+    const std::size_t packed = planes * output_plane;
+    if (inplace_stage.size() < packed) inplace_stage.resize(packed);
+    produced = inplace_stage.data();
+  }
 #if defined(PPOCR_HAS_AVX2_KERNELS)
   // AVX2 gather matches the scalar window add order. The AVX-512 gather
   // encoding is host-sensitive; eight-wide AVX2 already covers the
   // recognizer bridge widths including the odd tail.
+  static const bool simd_enabled =
+      std::getenv("PPOCR_DISABLE_AVGPOOL_SIMD") == nullptr;
   if (simd_enabled && HasAvx2() && output_width >= 8) {
     const auto avx = [&](int first, int last) {
-      Avx2AveragePool3x2Valid(dst, src, first, last, input_height, input_width);
+      Avx2AveragePool3x2Valid(produced, src, first, last, input_height, input_width);
     };
-    if (work >= 65536 && planes >= 2) ParallelFor(static_cast<int>(planes), avx);
+    if (parallel_planes) ParallelFor(static_cast<int>(planes), avx);
     else avx(0, static_cast<int>(planes));
+    if (produced != dst) {
+      std::memcpy(dst, produced, planes * output_plane * sizeof(float));
+    }
     return;
   }
 #endif
   const auto body = [&](int first, int last) {
     for (int plane = first; plane < last; ++plane) {
       const float* input = src + std::size_t(plane) * input_plane;
-      float* output = dst + std::size_t(plane) * output_plane;
+      float* output = produced + std::size_t(plane) * output_plane;
       for (int oy = 0; oy < output_height; ++oy) {
         const float* row0 = input + std::size_t(oy * 3) * input_width;
         const float* row1 = row0 + input_width;
@@ -5007,8 +5024,11 @@ void AveragePool3x2Valid(float* dst, const float* src, std::size_t planes,
       }
     }
   };
-  if (work >= 65536 && planes >= 2) ParallelFor(static_cast<int>(planes), body);
+  if (parallel_planes) ParallelFor(static_cast<int>(planes), body);
   else body(0, static_cast<int>(planes));
+  if (produced != dst) {
+    std::memcpy(dst, produced, planes * output_plane * sizeof(float));
+  }
 }
 
 void DepthwiseConv(float* dst, const float* src, const float* weights,

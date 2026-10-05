@@ -4338,11 +4338,13 @@ Tensor Pool(const Node& n, const Tensor& a, bool average) {
 }
 
 // PP-OCRv6's recognizer bridge pool is a valid 3x2 window with matching 3x2
-// stride. Its windows do not overlap, and the compact output is written in
-// increasing raster order. Therefore a destination beginning at the source
-// base cannot overwrite a value needed by a later window: each input row is
-// consumed before the smaller packed output reaches it. Reusing this dying
-// activation avoids allocating another [N,C,H/3,W/2] feature map.
+// stride. Its windows do not overlap, and one plane written in increasing
+// raster order does not overwrite a sample that a later window of that same
+// plane still needs. Parallel workers must not publish a later plane into
+// this buffer until every plane has been read: plane p's packed output sits
+// at p * output_plane, inside an earlier plane's H*W input. The kernel stages
+// that case. Reusing this dying activation avoids allocating another
+// [N,C,H/3,W/2] feature map on the serial and out-of-place paths.
 bool AveragePool3x2ValidInplace(const Node& n, Tensor& value) {
   if (std::getenv("PPOCR_DISABLE_AVERAGE_POOL3X2_INPLACE") != nullptr ||
       value.shape.size() != 4) return false;
@@ -6015,7 +6017,14 @@ bool OnnxLite::RunGpuOnlyInternal(
   // so resolution ladders can demonstrate memory recovery. Keep replay only
   // for callers that already supply device tensors or the in-graph RGB front
   // end; this remains a scheduling policy, never a CPU fallback.
+  // A single recorded command buffer is faster to resubmit, but on NVIDIA
+  // (GB10) that long buffer drops recognizer timesteps: the same page comes
+  // back with blank or truncated lines. The fenced 20-node segments below
+  // repeat the CPU text. Replay stays available as an explicit opt-in for
+  // adapters that have qualified it. PPOCR_DISABLE_GPU_GRAPH_REPLAY still
+  // forces the segmented path even when the opt-in is set.
   const bool allow_replay = (!device_values.empty() || rgb_front != nullptr) &&
+      std::getenv("PPOCR_ENABLE_GPU_GRAPH_REPLAY") != nullptr &&
       std::getenv("PPOCR_DISABLE_GPU_GRAPH_REPLAY") == nullptr &&
       !model_has_isolated_tail;
   std::uint64_t replay_key = 0;

@@ -73,5 +73,4 @@ jobs:
           VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.json
           PPOCR_VULKAN_DEVICE_INDEX: "0"
           PPOCR_VULKAN_VALIDATION: "1"
-          PPOCR_BENCH_THREADS: "1"
         run: bash tests/run_vulkan_lavapipe.sh build-vk

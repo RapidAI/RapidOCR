@@ -217,6 +217,9 @@ if(PPOCR_BUILD_EXAMPLES)
   add_executable(ppocr_kernel_smoke examples/ppocr_kernel_smoke.cpp)
   ppocr_link_objects(ppocr_kernel_smoke)
 
+  add_executable(ppocr_determinism examples/ppocr_determinism.cpp)
+  ppocr_link_objects(ppocr_determinism)
+
   add_executable(ppocr_gpu_graph_smoke examples/ppocr_gpu_graph_smoke.cpp)
   ppocr_link_objects(ppocr_gpu_graph_smoke)
 

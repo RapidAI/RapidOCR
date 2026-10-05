@@ -200,10 +200,13 @@ engine = RapidOCR(params={
 logs a warning and stays on CPU. Lavapipe is a CPU Vulkan device, so it is
 used only when `device_index` (or `PPOCR_VULKAN_DEVICE_INDEX`) selects it.
 
-A CPU comparison of a full page is deterministic with `PPOCR_BENCH_THREADS=1`.
-The default thread pool can change CTC text between runs; that is independent
-of the Vulkan graph, which repeats the serial CPU text. Lavapipe timings are
-a software rasterizer, not GPU performance. NVIDIA's driver faults if this
-process-wide device is destroyed from the static destructor that runs after
-the driver has already shut down, so that teardown is skipped at process
-exit and the OS reclaims the device.
+Default `PPOCR_BENCH_THREADS` (the persistent SIMD pool) repeats the same
+text, scores, and boxes as a one-thread run. `PPOCR_BENCH_THREADS` remains a
+throughput knob, not a determinism switch. GPU-only recognition keeps the
+fenced graph segments. One recorded command buffer can drop CTC timesteps
+on some adapters, so `PPOCR_ENABLE_GPU_GRAPH_REPLAY=1` is an explicit opt-in
+after that adapter has been qualified. Lavapipe timings are a software
+rasterizer, not GPU performance. NVIDIA's driver faults if this process-wide
+device is destroyed from the static destructor that runs after the driver has
+already shut down, so that teardown is skipped at process exit and the OS
+reclaims the device.
