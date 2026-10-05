@@ -111,6 +111,12 @@ class VulkanTensorArena {
   // primitives, whose admission timing must retain their full boundary.
   [[nodiscard]] bool BeginGraphRecording() noexcept;
   [[nodiscard]] bool EndGraphRecording(bool submit = true) noexcept;
+  // PPOCR_GPU_PROFILE=1 only. Scope is "det" or "rec"; label names the
+  // dispatch that the next timestamp-query pair attributes. Both are no-ops
+  // when profiling is off, so the CPU graph path never pays for them.
+  void SetGpuProfileScope(const char* scope) noexcept;
+  void SetGpuProfileLabel(const char* label) noexcept;
+  void PrintGpuProfile(double wall_ms) noexcept;
   // Submit the current graph segment, wait for completion, then immediately
   // begin the next recording.  All live arena slots remain resident; unlike a
   // host graph boundary this emits no activation download or upload.

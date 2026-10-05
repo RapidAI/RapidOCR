@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -6021,6 +6022,14 @@ bool OnnxLite::RunGpuOnlyInternal(
   std::lock_guard gpu_lock(impl.gpu_mutex);
   auto& arena = impl.gpu_arena;
   if (!arena.available()) return false;
+  static const bool gpu_profile = std::getenv("PPOCR_GPU_PROFILE") != nullptr;
+  const auto profile_begin = std::chrono::steady_clock::now();
+  const auto publish_profile = [&] {
+    if (!gpu_profile) return;
+    arena.PrintGpuProfile(std::chrono::duration<double, std::milli>(
+                              std::chrono::steady_clock::now() - profile_begin)
+                              .count());
+  };
   // The current persistent-replay facility is intentionally single-command-
   // buffer.  Models that need an isolated GPU tail submission must therefore
   // use the normal fenced graph path; this changes only command-buffer
@@ -6075,6 +6084,15 @@ bool OnnxLite::RunGpuOnlyInternal(
     replay_key = GpuReplayKey(replay_in_shape, fuse_terminal_ctc_softmax, rgb_src_w,
                               rgb_src_h);
   }
+  if (gpu_profile) {
+    // Recognizer tensors are NCHW with height 48. Detector maps are taller.
+    const char* scope = "gpu";
+    if (replay_in_shape.size() == 4 && replay_in_shape[2] > 0 && replay_in_shape[2] <= 64)
+      scope = "rec";
+    else if (replay_in_shape.size() == 4)
+      scope = "det";
+    arena.SetGpuProfileScope(scope);
+  }
   auto find_replay_cache = [&]() -> Impl::GpuReplayCache* {
     for (auto& cache : impl.gpu_replay_caches) {
       if (cache.key == replay_key) return &cache;
@@ -6109,6 +6127,7 @@ bool OnnxLite::RunGpuOnlyInternal(
         if (device_outputs) {
           device_outputs->emplace(cache->output_name,
                                   GpuTensor{cache->output_shape, cache->output});
+          publish_profile();
           return true;
         }
         if (host_outputs) {
@@ -6116,6 +6135,7 @@ bool OnnxLite::RunGpuOnlyInternal(
                         std::vector<float>(cache->output.live_elements)};
           if (arena.Download(output.data.data(), cache->output, output.data.size())) {
             host_outputs->emplace(cache->output_name, std::move(output));
+            publish_profile();
             return true;
           }
         }
@@ -6366,6 +6386,12 @@ bool OnnxLite::RunGpuOnlyInternal(
   // supply PPOCR_GPU_ONLY_SEGMENT_NODES for driver-specific qualification.
   if (segment_node_limit == 0) segment_node_limit = 20;
   for (const auto& node : impl.graph.nodes) {
+    if (gpu_profile) {
+      char label[192];
+      std::snprintf(label, sizeof(label), "%s %s", node.op.c_str(),
+                    node.out.empty() ? "" : node.out[0].c_str());
+      arena.SetGpuProfileLabel(label);
+    }
 
     // A previous segment is deliberately closed only after all of its final
     // consumers have released their slots below.  Start the next command
@@ -8060,6 +8086,7 @@ bool OnnxLite::RunGpuOnlyInternal(
   // allocation instead of accumulating one graph's activations per call.
   for (auto& [_, value] : values) arena.Release(value.slot);
   values.clear();
+  publish_profile();
   return true;
 }
 

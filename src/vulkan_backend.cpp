@@ -123,6 +123,51 @@ class VulkanBinaryRuntime {
     // replay graph returns all of its intermediate feature maps to the arena.
     std::vector<std::uint32_t> arena_slots;
     bool ready{};
+    // Timestamp-query pairs recorded into this command buffer. Replay reads
+    // the same queries after the fence; the label ids match that recording.
+    std::uint32_t profile_queries{};
+    std::vector<std::uint32_t> profile_labels;
+  };
+
+  struct ProfileAccum {
+    double fence_ms{};
+    double submit_ms{};
+    double upload_ms{};
+    double download_ms{};
+    double descriptor_ms{};
+    double barrier_ms{};
+    double record_ms{};
+    double gpu_ms{};
+    double gpu_gap_ms{};
+    std::uint64_t fences{};
+    std::uint64_t submits{};
+    std::uint64_t uploads{};
+    std::uint64_t downloads{};
+    std::uint64_t descriptors{};
+    std::uint64_t barriers{};
+    std::uint64_t dispatches{};
+  };
+
+  // Adds CPU time on every exit path, including the early returns inside
+  // upload and download. Inactive spans compile down to a branch.
+  struct CpuSpan {
+    double* slot{};
+    std::uint64_t* count{};
+    std::chrono::steady_clock::time_point start{};
+    bool active{};
+    CpuSpan(bool on, double* slot_in, std::uint64_t* count_in)
+        : slot(on ? slot_in : nullptr), count(on ? count_in : nullptr),
+          start(on ? std::chrono::steady_clock::now()
+                   : std::chrono::steady_clock::time_point{}),
+          active(on) {}
+    CpuSpan(const CpuSpan&) = delete;
+    CpuSpan& operator=(const CpuSpan&) = delete;
+    ~CpuSpan() {
+      if (!active || !slot) return;
+      *slot += std::chrono::duration<double, std::milli>(
+                   std::chrono::steady_clock::now() - start).count();
+      if (count) ++*count;
+    }
   };
 
  public:
@@ -282,6 +327,12 @@ class VulkanBinaryRuntime {
     cmd_pipeline_barrier_ = Device<PFN_vkCmdPipelineBarrier>("vkCmdPipelineBarrier");
     queue_submit_ = Device<PFN_vkQueueSubmit>("vkQueueSubmit");
     queue_wait_idle_ = Device<PFN_vkQueueWaitIdle>("vkQueueWaitIdle");
+    create_query_pool_ = Device<PFN_vkCreateQueryPool>("vkCreateQueryPool");
+    destroy_query_pool_ = Device<PFN_vkDestroyQueryPool>("vkDestroyQueryPool");
+    cmd_reset_query_pool_ = Device<PFN_vkCmdResetQueryPool>("vkCmdResetQueryPool");
+    cmd_write_timestamp_ = Device<PFN_vkCmdWriteTimestamp>("vkCmdWriteTimestamp");
+    get_query_pool_results_ = Device<PFN_vkGetQueryPoolResults>("vkGetQueryPoolResults");
+    profile_enabled_ = std::getenv("PPOCR_GPU_PROFILE") != nullptr;
     if (!HaveDeviceFunctions()) { CleanupUnlocked(); return false; }
     get_queue_(device_, queue_family_, 0, &queue_);
     if (!queue_ || !CreateFixedResources()) { CleanupUnlocked(); return false; }
@@ -328,7 +379,7 @@ class VulkanBinaryRuntime {
         VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                          usage, nullptr};
-    if (begin_command_buffer_(command_buffer_, &begin) != VK_SUCCESS) return false;
+    if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
     cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &descriptor_set_, 0, nullptr);
@@ -347,9 +398,9 @@ class VulkanBinaryRuntime {
                         0, sizeof(push), &push);
     // The SPIR-V kernel processes four contiguous floats per invocation.
     // Retain a scalar tail in the shader for shapes not divisible by four.
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>((count + 1023) / 1024),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>((count + 1023) / 1024),
                   static_cast<std::uint32_t>(batches), 1);
-    if (end_command_buffer_(command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
     const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                               1, &command_buffer_, 0, nullptr};
     // Waiting on this submission's fence avoids idling the whole queue.  This
@@ -357,8 +408,8 @@ class VulkanBinaryRuntime {
     // remains synchronous for mapped readback, but unrelated queue work is no
     // longer included in each batch's critical path.
     if (reset_fences_(device_, 1, &submission_fence_) != VK_SUCCESS ||
-        queue_submit_(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
-        wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        QueueSubmit(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
+        WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                          std::numeric_limits<std::uint64_t>::max()) != VK_SUCCESS) return false;
     // The shader updates mapped_[0] in place.  This keeps the CPU-visible
     // activation/result in one allocation instead of copying a third mapped
@@ -410,7 +461,7 @@ class VulkanBinaryRuntime {
     if (reset_command_buffer_(command_buffer_, 0) != VK_SUCCESS) return false;
     const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                          VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-    if (begin_command_buffer_(command_buffer_, &begin) != VK_SUCCESS) return false;
+    if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
     cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &descriptor_set_, 0, nullptr);
@@ -424,14 +475,14 @@ class VulkanBinaryRuntime {
            swish ? 2u : 1u};
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT,
                         0, sizeof(push), &push);
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>((count + 1023) / 1024),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>((count + 1023) / 1024),
                   static_cast<std::uint32_t>(batches), 1);
-    if (end_command_buffer_(command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
     const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                               1, &command_buffer_, 0, nullptr};
     if (reset_fences_(device_, 1, &submission_fence_) != VK_SUCCESS ||
-        queue_submit_(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
-        wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        QueueSubmit(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
+        WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                          std::numeric_limits<std::uint64_t>::max()) != VK_SUCCESS) return false;
     std::memcpy(output, mapped_[0], static_cast<std::size_t>(output_bytes));
     return true;
@@ -491,7 +542,7 @@ class VulkanBinaryRuntime {
     if (reset_command_buffer_(command_buffer_, 0) != VK_SUCCESS) return false;
     const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                          VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-    if (begin_command_buffer_(command_buffer_, &begin) != VK_SUCCESS) return false;
+    if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
     cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &descriptor_set_, 0, nullptr);
@@ -506,14 +557,14 @@ class VulkanBinaryRuntime {
            8u};
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT,
                         0, sizeof(push), &push);
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>((count + 1023) / 1024),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>((count + 1023) / 1024),
                   static_cast<std::uint32_t>(batches), 1);
-    if (end_command_buffer_(command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
     const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                               1, &command_buffer_, 0, nullptr};
     if (reset_fences_(device_, 1, &submission_fence_) != VK_SUCCESS ||
-        queue_submit_(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
-        wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        QueueSubmit(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
+        WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                          std::numeric_limits<std::uint64_t>::max()) != VK_SUCCESS) return false;
     std::memcpy(output, mapped_[0], static_cast<std::size_t>(output_bytes));
     return true;
@@ -574,7 +625,7 @@ class VulkanBinaryRuntime {
     if (reset_command_buffer_(command_buffer_, 0) != VK_SUCCESS) return false;
     const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                          VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-    if (begin_command_buffer_(command_buffer_, &begin) != VK_SUCCESS) return false;
+    if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
     cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &descriptor_set_, 0, nullptr);
@@ -607,14 +658,14 @@ class VulkanBinaryRuntime {
         ? ((out_channels + 3) / 4) * ((plane + 255) / 256)
         : (out_channels * plane + 1023) / 1024;
     if (dispatch_x == 0 || dispatch_x > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch_x),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch_x),
                   static_cast<std::uint32_t>(batches), 1);
-    if (end_command_buffer_(command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
     const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                               1, &command_buffer_, 0, nullptr};
     if (reset_fences_(device_, 1, &submission_fence_) != VK_SUCCESS ||
-        queue_submit_(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
-        wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        QueueSubmit(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
+        WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                          std::numeric_limits<std::uint64_t>::max()) != VK_SUCCESS) return false;
     std::memcpy(output, mapped_[3], static_cast<std::size_t>(output_bytes));
     return true;
@@ -686,7 +737,7 @@ class VulkanBinaryRuntime {
     if (reset_command_buffer_(command_buffer_, 0) != VK_SUCCESS) return false;
     const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                          VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-    if (begin_command_buffer_(command_buffer_, &begin) != VK_SUCCESS) return false;
+    if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
     cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &descriptor_set_, 0, nullptr);
@@ -713,14 +764,14 @@ class VulkanBinaryRuntime {
     }
     const auto dispatch_x = c * groups_per_channel;
     if (dispatch_x == 0 || dispatch_x > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch_x),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch_x),
                   static_cast<std::uint32_t>(batches), 1);
-    if (end_command_buffer_(command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
     const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                               1, &command_buffer_, 0, nullptr};
     if (reset_fences_(device_, 1, &submission_fence_) != VK_SUCCESS ||
-        queue_submit_(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
-        wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        QueueSubmit(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
+        WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                          std::numeric_limits<std::uint64_t>::max()) != VK_SUCCESS) return false;
     std::memcpy(output, mapped_[3], static_cast<std::size_t>(output_bytes));
     return true;
@@ -812,7 +863,7 @@ class VulkanBinaryRuntime {
     if (reset_command_buffer_(command_buffer_, 0) != VK_SUCCESS) return false;
     const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                          VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-    if (begin_command_buffer_(command_buffer_, &begin) != VK_SUCCESS) return false;
+    if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
     cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &descriptor_set_, 0, nullptr);
@@ -836,11 +887,11 @@ class VulkanBinaryRuntime {
     const auto groups_per_channel = (oh * ow + 1023) / 1024;
     const auto depthwise_dispatch_x = c * groups_per_channel;
     if (depthwise_dispatch_x == 0 || depthwise_dispatch_x > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(depthwise_dispatch_x),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(depthwise_dispatch_x),
                   static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier,
                           0, nullptr, 0, nullptr);
     const auto plane = oh * ow;
@@ -854,14 +905,14 @@ class VulkanBinaryRuntime {
         ? ((m + 3) / 4) * ((plane + 255) / 256)
         : (m * plane + 1023) / 1024;
     if (pointwise_dispatch_x == 0 || pointwise_dispatch_x > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(pointwise_dispatch_x),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(pointwise_dispatch_x),
                   static_cast<std::uint32_t>(batches), 1);
-    if (end_command_buffer_(command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
     const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                               1, &command_buffer_, 0, nullptr};
     if (reset_fences_(device_, 1, &submission_fence_) != VK_SUCCESS ||
-        queue_submit_(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
-        wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        QueueSubmit(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
+        WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                          std::numeric_limits<std::uint64_t>::max()) != VK_SUCCESS) return false;
     std::memcpy(output, mapped_[0], static_cast<std::size_t>(output_bytes));
     return true;
@@ -1026,12 +1077,12 @@ class VulkanBinaryRuntime {
       if (reset_command_buffer_(conv2d_command_buffer_, 0) != VK_SUCCESS) return false;
       const VkCommandBufferBeginInfo persistent_begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
           nullptr, 0, nullptr};
-      if (begin_command_buffer_(conv2d_command_buffer_, &persistent_begin) != VK_SUCCESS) return false;
+      if (BeginCommandBuffer(conv2d_command_buffer_, &persistent_begin) != VK_SUCCESS) return false;
       const VkMemoryBarrier host_barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
           VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
       const VkMemoryBarrier shader_to_shader{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
           VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-      cmd_pipeline_barrier_(conv2d_command_buffer_, VK_PIPELINE_STAGE_HOST_BIT,
+      CmdBarrier(conv2d_command_buffer_, VK_PIPELINE_STAGE_HOST_BIT,
           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &host_barrier, 0, nullptr, 0, nullptr);
       cmd_bind_pipeline_(conv2d_command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
       cmd_bind_descriptor_sets_(conv2d_command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE,
@@ -1046,27 +1097,27 @@ class VulkanBinaryRuntime {
                   2u, 2u, 40u | (1u << 16u) | (1u << 24u)};
         cmd_push_constants_(conv2d_command_buffer_, pipeline_layout_,
             VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pool), &pool);
-        cmd_dispatch_(conv2d_command_buffer_,
+        CmdDispatch(conv2d_command_buffer_,
             static_cast<std::uint32_t>((pool_count + 1023) / 1024),
             static_cast<std::uint32_t>(batches), 1);
-        cmd_pipeline_barrier_(conv2d_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        CmdBarrier(conv2d_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &shader_to_shader, 0, nullptr,
             0, nullptr);
         Push copy{static_cast<std::uint32_t>(pool_count), 1u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u,
                   61u};
         cmd_push_constants_(conv2d_command_buffer_, pipeline_layout_,
             VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(copy), &copy);
-        cmd_dispatch_(conv2d_command_buffer_,
+        CmdDispatch(conv2d_command_buffer_,
             static_cast<std::uint32_t>((pool_count + 1023) / 1024), 1, 1);
-        cmd_pipeline_barrier_(conv2d_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        CmdBarrier(conv2d_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &shader_to_shader, 0, nullptr,
             0, nullptr);
       }
       cmd_push_constants_(conv2d_command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT,
           0, sizeof(push), &push);
-      cmd_dispatch_(conv2d_command_buffer_, static_cast<std::uint32_t>(dispatch_x),
+      CmdDispatch(conv2d_command_buffer_, static_cast<std::uint32_t>(dispatch_x),
                     static_cast<std::uint32_t>(batches), 1);
-      if (end_command_buffer_(conv2d_command_buffer_) != VK_SUCCESS) return false;
+      if (EndCommandBuffer(conv2d_command_buffer_) != VK_SUCCESS) return false;
       conv2d_cmd_ready_ = true;
       conv2d_pool_first_ = pool_first;
       conv2d_dispatch_x_ = static_cast<std::uint32_t>(dispatch_x);
@@ -1082,8 +1133,8 @@ class VulkanBinaryRuntime {
     const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                               1, &conv2d_command_buffer_, 0, nullptr};
     if (reset_fences_(device_, 1, &submission_fence_) != VK_SUCCESS ||
-        queue_submit_(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
-        wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        QueueSubmit(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
+        WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                          std::numeric_limits<std::uint64_t>::max()) != VK_SUCCESS) return false;
     std::memcpy(output, mapped_[3], static_cast<std::size_t>(output_bytes));
     return true;
@@ -1146,15 +1197,15 @@ class VulkanBinaryRuntime {
       if (reset_command_buffer_(command_buffer_, 0) != VK_SUCCESS) return false;
       const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
           VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-      return begin_command_buffer_(command_buffer_, &begin) == VK_SUCCESS;
+      return BeginCommandBuffer(command_buffer_, &begin) == VK_SUCCESS;
     };
     const auto submit_one_shot = [&]() {
-      if (end_command_buffer_(command_buffer_) != VK_SUCCESS) return false;
+      if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
       const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                                 1, &command_buffer_, 0, nullptr};
       return reset_fences_(device_, 1, &submission_fence_) == VK_SUCCESS &&
-          queue_submit_(queue_, 1, &submit, submission_fence_) == VK_SUCCESS &&
-          wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+          QueueSubmit(queue_, 1, &submit, submission_fence_) == VK_SUCCESS &&
+          WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                            std::numeric_limits<std::uint64_t>::max()) == VK_SUCCESS;
     };
     const VkMemoryBarrier host_barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
@@ -1222,20 +1273,20 @@ class VulkanBinaryRuntime {
       if (!reuse) {
         if (!persist) {
           if (!begin_one_shot()) return false;
-          cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_HOST_BIT,
+          CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_HOST_BIT,
               VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &host_barrier, 0, nullptr, 0, nullptr);
           bind_compute();
           cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT,
               0, sizeof(resize_push), &resize_push);
-          cmd_dispatch_(command_buffer_,
+          CmdDispatch(command_buffer_,
               static_cast<std::uint32_t>((nchw_elements + 1023) / 1024), 1, 1);
-          cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+          CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
               VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &shader_to_shader, 0, nullptr, 0,
               nullptr);
           cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT,
               0, sizeof(conv_push), &conv_push);
-          cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch_x), 1, 1);
-          cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+          CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch_x), 1, 1);
+          CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
               VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &shader_barrier, 0, nullptr, 0, nullptr);
           if (!submit_one_shot()) return false;
           std::memcpy(output, mapped_[0], static_cast<std::size_t>(output_bytes));
@@ -1244,26 +1295,26 @@ class VulkanBinaryRuntime {
         if (reset_command_buffer_(stem_command_buffer_, 0) != VK_SUCCESS) return false;
         const VkCommandBufferBeginInfo persistent_begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
             nullptr, 0, nullptr};
-        if (begin_command_buffer_(stem_command_buffer_, &persistent_begin) != VK_SUCCESS)
+        if (BeginCommandBuffer(stem_command_buffer_, &persistent_begin) != VK_SUCCESS)
           return false;
-        cmd_pipeline_barrier_(stem_command_buffer_, VK_PIPELINE_STAGE_HOST_BIT,
+        CmdBarrier(stem_command_buffer_, VK_PIPELINE_STAGE_HOST_BIT,
             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &host_barrier, 0, nullptr, 0, nullptr);
         cmd_bind_pipeline_(stem_command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
         cmd_bind_descriptor_sets_(stem_command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE,
             pipeline_layout_, 0, 1, &descriptor_set_, 0, nullptr);
         cmd_push_constants_(stem_command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT,
             0, sizeof(resize_push), &resize_push);
-        cmd_dispatch_(stem_command_buffer_,
+        CmdDispatch(stem_command_buffer_,
             static_cast<std::uint32_t>((nchw_elements + 1023) / 1024), 1, 1);
-        cmd_pipeline_barrier_(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        CmdBarrier(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &shader_to_shader, 0, nullptr, 0,
             nullptr);
         cmd_push_constants_(stem_command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT,
             0, sizeof(conv_push), &conv_push);
-        cmd_dispatch_(stem_command_buffer_, static_cast<std::uint32_t>(dispatch_x), 1, 1);
-        cmd_pipeline_barrier_(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        CmdDispatch(stem_command_buffer_, static_cast<std::uint32_t>(dispatch_x), 1, 1);
+        CmdBarrier(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
             VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &shader_barrier, 0, nullptr, 0, nullptr);
-        if (end_command_buffer_(stem_command_buffer_) != VK_SUCCESS) return false;
+        if (EndCommandBuffer(stem_command_buffer_) != VK_SUCCESS) return false;
         rgb_conv_cmd_ready_ = true;
         rgb_conv_sw_ = source_width; rgb_conv_sh_ = source_height;
         rgb_conv_nw_ = nchw_width; rgb_conv_nh_ = nchw_height;
@@ -1276,22 +1327,22 @@ class VulkanBinaryRuntime {
       const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                                 1, &stem_command_buffer_, 0, nullptr};
       if (reset_fences_(device_, 1, &submission_fence_) != VK_SUCCESS ||
-          queue_submit_(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
-          wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+          QueueSubmit(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
+          WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                            std::numeric_limits<std::uint64_t>::max()) != VK_SUCCESS)
         return false;
       std::memcpy(output, mapped_[0], static_cast<std::size_t>(output_bytes));
       return true;
     }
     if (!begin_one_shot()) return false;
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_HOST_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_HOST_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &host_barrier, 0, nullptr, 0, nullptr);
     bind_compute();
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT,
         0, sizeof(resize_push), &resize_push);
-    cmd_dispatch_(command_buffer_,
+    CmdDispatch(command_buffer_,
         static_cast<std::uint32_t>((nchw_elements + 1023) / 1024), 1, 1);
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
         VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &shader_barrier, 0, nullptr, 0, nullptr);
     if (!submit_one_shot()) return false;
     std::memcpy(mapped_[0], mapped_[3], static_cast<std::size_t>(nchw_bytes));
@@ -1304,13 +1355,13 @@ class VulkanBinaryRuntime {
                    static_cast<std::uint32_t>(kernel),
                    static_cast<std::uint32_t>(stride), conv_mode | pad_bits};
     if (!begin_one_shot()) return false;
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_HOST_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_HOST_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &host_barrier, 0, nullptr, 0, nullptr);
     bind_compute();
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT,
         0, sizeof(conv_push), &conv_push);
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch_x), 1, 1);
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch_x), 1, 1);
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
         VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &shader_barrier, 0, nullptr, 0, nullptr);
     if (!submit_one_shot()) return false;
     std::memcpy(output, mapped_[3], static_cast<std::size_t>(output_bytes));
@@ -1404,7 +1455,7 @@ class VulkanBinaryRuntime {
       return false;
     const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
         0, nullptr};
-    if (begin_command_buffer_(stem_command_buffer_, &begin) != VK_SUCCESS) return false;
+    if (BeginCommandBuffer(stem_command_buffer_, &begin) != VK_SUCCESS) return false;
     cmd_bind_pipeline_(stem_command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
     cmd_bind_descriptor_sets_(stem_command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
         0, 1, &descriptor_set_, 0, nullptr);
@@ -1445,10 +1496,10 @@ class VulkanBinaryRuntime {
                 static_cast<std::uint32_t>(stride), mode_bits};
       cmd_push_constants_(stem_command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT,
           0, sizeof(push), &push);
-      cmd_dispatch_(stem_command_buffer_, static_cast<std::uint32_t>(dispatch_x), 1, 1);
+      CmdDispatch(stem_command_buffer_, static_cast<std::uint32_t>(dispatch_x), 1, 1);
       return true;
     };
-    cmd_pipeline_barrier_(stem_command_buffer_, VK_PIPELINE_STAGE_HOST_BIT,
+    CmdBarrier(stem_command_buffer_, VK_PIPELINE_STAGE_HOST_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
         &host_barrier, 0, nullptr, 0, nullptr);
     Push resize{static_cast<std::uint32_t>(nchw_n), 1u,
@@ -1460,14 +1511,14 @@ class VulkanBinaryRuntime {
                 static_cast<std::uint32_t>(nchw_height), 46u};
     cmd_push_constants_(stem_command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT,
         0, sizeof(resize), &resize);
-    cmd_dispatch_(stem_command_buffer_, static_cast<std::uint32_t>((nchw_n + 1023) / 1024), 1, 1);
-    cmd_pipeline_barrier_(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdDispatch(stem_command_buffer_, static_cast<std::uint32_t>((nchw_n + 1023) / 1024), 1, 1);
+    CmdBarrier(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &shader_to_shader, 0, nullptr, 0, nullptr);
     const auto dispatch_copy = [&](std::uint32_t count, std::uint32_t mode) {
       Push copy{count, 1u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, mode};
       cmd_push_constants_(stem_command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT,
           0, sizeof(copy), &copy);
-      cmd_dispatch_(stem_command_buffer_, (count + 1023u) / 1024u, 1, 1);
+      CmdDispatch(stem_command_buffer_, (count + 1023u) / 1024u, 1, 1);
     };
     if (!full_stem) {
       // Same resident layout as Conv.0-only: resize wrote D, Conv.0 swap_ad
@@ -1476,16 +1527,16 @@ class VulkanBinaryRuntime {
       if (!dispatch_conv(3, oc0, nchw_height, nchw_width, c0_h, c0_w, conv0.kernel, conv0.kernel,
                          conv0.stride, conv0.pad, conv0.relu, true, 0u, 0u))
         return false;
-      cmd_pipeline_barrier_(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+      CmdBarrier(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &shader_to_shader, 0, nullptr, 0, nullptr);
       dispatch_copy(static_cast<std::uint32_t>(c0_n), 60u);
-      cmd_pipeline_barrier_(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+      CmdBarrier(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &shader_to_shader, 0, nullptr, 0, nullptr);
       if (!dispatch_conv(oc0, oc1, c0_h, c0_w, c0_h, c0_w, conv1.kernel, conv1.kernel,
                          conv1.stride, conv1.pad, conv1.relu, false,
                          static_cast<std::uint32_t>(w0), static_cast<std::uint32_t>(oc0)))
         return false;
-      cmd_pipeline_barrier_(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+      CmdBarrier(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &shader_to_shader, 0, nullptr, 0, nullptr);
       if (!dispatch_conv(oc1, oc2, c0_h, c0_w, c0_h, c0_w, conv2.kernel, conv2.kernel,
                          conv2.stride, conv2.pad, conv2.relu, true,
@@ -1496,26 +1547,26 @@ class VulkanBinaryRuntime {
                               conv0.kernel, conv0.stride, conv0.pad, conv0.relu, true, 0u, 0u))
       return false;
     if (full_stem) {
-    cmd_pipeline_barrier_(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &shader_to_shader, 0, nullptr, 0, nullptr);
     Push save_c0{static_cast<std::uint32_t>(c0_n), 1u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 60u};
     cmd_push_constants_(stem_command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT,
         0, sizeof(save_c0), &save_c0);
-    cmd_dispatch_(stem_command_buffer_,
+    CmdDispatch(stem_command_buffer_,
         static_cast<std::uint32_t>((c0_n + 1023) / 1024), 1, 1);
-    cmd_pipeline_barrier_(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &shader_to_shader, 0, nullptr, 0, nullptr);
     if (!dispatch_conv(oc0, oc1, c0_h, c0_w, c0_h, c0_w, conv1.kernel, conv1.kernel, conv1.stride,
                        conv1.pad, conv1.relu, false, static_cast<std::uint32_t>(w0),
                        static_cast<std::uint32_t>(oc0)))
       return false;
-    cmd_pipeline_barrier_(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &shader_to_shader, 0, nullptr, 0, nullptr);
     if (!dispatch_conv(oc1, oc2, c0_h, c0_w, c0_h, c0_w, conv2.kernel, conv2.kernel, conv2.stride,
                        conv2.pad, conv2.relu, true, static_cast<std::uint32_t>(w0 + w1),
                        static_cast<std::uint32_t>(oc0 + oc1)))
       return false;
-    cmd_pipeline_barrier_(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &shader_to_shader, 0, nullptr, 0, nullptr);
     Push pool{static_cast<std::uint32_t>(c0_n), 1u, 0u, static_cast<std::uint32_t>(oc0),
               static_cast<std::uint32_t>(c0_h), static_cast<std::uint32_t>(c0_w),
@@ -1523,8 +1574,8 @@ class VulkanBinaryRuntime {
               57u | (1u << 16u) | (1u << 24u)};
     cmd_push_constants_(stem_command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT,
         0, sizeof(pool), &pool);
-    cmd_dispatch_(stem_command_buffer_, static_cast<std::uint32_t>((c0_n + 1023) / 1024), 1, 1);
-    cmd_pipeline_barrier_(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdDispatch(stem_command_buffer_, static_cast<std::uint32_t>((c0_n + 1023) / 1024), 1, 1);
+    CmdBarrier(stem_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &shader_to_shader, 0, nullptr, 0, nullptr);
     const std::uint32_t stem_mode = 56u | (std::uint32_t(stem_conv->pad) << 16u) |
         (std::uint32_t(stem_conv->pad) << 24u);
@@ -1537,12 +1588,12 @@ class VulkanBinaryRuntime {
               static_cast<std::uint32_t>(oc0 + oc1 + oc2), stem_mode};
     cmd_push_constants_(stem_command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT,
         0, sizeof(stem), &stem);
-    cmd_dispatch_(stem_command_buffer_, static_cast<std::uint32_t>(stem_groups), 1, 1);
+    CmdDispatch(stem_command_buffer_, static_cast<std::uint32_t>(stem_groups), 1, 1);
     }
-    cmd_pipeline_barrier_(stem_command_buffer_,
+    CmdBarrier(stem_command_buffer_,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT,
         VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &shader_to_host, 0, nullptr, 0, nullptr);
-    if (end_command_buffer_(stem_command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(stem_command_buffer_) != VK_SUCCESS) return false;
     stem_cmd_ready_ = true;
     stem_src_w_ = source_width; stem_src_h_ = source_height;
     stem_nchw_w_ = nchw_width; stem_nchw_h_ = nchw_height;
@@ -1554,8 +1605,8 @@ class VulkanBinaryRuntime {
     const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                               1, &stem_command_buffer_, 0, nullptr};
     if (reset_fences_(device_, 1, &submission_fence_) != VK_SUCCESS ||
-        queue_submit_(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
-        wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        QueueSubmit(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
+        WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                          std::numeric_limits<std::uint64_t>::max()) != VK_SUCCESS)
       return false;
     if (full_stem) {
@@ -1621,7 +1672,7 @@ class VulkanBinaryRuntime {
     if (reset_command_buffer_(command_buffer_, 0) != VK_SUCCESS) return false;
     const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                          VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-    if (begin_command_buffer_(command_buffer_, &begin) != VK_SUCCESS) return false;
+    if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
     cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &descriptor_set_, 0, nullptr);
@@ -1643,14 +1694,14 @@ class VulkanBinaryRuntime {
         ? out_channels * ((output_per_batch / out_channels + 1023) / 1024)
         : (output_per_batch + 1023) / 1024;
     if (dispatch_x == 0 || dispatch_x > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch_x),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch_x),
                   static_cast<std::uint32_t>(batches), 1);
-    if (end_command_buffer_(command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
     const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                               1, &command_buffer_, 0, nullptr};
     if (reset_fences_(device_, 1, &submission_fence_) != VK_SUCCESS ||
-        queue_submit_(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
-        wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        QueueSubmit(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
+        WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                          std::numeric_limits<std::uint64_t>::max()) != VK_SUCCESS) return false;
     std::memcpy(output, mapped_[3], static_cast<std::size_t>(output_bytes));
     return true;
@@ -1707,7 +1758,7 @@ class VulkanBinaryRuntime {
     if (reset_command_buffer_(command_buffer_, 0) != VK_SUCCESS) return false;
     const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                          VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-    if (begin_command_buffer_(command_buffer_, &begin) != VK_SUCCESS) return false;
+    if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
     cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &descriptor_set_, 0, nullptr);
@@ -1723,11 +1774,11 @@ class VulkanBinaryRuntime {
         ? out_channels * ((output_per_batch / out_channels + 1023) / 1024)
         : (output_per_batch + 1023) / 1024;
     if (transpose_dispatch_x == 0 || transpose_dispatch_x > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(transpose_dispatch_x),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(transpose_dispatch_x),
                   static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier,
                           0, nullptr, 0, nullptr);
     Push add{static_cast<std::uint32_t>(output_per_batch), static_cast<std::uint32_t>(batches),
@@ -1736,14 +1787,14 @@ class VulkanBinaryRuntime {
                         0, sizeof(add), &add);
     const auto add_dispatch_x = (output_per_batch + 1023) / 1024;
     if (add_dispatch_x == 0 || add_dispatch_x > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(add_dispatch_x),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(add_dispatch_x),
                   static_cast<std::uint32_t>(batches), 1);
-    if (end_command_buffer_(command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
     const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                               1, &command_buffer_, 0, nullptr};
     if (reset_fences_(device_, 1, &submission_fence_) != VK_SUCCESS ||
-        queue_submit_(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
-        wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        QueueSubmit(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
+        WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                          std::numeric_limits<std::uint64_t>::max()) != VK_SUCCESS) return false;
     std::memcpy(output, mapped_[0], static_cast<std::size_t>(output_bytes));
     return true;
@@ -1773,7 +1824,7 @@ class VulkanBinaryRuntime {
     if (reset_command_buffer_(command_buffer_, 0) != VK_SUCCESS) return false;
     const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                          VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-    if (begin_command_buffer_(command_buffer_, &begin) != VK_SUCCESS) return false;
+    if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
     cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &descriptor_set_, 0, nullptr);
@@ -1786,14 +1837,14 @@ class VulkanBinaryRuntime {
                         0, sizeof(push), &push);
     const auto dispatch_x = (output_per_batch + 1023) / 1024;
     if (dispatch_x == 0 || dispatch_x > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch_x),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch_x),
                   static_cast<std::uint32_t>(batches), 1);
-    if (end_command_buffer_(command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
     const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                               1, &command_buffer_, 0, nullptr};
     if (reset_fences_(device_, 1, &submission_fence_) != VK_SUCCESS ||
-        queue_submit_(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
-        wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        QueueSubmit(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
+        WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                          std::numeric_limits<std::uint64_t>::max()) != VK_SUCCESS) return false;
     std::memcpy(output, mapped_[3], static_cast<std::size_t>(output_bytes));
     return true;
@@ -1834,7 +1885,7 @@ class VulkanBinaryRuntime {
     if (reset_command_buffer_(command_buffer_,0)!=VK_SUCCESS) return false;
     const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,nullptr,
                                          VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,nullptr};
-    if (begin_command_buffer_(command_buffer_,&begin)!=VK_SUCCESS) return false;
+    if (BeginCommandBuffer(command_buffer_,&begin)!=VK_SUCCESS) return false;
     cmd_bind_pipeline_(command_buffer_,VK_PIPELINE_BIND_POINT_COMPUTE,pipeline_);
     cmd_bind_descriptor_sets_(command_buffer_,VK_PIPELINE_BIND_POINT_COMPUTE,pipeline_layout_,0,1,&descriptor_set_,0,nullptr);
     // Recognition MLPs use the same wide, row-major shape as the plain
@@ -1856,13 +1907,13 @@ class VulkanBinaryRuntime {
     const auto dispatch_x=tiled_batch_gemm ? (c+127)/128 : (output_elements+1023)/1024;
     const auto dispatch_y=tiled_batch_gemm ? (r+7)/8 : 1;
     if (dispatch_x==0 || dispatch_x>UINT32_MAX || dispatch_y==0 || dispatch_y>UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_,static_cast<std::uint32_t>(dispatch_x),
+    CmdDispatch(command_buffer_,static_cast<std::uint32_t>(dispatch_x),
                   static_cast<std::uint32_t>(dispatch_y),1);
-    if (end_command_buffer_(command_buffer_)!=VK_SUCCESS) return false;
+    if (EndCommandBuffer(command_buffer_)!=VK_SUCCESS) return false;
     const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO,nullptr,0,nullptr,nullptr,1,&command_buffer_,0,nullptr};
     if (reset_fences_(device_,1,&submission_fence_)!=VK_SUCCESS ||
-        queue_submit_(queue_,1,&submit,submission_fence_)!=VK_SUCCESS ||
-        wait_for_fences_(device_,1,&submission_fence_,VK_TRUE,std::numeric_limits<std::uint64_t>::max())!=VK_SUCCESS) return false;
+        QueueSubmit(queue_,1,&submit,submission_fence_)!=VK_SUCCESS ||
+        WaitFence(device_,1,&submission_fence_,VK_TRUE,std::numeric_limits<std::uint64_t>::max())!=VK_SUCCESS) return false;
     std::memcpy(output,mapped_[3],static_cast<std::size_t>(output_bytes));
     return true;
   }
@@ -1914,13 +1965,13 @@ class VulkanBinaryRuntime {
     if (reset_command_buffer_(command_buffer_, 0) != VK_SUCCESS) return false;
     const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
         VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-    if (begin_command_buffer_(command_buffer_, &begin) != VK_SUCCESS) return false;
+    if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
     cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
         0, 1, &descriptor_set_, 0, nullptr);
     const VkMemoryBarrier host_barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
         VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_HOST_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_HOST_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &host_barrier, 0, nullptr, 0, nullptr);
     const bool tiled = rows >= 8 && depth >= 16 && vocab >= 128;
     struct Push {
@@ -1934,28 +1985,28 @@ class VulkanBinaryRuntime {
     const auto gemm_x = tiled ? (vocab + 127) / 128 : int((logit_elements + 1023) / 1024);
     const auto gemm_y = tiled ? (rows + 7) / 8 : 1;
     if (gemm_x <= 0 || gemm_y <= 0) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(gemm_x),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(gemm_x),
                   static_cast<std::uint32_t>(gemm_y), 1);
     const VkMemoryBarrier shader_to_shader{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
         VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &shader_to_shader, 0, nullptr, 0, nullptr);
     Push ctc{static_cast<std::uint32_t>(r), 1u, static_cast<std::uint32_t>(r),
              static_cast<std::uint32_t>(v), 0u, 0u, 0u, 0u, 0u, 0u,
              48u | 0x20000000u | 0x40000000u | 0x80000000u};
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT,
         0, sizeof(ctc), &ctc);
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(r), 1, 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(r), 1, 1);
     const VkMemoryBarrier shader_to_host{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
         VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
         VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &shader_to_host, 0, nullptr, 0, nullptr);
-    if (end_command_buffer_(command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
     const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                               1, &command_buffer_, 0, nullptr};
     if (reset_fences_(device_, 1, &submission_fence_) != VK_SUCCESS ||
-        queue_submit_(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
-        wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        QueueSubmit(queue_, 1, &submit, submission_fence_) != VK_SUCCESS ||
+        WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                          std::numeric_limits<std::uint64_t>::max()) != VK_SUCCESS)
       return false;
     const auto* gpu_indices = static_cast<const float*>(mapped_[0]);
@@ -2059,6 +2110,7 @@ class VulkanBinaryRuntime {
   }
 
   bool UploadArena(std::uint32_t index, const float* source, std::size_t elements) noexcept {
+    CpuSpan timer{profile_enabled_, &profile_.upload_ms, &profile_.uploads};
     if (!source) return false;
     std::lock_guard lock(mutex_);
     if (index >= arena_buffers_.size()) return false;
@@ -2086,6 +2138,7 @@ class VulkanBinaryRuntime {
   }
 
   bool DownloadArena(float* destination, std::uint32_t index, std::size_t elements) noexcept {
+    CpuSpan timer{profile_enabled_, &profile_.download_ms, &profile_.downloads};
     if (!destination) return false;
     std::lock_guard lock(mutex_);
     if (index >= arena_buffers_.size()) return false;
@@ -2132,7 +2185,7 @@ class VulkanBinaryRuntime {
     if (reset_command_buffer_(command_buffer_, 0) != VK_SUCCESS) return false;
     const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                          VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-    if (begin_command_buffer_(command_buffer_, &begin) != VK_SUCCESS) return false;
+    if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
     cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
     arena_recording_ = true;
     // Arena inputs can originate either from a host-visible mapped upload or
@@ -2144,7 +2197,7 @@ class VulkanBinaryRuntime {
     const VkMemoryBarrier input_barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
         VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT,
         VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_,
+    CmdBarrier(command_buffer_,
         VK_PIPELINE_STAGE_HOST_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &input_barrier,
         0, nullptr, 0, nullptr);
@@ -2164,7 +2217,7 @@ class VulkanBinaryRuntime {
     std::lock_guard lock(mutex_);
     if (!arena_recording_) return false;
     arena_recording_ = false;
-    if (end_command_buffer_(command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
     if (!submit) {
       recording_descriptor_sets_.clear();
       return true;
@@ -2181,9 +2234,9 @@ class VulkanBinaryRuntime {
     const VkResult pre_idle = reset == VK_SUCCESS && queue_idle_before_submit
         ? queue_wait_idle_(queue_) : reset;
     const VkResult submitted = pre_idle == VK_SUCCESS
-        ? queue_submit_(queue_, 1, &info, submission_fence_) : pre_idle;
+        ? QueueSubmit(queue_, 1, &info, submission_fence_) : pre_idle;
     const VkResult waited = submitted == VK_SUCCESS
-        ? wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        ? WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                           std::numeric_limits<std::uint64_t>::max()) : submitted;
     last_submission_result_.store(static_cast<int>(waited), std::memory_order_release);
     const bool completed = waited == VK_SUCCESS;
@@ -2276,7 +2329,7 @@ class VulkanBinaryRuntime {
     if (reset_command_buffer_(graph->command_buffer, 0) != VK_SUCCESS) return false;
     const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                          0, nullptr};
-    if (begin_command_buffer_(graph->command_buffer, &begin) != VK_SUCCESS) return false;
+    if (BeginCommandBuffer(graph->command_buffer, &begin) != VK_SUCCESS) return false;
     saved_command_buffer_ = command_buffer_;
     command_buffer_ = graph->command_buffer;
     persistent_recording_ = graph;
@@ -2285,7 +2338,7 @@ class VulkanBinaryRuntime {
     const VkMemoryBarrier input_barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
         VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT,
         VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_,
+    CmdBarrier(command_buffer_,
         VK_PIPELINE_STAGE_HOST_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &input_barrier,
         0, nullptr, 0, nullptr);
@@ -2316,7 +2369,7 @@ class VulkanBinaryRuntime {
     PersistentGraph* graph = persistent_recording_;
     arena_recording_ = false;
     persistent_recording_ = nullptr;
-    const bool ended = end_command_buffer_(command_buffer_) == VK_SUCCESS;
+    const bool ended = EndCommandBuffer(command_buffer_) == VK_SUCCESS;
     command_buffer_ = saved_command_buffer_;
     saved_command_buffer_ = VK_NULL_HANDLE;
     if (!ended || !submit) {
@@ -2330,13 +2383,15 @@ class VulkanBinaryRuntime {
       graph->arena_slots.clear();
       return false;
     }
+    graph->profile_queries = profile_written_;
+    graph->profile_labels = profile_label_ids_;
     const VkSubmitInfo info{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                             1, &graph->command_buffer, 0, nullptr};
     const VkResult reset = reset_fences_(device_, 1, &submission_fence_);
     const VkResult submitted = reset == VK_SUCCESS
-        ? queue_submit_(queue_, 1, &info, submission_fence_) : reset;
+        ? QueueSubmit(queue_, 1, &info, submission_fence_) : reset;
     const VkResult waited = submitted == VK_SUCCESS
-        ? wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        ? WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                            std::numeric_limits<std::uint64_t>::max()) : submitted;
     const bool completed = waited == VK_SUCCESS;
     if (!completed) restart_required_.store(true, std::memory_order_release);
@@ -2370,7 +2425,7 @@ class VulkanBinaryRuntime {
       pending_standalone_ = false;
       const VkSubmitInfo first{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                                1, &command_buffer_, 1, &chain_semaphore_};
-      if (queue_submit_(queue_, 1, &first, VK_NULL_HANDLE) != VK_SUCCESS) {
+      if (QueueSubmit(queue_, 1, &first, VK_NULL_HANDLE) != VK_SUCCESS) {
         mark_unready();
         return false;
       }
@@ -2379,10 +2434,11 @@ class VulkanBinaryRuntime {
                                 &wait_stage, static_cast<std::uint32_t>(command_buffers.size()),
                                 command_buffers.data(), 0, nullptr};
       const VkResult reset = reset_fences_(device_, 1, &submission_fence_);
+      ArmReplayProfile(FindPersistentGraphLocked(keys[count - 1]));
       const VkResult submitted = reset == VK_SUCCESS
-          ? queue_submit_(queue_, 1, &second, submission_fence_) : reset;
+          ? QueueSubmit(queue_, 1, &second, submission_fence_) : reset;
       const VkResult waited = submitted == VK_SUCCESS
-          ? wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+          ? WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                              std::numeric_limits<std::uint64_t>::max()) : submitted;
       if (waited != VK_SUCCESS) {
         mark_unready();
@@ -2398,10 +2454,11 @@ class VulkanBinaryRuntime {
                             static_cast<std::uint32_t>(command_buffers.size()),
                             command_buffers.data(), 0, nullptr};
     const VkResult reset = reset_fences_(device_, 1, &submission_fence_);
+    ArmReplayProfile(FindPersistentGraphLocked(keys[count - 1]));
     const VkResult submitted = reset == VK_SUCCESS
-        ? queue_submit_(queue_, 1, &info, submission_fence_) : reset;
+        ? QueueSubmit(queue_, 1, &info, submission_fence_) : reset;
     const VkResult waited = submitted == VK_SUCCESS
-        ? wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        ? WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                            std::numeric_limits<std::uint64_t>::max()) : submitted;
     if (waited != VK_SUCCESS) {
       mark_unready();
@@ -2501,9 +2558,9 @@ class VulkanBinaryRuntime {
                             1, &command_buffer_, 0, nullptr};
     const VkResult reset = reset_fences_(device_, 1, &submission_fence_);
     const VkResult submitted = reset == VK_SUCCESS
-        ? queue_submit_(queue_, 1, &info, submission_fence_) : reset;
+        ? QueueSubmit(queue_, 1, &info, submission_fence_) : reset;
     const VkResult waited = submitted == VK_SUCCESS
-        ? wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        ? WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                            std::numeric_limits<std::uint64_t>::max()) : submitted;
     if (waited != VK_SUCCESS) {
       restart_required_.store(true, std::memory_order_release);
@@ -2524,7 +2581,7 @@ class VulkanBinaryRuntime {
     if (reset_command_buffer_(command_buffer_, 0) != VK_SUCCESS) return false;
     const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                          VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-    if (begin_command_buffer_(command_buffer_, &begin) != VK_SUCCESS) return false;
+    if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
     cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
     if (!RecordDirtyStagingCopiesLocked()) return false;
     // Standalone front-end/boundary dispatches may consume freshly mapped
@@ -2534,7 +2591,7 @@ class VulkanBinaryRuntime {
     const VkMemoryBarrier input_barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
         VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT,
         VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_,
+    CmdBarrier(command_buffer_,
         VK_PIPELINE_STAGE_HOST_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &input_barrier,
         0, nullptr, 0, nullptr);
@@ -2548,7 +2605,7 @@ class VulkanBinaryRuntime {
 
   bool EndArenaOpLocked() noexcept {
     if (arena_recording_) return true;
-    if (end_command_buffer_(command_buffer_) != VK_SUCCESS) {
+    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) {
       defer_next_standalone_ = false;
       return false;
     }
@@ -2562,9 +2619,9 @@ class VulkanBinaryRuntime {
                               1, &command_buffer_, 0, nullptr};
     const VkResult reset = reset_fences_(device_, 1, &submission_fence_);
     const VkResult submitted = reset == VK_SUCCESS
-        ? queue_submit_(queue_, 1, &submit, submission_fence_) : reset;
+        ? QueueSubmit(queue_, 1, &submit, submission_fence_) : reset;
     const VkResult waited = submitted == VK_SUCCESS
-        ? wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        ? WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                            std::numeric_limits<std::uint64_t>::max()) : submitted;
     if (waited != VK_SUCCESS) restart_required_.store(true, std::memory_order_release);
     return waited == VK_SUCCESS;
@@ -2596,7 +2653,7 @@ class VulkanBinaryRuntime {
     // queue fence completes, and resetting that pool before the tail submit
     // violates Vulkan descriptor-pool lifetime rules on strict drivers.
     arena_recording_ = false;
-    if (end_command_buffer_(command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
     recording_descriptor_sets_.clear();
 
     std::array<VkDescriptorBufferInfo, 5> infos{};
@@ -2608,15 +2665,15 @@ class VulkanBinaryRuntime {
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr,
                          &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(),
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(),
                             0, nullptr);
     if (reset_command_buffer_(tail_command_buffer_, 0) != VK_SUCCESS) return false;
     const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                          VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-    if (begin_command_buffer_(tail_command_buffer_, &begin) != VK_SUCCESS) return false;
+    if (BeginCommandBuffer(tail_command_buffer_, &begin) != VK_SUCCESS) return false;
     const VkMemoryBarrier input_visible{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
         VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(tail_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(tail_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &input_visible,
                           0, nullptr, 0, nullptr);
     cmd_bind_pipeline_(tail_command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, tail_pipeline_);
@@ -2635,20 +2692,20 @@ class VulkanBinaryRuntime {
     const std::size_t dispatch = std::size_t(count) /
         (std::size_t(output_height) * output_width);
     if (dispatch == 0 || dispatch > UINT32_MAX) return false;
-    cmd_dispatch_(tail_command_buffer_, static_cast<std::uint32_t>(dispatch), batches, 1);
+    CmdDispatch(tail_command_buffer_, static_cast<std::uint32_t>(dispatch), batches, 1);
     const VkMemoryBarrier output_visible{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
         VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(tail_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(tail_command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &output_visible,
                           0, nullptr, 0, nullptr);
-    if (end_command_buffer_(tail_command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(tail_command_buffer_) != VK_SUCCESS) return false;
     const VkSubmitInfo tail_submit_info{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                                         1, &tail_command_buffer_, 0, nullptr};
     const VkResult tail_reset = reset_fences_(device_, 1, &submission_fence_);
     const VkResult tail_submit = tail_reset == VK_SUCCESS
-        ? queue_submit_(queue_, 1, &tail_submit_info, submission_fence_) : tail_reset;
+        ? QueueSubmit(queue_, 1, &tail_submit_info, submission_fence_) : tail_reset;
     const VkResult tail_wait = tail_submit == VK_SUCCESS
-        ? wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        ? WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                            std::numeric_limits<std::uint64_t>::max()) : tail_submit;
     if (tail_wait != VK_SUCCESS) {
       restart_required_.store(true, std::memory_order_release);
@@ -2665,9 +2722,9 @@ class VulkanBinaryRuntime {
     // sets may now be reclaimed safely.
     if (reset_descriptor_pool_(device_, graph_descriptor_pool_, 0) != VK_SUCCESS ||
         reset_command_buffer_(command_buffer_, 0) != VK_SUCCESS) return false;
-    if (begin_command_buffer_(command_buffer_, &begin) != VK_SUCCESS) return false;
+    if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
     cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &output_visible,
                           0, nullptr, 0, nullptr);
     arena_recording_ = true;
@@ -2709,14 +2766,14 @@ class VulkanBinaryRuntime {
     const VkMemoryBarrier before{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
         VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
         VK_ACCESS_TRANSFER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_,
+    CmdBarrier(command_buffer_,
         VK_PIPELINE_STAGE_HOST_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT,
         VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &before, 0, nullptr, 0, nullptr);
     const VkBufferCopy region{0, 0, bytes};
     cmd_copy_buffer_(command_buffer_, input.buffer, output.buffer, 1, &region);
     const VkMemoryBarrier after{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
         VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_TRANSFER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_TRANSFER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &after,
                           0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
@@ -2744,7 +2801,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 
                               0, 1, &arena_set, 0, nullptr);
@@ -2755,10 +2812,10 @@ class VulkanBinaryRuntime {
               static_cast<std::uint32_t>(elements), 0u};
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                         sizeof(push), &push);
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>((elements + 1023) / 1024), 1, 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>((elements + 1023) / 1024), 1, 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -2808,7 +2865,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1,
                               &arena_set, 0, nullptr);
@@ -2821,10 +2878,10 @@ class VulkanBinaryRuntime {
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
     const std::size_t dispatch = (elements / batches + 1023) / 1024;
     if (dispatch == 0 || dispatch > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -2865,7 +2922,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1,
                               &arena_set, 0, nullptr);
@@ -2879,10 +2936,10 @@ class VulkanBinaryRuntime {
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
     const std::size_t dispatch = (total + 1023) / 1024;
     if (dispatch == 0 || dispatch > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch), 1, 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), 1, 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -2912,7 +2969,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1,
                               &arena_set, 0, nullptr);
@@ -2925,10 +2982,10 @@ class VulkanBinaryRuntime {
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
     const std::size_t dispatch = (std::size_t(channels) * output_plane + 1023) / 1024;
     if (dispatch == 0 || dispatch > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -2950,7 +3007,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &arena_set, 0, nullptr);
@@ -2964,10 +3021,10 @@ class VulkanBinaryRuntime {
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
     const std::size_t dispatch = (elements + 1023) / 1024;
     if (dispatch == 0 || dispatch > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch), 1, 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), 1, 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -3000,7 +3057,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1,
                               &arena_set, 0, nullptr);
@@ -3013,10 +3070,10 @@ class VulkanBinaryRuntime {
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
     const std::size_t dispatch = (std::size_t(channels) * plane + 1023) / 1024;
     if (dispatch == 0 || dispatch > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -3049,7 +3106,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1,
                               &arena_set, 0, nullptr);
@@ -3069,13 +3126,13 @@ class VulkanBinaryRuntime {
         (layer_norm || width <= 256);
     push.operation3 = compact ? 1u : 0u;
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
-    cmd_dispatch_(command_buffer_,
+    CmdDispatch(command_buffer_,
                   compact ? static_cast<std::uint32_t>((rows + 255) / 256)
                           : static_cast<std::uint32_t>(rows),
                   1, 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -3113,7 +3170,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     // The RGB staging upload must be visible before its first shader read
     // when an explicitly requested device-local arena is in use. The default
@@ -3132,9 +3189,9 @@ class VulkanBinaryRuntime {
              static_cast<std::uint32_t>(output_width), static_cast<std::uint32_t>(output_height),
              (recognition ? 47u : 46u) | packed_content};
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>((output_elements + 1023) / 1024), 1, 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>((output_elements + 1023) / 1024), 1, 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           0, 1, &barrier, 0, nullptr, 0, nullptr);
     // Shader output is the source of truth; do not later copy stale staging
     // zeros over this NCHW at graph-record time.
@@ -3169,7 +3226,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked() || !CopyStagingToArenaLocked(arena_buffers_[rgb_index], source_elements * std::size_t(batches))) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1, &arena_set, 0, nullptr);
     struct Push { std::uint32_t count, batches, operation0, operation1, operation2, operation3,
@@ -3179,10 +3236,10 @@ class VulkanBinaryRuntime {
              0u, 0u, static_cast<std::uint32_t>(source_width), static_cast<std::uint32_t>(source_height),
              static_cast<std::uint32_t>(output_width), static_cast<std::uint32_t>(output_height), 46u};
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>((output_elements + 1023) / 1024),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>((output_elements + 1023) / 1024),
                   static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -3202,7 +3259,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1, &arena_set, 0, nullptr);
     std::uint32_t threshold_bits{}; std::memcpy(&threshold_bits, &threshold, sizeof(threshold));
@@ -3210,9 +3267,9 @@ class VulkanBinaryRuntime {
                                 steps, right_repeat, right_per_batch, right_batch_stride, mode; }
         push{static_cast<std::uint32_t>(elements), 1u, threshold_bits, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 49u};
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>((elements + 1023) / 1024), 1, 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>((elements + 1023) / 1024), 1, 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -3255,7 +3312,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1,
                               &arena_set, 0, nullptr);
@@ -3270,10 +3327,10 @@ class VulkanBinaryRuntime {
              static_cast<std::uint32_t>(image_height), static_cast<std::uint32_t>(height),
              static_cast<std::uint32_t>(width), static_cast<std::uint32_t>(capacity), 54u};
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
-    cmd_dispatch_(command_buffer_, 1, 1, 1);
+    CmdDispatch(command_buffer_, 1, 1, 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -3301,7 +3358,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1, &arena_set, 0, nullptr);
     // The scalar compatibility reduction preserves the exported CTC's
@@ -3321,10 +3378,10 @@ class VulkanBinaryRuntime {
     // rec command buffer: one 256-lane workgroup per vocabulary row beats the
     // scalar-per-row dispatch on this UMA adapter. `PPOCR_DISABLE_GPU_CTC_COOPERATIVE`
     // restores the one-thread-per-row path.
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(
                       cooperative_ctc ? rows : (rows + 255) / 256), 1, 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -3356,7 +3413,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1,
                               &arena_set, 0, nullptr);
@@ -3367,10 +3424,10 @@ class VulkanBinaryRuntime {
              static_cast<std::uint32_t>(dimensions[3]), permutation_bits, 0u, 0u, 0u, 36u};
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
     const std::size_t dispatch = (elements + 1023) / 1024;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch), 1, 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), 1, 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -3399,7 +3456,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1,
                               &arena_set, 0, nullptr);
@@ -3409,10 +3466,10 @@ class VulkanBinaryRuntime {
              static_cast<std::uint32_t>(plane), 0u, 0u, 0u, 0u, 0u, 0u, 37u};
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
     const std::size_t dispatch = (output_elements + 255) / 256;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch), 1, 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), 1, 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -3450,7 +3507,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1,
                               &arena_set, 0, nullptr);
@@ -3461,10 +3518,10 @@ class VulkanBinaryRuntime {
              static_cast<std::uint32_t>(head_width), 0u, 0u, 0u, 0u, 38u};
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
     const std::size_t dispatch = (branch_elements + 1023) / 1024;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch), 1, 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), 1, 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -3504,7 +3561,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1,
                               &arena_set, 0, nullptr);
@@ -3535,12 +3592,12 @@ class VulkanBinaryRuntime {
         ? (std::size_t(rows) + 7) / 8
         : matrix_batches;
     const std::size_t dispatch_z = tiled_kernel ? matrix_batches : 1;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch_x),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch_x),
                   static_cast<std::uint32_t>(dispatch_y),
                   static_cast<std::uint32_t>(dispatch_z));
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -3573,7 +3630,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1,
                               &arena_set, 0, nullptr);
@@ -3590,10 +3647,10 @@ class VulkanBinaryRuntime {
              static_cast<std::uint32_t>(kernel_height), static_cast<std::uint32_t>(kernel_width), mode};
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
     const std::size_t dispatch = (std::size_t(channels) * output_height * output_width + 1023) / 1024;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -3641,7 +3698,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &arena_set, 0, nullptr);
@@ -3666,10 +3723,10 @@ class VulkanBinaryRuntime {
         ? ((static_cast<std::size_t>(output_channels) + 3) / 4) * ((plane + 255) / 256)
         : (std::size_t(output_channels) * plane + 1023) / 1024;
     if (dispatch == 0 || dispatch > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -3709,7 +3766,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, tail_pointwise_pipeline_);
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
@@ -3722,10 +3779,10 @@ class VulkanBinaryRuntime {
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
     const std::size_t dispatch = (std::size_t(output_channels) * plane + 1023) / 1024;
     if (dispatch == 0 || dispatch > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -3770,7 +3827,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &arena_set, 0, nullptr);
@@ -3786,10 +3843,10 @@ class VulkanBinaryRuntime {
         ? ((static_cast<std::size_t>(output_channels) + 3) / 4) * ((plane + 255) / 256)
         : (std::size_t(output_channels) * plane + 1023) / 1024;
     if (dispatch == 0 || dispatch > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -3835,7 +3892,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &arena_set, 0, nullptr);
@@ -3850,11 +3907,11 @@ class VulkanBinaryRuntime {
     const std::size_t tile = std::min<std::size_t>(16, 4096 / std::size_t(hidden));
     const std::size_t dispatch = (plane + tile - 1) / tile;
     if (dispatch == 0 || dispatch > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch),
                   static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -3903,7 +3960,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &arena_set, 0, nullptr);
@@ -3920,11 +3977,11 @@ class VulkanBinaryRuntime {
     if (tile == 0) return false;
     const std::size_t dispatch = (plane + tile - 1) / tile;
     if (dispatch == 0 || dispatch > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch),
                   static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -4057,15 +4114,15 @@ class VulkanBinaryRuntime {
       const bool submit_each_slice =
           std::getenv("PPOCR_GPU_TAIL_SUBMIT_SLICES") != nullptr;
       const auto submit_and_continue = [&]() noexcept {
-        if (!arena_recording_ || end_command_buffer_(command_buffer_) != VK_SUCCESS) return false;
+        if (!arena_recording_ || EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
         const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                                   1, &command_buffer_, 0, nullptr};
         arena_recording_ = false;
         const VkResult reset = reset_fences_(device_, 1, &submission_fence_);
         const VkResult submitted = reset == VK_SUCCESS
-            ? queue_submit_(queue_, 1, &submit, submission_fence_) : reset;
+            ? QueueSubmit(queue_, 1, &submit, submission_fence_) : reset;
         const VkResult waited = submitted == VK_SUCCESS
-            ? wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+            ? WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                                std::numeric_limits<std::uint64_t>::max()) : submitted;
         if (waited != VK_SUCCESS) {
           restart_required_.store(true, std::memory_order_release);
@@ -4080,11 +4137,11 @@ class VulkanBinaryRuntime {
             reset_command_buffer_(command_buffer_, 0) != VK_SUCCESS) return false;
         const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                              VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-        if (begin_command_buffer_(command_buffer_, &begin) != VK_SUCCESS) return false;
+        if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
         cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
         const VkMemoryBarrier visible{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
             VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-        cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                               VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &visible,
                               0, nullptr, 0, nullptr);
         arena_recording_ = true;
@@ -4104,7 +4161,7 @@ class VulkanBinaryRuntime {
           writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                              VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
         }
-        update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+        UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
         cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                                   0, 1, &arena_set, 0, nullptr);
         // count stays the complete per-batch tensor span so mode 53 computes
@@ -4114,10 +4171,10 @@ class VulkanBinaryRuntime {
         cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                             sizeof(slice_push), &slice_push);
         const std::size_t slice_dispatch = (std::size_t(slice_channels) * output_plane + 255) / 256;
-        cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(slice_dispatch), 1, 1);
+        CmdDispatch(command_buffer_, static_cast<std::uint32_t>(slice_dispatch), 1, 1);
         const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
             VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-        cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                               VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
         if (submit_each_slice && channel_begin + slice_channels < channels && !submit_and_continue())
           return false;
@@ -4136,7 +4193,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, default_arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     // Select the isolated module only for the exact exported tail. The next
     // arena operator restores the normal pipeline in BeginArenaOpLocked().
     if (dedicated_tail_pipeline)
@@ -4158,10 +4215,10 @@ class VulkanBinaryRuntime {
                         sizeof(push), &push);
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &default_arena_set, 0, nullptr);
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -4212,7 +4269,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
                               0, 1, &arena_set, 0, nullptr);
@@ -4266,11 +4323,11 @@ class VulkanBinaryRuntime {
                   ((output_plane + 1023) / 1024)
             : (std::size_t(output_channels) * output_plane + 1023) / 1024);
     if (dispatch == 0 || dispatch > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch),
                   static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -4310,7 +4367,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1,
                               &arena_set, 0, nullptr);
@@ -4331,10 +4388,10 @@ class VulkanBinaryRuntime {
     const std::size_t dispatch = tiled ? std::size_t(output_channels) * ((output_plane + 1023) / 1024)
                                        : (std::size_t(output_channels) * output_plane + 1023) / 1024;
     if (dispatch == 0 || dispatch > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -4385,7 +4442,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0,
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0,
                             nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1,
@@ -4401,11 +4458,11 @@ class VulkanBinaryRuntime {
                         sizeof(push), &push);
     const std::size_t dispatch = (std::size_t(output_channels) * output_plane + 1023) / 1024;
     if (dispatch == 0 || dispatch > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch),
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch),
                   static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -4438,7 +4495,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1,
                               &arena_set, 0, nullptr);
@@ -4451,10 +4508,10 @@ class VulkanBinaryRuntime {
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
     const std::size_t dispatch = (std::size_t(channels) * input_plane * 4 + 1023) / 1024;
     if (dispatch == 0 || dispatch > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), static_cast<std::uint32_t>(batches), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -4495,7 +4552,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1,
                               &arena_set, 0, nullptr);
@@ -4516,10 +4573,10 @@ class VulkanBinaryRuntime {
     const std::size_t dispatch_x = tiled ? (std::size_t(columns) + 127) / 128 : (output_elements + 1023) / 1024;
     const std::size_t dispatch_y = tiled ? (std::size_t(rows) + 7) / 8 : 1;
     if (dispatch_x == 0 || dispatch_x > UINT32_MAX || dispatch_y == 0 || dispatch_y > UINT32_MAX) return false;
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(dispatch_x), static_cast<std::uint32_t>(dispatch_y), 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch_x), static_cast<std::uint32_t>(dispatch_y), 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
     return EndArenaOpLocked();
   }
@@ -4562,7 +4619,7 @@ class VulkanBinaryRuntime {
       writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
     }
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0,
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0,
                             nullptr);
     if (!BeginArenaOpLocked()) return false;
     cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0,
@@ -4574,10 +4631,10 @@ class VulkanBinaryRuntime {
              has_bias ? 1u : 0u, 0u, 0u, 0u, 0u, 65u};
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                         sizeof(push), &push);
-    cmd_dispatch_(command_buffer_, static_cast<std::uint32_t>(rows), 1, 1);
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(rows), 1, 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0,
                           nullptr);
     return EndArenaOpLocked();
@@ -4649,6 +4706,104 @@ class VulkanBinaryRuntime {
     const auto generation = arena_generation_.load(std::memory_order_acquire);
     return adapter ^ (generation + 0x9e3779b97f4a7c15ull + (adapter << 6) +
                       (adapter >> 2));
+  }
+
+  void SetGpuProfileScope(const char* scope) noexcept {
+    // Read the flag here so a scope set before device initialization is kept.
+    // Initialize() latches the same variable for the dispatch wrappers.
+    static const bool enabled = std::getenv("PPOCR_GPU_PROFILE") != nullptr;
+    if (!enabled || !scope || !scope[0]) return;
+    profile_scope_ = scope;
+  }
+
+  void SetGpuProfileLabel(const char* label) noexcept {
+    static const bool enabled = std::getenv("PPOCR_GPU_PROFILE") != nullptr;
+    if (!enabled || !label || !label[0]) return;
+    profile_label_ = label;
+  }
+
+  void PrintGpuProfile(double wall_ms) noexcept {
+    if (!profile_enabled_) return;
+    std::lock_guard lock(mutex_);
+    ProfileAccum delta;
+    delta.fence_ms = profile_.fence_ms - printed_.fence_ms;
+    delta.submit_ms = profile_.submit_ms - printed_.submit_ms;
+    delta.upload_ms = profile_.upload_ms - printed_.upload_ms;
+    delta.download_ms = profile_.download_ms - printed_.download_ms;
+    delta.descriptor_ms = profile_.descriptor_ms - printed_.descriptor_ms;
+    delta.barrier_ms = profile_.barrier_ms - printed_.barrier_ms;
+    delta.record_ms = profile_.record_ms - printed_.record_ms;
+    delta.gpu_ms = profile_.gpu_ms - printed_.gpu_ms;
+    delta.gpu_gap_ms = profile_.gpu_gap_ms - printed_.gpu_gap_ms;
+    delta.fences = profile_.fences - printed_.fences;
+    delta.submits = profile_.submits - printed_.submits;
+    delta.uploads = profile_.uploads - printed_.uploads;
+    delta.downloads = profile_.downloads - printed_.downloads;
+    delta.descriptors = profile_.descriptors - printed_.descriptors;
+    delta.barriers = profile_.barriers - printed_.barriers;
+    delta.dispatches = profile_.dispatches - printed_.dispatches;
+    printed_ = profile_;
+    auto& total = scope_totals_[profile_scope_];
+    total.fence_ms += delta.fence_ms;
+    total.submit_ms += delta.submit_ms;
+    total.upload_ms += delta.upload_ms;
+    total.download_ms += delta.download_ms;
+    total.descriptor_ms += delta.descriptor_ms;
+    total.barrier_ms += delta.barrier_ms;
+    total.record_ms += delta.record_ms;
+    total.gpu_ms += delta.gpu_ms;
+    total.gpu_gap_ms += delta.gpu_gap_ms;
+    total.fences += delta.fences;
+    total.submits += delta.submits;
+    total.uploads += delta.uploads;
+    total.downloads += delta.downloads;
+    total.descriptors += delta.descriptors;
+    total.barriers += delta.barriers;
+    total.dispatches += delta.dispatches;
+    std::cerr << "ppocr_gpu_profile scope=" << profile_scope_
+              << " wall=" << wall_ms
+              << " gpu_dispatch=" << delta.gpu_ms
+              << " gpu_gap=" << delta.gpu_gap_ms
+              << " fence=" << delta.fence_ms
+              << " submit=" << delta.submit_ms
+              << " upload=" << delta.upload_ms
+              << " download=" << delta.download_ms
+              << " descriptor=" << delta.descriptor_ms
+              << " barrier=" << delta.barrier_ms
+              << " record=" << delta.record_ms
+              << " dispatches=" << delta.dispatches
+              << " submits=" << delta.submits
+              << " fences=" << delta.fences
+              << " barriers=" << delta.barriers
+              << " descriptors=" << delta.descriptors
+              << " uploads=" << delta.uploads
+              << " downloads=" << delta.downloads << '\n';
+    std::vector<std::pair<double, std::string>> ranked;
+    ranked.reserve(label_ms_.size());
+    for (const auto& entry : label_ms_) ranked.emplace_back(entry.second, entry.first);
+    std::sort(ranked.begin(), ranked.end(),
+              [](const auto& left, const auto& right) { return left.first > right.first; });
+    const std::size_t shown = std::min<std::size_t>(ranked.size(), 12);
+    for (std::size_t index = 0; index < shown; ++index) {
+      const auto count = label_count_.find(ranked[index].second);
+      std::cerr << "  " << ranked[index].second << ' ' << ranked[index].first << " ms x"
+                << (count == label_count_.end() ? 0 : count->second) << '\n';
+    }
+    label_ms_.clear();
+    label_count_.clear();
+    std::cerr << "ppocr_gpu_profile_total scope=" << profile_scope_
+              << " gpu_dispatch=" << total.gpu_ms
+              << " gpu_gap=" << total.gpu_gap_ms
+              << " fence=" << total.fence_ms
+              << " submit=" << total.submit_ms
+              << " upload=" << total.upload_ms
+              << " download=" << total.download_ms
+              << " descriptor=" << total.descriptor_ms
+              << " barrier=" << total.barrier_ms
+              << " record=" << total.record_ms
+              << " dispatches=" << total.dispatches
+              << " submits=" << total.submits
+              << " fences=" << total.fences << '\n';
   }
 
  private:
@@ -4728,23 +4883,23 @@ class VulkanBinaryRuntime {
       if (reset_command_buffer_(command_buffer_, 0) != VK_SUCCESS) return false;
       const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
           VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-      if (begin_command_buffer_(command_buffer_, &begin) != VK_SUCCESS) return false;
+      if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
     }
     const VkBufferCopy region{0, 0, static_cast<VkDeviceSize>(elements) * sizeof(float)};
     cmd_copy_buffer_(command_buffer_, slot.staging_buffer, slot.buffer, 1, &region);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
         VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_TRANSFER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_TRANSFER_BIT,
                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier,
                           0, nullptr, 0, nullptr);
     slot.staging_dirty = false;
     if (!standalone) return true;
-    if (end_command_buffer_(command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
     const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
         1, &command_buffer_, 0, nullptr};
     return reset_fences_(device_, 1, &submission_fence_) == VK_SUCCESS &&
-        queue_submit_(queue_, 1, &submit, submission_fence_) == VK_SUCCESS &&
-        wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        QueueSubmit(queue_, 1, &submit, submission_fence_) == VK_SUCCESS &&
+        WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                          std::numeric_limits<std::uint64_t>::max()) == VK_SUCCESS;
   }
 
@@ -4764,27 +4919,27 @@ class VulkanBinaryRuntime {
       if (reset_command_buffer_(command_buffer_, 0) != VK_SUCCESS) return false;
       const VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
           VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
-      if (begin_command_buffer_(command_buffer_, &begin) != VK_SUCCESS) return false;
+      if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
     }
     const VkMemoryBarrier before{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
         VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                           VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &before,
                           0, nullptr, 0, nullptr);
     const VkBufferCopy region{0, 0, static_cast<VkDeviceSize>(elements) * sizeof(float)};
     cmd_copy_buffer_(command_buffer_, slot.buffer, slot.staging_buffer, 1, &region);
     const VkMemoryBarrier after{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
         VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT};
-    cmd_pipeline_barrier_(command_buffer_, VK_PIPELINE_STAGE_TRANSFER_BIT,
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_TRANSFER_BIT,
                           VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &after,
                           0, nullptr, 0, nullptr);
     if (!standalone) return true;
-    if (end_command_buffer_(command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
     const VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
         1, &command_buffer_, 0, nullptr};
     return reset_fences_(device_, 1, &submission_fence_) == VK_SUCCESS &&
-        queue_submit_(queue_, 1, &submit, submission_fence_) == VK_SUCCESS &&
-        wait_for_fences_(device_, 1, &submission_fence_, VK_TRUE,
+        QueueSubmit(queue_, 1, &submit, submission_fence_) == VK_SUCCESS &&
+        WaitFence(device_, 1, &submission_fence_, VK_TRUE,
                          std::numeric_limits<std::uint64_t>::max()) == VK_SUCCESS;
   }
 
@@ -5058,6 +5213,7 @@ class VulkanBinaryRuntime {
     // never a useful default accelerator beside a real GPU. Keep it only for
     // an explicit device-index selection.
     int best_score = std::numeric_limits<int>::min();
+    std::uint32_t best_timestamp_bits = 0;
     VkPhysicalDevice best_device = VK_NULL_HANDLE;
     std::uint32_t best_queue = UINT32_MAX;
     VkPhysicalDeviceProperties best_properties{};
@@ -5096,6 +5252,7 @@ class VulkanBinaryRuntime {
             best_device = candidate;
             best_queue = i;
             best_properties = properties_out;
+            best_timestamp_bits = properties[i].timestampValidBits;
           }
           break;
         }
@@ -5106,6 +5263,8 @@ class VulkanBinaryRuntime {
     queue_family_ = best_queue;
     device_name_ = best_properties.deviceName;
     vendor_id_ = best_properties.vendorID;
+    timestamp_period_ns_ = best_properties.limits.timestampPeriod;
+    timestamp_valid_bits_ = best_timestamp_bits;
     std::uint64_t identity = 1469598103934665603ull;
     for (const unsigned char byte : device_name_) {
       identity ^= byte;
@@ -5117,6 +5276,159 @@ class VulkanBinaryRuntime {
     adapter_identity_.store(identity ? identity : 1u, std::memory_order_release);
     get_memory_properties_(physical_, &memory_properties_);
     return true;
+  }
+
+  static constexpr std::uint32_t kProfileQueryCount = 16384;
+
+  std::uint32_t InternProfileLabel(const std::string& name) {
+    const auto found = label_ids_.find(name);
+    if (found != label_ids_.end()) return found->second;
+    const auto id = static_cast<std::uint32_t>(label_names_.size());
+    label_names_.push_back(name);
+    label_ids_.emplace(name, id);
+    return id;
+  }
+
+  void CmdDispatch(VkCommandBuffer cb, std::uint32_t x, std::uint32_t y, std::uint32_t z) noexcept {
+    const bool stamp = profile_enabled_ && query_pool_ && cmd_write_timestamp_ && cmd_reset_query_pool_ &&
+                       profile_written_ + 2 <= kProfileQueryCount;
+    if (stamp) {
+      if (profile_reset_pending_) {
+        cmd_reset_query_pool_(cb, query_pool_, 0, kProfileQueryCount);
+        profile_reset_pending_ = false;
+      }
+      cmd_write_timestamp_(cb, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, query_pool_, profile_written_++);
+      profile_label_ids_.push_back(InternProfileLabel(profile_label_));
+    }
+    cmd_dispatch_(cb, x, y, z);
+    if (stamp) {
+      cmd_write_timestamp_(cb, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, query_pool_, profile_written_++);
+    }
+    if (profile_enabled_) ++profile_.dispatches;
+  }
+
+  void CmdBarrier(VkCommandBuffer cb, VkPipelineStageFlags src, VkPipelineStageFlags dst,
+                  VkDependencyFlags dependency, std::uint32_t memory_count,
+                  const VkMemoryBarrier* memory, std::uint32_t buffer_count,
+                  const VkBufferMemoryBarrier* buffers, std::uint32_t image_count,
+                  const VkImageMemoryBarrier* images) noexcept {
+    if (!profile_enabled_) {
+      cmd_pipeline_barrier_(cb, src, dst, dependency, memory_count, memory, buffer_count, buffers,
+                            image_count, images);
+      return;
+    }
+    const auto start = std::chrono::steady_clock::now();
+    cmd_pipeline_barrier_(cb, src, dst, dependency, memory_count, memory, buffer_count, buffers,
+                          image_count, images);
+    profile_.barrier_ms += std::chrono::duration<double, std::milli>(
+                               std::chrono::steady_clock::now() - start).count();
+    ++profile_.barriers;
+  }
+
+  void UpdateDescriptors(VkDevice device, std::uint32_t write_count, const VkWriteDescriptorSet* writes,
+                         std::uint32_t copy_count, const VkCopyDescriptorSet* copies) noexcept {
+    if (!profile_enabled_) {
+      update_descriptor_sets_(device, write_count, writes, copy_count, copies);
+      return;
+    }
+    const auto start = std::chrono::steady_clock::now();
+    update_descriptor_sets_(device, write_count, writes, copy_count, copies);
+    profile_.descriptor_ms += std::chrono::duration<double, std::milli>(
+                                  std::chrono::steady_clock::now() - start).count();
+    ++profile_.descriptors;
+  }
+
+  VkResult BeginCommandBuffer(VkCommandBuffer cb, const VkCommandBufferBeginInfo* info) noexcept {
+    if (profile_enabled_) {
+      profile_written_ = 0;
+      profile_label_ids_.clear();
+      profile_reset_pending_ = query_pool_ != VK_NULL_HANDLE;
+    }
+    if (!profile_enabled_) return begin_command_buffer_(cb, info);
+    const auto start = std::chrono::steady_clock::now();
+    const VkResult result = begin_command_buffer_(cb, info);
+    profile_.record_ms += std::chrono::duration<double, std::milli>(
+                              std::chrono::steady_clock::now() - start).count();
+    return result;
+  }
+
+  VkResult EndCommandBuffer(VkCommandBuffer cb) noexcept {
+    if (!profile_enabled_) return end_command_buffer_(cb);
+    const auto start = std::chrono::steady_clock::now();
+    const VkResult result = end_command_buffer_(cb);
+    profile_.record_ms += std::chrono::duration<double, std::milli>(
+                             std::chrono::steady_clock::now() - start).count();
+    return result;
+  }
+
+  VkResult QueueSubmit(VkQueue queue, std::uint32_t count, const VkSubmitInfo* infos,
+                       VkFence fence) noexcept {
+    if (!profile_enabled_) return queue_submit_(queue, count, infos, fence);
+    const auto start = std::chrono::steady_clock::now();
+    const VkResult result = queue_submit_(queue, count, infos, fence);
+    profile_.submit_ms += std::chrono::duration<double, std::milli>(
+                              std::chrono::steady_clock::now() - start).count();
+    ++profile_.submits;
+    return result;
+  }
+
+  void CollectProfileTimestamps() noexcept {
+    if (!profile_enabled_ || !query_pool_ || !get_query_pool_results_ || profile_written_ < 2) {
+      profile_written_ = 0;
+      profile_label_ids_.clear();
+      profile_reset_pending_ = query_pool_ != VK_NULL_HANDLE;
+      return;
+    }
+    const std::uint32_t count = profile_written_ - (profile_written_ % 2);
+    std::vector<std::uint64_t> ticks(count);
+    const VkResult result = get_query_pool_results_(
+        device_, query_pool_, 0, count, sizeof(std::uint64_t) * ticks.size(), ticks.data(),
+        sizeof(std::uint64_t), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+    const auto labels = profile_label_ids_;
+    profile_written_ = 0;
+    profile_label_ids_.clear();
+    profile_reset_pending_ = query_pool_ != VK_NULL_HANDLE;
+    if (result != VK_SUCCESS) return;
+    const std::uint64_t mask = timestamp_valid_bits_ == 0 || timestamp_valid_bits_ >= 64
+                                   ? ~std::uint64_t{0}
+                                   : ((std::uint64_t{1} << timestamp_valid_bits_) - 1);
+    const double to_ms = static_cast<double>(timestamp_period_ns_) * 1e-6;
+    double previous_end = -1.0;
+    for (std::uint32_t index = 0; index + 1 < count; index += 2) {
+      const auto begin_tick = ticks[index] & mask;
+      const auto end_tick = ticks[index + 1] & mask;
+      const double dt = static_cast<double>((end_tick - begin_tick) & mask) * to_ms;
+      if (dt >= 0.0 && dt < 60000.0) profile_.gpu_ms += dt;
+      if (previous_end >= 0.0) {
+        const double begin_ms = static_cast<double>(begin_tick) * to_ms;
+        if (begin_ms >= previous_end && begin_ms - previous_end < 60000.0)
+          profile_.gpu_gap_ms += begin_ms - previous_end;
+      }
+      previous_end = static_cast<double>(end_tick) * to_ms;
+      const std::uint32_t label = (index / 2) < labels.size() ? labels[index / 2] : 0;
+      const std::string& name = label < label_names_.size() ? label_names_[label] : profile_label_;
+      label_ms_[name] += dt;
+      label_count_[name] += 1;
+    }
+  }
+
+  VkResult WaitFence(VkDevice device, std::uint32_t count, const VkFence* fences, VkBool32 wait_all,
+                     std::uint64_t timeout) noexcept {
+    if (!profile_enabled_) return wait_for_fences_(device, count, fences, wait_all, timeout);
+    const auto start = std::chrono::steady_clock::now();
+    const VkResult result = wait_for_fences_(device, count, fences, wait_all, timeout);
+    profile_.fence_ms += std::chrono::duration<double, std::milli>(
+                             std::chrono::steady_clock::now() - start).count();
+    ++profile_.fences;
+    if (result == VK_SUCCESS) CollectProfileTimestamps();
+    return result;
+  }
+
+  void ArmReplayProfile(const PersistentGraph* graph) noexcept {
+    if (!profile_enabled_ || !query_pool_ || !graph || graph->profile_queries < 2) return;
+    profile_written_ = graph->profile_queries;
+    profile_label_ids_ = graph->profile_labels;
+    profile_reset_pending_ = false;
   }
 
   bool HaveDeviceFunctions() const noexcept {
@@ -5229,6 +5541,13 @@ class VulkanBinaryRuntime {
       const VkSemaphoreCreateInfo semaphore_info{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
                                                  nullptr, 0};
       (void)create_semaphore_(device_, &semaphore_info, nullptr, &chain_semaphore_);
+    }
+    if (profile_enabled_ && timestamp_valid_bits_ > 0 && create_query_pool_ &&
+        cmd_reset_query_pool_ && cmd_write_timestamp_ && get_query_pool_results_) {
+      const VkQueryPoolCreateInfo query_info{VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO, nullptr, 0,
+                                              VK_QUERY_TYPE_TIMESTAMP, kProfileQueryCount, 0};
+      if (create_query_pool_(device_, &query_info, nullptr, &query_pool_) != VK_SUCCESS)
+        query_pool_ = VK_NULL_HANDLE;
     }
     return true;
   }
@@ -5360,7 +5679,7 @@ class VulkanBinaryRuntime {
     // set, including the reusable conv/stem recordings. Skip a write that
     // does not change the bindings so those recordings stay executable.
     if (unchanged) return;
-    update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
     for (std::uint32_t i = 0; i < infos.size(); ++i) {
       scratch_descriptor_binding_[i] = {infos[i].buffer, infos[i].offset, infos[i].range};
     }
@@ -5477,6 +5796,8 @@ class VulkanBinaryRuntime {
     // constants after a GPU reset rather than dereferencing stale indices.
     arena_generation_.fetch_add(1, std::memory_order_acq_rel);
     if (queue_ && queue_wait_idle_) queue_wait_idle_(queue_);
+    if (query_pool_ && destroy_query_pool_) destroy_query_pool_(device_, query_pool_, nullptr);
+    query_pool_ = VK_NULL_HANDLE;
     DestroyArenaBuffers();
     DestroyBuffers();
     if (submission_fence_ && destroy_fence_) destroy_fence_(device_, submission_fence_, nullptr);
@@ -5687,6 +6008,27 @@ class VulkanBinaryRuntime {
   PFN_vkCmdCopyBuffer cmd_copy_buffer_{};
   PFN_vkCmdPipelineBarrier cmd_pipeline_barrier_{};
   PFN_vkQueueSubmit queue_submit_{}; PFN_vkQueueWaitIdle queue_wait_idle_{};
+  PFN_vkCreateQueryPool create_query_pool_{};
+  PFN_vkDestroyQueryPool destroy_query_pool_{};
+  PFN_vkCmdResetQueryPool cmd_reset_query_pool_{};
+  PFN_vkCmdWriteTimestamp cmd_write_timestamp_{};
+  PFN_vkGetQueryPoolResults get_query_pool_results_{};
+  VkQueryPool query_pool_{VK_NULL_HANDLE};
+  bool profile_enabled_{};
+  bool profile_reset_pending_{true};
+  float timestamp_period_ns_{1.F};
+  std::uint32_t timestamp_valid_bits_{};
+  std::uint32_t profile_written_{};
+  std::string profile_scope_{"gpu"};
+  std::string profile_label_{"dispatch"};
+  std::vector<std::uint32_t> profile_label_ids_;
+  std::vector<std::string> label_names_;
+  std::unordered_map<std::string, std::uint32_t> label_ids_;
+  std::unordered_map<std::string, double> label_ms_;
+  std::unordered_map<std::string, std::uint64_t> label_count_;
+  std::unordered_map<std::string, ProfileAccum> scope_totals_;
+  ProfileAccum profile_{};
+  ProfileAccum printed_{};
 };
 
 VulkanBinaryRuntime& Runtime() {
@@ -5768,6 +6110,30 @@ bool VulkanTensorArena::BeginGraphRecording() noexcept {
   return impl_ && Runtime().BeginArenaRecording();
 #else
   return false;
+#endif
+}
+
+void VulkanTensorArena::SetGpuProfileScope(const char* scope) noexcept {
+#if defined(PPOCR_HAS_VULKAN_HEADERS) && defined(PPOCR_HAS_VULKAN_KERNELS) && defined(_WIN32)
+  if (impl_) Runtime().SetGpuProfileScope(scope);
+#else
+  (void)scope;
+#endif
+}
+
+void VulkanTensorArena::SetGpuProfileLabel(const char* label) noexcept {
+#if defined(PPOCR_HAS_VULKAN_HEADERS) && defined(PPOCR_HAS_VULKAN_KERNELS) && defined(_WIN32)
+  if (impl_) Runtime().SetGpuProfileLabel(label);
+#else
+  (void)label;
+#endif
+}
+
+void VulkanTensorArena::PrintGpuProfile(double wall_ms) noexcept {
+#if defined(PPOCR_HAS_VULKAN_HEADERS) && defined(PPOCR_HAS_VULKAN_KERNELS) && defined(_WIN32)
+  if (impl_) Runtime().PrintGpuProfile(wall_ms);
+#else
+  (void)wall_ms;
 #endif
 }
 
