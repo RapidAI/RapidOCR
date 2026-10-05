@@ -6,7 +6,7 @@ build-backend = "scikit_build_core.build"
 name = "rapidocr"
 version = "5.0.0a1"
 description = "RapidOCR 5, the next major version of rapidocr: PP-OCRv6 with the native engine"
-readme = "README.md"
+readme = "python/README.md"
 requires-python = ">=3.9"
 license = "Apache-2.0"
 authors = [{ name = "SWHL", email = "liekkaskono@163.com" }]
@@ -37,12 +37,20 @@ Repository = "https://github.com/RapidAI/RapidOCR"
 rapidocr = "rapidocr.main:main"
 
 [tool.scikit-build]
-cmake.source-dir = ".."
+cmake.source-dir = "."
 cmake.build-type = "Release"
 cmake.args = ["-DPPOCR_BUILD_EXAMPLES=OFF", "-DPPOCR_BUILD_TESTS=OFF"]
-wheel.packages = ["src/rapidocr"]
+wheel.packages = ["python/src/rapidocr"]
 minimum-version = "0.10"
 
 [tool.scikit-build.cmake.define]
 PPOCR_BUILD_SHARED = "ON"
 PPOCR_BUILD_STATIC = "OFF"
+
+[tool.scikit-build.sdist]
+exclude = [
+    "third_party/**",
+    "build*/**",
+    ".git/**",
+    "python/.pytest_cache/**",
+]

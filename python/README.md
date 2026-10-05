@@ -29,12 +29,15 @@ using the URL filename, and the SHA256 is checked. `download_models()` and
 recognizers also download the dictionary published next to the MNN bundles
 (`ppocrv6_tiny_dict.txt` / `ppocrv6_dict.txt`).
 
-Build a wheel from a checkout that already has the Vulkan-Headers submodule:
+Build from a checkout (CMake and a C++20 compiler required). The repository
+root is the installable project, so the sdist contains the native sources:
 
 ```bash
-pip install scikit-build-core
-pip install ./python
+pip install .
 ```
+
+`pip install ./python` also works from a checkout, because that project
+points CMake at the parent tree. It does not produce a self-contained sdist.
 
 The binding is ctypes over the C ABI (`include/ppocr/ppocr.h`), so the wheel
 ships `libppocr` and does not add a second C++ wrapper.
