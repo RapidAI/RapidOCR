@@ -38,10 +38,12 @@ NEON). It now keeps a 2×16 register tile, which is the same idea as the x86
 kernels. `PPOCR_DISABLE_NEON_GEMM_BLOCK` restores the scalar loop.
 
 The recognizer MLP (`ExpandGeluProjectAdd`) was scalar unless the CPU had
-AVX-512. AVX2 now runs an 8-wide FMA tile, and AArch64 runs a 4-wide NEON
-tile. Unit-stride convolutions and depthwise layers on AArch64 use a 4-wide
-interior as well. `PPOCR_DISABLE_AVX2_EXPAND_GELU`,
-`PPOCR_DISABLE_NEON_EXPAND_GELU`, `PPOCR_DISABLE_NEON_CONV`, and
+AVX-512. AVX2 now runs an 8-wide FMA tile. AArch64 runs the same kernel
+16-wide (four NEON vectors) and keeps a 4-wide tail. Unit-stride
+convolutions and depthwise layers on AArch64 use a 4-wide interior, and
+3×3 stride-2 convolutions use a 4-output NEON tile with stride-2 gathers.
+`PPOCR_DISABLE_AVX2_EXPAND_GELU`, `PPOCR_DISABLE_NEON_EXPAND_GELU`,
+`PPOCR_DISABLE_NEON_CONV`, `PPOCR_DISABLE_NEON_STRIDE2`, and
 `PPOCR_DISABLE_NEON_DW` restore the previous loops.
 
 `tools/bench_cpu.sh` and `ppocr_isa_bench` print the active ISA and time a
@@ -50,11 +52,21 @@ and optionally a full OCR.
 
 ## What was measured
 
-Host: 4 vCPU Intel Xeon (family 6, model 207) with AVX2, AVX-512F/DQ/BW/VL,
-BMI1, and BMI2. `g++` 13.3. There is no ARM board and no AVX2-only CPU in
-this environment. AVX2 is measured by `PPOCR_FORCE_ISA=avx2`, which keeps
+x86 host: 4 vCPU Intel Xeon (family 6, model 207) with AVX2,
+AVX-512F/DQ/BW/VL, BMI1, and BMI2. `g++` 13.3. There is no AVX2-only CPU in
+that environment. AVX2 is measured by `PPOCR_FORCE_ISA=avx2`, which keeps
 `HasAvx512()` false. The AVX2 object file was disassembled and contains no
 `zmm` or AVX-512 mask registers (`tests/check_isa_encoding.sh`).
+
+ARM host: 20-core big.LITTLE, 10× Cortex-X925 (up to 3.9 GHz) and 10×
+Cortex-A725 (up to 2.8 GHz), `g++` 13.3. `lscpu` flags include NEON
+(`asimd`), FP16 (`fphp`, `asimdhp`), dot-product (`asimddp`), `i8mm`,
+`bf16`, and `sve`/`sve2`. The SVE vector length is 16 bytes, the same width
+as NEON, so the wider path is unrolled NEON rather than SVE. Dot-product and
+`i8mm` are integer; this graph is FP32, and an FP16 accumulate would move
+the recognized score, so those units are not used. `perf` is not available
+to this user (`perf_event_paranoid` is 4) and was left unchanged. Hotspots
+below are end-to-end A/B timings with the disable flags.
 
 ### GEMM accumulate, 32×256×256, mean of 8 runs (`ppocr_isa_bench`)
 
@@ -99,45 +111,62 @@ The accumulate win shows up on the GEMM shape above. The remaining AVX-512
 versus AVX2 gap (17.3 ms versus 31 ms) is the wider AVX-512 tiles on
 convolution and this MLP, not an 8× end-to-end claim.
 
-### AArch64 NEON
+### AArch64 NEON (Cortex-X925 / A725)
 
-No ARM CPU was available. `src/kernels.cpp` cross-compiles with
-`aarch64-linux-gnu-g++ -O3` and the GEMM object contains `fmla`. The same
-8×6906×192 recognizer-vocabulary shape was timed under `qemu-aarch64-static`:
+Native Release build, `PPOCR_BACKEND=cpu`, PP-OCRv6 tiny, 960×240
+“Hello RapidOCR 123”. `ppocr_bench`, 1 warmup + 5 runs:
 
-- Standalone copy of the old NEON reload loop versus the new register tile:
-  166 ms → 76 ms. That is the algorithm before/after. The tile result matched
-  the reload loop (max abs error 0).
-- In-tree `Gemm` linked against that object: register tile 56–64 ms. Checksum
-  and max abs matched the scalar fallback
-  (`PPOCR_DISABLE_NEON_GEMM_BLOCK=1`, 31–34 ms) exactly (`sum=3.171875`,
-  `max_abs=1.611328`). qemu-user's translator often runs scalar ARM faster
-  than NEON, so the scalar number is not a wall-clock result for a Cortex or
-  Neoverse core.
+| Build | mean |
+| --- | --- |
+| `aae00ca`, NEON (4-wide expand, unit-stride conv, scalar 3×3 stride-2) | 42.6 ms |
+| same commit, `PPOCR_FORCE_ISA=scalar` | 138.5 ms |
+| this change, NEON | 31.7 ms (29.8–33.5) |
+| this change, `PPOCR_DISABLE_NEON_STRIDE2=1` | 39.9–41.6 ms |
+| this change, `PPOCR_FORCE_ISA=scalar` | 137.6 ms |
 
-The same cross-compile covers the convolution and MLP paths that were scalar
-on AArch64. `NeonConv2d` and `NeonDepthwiseConv` are 4-wide FMA interiors for
-unit-stride 2/3/5/7 convolutions and 3/5/7/9 depthwise layers.
-`NeonExpandGeluProjectAdd` is the 4-wide form of the MLP kernel above, with
-the same erf polynomial as AVX2. `PPOCR_DISABLE_NEON_CONV`,
-`PPOCR_DISABLE_NEON_DW`, and `PPOCR_DISABLE_NEON_EXPAND_GELU` restore the
-scalar loops.
+Decoded text, score, and box match the x86 AVX-512, forced-AVX2, and scalar
+runs: `Hello RapidOCR 123`, confidence 0.9766, box `23,73,672×86`. The C and
+C++ demos, `ctest` (`c_api_smoke`), kernel smoke, and the Python package
+(`pytest`, 5 passed, plus a `RapidOCR` call) agree on that text. With the
+C++ detection defaults the Python score is 0.9766 and the polygon is
+`(23,73)-(695,159)`, which is the same box.
 
-Under `qemu-aarch64-static` (not cycle-accurate), in-tree kernels versus
-those scalar fallbacks:
+On `aae00ca` the env-flag A/B (1 warmup + 3 runs) put the time here:
 
-| Kernel | NEON | scalar fallback |
+| Flag | mean | delta vs 43.2 ms NEON |
 | --- | --- | --- |
-| Expand-GELU 32×64, plane 1536 | 16.3 ms | 58.2 ms |
-| 3×3 stride-1 conv, 8→8, 18×20, pad 1 | 1.70 ms | 2.09 ms |
-| 5×5 depthwise, 8 channels, 18×20, pad 2 | 0.48 ms | 0.82 ms |
+| `PPOCR_DISABLE_NEON_EXPAND_GELU=1` | 113.2 ms | +70 ms |
+| `PPOCR_DISABLE_NEON_CONV=1` | 62.9 ms | +20 ms |
+| `PPOCR_DISABLE_NEON_DW=1` | 45.3 ms | +2 ms |
+| `PPOCR_DISABLE_NEON_GEMM_BLOCK=1` | 41.1 ms | none |
+| `PPOCR_BENCH_THREADS=8` | 58.2 ms | slower |
+| `PPOCR_BENCH_THREADS=20` | 52.6 ms | slower |
 
-Convolution and depthwise sums matched the scalar fallback exactly
-(`1008.004807` and `1007.901022`). Expand-GELU versus a `std::erf` reference
-had max abs error `2.98e-6` (the scalar fallback itself was `1.19e-7` under
-`-ffast-math`). Full OCR was not run under qemu.
+Expand-GELU is the largest NEON-versus-scalar gap. The 4-wide kernel already
+took most of it; widening it to 16 and register-blocking the 1×1 pointwise
+loop stay inside the noise of this page (stride-2 off is 40–42 ms, next to
+the 42.6 ms baseline). The new 3×3 stride-2 tile is the measured end-to-end
+gain, about 10 ms (42.6 ms → 31.7 ms). Default 16 threads is faster than 8
+or 20 on this 10+10 layout; the cap was left at 16.
 
-qemu-user is not cycle-accurate. It does execute the NEON instructions. The
-GEMM NEON-versus-NEON ratio matches the drop in C-matrix traffic. The small
-convolution shapes above are too short for qemu to show a large ratio; the
-sums are the correctness check.
+`tools/bench_cpu.sh` on this machine reports `active_isa=neon` by default
+and falls through to scalar when `PPOCR_FORCE_ISA=avx2`, which is the
+intended dispatch. Microbenchmarks (`gemm_accumulate`, identity RGB) move
+around under the host’s other load; the end-to-end numbers above were
+repeated and stay in the ranges shown.
+
+#### Earlier qemu-user checks
+
+Before this board was available, the same NEON kernels were timed under
+`qemu-aarch64-static`. Those numbers are instruction-execution checks, not
+wall-clock for the Cortex-X925 / A725 machine above.
+
+- Standalone old NEON GEMM reload versus the 2×16 register tile, 8×6906×192:
+  166 ms → 76 ms, max abs error 0.
+- In-tree `Gemm` tile 56–64 ms. Checksum matched the scalar fallback
+  (`sum=3.171875`, `max_abs=1.611328`). qemu-user often runs scalar ARM
+  faster than NEON, so that scalar 31–34 ms is not a device result.
+- Expand-GELU 32×64, plane 1536: 16.3 ms vs scalar 58.2 ms. 3×3 stride-1
+  8→8 on 18×20: 1.70 vs 2.09 ms (sum `1008.004807`). 5×5 depthwise: 0.48 vs
+  0.82 ms (sum `1007.901022`). Expand-GELU versus `std::erf` max abs
+  `2.98e-6`. Full OCR was not run under qemu.

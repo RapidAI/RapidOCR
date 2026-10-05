@@ -2031,7 +2031,7 @@ void NeonExpandGeluProjectAdd(float* dst, const float* src, const float* expand_
     return;
   }
   thread_local std::vector<float> hidden_tile;
-  hidden_tile.resize(std::size_t(hidden) * 4);
+  hidden_tile.resize(std::size_t(hidden) * 16);
   constexpr float inv_sqrt2s = 0.7071067811865475244F;
   const auto scalar_at = [&](std::size_t spatial) {
     for (int hidden_channel = 0; hidden_channel < hidden; ++hidden_channel) {
@@ -2054,6 +2054,144 @@ void NeonExpandGeluProjectAdd(float* dst, const float* src, const float* expand_
     }
   };
   std::size_t spatial = spatial_begin;
+  for (; spatial + 16 <= spatial_end; spatial += 16) {
+    int hidden_channel = 0;
+    for (; hidden_channel + 4 <= hidden; hidden_channel += 4) {
+      const float* e0 = expand_weights + std::size_t(hidden_channel) * channels;
+      const float* e1 = e0 + channels;
+      const float* e2 = e1 + channels;
+      const float* e3 = e2 + channels;
+      float32x4_t a00 = vdupq_n_f32(expand_bias ? expand_bias[hidden_channel] : 0.F);
+      float32x4_t a01 = a00, a02 = a00, a03 = a00;
+      float32x4_t a10 = vdupq_n_f32(expand_bias ? expand_bias[hidden_channel + 1] : 0.F);
+      float32x4_t a11 = a10, a12 = a10, a13 = a10;
+      float32x4_t a20 = vdupq_n_f32(expand_bias ? expand_bias[hidden_channel + 2] : 0.F);
+      float32x4_t a21 = a20, a22 = a20, a23 = a20;
+      float32x4_t a30 = vdupq_n_f32(expand_bias ? expand_bias[hidden_channel + 3] : 0.F);
+      float32x4_t a31 = a30, a32 = a30, a33 = a30;
+      for (int channel = 0; channel < channels; ++channel) {
+        const float* in = src + std::size_t(channel) * plane + spatial;
+        const float32x4_t x0 = vld1q_f32(in);
+        const float32x4_t x1 = vld1q_f32(in + 4);
+        const float32x4_t x2 = vld1q_f32(in + 8);
+        const float32x4_t x3 = vld1q_f32(in + 12);
+        const float32x4_t w0 = vdupq_n_f32(e0[channel]);
+        const float32x4_t w1 = vdupq_n_f32(e1[channel]);
+        const float32x4_t w2 = vdupq_n_f32(e2[channel]);
+        const float32x4_t w3 = vdupq_n_f32(e3[channel]);
+        a00 = vfmaq_f32(a00, x0, w0); a01 = vfmaq_f32(a01, x1, w0);
+        a02 = vfmaq_f32(a02, x2, w0); a03 = vfmaq_f32(a03, x3, w0);
+        a10 = vfmaq_f32(a10, x0, w1); a11 = vfmaq_f32(a11, x1, w1);
+        a12 = vfmaq_f32(a12, x2, w1); a13 = vfmaq_f32(a13, x3, w1);
+        a20 = vfmaq_f32(a20, x0, w2); a21 = vfmaq_f32(a21, x1, w2);
+        a22 = vfmaq_f32(a22, x2, w2); a23 = vfmaq_f32(a23, x3, w2);
+        a30 = vfmaq_f32(a30, x0, w3); a31 = vfmaq_f32(a31, x1, w3);
+        a32 = vfmaq_f32(a32, x2, w3); a33 = vfmaq_f32(a33, x3, w3);
+      }
+      float* tile = hidden_tile.data() + std::size_t(hidden_channel) * 16;
+      vst1q_f32(tile, NeonGeluPs(a00)); vst1q_f32(tile + 4, NeonGeluPs(a01));
+      vst1q_f32(tile + 8, NeonGeluPs(a02)); vst1q_f32(tile + 12, NeonGeluPs(a03));
+      tile += 16;
+      vst1q_f32(tile, NeonGeluPs(a10)); vst1q_f32(tile + 4, NeonGeluPs(a11));
+      vst1q_f32(tile + 8, NeonGeluPs(a12)); vst1q_f32(tile + 12, NeonGeluPs(a13));
+      tile += 16;
+      vst1q_f32(tile, NeonGeluPs(a20)); vst1q_f32(tile + 4, NeonGeluPs(a21));
+      vst1q_f32(tile + 8, NeonGeluPs(a22)); vst1q_f32(tile + 12, NeonGeluPs(a23));
+      tile += 16;
+      vst1q_f32(tile, NeonGeluPs(a30)); vst1q_f32(tile + 4, NeonGeluPs(a31));
+      vst1q_f32(tile + 8, NeonGeluPs(a32)); vst1q_f32(tile + 12, NeonGeluPs(a33));
+    }
+    for (; hidden_channel < hidden; ++hidden_channel) {
+      const float* filter = expand_weights + std::size_t(hidden_channel) * channels;
+      const float base = expand_bias ? expand_bias[hidden_channel] : 0.F;
+      float32x4_t a0 = vdupq_n_f32(base), a1 = a0, a2 = a0, a3 = a0;
+      for (int channel = 0; channel < channels; ++channel) {
+        const float* in = src + std::size_t(channel) * plane + spatial;
+        const float32x4_t w = vdupq_n_f32(filter[channel]);
+        a0 = vfmaq_f32(a0, vld1q_f32(in), w);
+        a1 = vfmaq_f32(a1, vld1q_f32(in + 4), w);
+        a2 = vfmaq_f32(a2, vld1q_f32(in + 8), w);
+        a3 = vfmaq_f32(a3, vld1q_f32(in + 12), w);
+      }
+      float* tile = hidden_tile.data() + std::size_t(hidden_channel) * 16;
+      vst1q_f32(tile, NeonGeluPs(a0));
+      vst1q_f32(tile + 4, NeonGeluPs(a1));
+      vst1q_f32(tile + 8, NeonGeluPs(a2));
+      vst1q_f32(tile + 12, NeonGeluPs(a3));
+    }
+    int channel = 0;
+    for (; channel + 4 <= channels; channel += 4) {
+      const float* p0 = project_weights + std::size_t(channel) * hidden;
+      const float* p1 = p0 + hidden;
+      const float* p2 = p1 + hidden;
+      const float* p3 = p2 + hidden;
+      const float* s0 = src + std::size_t(channel) * plane + spatial;
+      const float* s1 = src + std::size_t(channel + 1) * plane + spatial;
+      const float* s2 = src + std::size_t(channel + 2) * plane + spatial;
+      const float* s3 = src + std::size_t(channel + 3) * plane + spatial;
+      float32x4_t b00 = vdupq_n_f32(project_bias ? project_bias[channel] : 0.F);
+      float32x4_t b01 = b00, b02 = b00, b03 = b00;
+      float32x4_t b10 = vdupq_n_f32(project_bias ? project_bias[channel + 1] : 0.F);
+      float32x4_t b11 = b10, b12 = b10, b13 = b10;
+      float32x4_t b20 = vdupq_n_f32(project_bias ? project_bias[channel + 2] : 0.F);
+      float32x4_t b21 = b20, b22 = b20, b23 = b20;
+      float32x4_t b30 = vdupq_n_f32(project_bias ? project_bias[channel + 3] : 0.F);
+      float32x4_t b31 = b30, b32 = b30, b33 = b30;
+      b00 = vaddq_f32(b00, vld1q_f32(s0)); b01 = vaddq_f32(b01, vld1q_f32(s0 + 4));
+      b02 = vaddq_f32(b02, vld1q_f32(s0 + 8)); b03 = vaddq_f32(b03, vld1q_f32(s0 + 12));
+      b10 = vaddq_f32(b10, vld1q_f32(s1)); b11 = vaddq_f32(b11, vld1q_f32(s1 + 4));
+      b12 = vaddq_f32(b12, vld1q_f32(s1 + 8)); b13 = vaddq_f32(b13, vld1q_f32(s1 + 12));
+      b20 = vaddq_f32(b20, vld1q_f32(s2)); b21 = vaddq_f32(b21, vld1q_f32(s2 + 4));
+      b22 = vaddq_f32(b22, vld1q_f32(s2 + 8)); b23 = vaddq_f32(b23, vld1q_f32(s2 + 12));
+      b30 = vaddq_f32(b30, vld1q_f32(s3)); b31 = vaddq_f32(b31, vld1q_f32(s3 + 4));
+      b32 = vaddq_f32(b32, vld1q_f32(s3 + 8)); b33 = vaddq_f32(b33, vld1q_f32(s3 + 12));
+      for (int h = 0; h < hidden; ++h) {
+        const float* g = hidden_tile.data() + std::size_t(h) * 16;
+        const float32x4_t g0 = vld1q_f32(g);
+        const float32x4_t g1 = vld1q_f32(g + 4);
+        const float32x4_t g2 = vld1q_f32(g + 8);
+        const float32x4_t g3 = vld1q_f32(g + 12);
+        const float32x4_t w0 = vdupq_n_f32(p0[h]);
+        const float32x4_t w1 = vdupq_n_f32(p1[h]);
+        const float32x4_t w2 = vdupq_n_f32(p2[h]);
+        const float32x4_t w3 = vdupq_n_f32(p3[h]);
+        b00 = vfmaq_f32(b00, g0, w0); b01 = vfmaq_f32(b01, g1, w0);
+        b02 = vfmaq_f32(b02, g2, w0); b03 = vfmaq_f32(b03, g3, w0);
+        b10 = vfmaq_f32(b10, g0, w1); b11 = vfmaq_f32(b11, g1, w1);
+        b12 = vfmaq_f32(b12, g2, w1); b13 = vfmaq_f32(b13, g3, w1);
+        b20 = vfmaq_f32(b20, g0, w2); b21 = vfmaq_f32(b21, g1, w2);
+        b22 = vfmaq_f32(b22, g2, w2); b23 = vfmaq_f32(b23, g3, w2);
+        b30 = vfmaq_f32(b30, g0, w3); b31 = vfmaq_f32(b31, g1, w3);
+        b32 = vfmaq_f32(b32, g2, w3); b33 = vfmaq_f32(b33, g3, w3);
+      }
+      float* d0 = dst + std::size_t(channel) * plane + spatial;
+      vst1q_f32(d0, b00); vst1q_f32(d0 + 4, b01); vst1q_f32(d0 + 8, b02); vst1q_f32(d0 + 12, b03);
+      d0 = dst + std::size_t(channel + 1) * plane + spatial;
+      vst1q_f32(d0, b10); vst1q_f32(d0 + 4, b11); vst1q_f32(d0 + 8, b12); vst1q_f32(d0 + 12, b13);
+      d0 = dst + std::size_t(channel + 2) * plane + spatial;
+      vst1q_f32(d0, b20); vst1q_f32(d0 + 4, b21); vst1q_f32(d0 + 8, b22); vst1q_f32(d0 + 12, b23);
+      d0 = dst + std::size_t(channel + 3) * plane + spatial;
+      vst1q_f32(d0, b30); vst1q_f32(d0 + 4, b31); vst1q_f32(d0 + 8, b32); vst1q_f32(d0 + 12, b33);
+    }
+    for (; channel < channels; ++channel) {
+      const float* filter = project_weights + std::size_t(channel) * hidden;
+      const float* in = src + std::size_t(channel) * plane + spatial;
+      float32x4_t a0 = vaddq_f32(vdupq_n_f32(project_bias ? project_bias[channel] : 0.F), vld1q_f32(in));
+      float32x4_t a1 = vaddq_f32(vdupq_n_f32(project_bias ? project_bias[channel] : 0.F), vld1q_f32(in + 4));
+      float32x4_t a2 = vaddq_f32(vdupq_n_f32(project_bias ? project_bias[channel] : 0.F), vld1q_f32(in + 8));
+      float32x4_t a3 = vaddq_f32(vdupq_n_f32(project_bias ? project_bias[channel] : 0.F), vld1q_f32(in + 12));
+      for (int h = 0; h < hidden; ++h) {
+        const float* g = hidden_tile.data() + std::size_t(h) * 16;
+        const float32x4_t w = vdupq_n_f32(filter[h]);
+        a0 = vfmaq_f32(a0, vld1q_f32(g), w);
+        a1 = vfmaq_f32(a1, vld1q_f32(g + 4), w);
+        a2 = vfmaq_f32(a2, vld1q_f32(g + 8), w);
+        a3 = vfmaq_f32(a3, vld1q_f32(g + 12), w);
+      }
+      float* out = dst + std::size_t(channel) * plane + spatial;
+      vst1q_f32(out, a0); vst1q_f32(out + 4, a1); vst1q_f32(out + 8, a2); vst1q_f32(out + 12, a3);
+    }
+  }
   for (; spatial + 4 <= spatial_end; spatial += 4) {
     int hidden_channel = 0;
     for (; hidden_channel + 4 <= hidden; hidden_channel += 4) {
@@ -2124,6 +2262,143 @@ void NeonExpandGeluProjectAdd(float* dst, const float* src, const float* expand_
     }
   }
   for (; spatial < spatial_end; ++spatial) scalar_at(spatial);
+}
+
+void NeonConv3x3Stride2x4(float* dst, const float* src, const float* weights,
+                            const float* bias, int first_output, int last_output,
+                            int input_channels, int input_h, int input_w, int output_h,
+                            int output_w, int pad_top, int pad_left, bool relu) noexcept {
+  const std::size_t input_plane = std::size_t(input_h) * input_w;
+  const std::size_t output_plane = std::size_t(output_h) * output_w;
+  const int first_y = std::max(0, (pad_top + 1) / 2);
+  const int first_x = std::max(0, (pad_left + 1) / 2);
+  const int max_y = input_h + pad_top - 3;
+  const int max_x = input_w + pad_left - 3;
+  const int last_y = max_y < 0 ? 0 : std::min(output_h, max_y / 2 + 1);
+  const int last_x = max_x < 0 ? 0 : std::min(output_w, max_x / 2 + 1);
+  const auto scalar4 = [&](float* o0, float* o1, float* o2, float* o3, const float* f0,
+                           const float* f1, const float* f2, const float* f3, float b0, float b1,
+                           float b2, float b3, int y, int x) {
+    const int iy0 = y * 2 - pad_top;
+    const int ix0 = x * 2 - pad_left;
+    float s0 = b0, s1 = b1, s2 = b2, s3 = b3;
+    for (int input = 0; input < input_channels; ++input) {
+      const float* plane = src + std::size_t(input) * input_plane;
+      const float* k0 = f0 + std::size_t(input) * 9;
+      const float* k1 = f1 + std::size_t(input) * 9;
+      const float* k2 = f2 + std::size_t(input) * 9;
+      const float* k3 = f3 + std::size_t(input) * 9;
+      for (int ky = 0; ky < 3; ++ky) {
+        const int iy = iy0 + ky;
+        if (iy < 0 || iy >= input_h) continue;
+        for (int kx = 0; kx < 3; ++kx) {
+          const int ix = ix0 + kx;
+          if (ix < 0 || ix >= input_w) continue;
+          const float value = plane[std::size_t(iy) * input_w + ix];
+          const int ki = ky * 3 + kx;
+          s0 += value * k0[ki];
+          s1 += value * k1[ki];
+          s2 += value * k2[ki];
+          s3 += value * k3[ki];
+        }
+      }
+    }
+    const auto index = std::size_t(y) * output_w + x;
+    o0[index] = relu ? std::max(s0, 0.F) : s0;
+    o1[index] = relu ? std::max(s1, 0.F) : s1;
+    o2[index] = relu ? std::max(s2, 0.F) : s2;
+    o3[index] = relu ? std::max(s3, 0.F) : s3;
+  };
+  int output = first_output;
+  for (; output + 4 <= last_output; output += 4) {
+    float* out0 = dst + std::size_t(output) * output_plane;
+    float* out1 = out0 + output_plane;
+    float* out2 = out1 + output_plane;
+    float* out3 = out2 + output_plane;
+    const float* f0 = weights + std::size_t(output) * input_channels * 9;
+    const float* f1 = f0 + std::size_t(input_channels) * 9;
+    const float* f2 = f1 + std::size_t(input_channels) * 9;
+    const float* f3 = f2 + std::size_t(input_channels) * 9;
+    const float b0 = bias ? bias[output] : 0.F;
+    const float b1 = bias ? bias[output + 1] : 0.F;
+    const float b2 = bias ? bias[output + 2] : 0.F;
+    const float b3 = bias ? bias[output + 3] : 0.F;
+    for (int y = 0; y < output_h; ++y) {
+      const int iy0 = y * 2 - pad_top;
+      const bool interior_y = y >= first_y && y < last_y;
+      int x = 0;
+      for (; x < output_w; ++x) {
+        if (interior_y && x >= first_x && x + 4 <= last_x) break;
+        scalar4(out0, out1, out2, out3, f0, f1, f2, f3, b0, b1, b2, b3, y, x);
+      }
+      for (; x + 4 <= last_x; x += 4) {
+        const int ix0 = x * 2 - pad_left;
+        float32x4_t s0 = vdupq_n_f32(b0), s1 = vdupq_n_f32(b1);
+        float32x4_t s2 = vdupq_n_f32(b2), s3 = vdupq_n_f32(b3);
+        for (int input = 0; input < input_channels; ++input) {
+          const float* plane = src + std::size_t(input) * input_plane + std::size_t(iy0) * input_w + ix0;
+          const float* k0 = f0 + std::size_t(input) * 9;
+          const float* k1 = f1 + std::size_t(input) * 9;
+          const float* k2 = f2 + std::size_t(input) * 9;
+          const float* k3 = f3 + std::size_t(input) * 9;
+          for (int ky = 0; ky < 3; ++ky) {
+            const float* row = plane + std::size_t(ky) * input_w;
+            for (int kx = 0; kx < 3; ++kx) {
+              float32x4_t values;
+              if (ix0 + kx + 7 < input_w) {
+                values = vld2q_f32(row + kx).val[0];
+              } else {
+                float tmp[4] = {row[kx], row[kx + 2], row[kx + 4], row[kx + 6]};
+                values = vld1q_f32(tmp);
+              }
+              const int ki = ky * 3 + kx;
+              s0 = vfmaq_f32(s0, values, vdupq_n_f32(k0[ki]));
+              s1 = vfmaq_f32(s1, values, vdupq_n_f32(k1[ki]));
+              s2 = vfmaq_f32(s2, values, vdupq_n_f32(k2[ki]));
+              s3 = vfmaq_f32(s3, values, vdupq_n_f32(k3[ki]));
+            }
+          }
+        }
+        if (relu) {
+          const float32x4_t zero = vdupq_n_f32(0.F);
+          s0 = vmaxq_f32(s0, zero); s1 = vmaxq_f32(s1, zero);
+          s2 = vmaxq_f32(s2, zero); s3 = vmaxq_f32(s3, zero);
+        }
+        const auto index = std::size_t(y) * output_w + x;
+        vst1q_f32(out0 + index, s0); vst1q_f32(out1 + index, s1);
+        vst1q_f32(out2 + index, s2); vst1q_f32(out3 + index, s3);
+      }
+      for (; x < output_w; ++x) {
+        scalar4(out0, out1, out2, out3, f0, f1, f2, f3, b0, b1, b2, b3, y, x);
+      }
+    }
+  }
+  for (; output < last_output; ++output) {
+    float* out = dst + std::size_t(output) * output_plane;
+    const float* filter = weights + std::size_t(output) * input_channels * 9;
+    const float base = bias ? bias[output] : 0.F;
+    for (int y = 0; y < output_h; ++y) {
+      const int iy0 = y * 2 - pad_top;
+      for (int x = 0; x < output_w; ++x) {
+        const int ix0 = x * 2 - pad_left;
+        float sum = base;
+        for (int input = 0; input < input_channels; ++input) {
+          const float* plane = src + std::size_t(input) * input_plane;
+          const float* kernel = filter + std::size_t(input) * 9;
+          for (int ky = 0; ky < 3; ++ky) {
+            const int iy = iy0 + ky;
+            if (iy < 0 || iy >= input_h) continue;
+            for (int kx = 0; kx < 3; ++kx) {
+              const int ix = ix0 + kx;
+              if (ix < 0 || ix >= input_w) continue;
+              sum += plane[std::size_t(iy) * input_w + ix] * kernel[ky * 3 + kx];
+            }
+          }
+        }
+        out[std::size_t(y) * output_w + x] = relu ? std::max(sum, 0.F) : sum;
+      }
+    }
+  }
 }
 
 void NeonConv2d(float* dst, const float* src, const float* weights, const float* bias,
@@ -2302,11 +2577,11 @@ void ExpandGeluProjectAdd(float* dst, const float* src, const float* expand_weig
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
   static const bool neon_expand = std::getenv("PPOCR_DISABLE_NEON_EXPAND_GELU") == nullptr;
   if (HasNeon() && neon_expand) {
-    const int tiles = static_cast<int>((plane + 3) / 4);
+    const int tiles = static_cast<int>((plane + 15) / 16);
     const auto work = std::int64_t(channels) * hidden * static_cast<std::int64_t>(plane);
     const auto body = [&](int first, int last) {
-      const std::size_t begin = std::size_t(first) * 4;
-      const std::size_t end = std::min(plane, std::size_t(last) * 4);
+      const std::size_t begin = std::size_t(first) * 16;
+      const std::size_t end = std::min(plane, std::size_t(last) * 16);
       NeonExpandGeluProjectAdd(dst, src, expand_weights, expand_bias, project_weights,
                                project_bias, channels, hidden, plane, begin, end);
     };
@@ -2370,35 +2645,69 @@ void PointwiseConv(float* dst, const float* src, const float* weights,
         float* out1 = out0 + plane;
         float* out2 = out1 + plane;
         float* out3 = out2 + plane;
-        std::fill_n(out0, plane, bias ? bias[output] : 0.F);
-        std::fill_n(out1, plane, bias ? bias[output + 1] : 0.F);
-        std::fill_n(out2, plane, bias ? bias[output + 2] : 0.F);
-        std::fill_n(out3, plane, bias ? bias[output + 3] : 0.F);
         const float* w0 = weights + std::size_t(output) * input_channels;
         const float* w1 = w0 + input_channels;
         const float* w2 = w1 + input_channels;
         const float* w3 = w2 + input_channels;
-        for (int input = 0; input < input_channels; ++input) {
-          const float* values = src + std::size_t(input) * plane;
-          const float32x4_t a0 = vdupq_n_f32(w0[input]);
-          const float32x4_t a1 = vdupq_n_f32(w1[input]);
-          const float32x4_t a2 = vdupq_n_f32(w2[input]);
-          const float32x4_t a3 = vdupq_n_f32(w3[input]);
-          std::size_t index = 0;
-          for (; index + 4 <= plane; index += 4) {
-            const float32x4_t x = vld1q_f32(values + index);
-            vst1q_f32(out0 + index, vmlaq_f32(vld1q_f32(out0 + index), a0, x));
-            vst1q_f32(out1 + index, vmlaq_f32(vld1q_f32(out1 + index), a1, x));
-            vst1q_f32(out2 + index, vmlaq_f32(vld1q_f32(out2 + index), a2, x));
-            vst1q_f32(out3 + index, vmlaq_f32(vld1q_f32(out3 + index), a3, x));
+        const float b0 = bias ? bias[output] : 0.F;
+        const float b1 = bias ? bias[output + 1] : 0.F;
+        const float b2 = bias ? bias[output + 2] : 0.F;
+        const float b3 = bias ? bias[output + 3] : 0.F;
+        std::size_t index = 0;
+        for (; index + 16 <= plane; index += 16) {
+          float32x4_t s00 = vdupq_n_f32(b0), s01 = s00, s02 = s00, s03 = s00;
+          float32x4_t s10 = vdupq_n_f32(b1), s11 = s10, s12 = s10, s13 = s10;
+          float32x4_t s20 = vdupq_n_f32(b2), s21 = s20, s22 = s20, s23 = s20;
+          float32x4_t s30 = vdupq_n_f32(b3), s31 = s30, s32 = s30, s33 = s30;
+          for (int input = 0; input < input_channels; ++input) {
+            const float* values = src + std::size_t(input) * plane + index;
+            const float32x4_t x0 = vld1q_f32(values);
+            const float32x4_t x1 = vld1q_f32(values + 4);
+            const float32x4_t x2 = vld1q_f32(values + 8);
+            const float32x4_t x3 = vld1q_f32(values + 12);
+            const float32x4_t a0 = vdupq_n_f32(w0[input]);
+            const float32x4_t a1 = vdupq_n_f32(w1[input]);
+            const float32x4_t a2 = vdupq_n_f32(w2[input]);
+            const float32x4_t a3 = vdupq_n_f32(w3[input]);
+            s00 = vfmaq_f32(s00, x0, a0); s01 = vfmaq_f32(s01, x1, a0);
+            s02 = vfmaq_f32(s02, x2, a0); s03 = vfmaq_f32(s03, x3, a0);
+            s10 = vfmaq_f32(s10, x0, a1); s11 = vfmaq_f32(s11, x1, a1);
+            s12 = vfmaq_f32(s12, x2, a1); s13 = vfmaq_f32(s13, x3, a1);
+            s20 = vfmaq_f32(s20, x0, a2); s21 = vfmaq_f32(s21, x1, a2);
+            s22 = vfmaq_f32(s22, x2, a2); s23 = vfmaq_f32(s23, x3, a2);
+            s30 = vfmaq_f32(s30, x0, a3); s31 = vfmaq_f32(s31, x1, a3);
+            s32 = vfmaq_f32(s32, x2, a3); s33 = vfmaq_f32(s33, x3, a3);
           }
-          for (; index < plane; ++index) {
-            const float x = values[index];
-            out0[index] += w0[input] * x;
-            out1[index] += w1[input] * x;
-            out2[index] += w2[input] * x;
-            out3[index] += w3[input] * x;
+          vst1q_f32(out0 + index, s00); vst1q_f32(out0 + index + 4, s01);
+          vst1q_f32(out0 + index + 8, s02); vst1q_f32(out0 + index + 12, s03);
+          vst1q_f32(out1 + index, s10); vst1q_f32(out1 + index + 4, s11);
+          vst1q_f32(out1 + index + 8, s12); vst1q_f32(out1 + index + 12, s13);
+          vst1q_f32(out2 + index, s20); vst1q_f32(out2 + index + 4, s21);
+          vst1q_f32(out2 + index + 8, s22); vst1q_f32(out2 + index + 12, s23);
+          vst1q_f32(out3 + index, s30); vst1q_f32(out3 + index + 4, s31);
+          vst1q_f32(out3 + index + 8, s32); vst1q_f32(out3 + index + 12, s33);
+        }
+        for (; index + 4 <= plane; index += 4) {
+          float32x4_t s0 = vdupq_n_f32(b0), s1 = vdupq_n_f32(b1);
+          float32x4_t s2 = vdupq_n_f32(b2), s3 = vdupq_n_f32(b3);
+          for (int input = 0; input < input_channels; ++input) {
+            const float32x4_t x = vld1q_f32(src + std::size_t(input) * plane + index);
+            s0 = vfmaq_f32(s0, x, vdupq_n_f32(w0[input]));
+            s1 = vfmaq_f32(s1, x, vdupq_n_f32(w1[input]));
+            s2 = vfmaq_f32(s2, x, vdupq_n_f32(w2[input]));
+            s3 = vfmaq_f32(s3, x, vdupq_n_f32(w3[input]));
           }
+          vst1q_f32(out0 + index, s0); vst1q_f32(out1 + index, s1);
+          vst1q_f32(out2 + index, s2); vst1q_f32(out3 + index, s3);
+        }
+        for (; index < plane; ++index) {
+          float s0 = b0, s1 = b1, s2 = b2, s3 = b3;
+          for (int input = 0; input < input_channels; ++input) {
+            const float x = src[std::size_t(input) * plane + index];
+            s0 += w0[input] * x; s1 += w1[input] * x;
+            s2 += w2[input] * x; s3 += w3[input] * x;
+          }
+          out0[index] = s0; out1[index] = s1; out2[index] = s2; out3[index] = s3;
         }
       }
       for (; output < last; ++output) {
@@ -3417,6 +3726,18 @@ void Conv2d(float* dst, const float* src, const float* weights, const float* bia
       }
     };
     if (parallel) ParallelFor(output_channels, neon); else neon(0, output_channels);
+    return;
+  }
+  if (HasNeon() && neon_conv && stride_h == 2 && stride_w == 2 &&
+      kernel_h == 3 && kernel_w == 3 && output_channels >= 4 &&
+      std::getenv("PPOCR_DISABLE_NEON_STRIDE2") == nullptr) {
+    const auto neon = [&](int first, int last) {
+      NeonConv3x3Stride2x4(dst, src, weights, bias, first * 4,
+                            std::min(output_channels, last * 4), input_channels,
+                            input_h, input_w, output_h, output_w, pad_top, pad_left, relu);
+    };
+    const int groups = (output_channels + 3) / 4;
+    if (parallel) ParallelFor(groups, neon); else neon(0, groups);
     return;
   }
 #endif
