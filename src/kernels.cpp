@@ -46,8 +46,9 @@ void Avx2ScaleShift(float* dst, const float* src, std::size_t n, float scale,
                     float shift) noexcept;
 void Avx2Axpy(float* dst, const float* src, float alpha, std::size_t n) noexcept;
 void Avx2PointwiseConv4(float* dst, const float* src, const float* weights,
-                        const float* bias, int first_output, int last_output,
-                        int input_channels, std::size_t plane) noexcept;
+                         const float* bias, int first_output, int last_output,
+                         int input_channels, std::size_t plane,
+                         std::size_t index_begin = 0, std::size_t index_end = 0) noexcept;
 void Avx2PointwiseConvAdd4(float* dst, const float* src, const float* weights,
                            const float* bias, const float* residual,
                            int first_output, int last_output, int input_channels,
@@ -2956,6 +2957,35 @@ void PointwiseConv(float* dst, const float* src, const float* weights,
 #endif
 #if defined(PPOCR_HAS_AVX2_KERNELS)
   if (HasAvx2()) {
+    // High-res detector 1×1s (Conv.63 is 32→64 on 496×384) reread every
+    // source plane once per 4-output tile. Those planes are hundreds of KB
+    // apart, so the reread misses L2. A 128-wide spatial chunk keeps the
+    // input channels in L1 while every output is written. Recognizer 1×1s
+    // stay under this plane and keep the output-channel split.
+    // `PPOCR_DISABLE_AVX2_POINTWISE_SPATIAL` restores that split.
+    static const bool spatial_tiles =
+        std::getenv("PPOCR_DISABLE_AVX2_POINTWISE_SPATIAL") == nullptr;
+    if (spatial_tiles && plane >= 8192 && output_channels >= 16 && input_channels >= 8) {
+      // Keep one chunk's input channels in L1 (16 KB). Narrow layers can
+      // take a longer chunk; 64-channel maps shrink so the tile still fits.
+      // Four accumulators stay in registers. An eight-accumulator spatial
+      // tile spilled and lost this layer (Conv.63 9.6 ms vs 8.6 ms).
+      std::size_t chunk = 128;
+      if (input_channels * chunk * sizeof(float) > 16 * 1024) chunk = 64;
+      if (input_channels * 256 * sizeof(float) <= 16 * 1024) chunk = 256;
+      const int groups = static_cast<int>((plane + chunk - 1) / chunk);
+      const auto spatial = [&](int first, int last) {
+        for (int group = first; group < last; ++group) {
+          const std::size_t i0 = std::size_t(group) * chunk;
+          const std::size_t i1 = std::min(plane, i0 + chunk);
+          Avx2PointwiseConv4(dst, src, weights, bias, 0, output_channels,
+                             input_channels, plane, i0, i1);
+        }
+      };
+      if (groups > 1) ParallelFor(groups, spatial);
+      else spatial(0, groups);
+      return;
+    }
     const int groups = (output_channels + 3) / 4;
     const auto grouped = [&](int first, int last) {
       body(first * 4, std::min(output_channels, last * 4));
@@ -4357,7 +4387,9 @@ void ConcatChannelConv2d(float* dst, const float* const* sources,
       }
       const auto run_rows = [&](int y0, int y1) {
         // Four-output tiles match Avx2Conv3x3Stride*x4. An eight-output tile
-        // spilled on this host and slowed the page (542 ms vs 499 ms).
+        // spilled on this host and slowed the page (542 ms vs 499 ms). A
+        // 64-wide x chunk also lost (Concat.2 21 ms vs 17 ms): the extra
+        // calls cost more than the L1 halo.
         for (int output = 0; output < output_channels; output += 4) {
           for (int source = 0; source < source_count; ++source) {
             const float* wsrc = wpacks.data() + std::size_t(source) * w_src;
@@ -5709,7 +5741,23 @@ void SpatialMean(float* dst, const float* src, std::size_t planes,
   if (HasAvx512()) { Avx512SpatialMean(dst, src, planes, spatial); return; }
 #endif
 #if defined(PPOCR_HAS_AVX2_KERNELS)
-  if (HasAvx2()) { Avx2SpatialMean(dst, src, planes, spatial); return; }
+  if (HasAvx2()) {
+    // High-res SE maps (64 x 496 x 384) are one accumulator chain per plane
+    // and were serial. Planes are independent, so the sum order is unchanged.
+    // `PPOCR_DISABLE_AVX2_SE_PF` restores the single thread. AVX-512 returns
+    // above and is not affected.
+    static const bool plane_pf =
+        std::getenv("PPOCR_DISABLE_AVX2_SE_PF") == nullptr;
+    if (plane_pf && spatial >= 16384 && planes >= 8) {
+      ParallelFor(static_cast<int>(planes), [&](int first, int last) {
+        Avx2SpatialMean(dst + first, src + std::size_t(first) * spatial,
+                        static_cast<std::size_t>(last - first), spatial);
+      });
+      return;
+    }
+    Avx2SpatialMean(dst, src, planes, spatial);
+    return;
+  }
 #endif
   const float scale = 1.F / static_cast<float>(spatial);
   for (std::size_t plane = 0; plane < planes; ++plane) {
@@ -5867,10 +5915,16 @@ void SqueezeExcitationGateInplace(float* values, const float* first_weights,
                    scale, BinaryOp::mul, false);
     }
   };
-  // The surrounding detector convolutions already use the persistent pool.
-  // A second tiny plane task per SE gate caused cache/pool contention on
-  // normal pages, so retain one contiguous ISA-dispatched sweep here. This
-  // still removes the entire generic full-map destination allocation.
+  // Small maps stay serial: a second tiny plane task contended with the
+  // detector pool. High-res pages (spatial >= 16384) have enough bytes per
+  // plane to occupy the extra cores. AVX-512 keeps the serial sweep.
+  // `PPOCR_DISABLE_AVX2_SE_PF` restores it on AVX2 as well.
+  static const bool scale_pf =
+      std::getenv("PPOCR_DISABLE_AVX2_SE_PF") == nullptr;
+  if (scale_pf && !HasAvx512() && HasAvx2() && spatial >= 16384 && planes >= 8) {
+    ParallelFor(planes, scale_planes);
+    return;
+  }
   scale_planes(0, planes);
 }
 

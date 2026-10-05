@@ -355,7 +355,10 @@ void Avx2Axpy(float* dst, const float* src, float alpha, std::size_t n) noexcept
 // order are unchanged, so it remains an exact execution-path optimization.
 void Avx2PointwiseConv4(float* dst, const float* src, const float* weights,
                          const float* bias, int first_output, int last_output,
-                         int input_channels, std::size_t plane) noexcept {
+                         int input_channels, std::size_t plane,
+                         std::size_t index_begin, std::size_t index_end) noexcept {
+  if (index_end == 0 || index_end > plane) index_end = plane;
+  if (index_begin > index_end) index_begin = index_end;
   int output = first_output;
   for (; output + 4 <= last_output; output += 4) {
     float* out0 = dst + std::size_t(output) * plane;
@@ -366,12 +369,28 @@ void Avx2PointwiseConv4(float* dst, const float* src, const float* weights,
     const float* w1 = w0 + input_channels;
     const float* w2 = w1 + input_channels;
     const float* w3 = w2 + input_channels;
-    std::size_t index = 0;
-    for (; index + 8 <= plane; index += 8) {
-      __m256 sum0 = _mm256_set1_ps(bias ? bias[output] : 0.F);
-      __m256 sum1 = _mm256_set1_ps(bias ? bias[output + 1] : 0.F);
-      __m256 sum2 = _mm256_set1_ps(bias ? bias[output + 2] : 0.F);
-      __m256 sum3 = _mm256_set1_ps(bias ? bias[output + 3] : 0.F);
+    const __m256 vb0 = _mm256_set1_ps(bias ? bias[output] : 0.F);
+    const __m256 vb1 = _mm256_set1_ps(bias ? bias[output + 1] : 0.F);
+    const __m256 vb2 = _mm256_set1_ps(bias ? bias[output + 2] : 0.F);
+    const __m256 vb3 = _mm256_set1_ps(bias ? bias[output + 3] : 0.F);
+    std::size_t index = index_begin;
+    for (; index < index_end && (index & 7) != 0; ++index) {
+      float sum0 = bias ? bias[output] : 0.F;
+      float sum1 = bias ? bias[output + 1] : 0.F;
+      float sum2 = bias ? bias[output + 2] : 0.F;
+      float sum3 = bias ? bias[output + 3] : 0.F;
+      for (int input = 0; input < input_channels; ++input) {
+        const float x = src[std::size_t(input) * plane + index];
+        sum0 += w0[input] * x; sum1 += w1[input] * x;
+        sum2 += w2[input] * x; sum3 += w3[input] * x;
+      }
+      out0[index] = sum0; out1[index] = sum1; out2[index] = sum2; out3[index] = sum3;
+    }
+    for (; index + 8 <= index_end; index += 8) {
+      __m256 sum0 = vb0;
+      __m256 sum1 = vb1;
+      __m256 sum2 = vb2;
+      __m256 sum3 = vb3;
       for (int input = 0; input < input_channels; ++input) {
         const __m256 x = _mm256_loadu_ps(src + std::size_t(input) * plane + index);
         sum0 = _mm256_fmadd_ps(_mm256_set1_ps(w0[input]), x, sum0);
@@ -384,7 +403,7 @@ void Avx2PointwiseConv4(float* dst, const float* src, const float* weights,
       _mm256_storeu_ps(out2 + index, sum2);
       _mm256_storeu_ps(out3 + index, sum3);
     }
-    for (; index < plane; ++index) {
+    for (; index < index_end; ++index) {
       float sum0 = bias ? bias[output] : 0.F;
       float sum1 = bias ? bias[output + 1] : 0.F;
       float sum2 = bias ? bias[output + 2] : 0.F;
@@ -400,18 +419,26 @@ void Avx2PointwiseConv4(float* dst, const float* src, const float* weights,
   for (; output < last_output; ++output) {
     float* out = dst + std::size_t(output) * plane;
     const float* filter = weights + std::size_t(output) * input_channels;
-    std::size_t index = 0;
-    for (; index + 8 <= plane; index += 8) {
-      __m256 sum = _mm256_set1_ps(bias ? bias[output] : 0.F);
+    const __m256 vb = _mm256_set1_ps(bias ? bias[output] : 0.F);
+    std::size_t index = index_begin;
+    for (; index < index_end && (index & 7) != 0; ++index) {
+      float sum = bias ? bias[output] : 0.F;
+      for (int input = 0; input < input_channels; ++input)
+        sum += filter[input] * src[std::size_t(input) * plane + index];
+      out[index] = sum;
+    }
+    for (; index + 8 <= index_end; index += 8) {
+      __m256 sum = vb;
       for (int input = 0; input < input_channels; ++input) {
         sum = _mm256_fmadd_ps(_mm256_set1_ps(filter[input]),
                             _mm256_loadu_ps(src + std::size_t(input) * plane + index), sum);
       }
       _mm256_storeu_ps(out + index, sum);
     }
-    for (; index < plane; ++index) {
+    for (; index < index_end; ++index) {
       float sum = bias ? bias[output] : 0.F;
-      for (int input = 0; input < input_channels; ++input) sum += filter[input] * src[std::size_t(input) * plane + index];
+      for (int input = 0; input < input_channels; ++input)
+        sum += filter[input] * src[std::size_t(input) * plane + index];
       out[index] = sum;
     }
   }
@@ -1519,6 +1546,73 @@ void Avx2Conv3x3Stride1x4(float* dst, const float* src, const float* weights,
         if (interior_y && x >= first_x && x + 8 <= last_x) break;
         scalar4(out0, out1, out2, out3, f0, f1, f2, f3, b0, b1, b2, b3, y, x);
       }
+      // Two spatial vectors share each tap broadcast and give eight ymm
+      // chains, enough to cover two FMAs per cycle. Per-pixel tap order is
+      // unchanged. `PPOCR_DISABLE_AVX2_CONV3_X16` keeps the eight-wide loop.
+      static const bool wide16 =
+          std::getenv("PPOCR_DISABLE_AVX2_CONV3_X16") == nullptr;
+      if (wide16) {
+        for (; x + 16 <= last_x; x += 16) {
+          const auto index = std::size_t(y) * output_w + x;
+          __m256 s00 = _mm256_set1_ps(b0), s01 = s00;
+          __m256 s10 = _mm256_set1_ps(b1), s11 = s10;
+          __m256 s20 = _mm256_set1_ps(b2), s21 = s20;
+          __m256 s30 = _mm256_set1_ps(b3), s31 = s30;
+          for (int input = 0; input < input_channels; ++input) {
+            const float* plane = src + std::size_t(input) * input_plane +
+                                 std::size_t(iy0) * input_w + x - pad_left;
+            const float* k0 = f0 + std::size_t(input) * 9;
+            const float* k1 = f1 + std::size_t(input) * 9;
+            const float* k2 = f2 + std::size_t(input) * 9;
+            const float* k3 = f3 + std::size_t(input) * 9;
+            for (int ky = 0; ky < 3; ++ky) {
+              const float* row = plane + std::size_t(ky) * input_w;
+              for (int kx = 0; kx < 3; ++kx) {
+                const __m256 v0 = _mm256_loadu_ps(row + kx);
+                const __m256 v1 = _mm256_loadu_ps(row + kx + 8);
+                const int ki = ky * 3 + kx;
+                const __m256 t0 = _mm256_set1_ps(k0[ki]);
+                const __m256 t1 = _mm256_set1_ps(k1[ki]);
+                const __m256 t2 = _mm256_set1_ps(k2[ki]);
+                const __m256 t3 = _mm256_set1_ps(k3[ki]);
+                s00 = _mm256_fmadd_ps(t0, v0, s00);
+                s01 = _mm256_fmadd_ps(t0, v1, s01);
+                s10 = _mm256_fmadd_ps(t1, v0, s10);
+                s11 = _mm256_fmadd_ps(t1, v1, s11);
+                s20 = _mm256_fmadd_ps(t2, v0, s20);
+                s21 = _mm256_fmadd_ps(t2, v1, s21);
+                s30 = _mm256_fmadd_ps(t3, v0, s30);
+                s31 = _mm256_fmadd_ps(t3, v1, s31);
+              }
+            }
+          }
+          if (accumulate) {
+            s00 = _mm256_add_ps(s00, _mm256_loadu_ps(out0 + index));
+            s01 = _mm256_add_ps(s01, _mm256_loadu_ps(out0 + index + 8));
+            s10 = _mm256_add_ps(s10, _mm256_loadu_ps(out1 + index));
+            s11 = _mm256_add_ps(s11, _mm256_loadu_ps(out1 + index + 8));
+            s20 = _mm256_add_ps(s20, _mm256_loadu_ps(out2 + index));
+            s21 = _mm256_add_ps(s21, _mm256_loadu_ps(out2 + index + 8));
+            s30 = _mm256_add_ps(s30, _mm256_loadu_ps(out3 + index));
+            s31 = _mm256_add_ps(s31, _mm256_loadu_ps(out3 + index + 8));
+          }
+          if (relu) {
+            const __m256 zero = _mm256_setzero_ps();
+            s00 = _mm256_max_ps(s00, zero); s01 = _mm256_max_ps(s01, zero);
+            s10 = _mm256_max_ps(s10, zero); s11 = _mm256_max_ps(s11, zero);
+            s20 = _mm256_max_ps(s20, zero); s21 = _mm256_max_ps(s21, zero);
+            s30 = _mm256_max_ps(s30, zero); s31 = _mm256_max_ps(s31, zero);
+          }
+          _mm256_storeu_ps(out0 + index, s00);
+          _mm256_storeu_ps(out0 + index + 8, s01);
+          _mm256_storeu_ps(out1 + index, s10);
+          _mm256_storeu_ps(out1 + index + 8, s11);
+          _mm256_storeu_ps(out2 + index, s20);
+          _mm256_storeu_ps(out2 + index + 8, s21);
+          _mm256_storeu_ps(out3 + index, s30);
+          _mm256_storeu_ps(out3 + index + 8, s31);
+        }
+      }
       for (; x + 8 <= last_x; x += 8) {
         const auto index = std::size_t(y) * output_w + x;
         __m256 s0 = _mm256_set1_ps(b0), s1 = _mm256_set1_ps(b1);
@@ -1552,7 +1646,7 @@ void Avx2Conv3x3Stride1x4(float* dst, const float* src, const float* weights,
         _mm256_storeu_ps(out2 + index, s2); _mm256_storeu_ps(out3 + index, s3);
       }
       for (; x < output_w; ++x) scalar4(out0, out1, out2, out3, f0, f1, f2, f3,
-                                          b0, b1, b2, b3, y, x);
+                                        b0, b1, b2, b3, y, x);
     }
   }
   const bool full_rows = row_begin <= 0 && (row_end < 0 || row_end >= output_h);
