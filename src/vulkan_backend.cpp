@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <bit>
@@ -62,8 +63,49 @@ inline int FreeLibrary(HMODULE module) noexcept {
 
 namespace ppocr::detail {
 
+namespace {
+std::atomic<int> g_requested_vulkan_device_index{-1};
+std::atomic<bool> g_vulkan_runtime_attempted{false};
+}  // namespace
+
+void RequestVulkanDeviceIndex(int index) noexcept {
+  if (index < 0) return;
+  if (g_vulkan_runtime_attempted.load(std::memory_order_acquire)) {
+    const int selected = g_requested_vulkan_device_index.load(std::memory_order_relaxed);
+    if (selected != index) {
+      std::fprintf(stderr,
+                   "ppocr: Vulkan device index %d ignored; device selection is already fixed",
+                   index);
+      if (selected >= 0) std::fprintf(stderr, " at %d", selected);
+      std::fprintf(stderr, "\n");
+    }
+    return;
+  }
+  g_requested_vulkan_device_index.store(index, std::memory_order_release);
+}
+
+int RequestedVulkanDeviceIndex() noexcept {
+  return g_requested_vulkan_device_index.load(std::memory_order_acquire);
+}
+
+void MarkVulkanRuntimeAttempted() noexcept {
+  g_vulkan_runtime_attempted.store(true, std::memory_order_release);
+}
+
 #if defined(PPOCR_HAS_VULKAN_HEADERS) && defined(PPOCR_HAS_VULKAN_KERNELS) && defined(_WIN32)
 namespace {
+
+std::atomic<int> g_validation_errors{0};
+
+VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT severity, VkDebugUtilsMessageTypeFlagsEXT,
+    const VkDebugUtilsMessengerCallbackDataEXT* data, void*) {
+  if ((severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0) {
+    g_validation_errors.fetch_add(1, std::memory_order_relaxed);
+    if (data && data->pMessage) std::fprintf(stderr, "Validation Error: %s\n", data->pMessage);
+  }
+  return VK_FALSE;
+}
 
 // This is deliberately a small, reusable Vulkan execution context rather than
 // a second inference runtime.  Keeping device state, the pipeline, descriptor
@@ -85,7 +127,17 @@ class VulkanBinaryRuntime {
 
  public:
   VulkanBinaryRuntime() = default;
-  ~VulkanBinaryRuntime() { Cleanup(); }
+  ~VulkanBinaryRuntime() {
+    // This object is a function-local static, so its destructor runs at
+    // process exit, after every library Initialize() dlopened. NVIDIA's
+    // driver (vendor 0x10DE, including GB10's libGLX_nvidia.so.0) has already
+    // destroyed its own static state by then and faults inside vkQueueWaitIdle
+    // and the subsequent vkDestroy* calls. The process is exiting and the OS
+    // reclaims the device. Other drivers, including lavapipe with the
+    // validation layer enabled, still tear down so object leaks stay visible.
+    if (vendor_id_ == 0x10DEu) return;
+    Cleanup();
+  }
   VulkanBinaryRuntime(const VulkanBinaryRuntime&) = delete;
   VulkanBinaryRuntime& operator=(const VulkanBinaryRuntime&) = delete;
 
@@ -110,14 +162,55 @@ class VulkanBinaryRuntime {
 
     const VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO, nullptr,
                                 "ppocr_cpp", 1, "ppocr_cpp", 1, VK_API_VERSION_1_0};
-    const VkInstanceCreateInfo instance_info{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, nullptr,
-                                              0, &app, 0, nullptr, 0, nullptr};
+    const char* validation_layer = "VK_LAYER_KHRONOS_validation";
+    const char* debug_extension = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
+    bool enable_validation = false;
+    if (const char* flag = std::getenv("PPOCR_VULKAN_VALIDATION")) {
+      enable_validation = flag[0] != '\0' && flag[0] != '0';
+    }
+    if (enable_validation) {
+      auto enumerate = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(
+          get_instance_proc_(VK_NULL_HANDLE, "vkEnumerateInstanceLayerProperties"));
+      enable_validation = false;
+      std::uint32_t layer_count = 0;
+      if (enumerate && enumerate(&layer_count, nullptr) == VK_SUCCESS && layer_count > 0) {
+        std::vector<VkLayerProperties> layers(layer_count);
+        if (enumerate(&layer_count, layers.data()) == VK_SUCCESS) {
+          for (const auto& layer : layers) {
+            if (std::strcmp(layer.layerName, validation_layer) == 0) enable_validation = true;
+          }
+        }
+      }
+    }
+    VkInstanceCreateInfo instance_info{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, nullptr,
+                                        0, &app, 0, nullptr, 0, nullptr};
+    if (enable_validation) {
+      instance_info.enabledLayerCount = 1;
+      instance_info.ppEnabledLayerNames = &validation_layer;
+      instance_info.enabledExtensionCount = 1;
+      instance_info.ppEnabledExtensionNames = &debug_extension;
+    }
     if (create_instance_(&instance_info, nullptr, &instance_) != VK_SUCCESS) {
       CleanupUnlocked();
       return false;
     }
 
     destroy_instance_ = Global<PFN_vkDestroyInstance>("vkDestroyInstance");
+    if (enable_validation) {
+      auto create_debug = Global<PFN_vkCreateDebugUtilsMessengerEXT>("vkCreateDebugUtilsMessengerEXT");
+      destroy_debug_ = Global<PFN_vkDestroyDebugUtilsMessengerEXT>("vkDestroyDebugUtilsMessengerEXT");
+      if (create_debug && destroy_debug_) {
+        VkDebugUtilsMessengerCreateInfoEXT messenger{VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+            nullptr, 0,
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
+            VulkanDebugCallback, nullptr};
+        if (create_debug(instance_, &messenger, nullptr, &debug_messenger_) != VK_SUCCESS)
+          debug_messenger_ = VK_NULL_HANDLE;
+      }
+    }
     enumerate_devices_ = Global<PFN_vkEnumeratePhysicalDevices>("vkEnumeratePhysicalDevices");
     get_properties_ = Global<PFN_vkGetPhysicalDeviceProperties>("vkGetPhysicalDeviceProperties");
     get_queues_ = Global<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(
@@ -131,6 +224,8 @@ class VulkanBinaryRuntime {
       CleanupUnlocked();
       return false;
     }
+    // A device is chosen. Later index requests cannot retarget this process.
+    MarkVulkanRuntimeAttempted();
 
     const float priority = 1.F;
     const VkDeviceQueueCreateInfo queue_info{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, nullptr,
@@ -1035,6 +1130,11 @@ class VulkanBinaryRuntime {
       return false;
     }
     std::memcpy(mapped_[0], rgb, rgb_bytes);
+    // The shader loads packed RGB as little-endian uint words. A length that
+    // is not a multiple of 4 must not let that last word observe stale bytes.
+    if (const std::size_t tail = rgb_bytes & 3u) {
+      std::memset(static_cast<unsigned char*>(mapped_[0]) + rgb_bytes, 0, 4u - tail);
+    }
     BindScratchParameters(weight_bytes, bias_bytes);
     std::memcpy(mapped_[1], weights, static_cast<std::size_t>(weight_bytes));
     std::memcpy(mapped_[2], bias, static_cast<std::size_t>(bias_bytes));
@@ -1060,7 +1160,7 @@ class VulkanBinaryRuntime {
     const VkMemoryBarrier host_barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
         VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
     const VkMemoryBarrier shader_barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
-        VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_HOST_READ_BIT};
+        VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT};
     const VkMemoryBarrier shader_to_shader{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
         VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
     struct Push {
@@ -1272,6 +1372,9 @@ class VulkanBinaryRuntime {
     std::lock_guard lock(mutex_);
     if (!EnsureCapacity(act_b, packed_w_b, packed_bias_b, act_b, save_b)) return false;
     std::memcpy(mapped_[0], rgb, rgb_bytes);
+    if (const std::size_t tail = rgb_bytes & 3u) {
+      std::memset(static_cast<unsigned char*>(mapped_[0]) + rgb_bytes, 0, 4u - tail);
+    }
     const float* stem_weights = full_stem ? stem_conv->weights : nullptr;
     const bool reuse_stem = stem_cmd_ready_ && stem_command_buffer_ &&
         stem_src_w_ == source_width && stem_src_h_ == source_height &&
@@ -2997,7 +3100,10 @@ class VulkanBinaryRuntime {
         output.live_elements < output_offset_elements + output_elements) return false;
     std::array<VkDescriptorBufferInfo, 5> infos{}; std::array<VkWriteDescriptorSet, 5> writes{};
     const std::array<const ArenaBuffer*, 5> sources{&rgb, &rgb, &rgb, &output, &rgb};
-    const std::array<VkDeviceSize, 5> ranges{VkDeviceSize(rgb_elements), sizeof(float), sizeof(float),
+    // Packed RGB is read as uint words, so the descriptor range covers the
+    // last partial word. The arena slot is allocated in floats and is larger.
+    const VkDeviceSize rgb_range = VkDeviceSize((rgb_elements + 3u) & ~std::size_t{3});
+    const std::array<VkDeviceSize, 5> ranges{rgb_range, sizeof(float), sizeof(float),
                                               VkDeviceSize(output_elements * sizeof(float)), sizeof(float)};
     const VkDescriptorSet arena_set = DescriptorSetForArenaOpLocked(); if (!arena_set) return false;
     for (std::uint32_t binding = 0; binding < 5; ++binding) {
@@ -3052,8 +3158,10 @@ class VulkanBinaryRuntime {
         output.live_elements < output_elements * std::size_t(batches)) return false;
     std::array<VkDescriptorBufferInfo, 5> infos{}; std::array<VkWriteDescriptorSet, 5> writes{};
     const std::array<const ArenaBuffer*, 5> sources{&rgb, &rgb, &rgb, &output, &rgb};
+    const VkDeviceSize rgb_range =
+        VkDeviceSize((source_elements * std::size_t(batches) + 3u) & ~std::size_t{3});
     const std::array<VkDeviceSize, 5> ranges{
-        VkDeviceSize(source_elements * std::size_t(batches)), sizeof(float), sizeof(float),
+        rgb_range, sizeof(float), sizeof(float),
         VkDeviceSize(output_elements * std::size_t(batches) * sizeof(float)), sizeof(float)};
     const VkDescriptorSet arena_set = DescriptorSetForArenaOpLocked(); if (!arena_set) return false;
     for (std::uint32_t binding = 0; binding < 5; ++binding) {
@@ -4923,14 +5031,21 @@ class VulkanBinaryRuntime {
     // device is available.  Select a compute-capable adapter by a stable
     // capability score, while keeping an explicit index override for
     // deployment owners who need a specific driver/device pairing.
-    int requested_index = -1;
-    if (const char* value = std::getenv("PPOCR_VULKAN_DEVICE_INDEX")) {
-      char* end{};
-      const long parsed = std::strtol(value, &end, 10);
-      if (end == value || *end != '\0' || parsed < 0 ||
-          parsed > std::numeric_limits<int>::max()) return false;
-      requested_index = static_cast<int>(parsed);
-      if (requested_index >= static_cast<int>(devices.size())) return false;
+    // Options::vulkan_device_index / ppocr_request_vulkan_device win over the
+    // environment so a caller can select lavapipe without exporting a variable
+    // for the whole process. The environment remains the fallback when the
+    // API index stays at its default of -1.
+    int requested_index = RequestedVulkanDeviceIndex();
+    if (requested_index >= static_cast<int>(devices.size())) return false;
+    if (requested_index < 0) {
+      if (const char* value = std::getenv("PPOCR_VULKAN_DEVICE_INDEX")) {
+        char* end{};
+        const long parsed = std::strtol(value, &end, 10);
+        if (end == value || *end != '\0' || parsed < 0 ||
+            parsed > std::numeric_limits<int>::max()) return false;
+        requested_index = static_cast<int>(parsed);
+        if (requested_index >= static_cast<int>(devices.size())) return false;
+      }
     }
     const auto requested_name = std::getenv("PPOCR_VULKAN_DEVICE_NAME");
     // Hybrid PP-OCR currently crosses the host/device boundary per admitted
@@ -4990,6 +5105,7 @@ class VulkanBinaryRuntime {
     physical_ = best_device;
     queue_family_ = best_queue;
     device_name_ = best_properties.deviceName;
+    vendor_id_ = best_properties.vendorID;
     std::uint64_t identity = 1469598103934665603ull;
     for (const unsigned char byte : device_name_) {
       identity ^= byte;
@@ -5019,6 +5135,12 @@ class VulkanBinaryRuntime {
   }
 
   bool CreateFixedResources() noexcept {
+    VkPhysicalDeviceProperties limits{};
+    get_properties_(physical_, &limits);
+    // vulkan_binary.comp keeps an overlaid 32 KiB workgroup. Creating the
+    // pipeline below that limit is a validation error, so this device stays
+    // on the CPU path instead.
+    if (limits.limits.maxComputeSharedMemorySize < 32768u) return false;
     std::array<VkDescriptorSetLayoutBinding, 5> bindings{};
     for (std::uint32_t i = 0; i < bindings.size(); ++i) {
       bindings[i] = {i, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
@@ -5210,6 +5332,7 @@ class VulkanBinaryRuntime {
                                 VkDeviceSize extra_right_bytes) noexcept {
     std::array<VkDescriptorBufferInfo, 5> infos{};
     std::array<VkWriteDescriptorSet, 5> writes{};
+    bool unchanged = scratch_descriptor_valid_;
     for (std::uint32_t i = 0; i < infos.size(); ++i) {
       const VkDeviceSize offset = i == 1 ? right_offset :
           (i == 2 ? extra_right_offset : 0);
@@ -5224,10 +5347,27 @@ class VulkanBinaryRuntime {
               (i == 3 ? extra_output_capacity_ : residual_capacity_)));
       infos[i] = {buffers_[i], offset < capacity ? offset : 0,
                   std::min(range, capacity)};
+      if (!scratch_descriptor_valid_ ||
+          scratch_descriptor_binding_[i].buffer != infos[i].buffer ||
+          scratch_descriptor_binding_[i].offset != infos[i].offset ||
+          scratch_descriptor_binding_[i].range != infos[i].range) {
+        unchanged = false;
+      }
       writes[i] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, descriptor_set_, i, 0, 1,
                    VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[i], nullptr};
     }
+    // vkUpdateDescriptorSets invalidates every command buffer that bound this
+    // set, including the reusable conv/stem recordings. Skip a write that
+    // does not change the bindings so those recordings stay executable.
+    if (unchanged) return;
     update_descriptor_sets_(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    for (std::uint32_t i = 0; i < infos.size(); ++i) {
+      scratch_descriptor_binding_[i] = {infos[i].buffer, infos[i].offset, infos[i].range};
+    }
+    scratch_descriptor_valid_ = true;
+    conv2d_cmd_ready_ = false;
+    stem_cmd_ready_ = false;
+    rgb_conv_cmd_ready_ = false;
   }
 
   static VkDeviceSize GrowCapacity(VkDeviceSize required) noexcept {
@@ -5294,6 +5434,7 @@ class VulkanBinaryRuntime {
     if (memories_[index] && free_memory_) free_memory_(device_, memories_[index], nullptr);
     buffers_[index] = VK_NULL_HANDLE;
     memories_[index] = VK_NULL_HANDLE;
+    scratch_descriptor_valid_ = false;
   }
 
   void DestroyBuffers() noexcept {
@@ -5366,9 +5507,11 @@ class VulkanBinaryRuntime {
     if (pipeline_layout_ && destroy_pipeline_layout_) destroy_pipeline_layout_(device_, pipeline_layout_, nullptr);
     if (descriptor_layout_ && destroy_descriptor_set_layout_) destroy_descriptor_set_layout_(device_, descriptor_layout_, nullptr);
     if (device_ && destroy_device_) destroy_device_(device_, nullptr);
+    if (debug_messenger_ && destroy_debug_) destroy_debug_(instance_, debug_messenger_, nullptr);
     if (instance_ && destroy_instance_) destroy_instance_(instance_, nullptr);
     if (loader_) FreeLibrary(loader_);
     loader_ = nullptr; instance_ = VK_NULL_HANDLE; device_ = VK_NULL_HANDLE; queue_ = VK_NULL_HANDLE;
+    debug_messenger_ = VK_NULL_HANDLE; destroy_debug_ = nullptr;
     physical_ = VK_NULL_HANDLE; command_pool_ = VK_NULL_HANDLE; descriptor_pool_ = VK_NULL_HANDLE;
     graph_descriptor_pool_ = VK_NULL_HANDLE;
     pipeline_ = VK_NULL_HANDLE; shader_ = VK_NULL_HANDLE;
@@ -5383,6 +5526,7 @@ class VulkanBinaryRuntime {
     conv2d_cmd_ready_ = false;
     stem_cmd_ready_ = false;
     rgb_conv_cmd_ready_ = false;
+    scratch_descriptor_valid_ = false;
     submission_fence_ = VK_NULL_HANDLE;
     chain_semaphore_ = VK_NULL_HANDLE;
     pending_standalone_ = false;
@@ -5408,6 +5552,7 @@ class VulkanBinaryRuntime {
   std::uint32_t queue_family_{UINT32_MAX};
   VkPhysicalDeviceMemoryProperties memory_properties_{};
   std::string device_name_;
+  std::uint32_t vendor_id_{};
   VkDescriptorSetLayout descriptor_layout_{};
   VkPipelineLayout pipeline_layout_{};
   VkShaderModule shader_{};
@@ -5467,6 +5612,13 @@ class VulkanBinaryRuntime {
   // the pointwise-Conv output; binding four is allocated only by residual
   // pointwise blocks and remains a read-only activation source in shaders.
   std::array<VkBuffer, 5> buffers_{};
+  struct ScratchDescriptorBinding {
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VkDeviceSize offset = 0;
+    VkDeviceSize range = 0;
+  };
+  std::array<ScratchDescriptorBinding, 5> scratch_descriptor_binding_{};
+  bool scratch_descriptor_valid_{};
   std::array<VkDeviceMemory, 5> memories_{};
   std::array<void*, 5> mapped_{};
   // Graph-level GPU-only execution allocates these independently from the
@@ -5504,6 +5656,8 @@ class VulkanBinaryRuntime {
   const float* chain_pointwise_weights_{};
   const float* chain_pointwise_bias_{};
 
+  VkDebugUtilsMessengerEXT debug_messenger_{VK_NULL_HANDLE};
+  PFN_vkDestroyDebugUtilsMessengerEXT destroy_debug_{};
   PFN_vkGetInstanceProcAddr get_instance_proc_{}; PFN_vkCreateInstance create_instance_{};
   PFN_vkDestroyInstance destroy_instance_{}; PFN_vkEnumeratePhysicalDevices enumerate_devices_{};
   PFN_vkGetPhysicalDeviceProperties get_properties_{}; PFN_vkGetPhysicalDeviceQueueFamilyProperties get_queues_{};
@@ -5722,6 +5876,7 @@ bool VulkanTensorArena::UploadRgb8(const VulkanTensorSlot& slot, const std::uint
   auto* mapped = reinterpret_cast<std::uint8_t*>(mapped_data(slot));
   if (!mapped) return false;
   std::memcpy(mapped, source, bytes);
+  if (const std::size_t tail = bytes & 3u) std::memset(mapped + bytes, 0, 4u - tail);
   return FlushHostWrites(slot, (bytes + sizeof(float) - 1) / sizeof(float));
 #else
   (void)slot; (void)source; (void)bytes;
@@ -6531,6 +6686,14 @@ BackendInfo QueryVulkanBackendInfo() {
   return result;
 }
 
+int VulkanValidationErrorCount() noexcept {
+#if defined(PPOCR_HAS_VULKAN_HEADERS) && defined(PPOCR_HAS_VULKAN_KERNELS)
+  return g_validation_errors.load(std::memory_order_relaxed);
+#else
+  return 0;
+#endif
+}
+
 int VulkanLastSubmissionResult() noexcept {
 #if defined(PPOCR_HAS_VULKAN_HEADERS) && defined(PPOCR_HAS_VULKAN_KERNELS) && defined(_WIN32)
   return Runtime().LastSubmissionResult();
@@ -6546,11 +6709,6 @@ std::uint64_t VulkanHybridAdmissionContext() noexcept {
   return 0;
 #endif
 }
-
-#if defined(PPOCR_POSIX_VULKAN_LOADER_ADAPTER)
-#undef _WIN32
-#undef PPOCR_POSIX_VULKAN_LOADER_ADAPTER
-#endif
 
 bool VulkanBinary(float* output, const float* left, const float* right,
                   std::size_t count, kernels::BinaryOp operation,
@@ -8499,5 +8657,10 @@ bool VulkanBinaryNoSlowerThanCpu(std::size_t count, kernels::BinaryOp operation,
     return false;
   }
 }
+
+#if defined(PPOCR_POSIX_VULKAN_LOADER_ADAPTER)
+#undef _WIN32
+#undef PPOCR_POSIX_VULKAN_LOADER_ADAPTER
+#endif
 
 }  // namespace ppocr::detail

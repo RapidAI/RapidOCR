@@ -177,6 +177,7 @@ class RapidOCR:
         det, rec, dictionary = _resolve_models(self.cfg)
         options = _native.default_options()
         options.backend = _native.PPOCR_BACKEND_CPU
+        _apply_vulkan_options(self.cfg, options)
         options.det_threshold = float(self.cfg["Det"].get("thresh", options.det_threshold))
         options.det_box_threshold = float(self.cfg["Det"].get("box_thresh", options.det_box_threshold))
         options.det_unclip_ratio = float(self.cfg["Det"].get("unclip_ratio", options.det_unclip_ratio))
@@ -205,6 +206,55 @@ class RapidOCR:
             options.rec_batch_size = int(batch)
         self._engine = _native.NativeOCR(det, rec, dictionary, options)
         return self._engine
+
+
+def _as_bool(value: Any) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(value)
+
+
+def _apply_vulkan_options(cfg: ConfigNode, options: _native.Options) -> None:
+    """Honor EngineConfig.ppocr_cpp the way 3.x honors use_cuda.
+
+    The default stays on CPU. ``use_vulkan`` or ``backend: vulkan`` uses the
+    GPU graph when a compute device is already available, and otherwise logs
+    a warning and keeps CPU. ``backend: hybrid`` is the C++ best-effort path.
+    ``gpu_only`` in C++ still fails closed; this wrapper does not.
+    """
+
+    engine = cfg.get("EngineConfig")
+    section = engine.get("ppocr_cpp") if isinstance(engine, ConfigNode) else None
+    if not isinstance(section, ConfigNode):
+        return
+    use_vulkan = _as_bool(section.get("use_vulkan", False))
+    backend_name = str(section.get("backend", "cpu")).strip().lower()
+    try:
+        device_index = int(section.get("device_index", -1))
+    except (TypeError, ValueError):
+        device_index = -1
+    options.vulkan_device_index = device_index
+    wants_vulkan = use_vulkan or backend_name in {"vulkan", "gpu", "gpu_only"}
+    wants_hybrid = backend_name == "hybrid"
+    if not wants_vulkan and not wants_hybrid and device_index < 0:
+        return
+    if device_index >= 0:
+        _native.request_vulkan_device(device_index)
+    info = _native.backend_info()
+    if wants_hybrid:
+        options.backend = _native.PPOCR_BACKEND_HYBRID
+        if not info["vulkan_compute_available"]:
+            logger.warning("Vulkan hybrid was requested but no compute device is available; using CPU")
+        return
+    if wants_vulkan:
+        if info["vulkan_compute_available"]:
+            options.backend = _native.PPOCR_BACKEND_GPU
+            logger.info("Vulkan device: %s", info["device_name"] or "(unnamed)")
+        else:
+            logger.warning(
+                "Vulkan was requested but no compute device is available; using the CPU backend"
+            )
+            options.backend = _native.PPOCR_BACKEND_CPU
 
 
 def _copy_norm(mean_out, std_out, mean, std, default=None) -> None:

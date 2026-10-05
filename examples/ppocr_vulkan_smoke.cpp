@@ -2723,9 +2723,16 @@ int main() {
       constexpr float scales[3] = {1.F / (255.F * .229F), 1.F / (255.F * .224F),
                                    1.F / (255.F * .225F)};
       constexpr float offsets[3] = {-.485F / .229F, -.456F / .224F, -.406F / .225F};
+      // The shader marks the sample address `precise`, so this reference must
+      // not contract the mul/div into an FMA. A volatile break keeps the same
+      // left-associative FP32 rounding on a fast-contract host compiler.
+      const auto strict = [](float value) {
+        volatile float kept = value;
+        return kept;
+      };
       for (int oy = 0; oy < rgb.oh; ++oy) for (int ox = 0; ox < rgb.ow; ++ox) {
-        const float fx = (float(ox) + .5F) * float(rgb.sw) / float(rgb.ow) - .5F;
-        const float fy = (float(oy) + .5F) * float(rgb.sh) / float(rgb.oh) - .5F;
+        const float fx = strict(strict(strict(float(ox) + .5F) * float(rgb.sw)) / float(rgb.ow)) - .5F;
+        const float fy = strict(strict(strict(float(oy) + .5F) * float(rgb.sh)) / float(rgb.oh)) - .5F;
         const int x_floor = int(std::floor(fx));
         const int y_floor = int(std::floor(fy));
         const int x0 = std::clamp(x_floor, 0, rgb.sw - 1);
@@ -2739,10 +2746,10 @@ int main() {
           const auto sample = [&](int x, int y) {
             return float(packed[(std::size_t(y) * rgb.sw + x) * 3 + rgb_c]);
           };
-          const float upper = sample(x0, y0) * (1.F - dx) + sample(x1, y0) * dx;
-          const float lower = sample(x0, y1) * (1.F - dx) + sample(x1, y1) * dx;
-          const float vertical = upper * (1.F - dy) + lower * dy;
-          const float sampled = std::clamp(std::floor(vertical + .5F), 0.F, 255.F);
+          const float upper = strict(sample(x0, y0) * (1.F - dx)) + strict(sample(x1, y0) * dx);
+          const float lower = strict(sample(x0, y1) * (1.F - dx)) + strict(sample(x1, y1) * dx);
+          const float vertical = strict(upper * (1.F - dy)) + strict(lower * dy);
+          const float sampled = std::clamp(std::floor(strict(vertical + .5F)), 0.F, 255.F);
           const float expected = sampled * scales[channel] + offsets[channel];
           const auto index = std::size_t(channel) * plane + std::size_t(oy) * rgb.ow + ox;
           // Large detector pages (720x152→704x160) differ by one uint8 step
@@ -2753,7 +2760,10 @@ int main() {
                                   std::max(1.F, std::abs(expected));
           if (std::abs(output[index] - expected) > tolerance) {
             std::cerr << "Vulkan RGB resize mismatch " << rgb.sw << "x" << rgb.sh
-                      << " offset=" << index << '\n';
+                      << " offset=" << index
+                      << " got=" << output[index] << " expected=" << expected
+                      << " fx=" << fx << " fy=" << fy
+                      << " dx=" << dx << " dy=" << dy << '\n';
             return 1;
           }
         }

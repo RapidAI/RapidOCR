@@ -1,0 +1,75 @@
+name: vulkan lavapipe
+
+on:
+  push:
+    branches:
+      - V5_NG
+  pull_request:
+    branches:
+      - V5_NG
+  workflow_dispatch:
+
+concurrency:
+  group: vulkan-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lavapipe:
+    name: lavapipe
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the software Vulkan stack
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            mesa-vulkan-drivers vulkan-tools vulkan-validationlayers \
+            glslang-tools ninja-build cmake g++
+
+      - name: Cache tiny models
+        uses: actions/cache@v4
+        with:
+          path: ci-models
+          key: rapidocr-ci-models-tiny-v1
+
+      - name: Download tiny models when the cache is empty
+        run: python python/tests/fetch_ci_models.py
+
+      - name: Build with embedded Vulkan shaders
+        run: |
+          cmake -S . -B build-vk -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+            -DPPOCR_BUILD_STATIC=OFF \
+            -DPPOCR_BUILD_TESTS=ON \
+            -DPPOCR_BUILD_EXAMPLES=ON \
+            -DPPOCR_ENABLE_VULKAN=ON
+          cmake --build build-vk -j"$(nproc)"
+
+      - name: Confirm the library does not link libvulkan
+        run: |
+          if objdump -p build-vk/libppocr.so | grep -E 'NEEDED[[:space:]]+libvulkan'; then
+            echo "libppocr.so must dlopen libvulkan, not DT_NEEDED it" >&2
+            exit 1
+          fi
+
+      - name: Install Python test dependencies
+        run: python -m pip install -r python/tests/ci-constraints.txt pytest
+
+      - name: Lavapipe hello, kernels, and fallback
+        env:
+          VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.json
+          PPOCR_VULKAN_DEVICE_INDEX: "0"
+          PPOCR_VULKAN_VALIDATION: "1"
+          PPOCR_BENCH_THREADS: "1"
+        run: bash tests/run_vulkan_lavapipe.sh build-vk

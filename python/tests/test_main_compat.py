@@ -39,7 +39,7 @@ REMAINING_INCOMPATIBILITIES = (
     "return_word_box and return_single_char_box do not produce word boxes",
     "PP-OCRv4 and PP-OCRv5 model versions raise NotImplementedError",
     "EngineType other than ONNXRUNTIME and PPOCR_CPP raises NotImplementedError",
-    "EngineConfig is stored and not applied (no CUDA, OpenVINO, Paddle, Torch, TensorRT, MNN)",
+    "EngineConfig CUDA/OpenVINO/Paddle/Torch/TensorRT/MNN sections are stored and not applied",
     "elapse_list is [None, None, total], not separate det/cls/rec times",
     "vis() returns Pillow RGB, not OpenCV BGR",
     "the 3.x model catalog is downloaded, but only PP-OCRv6 ONNX det/rec are executed",
@@ -82,6 +82,9 @@ def test_construct_default_matches_main_public_keys():
     assert cfg.Rec.rec_batch_num == 6
     assert cfg.EngineConfig.onnxruntime.use_cuda is False
     assert cfg.EngineConfig.mnn == {}
+    assert cfg.EngineConfig.ppocr_cpp.use_vulkan is False
+    assert cfg.EngineConfig.ppocr_cpp.backend == "cpu"
+    assert cfg.EngineConfig.ppocr_cpp.device_index == -1
 
 
 def test_construct_with_params_and_update_params():
@@ -115,6 +118,9 @@ def test_nested_engine_config_is_stored():
     cfg = ParseParams.load(None)
     ParseParams.update_batch(cfg, {"EngineConfig.onnxruntime.use_cuda": True})
     assert cfg.EngineConfig.onnxruntime.use_cuda is True
+    ParseParams.update_batch(cfg, {"EngineConfig.ppocr_cpp.use_vulkan": True, "EngineConfig.ppocr_cpp.device_index": 0})
+    assert cfg.EngineConfig.ppocr_cpp.use_vulkan is True
+    assert cfg.EngineConfig.ppocr_cpp.device_index == 0
 
 
 def test_demo_shape_vis_class_is_exported():

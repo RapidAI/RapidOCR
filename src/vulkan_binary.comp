@@ -26,37 +26,27 @@ layout(std430, binding = 3) buffer OutputD { float d[]; };
 // descriptor/pipeline layout for a graph-local transform.
 layout(std430, binding = 4) buffer ResidualE { float e[]; };
 
-// The pointwise-convolution modes stage learned [M,C] weights in workgroup
-// memory. One workgroup maps to four output channels and 256 adjacent spatial
-// positions per channel, so its four weight rows are reused by all 64 vec4
-// producing lanes. Four channels x 1024 input channels consumes 16 KiB, the
-// Vulkan guaranteed shared-memory floor. Wider layers take the generic path.
-shared float pointwise_weights[4096];
-// Depthwise convolution has one small [KH,KW] filter per channel.  Assigning
-// a workgroup to a single output channel lets all its output positions reuse
-// that filter from workgroup memory rather than fetching it once per pixel.
-// PP-OCRv6's depthwise kernels are at most 9x9; keep a conservative 16x16
-// cache and transparently retain global loads for a larger exported kernel.
-shared float depthwise_weights[256];
-// Ordinary detector convolutions use the same output channel over a spatial
-// tile.  For the common 3x3/2x2 projections this makes the entire [C,KH,KW]
-// filter small enough to stage once per workgroup instead of rereading it for
-// every output pixel.  Larger exports transparently take the generic path.
-shared float conv_weights[4096];
-// 16x16 output tile halo for 3x3 s1/s2. 4096 floats is the guaranteed 16 KiB
-// shared-memory floor: s1 18x18 stages 12 IC/pass (Concat.2 C=64), s2 34x34
-// stages 3 IC/pass (stem pool-concat C=32).
-shared float conv_spatial_tile[4096];
-// Row-transform workgroups use these only in the parallel Softmax branch.
-shared float softmax_row_max;
-shared float softmax_row_inverse_sum;
-// Terminal CTC's vocabulary rows are much wider than its sequence count.
-// Reduce one row cooperatively: the recognizer commonly has only a few dozen
-// time steps but up to several thousand classes, so a one-thread-per-row
-// implementation leaves nearly the whole GPU idle on small/medium models.
-shared float ctc_row_max[256];
-shared float ctc_row_sum[256];
-shared uint ctc_row_best[256];
+// One 32 KiB workgroup allocation. Each dispatch uses one mode, so the
+// historical arrays share storage instead of reserving 53256 bytes at once
+// (above maxComputeSharedMemorySize on lavapipe and on many 32 KiB GPUs).
+// wg_lo holds pointwise/conv/depthwise weights or CTC row maxima. wg_hi holds
+// the spatial halo or CTC partial sums. CTC class ids are bitcast into
+// wg_lo[256 + lane] because a parallel reduction only needs 256 maxima.
+// Devices with maxComputeSharedMemorySize below 32768 do not create this
+// pipeline; the runtime keeps the CPU path.
+shared float wg_lo[4096];
+shared float wg_hi[4096];
+#define pointwise_weights wg_lo
+#define conv_weights wg_lo
+#define depthwise_weights wg_lo
+#define conv_spatial_tile wg_hi
+#define ctc_row_max wg_lo
+#define ctc_row_sum wg_hi
+#define softmax_row_max wg_lo[0]
+#define softmax_row_inverse_sum wg_lo[1]
+
+uint ctc_load_best(uint lane) { return floatBitsToUint(wg_lo[256u + lane]); }
+void ctc_store_best(uint lane, uint value) { wg_lo[256u + lane] = uintBitsToFloat(value); }
 
 layout(push_constant) uniform Params {
   uint count;
@@ -562,25 +552,25 @@ void main() {
       }
     }
     ctc_row_max[local] = local_maximum;
-    ctc_row_best[local] = local_best;
+    ctc_store_best(local, local_best);
     barrier();
     // Keep the earliest class on equal scores, matching the portable
     // `if (value > maximum)` greedy CTC rule.
     for (uint width = gl_WorkGroupSize.x / 2u; width > 0u; width >>= 1u) {
       if (local < width) {
         const float right = ctc_row_max[local + width];
-        const uint right_best = ctc_row_best[local + width];
+        const uint right_best = ctc_load_best(local + width);
         const float left = ctc_row_max[local];
-        const uint left_best = ctc_row_best[local];
+        const uint left_best = ctc_load_best(local);
         if (right > left || (right == left && right_best < left_best)) {
           ctc_row_max[local] = right;
-          ctc_row_best[local] = right_best;
+          ctc_store_best(local, right_best);
         }
       }
       barrier();
     }
     const float maximum = ctc_row_max[0];
-    const uint best = ctc_row_best[0];
+    const uint best = ctc_load_best(0u);
     if ((params.mode & 0x80000000u) == 0u) {
       // Input values are the graph's materialised Softmax probabilities.
       if (local == 0u) {
@@ -654,23 +644,23 @@ void main() {
       }
     }
     ctc_row_max[local] = local_maximum;
-    ctc_row_best[local] = local_best;
+    ctc_store_best(local, local_best);
     barrier();
     for (uint width = gl_WorkGroupSize.x / 2u; width > 0u; width >>= 1u) {
       if (local < width) {
         const float right = ctc_row_max[local + width];
-        const uint right_best = ctc_row_best[local + width];
+        const uint right_best = ctc_load_best(local + width);
         const float leftv = ctc_row_max[local];
-        const uint left_best = ctc_row_best[local];
+        const uint left_best = ctc_load_best(local);
         if (right > leftv || (right == leftv && right_best < left_best)) {
           ctc_row_max[local] = right;
-          ctc_row_best[local] = right_best;
+          ctc_store_best(local, right_best);
         }
       }
       barrier();
     }
     const float maximum = ctc_row_max[0];
-    const uint best = ctc_row_best[0];
+    const uint best = ctc_load_best(0u);
     float partial_sum = 0.0;
     for (uint class_id = local; class_id < vocab; class_id += gl_WorkGroupSize.x) {
       float value = has_bias ? c[class_id] : 0.0;
@@ -1375,7 +1365,11 @@ void main() {
         const uint rem = i - q * channels * 9u;
         const uint oc = oc0 + q;
         const float w = oc < output_channels ? b[oc * channels * 9u + rem] : 0.0;
-        if (filters_in_dw) depthwise_weights[i] = w;
+        // Packed RGB stores the halo in conv_weights, so its 3x3 filters use
+        // the spatial tile. The other branches keep filters in wg_lo and the
+        // halo in wg_hi; those two regions must not alias each other.
+        if (packed_rgb) conv_spatial_tile[i] = w;
+        else if (filters_in_dw) depthwise_weights[i] = w;
         else conv_weights[i] = w;
       }
     }
@@ -1409,9 +1403,9 @@ void main() {
             const uint oc = oc0 + q;
             if (oc >= output_channels) break;
             const uint wb = q * channels * 9u + ic * 9u;
-            const float w0 = depthwise_weights[wb], w1 = depthwise_weights[wb + 1u], w2 = depthwise_weights[wb + 2u];
-            const float w3 = depthwise_weights[wb + 3u], w4 = depthwise_weights[wb + 4u], w5 = depthwise_weights[wb + 5u];
-            const float w6 = depthwise_weights[wb + 6u], w7 = depthwise_weights[wb + 7u], w8 = depthwise_weights[wb + 8u];
+            const float w0 = conv_spatial_tile[wb], w1 = conv_spatial_tile[wb + 1u], w2 = conv_spatial_tile[wb + 2u];
+            const float w3 = conv_spatial_tile[wb + 3u], w4 = conv_spatial_tile[wb + 4u], w5 = conv_spatial_tile[wb + 5u];
+            const float w6 = conv_spatial_tile[wb + 6u], w7 = conv_spatial_tile[wb + 7u], w8 = conv_spatial_tile[wb + 8u];
             const float sum = i00 * w0 + i01 * w1 + i02 * w2 + i10 * w3 + i11 * w4 + i12 * w5 +
                               i20 * w6 + i21 * w7 + i22 * w8;
             if (q == 0u) acc0 += sum;

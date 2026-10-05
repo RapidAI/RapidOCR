@@ -127,6 +127,15 @@ EngineConfig:
 
     mnn: {}
 
+    # Native engine. use_vulkan tries the Vulkan graph and stays on CPU when
+    # no compute device is available. backend is cpu, hybrid, or vulkan.
+    # device_index -1 keeps automatic adapter selection (CPU/lavapipe skipped);
+    # 0 or higher selects that physical device, including lavapipe.
+    ppocr_cpp:
+        use_vulkan: false
+        backend: cpu
+        device_index: -1
+
 Det:
     engine_type: "onnxruntime"
     lang_type: "ch"

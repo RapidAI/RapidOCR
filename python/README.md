@@ -42,6 +42,33 @@ points CMake at the parent tree. It does not produce a self-contained sdist.
 The binding is ctypes over the C ABI (`include/ppocr/ppocr.h`), so the wheel
 ships `libppocr` and does not add a second C++ wrapper.
 
+## Vulkan
+
+Wheels are built with `-DPPOCR_ENABLE_VULKAN=OFF`. They do not contain the
+compute shaders and do not need `libvulkan`. A checkout that has the
+Vulkan-Headers submodule and `glslangValidator` can build a Vulkan-enabled
+package with:
+
+```bash
+CMAKE_ARGS="-DPPOCR_ENABLE_VULKAN=ON -DPPOCR_BUILD_STATIC=OFF" pip install .
+```
+
+The runtime opens `libvulkan.so.1` with `dlopen`. It is not linked into the
+library. Enable it per engine, in the same style as 3.x `use_cuda`:
+
+```python
+engine = RapidOCR(params={
+    "EngineConfig.ppocr_cpp.use_vulkan": True,
+    "EngineConfig.ppocr_cpp.device_index": 0,
+})
+```
+
+`device_index` `-1` skips CPU Vulkan devices such as lavapipe. Set it to the
+lavapipe index (`0` when it is the only device) together with
+`VK_ICD_FILENAMES` pointing at `lvp_icd.json`. If no compute device exists,
+the call logs a warning and runs on CPU. `backend: vulkan` is the same
+attempt. `backend: hybrid` matches the C++ hybrid path. See `docs/API.md`.
+
 ## Migrating from rapidocr 3.x
 
 `RapidOCR(config_path=..., params={"Section.key": value})` and
@@ -62,7 +89,7 @@ What does not carry over from 3.x:
 | Word and character boxes | `return_word_box` / `return_single_char_box` warn. `word_results` is empty. |
 | `elapse_list` is `[det, cls, rec]` | `[None, None, total]`. The native call is one timed region. An empty page is `RapidOCROutput()` (`boxes`/`txts`/`img` are `None`), same as 3.x. |
 | `vis()` draws with OpenCV in BGR | `vis()` draws with Pillow and returns RGB. |
-| `EngineConfig` (CUDA, OpenVINO, TensorRT, MNN, …) | The keys load and can be read. They are not applied. |
+| `EngineConfig` (CUDA, OpenVINO, TensorRT, MNN, …) | Those keys load and can be read. They are not applied. `EngineConfig.ppocr_cpp.use_vulkan`, `backend` (`cpu`, `hybrid`, `vulkan`), and `device_index` are applied. |
 | Detector `mean`/`std`, `limit_type`, `limit_side_len`, `use_dilation` | Passed through the C ABI and applied. `mean`/`std` are B, G, R, the same order as an OpenCV image. Recognizer normalization defaults to 0.5/0.5, matching 3.x. |
 | `Global.min_height`, vertical padding, `max_side_len` | Applied before the native call, and boxes are mapped back. |
 

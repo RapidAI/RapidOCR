@@ -39,13 +39,14 @@ rapidocr = "rapidocr.main:main"
 [tool.scikit-build]
 cmake.source-dir = "."
 cmake.build-type = "Release"
-cmake.args = ["-DPPOCR_BUILD_EXAMPLES=OFF", "-DPPOCR_BUILD_TESTS=OFF"]
+cmake.args = ["-DPPOCR_BUILD_EXAMPLES=OFF", "-DPPOCR_BUILD_TESTS=OFF", "-DPPOCR_ENABLE_VULKAN=OFF"]
 wheel.packages = ["python/src/rapidocr"]
 minimum-version = "0.10"
 
 [tool.scikit-build.cmake.define]
 PPOCR_BUILD_SHARED = "ON"
 PPOCR_BUILD_STATIC = "OFF"
+PPOCR_ENABLE_VULKAN = "OFF"
 
 [tool.scikit-build.sdist]
 exclude = [
@@ -70,4 +71,4 @@ test-requires = ["pytest"]
 test-command = "bash {project}/python/tests/ci_wheel_check.sh"
 
 [tool.cibuildwheel.linux]
-environment = { CMAKE_ARGS = "-DPPOCR_BUILD_EXAMPLES=OFF -DPPOCR_BUILD_TESTS=OFF -DPPOCR_BUILD_STATIC=OFF -DPPOCR_BUILD_SHARED=ON", CMAKE_BUILD_PARALLEL_LEVEL = "4", PIP_CONSTRAINT = "/project/python/tests/ci-constraints.txt" }
+environment = { CMAKE_ARGS = "-DPPOCR_BUILD_EXAMPLES=OFF -DPPOCR_BUILD_TESTS=OFF -DPPOCR_BUILD_STATIC=OFF -DPPOCR_BUILD_SHARED=ON -DPPOCR_ENABLE_VULKAN=OFF", CMAKE_BUILD_PARALLEL_LEVEL = "4", PIP_CONSTRAINT = "/project/python/tests/ci-constraints.txt" }

@@ -39,10 +39,11 @@ rapidocr = "rapidocr.main:main"
 [tool.scikit-build]
 cmake.source-dir = ".."
 cmake.build-type = "Release"
-cmake.args = ["-DPPOCR_BUILD_EXAMPLES=OFF", "-DPPOCR_BUILD_TESTS=OFF"]
+cmake.args = ["-DPPOCR_BUILD_EXAMPLES=OFF", "-DPPOCR_BUILD_TESTS=OFF", "-DPPOCR_ENABLE_VULKAN=OFF"]
 wheel.packages = ["src/rapidocr"]
 minimum-version = "0.10"
 
 [tool.scikit-build.cmake.define]
 PPOCR_BUILD_SHARED = "ON"
 PPOCR_BUILD_STATIC = "OFF"
+PPOCR_ENABLE_VULKAN = "OFF"

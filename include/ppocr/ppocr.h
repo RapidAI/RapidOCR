@@ -60,6 +60,9 @@ typedef struct ppocr_options {
   float rec_std[3];
   int det_use_dilation; /* 1: 2x2 dilation before DB components */
   int det_max_candidates;
+  /* -1: automatic adapter. >=0: that physical device, including lavapipe.
+     Read on the first Vulkan initialization in the process. */
+  int vulkan_device_index;
 } ppocr_options;
 
 typedef struct ppocr_image {
@@ -138,6 +141,12 @@ PPOCR_API int ppocr_load_ppm(const char* path, ppocr_image_buffer* image);
 PPOCR_API void ppocr_image_free(ppocr_image_buffer* image);
 
 PPOCR_API void ppocr_query_backend_info(ppocr_backend_info* info);
+/* Pins the Vulkan physical device before the first initialization.
+   index < 0 leaves the current choice unchanged. */
+PPOCR_API void ppocr_request_vulkan_device(int device_index);
+/* ERROR-severity VK_LAYER_KHRONOS_validation messages since process start.
+   The layer is enabled only when PPOCR_VULKAN_VALIDATION is set and not "0". */
+PPOCR_API int ppocr_vulkan_validation_error_count(void);
 PPOCR_API void ppocr_query_cpu_info(ppocr_cpu_info* info);
 
 /* Thread-local. Pointer is valid until the next API call on this thread. */

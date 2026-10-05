@@ -17,9 +17,16 @@ namespace ppocr::detail {
 // device-resident implementation; callers use this to enforce GPU-only's
 // no-silent-fallback contract.
 [[nodiscard]] BackendInfo QueryVulkanBackendInfo();
+// Pins the process-wide physical device before the first Vulkan
+// initialization. A negative index leaves the current choice unchanged.
+// The first initialization wins; a later request is ignored.
+void RequestVulkanDeviceIndex(int index) noexcept;
 // The latest Vulkan submission result from the process-local runtime. This
 // is diagnostic state only: an error never authorizes a CPU fallback.
 [[nodiscard]] int VulkanLastSubmissionResult() noexcept;
+// ERROR-severity messages from VK_LAYER_KHRONOS_validation since process
+// start. The layer is installed only when PPOCR_VULKAN_VALIDATION=1.
+[[nodiscard]] int VulkanValidationErrorCount() noexcept;
 // A cheap process-local hybrid admission epoch. It includes the selected
 // adapter identity and changes after Vulkan device-loss recovery; unlike a
 // full backend probe it is safe to query at every hybrid operator boundary.

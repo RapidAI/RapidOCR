@@ -12,7 +12,7 @@ from .main import RapidOCR, RapidOCRError
 from .typings import EngineType, LangCls, LangDet, LangRec, ModelType, OCRVersion
 from .utils.load_image import LoadImageError
 from .utils.vis_res import VisRes
-from ._native import cpu_info
+from ._native import backend_info, cpu_info, request_vulkan_device
 
 __all__ = [
     "__version__",
@@ -28,4 +28,6 @@ __all__ = [
     "OCRVersion",
     "download_models",
     "cpu_info",
+    "backend_info",
+    "request_vulkan_device",
 ]

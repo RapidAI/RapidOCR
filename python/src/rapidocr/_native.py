@@ -39,6 +39,7 @@ class Options(ctypes.Structure):
         ("rec_std", ctypes.c_float * 3),
         ("det_use_dilation", ctypes.c_int),
         ("det_max_candidates", ctypes.c_int),
+        ("vulkan_device_index", ctypes.c_int),
     ]
 
 
@@ -68,6 +69,16 @@ class TextBox(ctypes.Structure):
 
 class Result(ctypes.Structure):
     _fields_ = [("items", ctypes.POINTER(TextBox)), ("count", ctypes.c_size_t)]
+
+
+class BackendInfo(ctypes.Structure):
+    _fields_ = [
+        ("vulkan_loader_available", ctypes.c_int),
+        ("vulkan_compute_available", ctypes.c_int),
+        ("full_graph_gpu_available", ctypes.c_int),
+        ("device_name", ctypes.c_char * 256),
+        ("vulkan_runtime_generation", ctypes.c_uint64),
+    ]
 
 
 class CpuInfo(ctypes.Structure):
@@ -147,6 +158,14 @@ def _bind(lib: ctypes.CDLL) -> None:
     lib.ppocr_last_error.restype = ctypes.c_char_p
     lib.ppocr_query_cpu_info.argtypes = [ctypes.POINTER(CpuInfo)]
     lib.ppocr_query_cpu_info.restype = None
+    query_backend = getattr(lib, "ppocr_query_backend_info", None)
+    if query_backend is not None:
+        query_backend.argtypes = [ctypes.POINTER(BackendInfo)]
+        query_backend.restype = None
+    request_device = getattr(lib, "ppocr_request_vulkan_device", None)
+    if request_device is not None:
+        request_device.argtypes = [ctypes.c_int]
+        request_device.restype = None
 
 
 class NativeOCR:
@@ -219,6 +238,40 @@ def cpu_info() -> dict:
         "avx512_compiled": bool(info.avx512_compiled),
         "neon_compiled": bool(info.neon_compiled),
     }
+
+
+def backend_info() -> dict:
+    lib = load_library()
+    query = getattr(lib, "ppocr_query_backend_info", None)
+    if query is None:
+        return {
+            "vulkan_loader_available": False,
+            "vulkan_compute_available": False,
+            "full_graph_gpu_available": False,
+            "device_name": "",
+            "vulkan_runtime_generation": 0,
+        }
+    info = BackendInfo()
+    query(ctypes.byref(info))
+    return {
+        "vulkan_loader_available": bool(info.vulkan_loader_available),
+        "vulkan_compute_available": bool(info.vulkan_compute_available),
+        "full_graph_gpu_available": bool(info.full_graph_gpu_available),
+        "device_name": info.device_name.split(b"\x00", 1)[0].decode(errors="replace"),
+        "vulkan_runtime_generation": int(info.vulkan_runtime_generation),
+    }
+
+
+def request_vulkan_device(index: int) -> None:
+    """Pin a Vulkan physical device before the first engine or backend probe."""
+
+    if index < 0:
+        return
+    lib = load_library()
+    request = getattr(lib, "ppocr_request_vulkan_device", None)
+    if request is None:
+        return
+    request(int(index))
 
 
 def default_options() -> Options:

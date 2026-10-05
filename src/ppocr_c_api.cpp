@@ -1,6 +1,7 @@
 #include "ppocr/ppocr.h"
 
 #include "ppocr/ppocr.hpp"
+#include "vulkan_backend.hpp"
 
 #include <cstdio>
 #include <cstdlib>
@@ -59,6 +60,7 @@ ppocr::Options ToOptions(const ppocr_options* options) {
   }
   out.det_use_dilation = local.det_use_dilation;
   out.det_max_candidates = local.det_max_candidates;
+  out.vulkan_device_index = local.vulkan_device_index;
   return out;
 }
 
@@ -145,6 +147,7 @@ void ppocr_options_init(ppocr_options* options) {
   }
   options->det_use_dilation = defaults.det_use_dilation;
   options->det_max_candidates = defaults.det_max_candidates;
+  options->vulkan_device_index = defaults.vulkan_device_index;
 }
 
 const char* ppocr_last_error(void) { return g_error.c_str(); }
@@ -163,7 +166,10 @@ ppocr_ocr* ppocr_create(const char* det_model, const char* rec_model,
     Fail(PPOCR_ERR_NOMEM, "out of memory");
   } catch (const std::exception& ex) {
     const std::string message = ex.what();
-    const int status = message.find("cannot open") != std::string::npos ? PPOCR_ERR_IO : PPOCR_ERR_MODEL;
+    const int status = message.find("cannot open") != std::string::npos ? PPOCR_ERR_IO
+        : message.find("GPU-only") != std::string::npos || message.find("Vulkan") != std::string::npos
+            ? PPOCR_ERR_UNSUPPORTED
+            : PPOCR_ERR_MODEL;
     Fail(status, message);
   }
   return nullptr;
@@ -281,6 +287,14 @@ void ppocr_query_backend_info(ppocr_backend_info* info) {
   } catch (const std::exception& ex) {
     SetError(ex.what());
   }
+}
+
+void ppocr_request_vulkan_device(int device_index) {
+  ppocr::detail::RequestVulkanDeviceIndex(device_index);
+}
+
+int ppocr_vulkan_validation_error_count(void) {
+  return ppocr::detail::VulkanValidationErrorCount();
 }
 
 void ppocr_query_cpu_info(ppocr_cpu_info* info) {

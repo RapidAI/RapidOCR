@@ -10,6 +10,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <condition_variable>
 #include <exception>
@@ -36,6 +37,14 @@ namespace {
 using detail::Tensor;
 
 [[noreturn]] void Fail(const std::string& msg) { throw std::runtime_error("ppocr: " + msg); }
+
+// The Vulkan queue and its command buffers are process-wide. Public GPU
+// calls from several handles must not record that queue at the same time.
+// Workers inside one call do not take this lock; they run under the caller.
+std::recursive_mutex& SharedGpuMutex() {
+  static std::recursive_mutex mutex;
+  return mutex;
+}
 
 // GPU-only is a hard execution contract.  Keep the adapter's last submission
 // result at every public OCR boundary so a device reset is never confused with
@@ -1217,6 +1226,11 @@ struct OCR::Impl {
   // first-call outcome so a rejected graph does not pay a throw every page.
   // PPOCR_DISABLE_HYBRID_GPU_GRAPH keeps the previous per-operator hybrid.
   mutable std::mutex hybrid_gpu_graph_mutex;
+  // One handle may be called from several threads. The ONNX interpreter and
+  // the process-wide Vulkan queue are not safe to enter concurrently, so
+  // public inference calls take this lock. RecognizeBatch calls Recognize on
+  // the same thread, so the mutex is recursive.
+  mutable std::recursive_mutex recognize_mutex;
   mutable int hybrid_gpu_graph_state{};
   // A complete graph can be required by an application, but hybrid's normal
   // policy is finer grained: every Vulkan segment is admitted only when its
@@ -1678,6 +1692,8 @@ CpuInfo QueryCpuInfo() {
   return info;
 }
 OCR::OCR(const std::string& det_model,const std::string& rec_model,std::string dictionary_path,Options options) {
+  if (options.vulkan_device_index >= 0)
+    detail::RequestVulkanDeviceIndex(options.vulkan_device_index);
   impl_=std::make_unique<Impl>(det_model,rec_model,options);
   if (options.backend == Backend::gpu_only &&
       (!QueryBackendInfo().full_graph_gpu_available || !impl_->det.SupportsGpuOnly() ||
@@ -1694,11 +1710,15 @@ void OCR::SetDetectionThresholds(float det_threshold, float det_box_threshold,
       !(det_unclip_ratio > 0.F)) {
     Fail("detection thresholds out of range");
   }
+  std::lock_guard lock(impl_->recognize_mutex);
   impl_->opt.det_threshold = det_threshold;
   impl_->opt.det_box_threshold = det_box_threshold;
   impl_->opt.det_unclip_ratio = det_unclip_ratio;
 }
 std::vector<Result> OCR::Recognize(const Image& image) const {
+  std::lock_guard lock(impl_->recognize_mutex);
+  std::unique_lock<std::recursive_mutex> gpu_lock(SharedGpuMutex(), std::defer_lock);
+  if (impl_->opt.backend != Backend::cpu_only) gpu_lock.lock();
   if(image.empty()) Fail("invalid RGB image");
   if(impl_->det.outputs().empty()) Fail("detector has no output");
   if (impl_->opt.backend == Backend::gpu_only) {
@@ -1734,8 +1754,13 @@ std::vector<Result> OCR::Recognize(const Image& image) const {
           (void)impl_->det.gpu_arena().ReclaimFreeTransientStorage();
         }
         return result;
-      } catch (const std::exception&) {
+      } catch (const std::exception& ex) {
         std::lock_guard lock(impl_->hybrid_gpu_graph_mutex);
+        if (impl_->hybrid_gpu_graph_state != -1) {
+          std::fprintf(stderr,
+                       "ppocr: Vulkan graph unavailable (%s); falling back to CPU\n",
+                       ex.what());
+        }
         impl_->hybrid_gpu_graph_state = -1;
       }
     }
@@ -1972,6 +1997,9 @@ std::vector<std::vector<Result>> OCR::RecognizeBatch(
     const std::vector<Image>& images) const {
   std::vector<std::vector<Result>> output(images.size());
   if (images.empty()) return output;
+  std::lock_guard lock(impl_->recognize_mutex);
+  std::unique_lock<std::recursive_mutex> gpu_lock(SharedGpuMutex(), std::defer_lock);
+  if (impl_->opt.backend != Backend::cpu_only) gpu_lock.lock();
   // The GPU-only path retains image/crop tensors on its one Vulkan queue. A
   // Same-original-size pages are coalesced for one device-side RGB front end
   // + detector graph. Their same-width recognizer crops are then coalesced

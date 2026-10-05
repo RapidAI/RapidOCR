@@ -8,6 +8,11 @@ option(PPOCR_BUILD_SHARED "Build the shared library" ON)
 option(PPOCR_BUILD_STATIC "Build the static library" ON)
 option(PPOCR_BUILD_EXAMPLES "Build examples and smoke tools" ON)
 option(PPOCR_BUILD_TESTS "Build the C API smoke test" ON)
+# Shaders are compiled into the library. The loader is dlopen'd, so this does
+# not add a libvulkan DT_NEEDED entry. Wheels pass OFF: manylinux images do
+# not ship glslang, and the published CPU wheel must not change when the
+# image happens to contain a shader compiler.
+option(PPOCR_ENABLE_VULKAN "Embed Vulkan compute shaders when headers and glslangValidator are available" ON)
 
 if(NOT PPOCR_BUILD_SHARED AND NOT PPOCR_BUILD_STATIC)
   message(FATAL_ERROR "Enable PPOCR_BUILD_SHARED and/or PPOCR_BUILD_STATIC")
@@ -43,7 +48,7 @@ if(WIN32 AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/glslang/bin/glslang
 else()
   find_program(PPOCR_GLSLANG NAMES glslangValidator glslang)
 endif()
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/Vulkan-Headers/include/vulkan/vulkan.h" AND PPOCR_GLSLANG)
+if(PPOCR_ENABLE_VULKAN AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/Vulkan-Headers/include/vulkan/vulkan.h" AND PPOCR_GLSLANG)
   set(PPOCR_VULKAN_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
   set(PPOCR_VULKAN_SPV "${PPOCR_VULKAN_GENERATED_DIR}/vulkan_binary.spv")
   set(PPOCR_VULKAN_SPV_HEADER "${PPOCR_VULKAN_GENERATED_DIR}/vulkan_binary_spv.hpp")
@@ -69,6 +74,10 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/Vulkan-Headers/include/vulkan
   add_dependencies(ppocr_objects ppocr_vulkan_shader)
   target_include_directories(ppocr_objects PRIVATE "${PPOCR_VULKAN_GENERATED_DIR}")
   target_compile_definitions(ppocr_objects PRIVATE PPOCR_HAS_VULKAN_KERNELS=1)
+elseif(NOT PPOCR_ENABLE_VULKAN)
+  message(STATUS "Vulkan compute shaders disabled by PPOCR_ENABLE_VULKAN=OFF")
+else()
+  message(STATUS "Vulkan compute shaders disabled: need Vulkan-Headers and glslangValidator")
 endif()
 
 if(MSVC)
@@ -158,6 +167,19 @@ function(ppocr_link_runtime target)
   endif()
 endfunction()
 
+# Smoke tools call detail:: symbols. Those symbols are hidden in the shared
+# library, so the tools link the object files instead.
+function(ppocr_link_objects target)
+  target_link_libraries(${target} PRIVATE $<TARGET_OBJECTS:ppocr_objects>)
+  target_include_directories(${target} PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/include"
+      "${CMAKE_CURRENT_SOURCE_DIR}/src")
+  target_compile_features(${target} PRIVATE cxx_std_20)
+  if(UNIX AND NOT APPLE)
+    target_link_libraries(${target} PRIVATE ${CMAKE_DL_LIBS})
+  endif()
+endfunction()
+
 if(PPOCR_BUILD_EXAMPLES)
   add_executable(ppocr_demo examples/ppocr_demo.cpp)
   ppocr_link_runtime(ppocr_demo)
@@ -175,8 +197,7 @@ if(PPOCR_BUILD_EXAMPLES)
   endif()
 
   add_executable(ppocr_isa_bench examples/ppocr_isa_bench.cpp)
-  ppocr_link_runtime(ppocr_isa_bench)
-  target_include_directories(ppocr_isa_bench PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+  ppocr_link_objects(ppocr_isa_bench)
 
   add_executable(ppocr_bench examples/ppocr_bench.cpp)
   ppocr_link_runtime(ppocr_bench)
@@ -188,34 +209,31 @@ if(PPOCR_BUILD_EXAMPLES)
   endif()
 
   add_executable(ppocr_vulkan_smoke examples/ppocr_vulkan_smoke.cpp)
-  ppocr_link_runtime(ppocr_vulkan_smoke)
-  target_include_directories(ppocr_vulkan_smoke PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+  ppocr_link_objects(ppocr_vulkan_smoke)
 
   add_executable(ppocr_batch_smoke examples/ppocr_batch_smoke.cpp)
   ppocr_link_runtime(ppocr_batch_smoke)
 
   add_executable(ppocr_kernel_smoke examples/ppocr_kernel_smoke.cpp)
-  ppocr_link_runtime(ppocr_kernel_smoke)
-  target_include_directories(ppocr_kernel_smoke PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+  ppocr_link_objects(ppocr_kernel_smoke)
 
   add_executable(ppocr_gpu_graph_smoke examples/ppocr_gpu_graph_smoke.cpp)
-  ppocr_link_runtime(ppocr_gpu_graph_smoke)
-  target_include_directories(ppocr_gpu_graph_smoke PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+  ppocr_link_objects(ppocr_gpu_graph_smoke)
 
   add_executable(ppocr_gpu_frontend_smoke examples/ppocr_gpu_frontend_smoke.cpp)
-  ppocr_link_runtime(ppocr_gpu_frontend_smoke)
-  target_include_directories(ppocr_gpu_frontend_smoke PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+  ppocr_link_objects(ppocr_gpu_frontend_smoke)
 
   add_executable(ppocr_gpu_pipeline_smoke examples/ppocr_gpu_pipeline_smoke.cpp)
-  ppocr_link_runtime(ppocr_gpu_pipeline_smoke)
-  target_include_directories(ppocr_gpu_pipeline_smoke PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+  ppocr_link_objects(ppocr_gpu_pipeline_smoke)
 
   add_executable(ppocr_gpu_ocr_smoke examples/ppocr_gpu_ocr_smoke.cpp)
   ppocr_link_runtime(ppocr_gpu_ocr_smoke)
 
+  add_executable(ppocr_vulkan_robust examples/ppocr_vulkan_robust.cpp)
+  ppocr_link_runtime(ppocr_vulkan_robust)
+
   add_executable(ppocr_gpu_graph_mem_soak examples/ppocr_gpu_graph_mem_soak.cpp)
-  ppocr_link_runtime(ppocr_gpu_graph_mem_soak)
-  target_include_directories(ppocr_gpu_graph_mem_soak PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+  ppocr_link_objects(ppocr_gpu_graph_mem_soak)
 endif()
 
 if(PPOCR_BUILD_TESTS)

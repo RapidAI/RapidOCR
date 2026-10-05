@@ -17,6 +17,12 @@ Triggers:
 - tag `v5*` (for example `v5.0.0a1`)
 - Actions → Run workflow
 
+The wheel build passes `-DPPOCR_ENABLE_VULKAN=OFF`. Shaders stay out of the
+published library, so the manylinux image does not need glslang and the
+wheel does not gain a `libvulkan` dependency. A Vulkan-enabled build is the
+source default when `glslangValidator` and `third_party/Vulkan-Headers` are
+present; `.github/workflows/vulkan-lavapipe.yml` runs that build on lavapipe.
+
 The wheel and sdist files are uploaded as the `rapidocr-dist` artifact,
 with `SHA256SUMS`. PyPI publishing and the GitHub Release run only for a
 push of a `v5*` tag. They do not run for a branch push, a pull request, or a

@@ -145,6 +145,11 @@ struct Options {
   // existing callers keep the previous component mask.
   int det_use_dilation = 0;
   int det_max_candidates = 1000;
+  // -1 keeps the automatic adapter choice (CPU/lavapipe devices are skipped).
+  // A non-negative index selects that physical device, including a software
+  // Vulkan device. The choice is process-wide and is read on the first
+  // Vulkan initialization.
+  int vulkan_device_index = -1;
 };
 
 // PP-OCRv6 detector + recognizer with a deliberately narrow built-in ONNX
