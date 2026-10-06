@@ -3,13 +3,13 @@
 # @Contact: liekkaskono@163.com
 import pytest
 from rapidocr import ModelType, OCRVersion
-from rapidocr.inference_engine.base import InferSession
+from rapidocr.inference_engine.base import FileInfo, InferSession
 from rapidocr.utils.model_resolver import (
     MODEL_ROUTES,
     list_supported_langs,
     route_to_model_key,
 )
-from rapidocr.utils.typings import TaskType
+from rapidocr.utils.typings import EngineType, TaskType
 from tools.validate_model_routes import validate_model_routes
 
 
@@ -17,7 +17,7 @@ def test_model_routes_schema_is_valid():
     validate_model_routes(MODEL_ROUTES)
 
 
-def test_every_route_resolves_and_exists_in_a_model_registry():
+def test_every_route_resolves_in_each_available_model_registry():
     registries = InferSession.model_info
     for version, version_cfg in MODEL_ROUTES.items():
         if version == "_defs":
@@ -34,11 +34,27 @@ def test_every_route_resolves_and_exists_in_a_model_registry():
                 model_enum = ModelType(model_type)
                 for route in routes:
                     model_key = route["model_key"]
-                    assert any(
-                        model_key in (registry.get(version, {}).get(task, {}) or {})
-                        for engine, registry in registries.items()
-                        if engine != "model_routes"
-                    ), model_key
+                    available_engines = 0
+                    for engine, registry in registries.items():
+                        if engine not in {item.value for item in EngineType}:
+                            continue
+                        model_dict = registry.get(version, {}).get(task, {}) or {}
+                        if model_key not in model_dict:
+                            continue
+
+                        available_engines += 1
+                        model_info = InferSession.get_model_url(
+                            FileInfo(
+                                engine_type=EngineType(engine),
+                                ocr_version=version_enum,
+                                task_type=task_enum,
+                                lang_type=route["supported_langs"][0],
+                                model_type=model_enum,
+                            )
+                        )
+                        assert model_info == model_dict[model_key]
+
+                    assert available_engines > 0, model_key
                     for lang in route["supported_langs"]:
                         assert (
                             route_to_model_key(
@@ -46,6 +62,35 @@ def test_every_route_resolves_and_exists_in_a_model_registry():
                             )
                             == model_key
                         )
+
+
+def test_model_routes_reject_unknown_enum_values():
+    with pytest.raises(ValueError, match="Invalid OCR version"):
+        validate_model_routes({"PP-OCRv7": {}})
+
+    with pytest.raises(ValueError, match="Invalid task"):
+        validate_model_routes({"PP-OCRv6": {"recognize": {}}})
+
+    with pytest.raises(ValueError, match="Invalid model type"):
+        validate_model_routes({"PP-OCRv6": {"rec": {"large": []}}})
+
+
+def test_model_routes_accept_native_python_containers():
+    validate_model_routes(
+        {
+            "PP-OCRv6": {
+                "rec": {
+                    "small": [
+                        {
+                            "lang": "multi",
+                            "model_key": "multi_PP-OCRv6_rec_small",
+                            "supported_langs": ["ch", "en"],
+                        }
+                    ]
+                }
+            }
+        }
+    )
 
 
 @pytest.mark.parametrize(

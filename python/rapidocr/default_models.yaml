@@ -1228,6 +1228,22 @@ lang_mapping:
     cn: "天城文"
     en: "Devanagari"
     aliases: []
+  cyrillic:
+    cn: "西里尔语"
+    en: "Cyrillic"
+    aliases: []
+  ch_doc:
+    cn: "中文文档"
+    en: "Chinese Document"
+    aliases: []
+  gl:
+    cn: "加利西亚语"
+    en: "Galician"
+    aliases: []
+  lb:
+    cn: "卢森堡语"
+    en: "Luxembourgish"
+    aliases: []
   abq:
     cn: "阿布哈兹语"
     en: "Abkhaz"
@@ -1243,7 +1259,7 @@ lang_mapping:
   ar:
     cn: "阿拉伯语"
     en: "Arabic"
-    aliases: []
+    aliases: ["arabic"]
   ava:
     cn: "阿瓦尔语"
     en: "Avaric"
