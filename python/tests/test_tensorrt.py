@@ -166,7 +166,7 @@ def test_tensorrt_default_cache_dir_uses_model_root_dir(monkeypatch, tmp_path):
     assert engine_paths == [
         cfg.model_root_dir
         / "models"
-        / "en_PP-OCRv3_det_mobile_sm87_fp16_tf32unset.engine"
+        / "en_PP-OCRv3_det_mobile_sm87_fp32_tf32unset.engine"
     ]
 
 
@@ -226,7 +226,7 @@ def test_tensorrt_loads_cached_engine_without_rebuild(monkeypatch, tmp_path):
 
     cfg = make_tensorrt_cfg(tmp_path, engine_cfg={"cache_dir": tmp_path / "trt_cache"})
     engine_path = (
-        tmp_path / "trt_cache" / "en_PP-OCRv3_det_mobile_sm87_fp16_tf32unset.engine"
+        tmp_path / "trt_cache" / "en_PP-OCRv3_det_mobile_sm87_fp32_tf32unset.engine"
     )
     engine_path.parent.mkdir()
     engine_path.write_bytes(b"cached engine")

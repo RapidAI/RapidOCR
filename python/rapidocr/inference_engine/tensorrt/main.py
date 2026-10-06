@@ -24,6 +24,10 @@ class TRTInferSession(InferSession):
     def __init__(self, cfg: Dict[str, Any]):
         self.cfg = cfg
         self.engine_cfg = cfg.get("engine_cfg", {})
+
+        self.use_fp16 = self.engine_cfg.get("use_fp16", False)
+        self.use_int8 = self.engine_cfg.get("use_int8", False)
+
         self.model_root_dir = None
         self._closed = False
         self.device_id = self._setup_cuda_device()
@@ -218,11 +222,18 @@ class TRTInferSession(InferSession):
             cache_dir = self.model_root_dir / "models"
 
         cache_dir = Path(cache_dir)
-        cache_dir.mkdir(parents=True, exist_ok=True)
+        mkdir(cache_dir)
 
         model_name = self._get_model_name(cfg)
         gpu_arch = self._get_gpu_arch()
-        precision = "fp16" if self.engine_cfg.get("use_fp16", True) else "fp32"
+
+        if self.use_int8:
+            precision = "int8"
+        elif self.use_fp16:
+            precision = "fp16"
+        else:
+            precision = "fp32"
+
         tf32_override = os.environ.get("NVIDIA_TF32_OVERRIDE", "unset")
 
         return cache_dir / (
@@ -235,15 +246,12 @@ class TRTInferSession(InferSession):
             return Path(cfg["model_path"]).stem
 
         model_key = route_to_model_key(
-            cfg.task_type,
-            cfg.ocr_version,
-            cfg.lang_type,
-            cfg.model_type,
+            cfg.task_type, cfg.ocr_version, cfg.lang_type, cfg.model_type
         )
         if model_key is None:
             task_type = cfg.task_type.value
             lang_type = normalize_lang(cfg.lang_type)
-            model_key = f"{lang_type}_{task_type}_{cfg.model_type.value}"
+            model_key = f"{lang_type}_{cfg.ocr_version.value}_{task_type}_{cfg.model_type.value}"
 
         return model_key
 
