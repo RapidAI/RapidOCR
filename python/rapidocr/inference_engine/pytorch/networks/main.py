@@ -37,7 +37,7 @@ class ModelLoader:
                 )
             )
             default_model_url = model_info["model_dir"]
-            model_path = cfg.model_root_dir / Path(default_model_url).name
+            model_path = Path(cfg.model_root_dir) / Path(default_model_url).name
             DownloadFile.run(
                 DownloadFileInput(
                     file_url=default_model_url,
