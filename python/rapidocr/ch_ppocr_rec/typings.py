@@ -75,3 +75,4 @@ class WordInfo:
     word_types: List[WordType] = field(default_factory=list)
     line_txt_len: float = 0.0
     confs: List[float] = field(default_factory=list)
+    char_confs: List[List[float]] = field(default_factory=list)

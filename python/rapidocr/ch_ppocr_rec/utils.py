@@ -123,6 +123,14 @@ class CTCLabelDecode:
                     len(token_indices) * wh_ratio_list[batch_idx] / max_wh_ratio
                 )
                 rec_word_info.confs = conf_list
+
+                # words holds every character of text except spaces, in order.
+                char_confs = iter(
+                    conf for char, conf in zip(text, conf_list) if not char.isspace()
+                )
+                rec_word_info.char_confs = [
+                    [next(char_confs) for _ in word] for word in rec_word_info.words
+                ]
                 result_words_list.append(rec_word_info)
         return result_list, result_words_list
 
