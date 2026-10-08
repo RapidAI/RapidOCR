@@ -4,7 +4,7 @@
 from ctypes import string_at
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import cv2
 import numpy as np
@@ -22,7 +22,31 @@ class MemoryImage:
         self.length = length
 
 
-InputType = Union[str, np.ndarray, bytes, Path, Image.Image, MemoryImage]
+class RawMemoryImage:
+    """Metadata needed to read an uncompressed pixel buffer by address."""
+
+    def __init__(
+        self,
+        address: int,
+        length: int,
+        width: int,
+        height: int,
+        pixel_format: str = "BGRA",
+        stride: Optional[int] = None,
+        bottom_up: bool = False,
+    ):
+        self.address = address
+        self.length = length
+        self.width = width
+        self.height = height
+        self.pixel_format = pixel_format
+        self.stride = stride
+        self.bottom_up = bottom_up
+
+
+InputType = Union[
+    str, np.ndarray, bytes, Path, Image.Image, MemoryImage, RawMemoryImage
+]
 
 
 class LoadImage:
@@ -71,6 +95,12 @@ class LoadImage:
                 return self.load_memory_image(img)
             except Exception as e:
                 raise LoadImageError("MemoryImage loading failed.") from e
+
+        if isinstance(img, RawMemoryImage):
+            try:
+                return self.load_raw_memory_image(img)
+            except Exception as e:
+                raise LoadImageError(f"RawMemoryImage loading failed: {e}") from e
 
         raise LoadImageError(f"{type(img)} is not supported!")
 
@@ -186,6 +216,69 @@ class LoadImage:
             raise LoadImageError("cannot decode image from memory")
 
         return result
+
+    @staticmethod
+    def load_raw_memory_image(img: RawMemoryImage) -> np.ndarray:
+        if img.address <= 0 or img.length <= 0:
+            raise LoadImageError("invalid memory address or length")
+        if img.width <= 0 or img.height <= 0:
+            raise LoadImageError("width and height must be positive")
+
+        pixel_format = str(img.pixel_format).upper()
+        channels_by_format = {
+            "GRAY": 1,
+            "GRAY8": 1,
+            "BGR": 3,
+            "BGR24": 3,
+            "RGB": 3,
+            "RGB24": 3,
+            "BGRA": 4,
+            "BGRA32": 4,
+            "BGRX": 4,
+            "RGBA": 4,
+            "RGBA32": 4,
+            "RGBX": 4,
+        }
+        channels = channels_by_format.get(pixel_format)
+        if channels is None:
+            supported = ", ".join(channels_by_format)
+            raise LoadImageError(
+                f"unsupported pixel format {img.pixel_format!r}; supported: {supported}"
+            )
+
+        row_bytes = img.width * channels
+        stride = row_bytes if img.stride is None else img.stride
+        if stride < row_bytes:
+            raise LoadImageError(
+                f"stride ({stride}) is smaller than row size ({row_bytes})"
+            )
+
+        required_length = stride * img.height
+        if img.length < required_length:
+            raise LoadImageError(
+                f"buffer is too small: need {required_length} bytes, got {img.length}"
+            )
+
+        raw = string_at(img.address, required_length)
+        rows = np.frombuffer(raw, dtype=np.uint8).reshape(img.height, stride)
+        pixels = rows[:, :row_bytes]
+        if channels == 1:
+            pixels = pixels.reshape(img.height, img.width)
+        else:
+            pixels = pixels.reshape(img.height, img.width, channels)
+
+        if img.bottom_up:
+            pixels = pixels[::-1]
+
+        if pixel_format in {"GRAY", "GRAY8"}:
+            return cv2.cvtColor(pixels, cv2.COLOR_GRAY2BGR)
+        if pixel_format in {"RGB", "RGB24"}:
+            return cv2.cvtColor(pixels, cv2.COLOR_RGB2BGR)
+        if pixel_format in {"BGRA", "BGRA32", "BGRX"}:
+            return cv2.cvtColor(pixels, cv2.COLOR_BGRA2BGR)
+        if pixel_format in {"RGBA", "RGBA32", "RGBX"}:
+            return cv2.cvtColor(pixels, cv2.COLOR_RGBA2BGR)
+        return np.ascontiguousarray(pixels)
 
 
 class LoadImageError(Exception):

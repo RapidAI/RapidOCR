@@ -21,8 +21,8 @@ from rapidocr import (
     OCRVersion,
     RapidOCR,
 )
+from rapidocr.utils.load_image import LoadImage, MemoryImage, RawMemoryImage
 from rapidocr.utils.parse_parameters import ParseParams
-from rapidocr.utils.load_image import LoadImage, MemoryImage
 
 test_dir = root_dir / "tests" / "test_files"
 img_path = test_dir / "ch_en_num.jpg"
@@ -165,6 +165,101 @@ def test_input_memory_image_invalid_encoded_data():
 
     with pytest.raises(LoadImageError, match="MemoryImage loading failed"):
         loader(MemoryImage(ctypes.addressof(buffer), len(encoded)))
+
+
+def make_raw_memory_image(img, pixel_format, stride=None, bottom_up=False):
+    height, width = img.shape[:2]
+    row_bytes = img.shape[1] * (1 if img.ndim == 2 else img.shape[2])
+    stride = row_bytes if stride is None else stride
+    rows = img[::-1] if bottom_up else img
+    raw = bytearray(stride * height)
+    for row_index, row in enumerate(rows):
+        row_data = row.tobytes()
+        raw[row_index * stride : row_index * stride + row_bytes] = row_data
+    buffer = ctypes.create_string_buffer(bytes(raw))
+    memory_img = RawMemoryImage(
+        ctypes.addressof(buffer),
+        len(raw),
+        width,
+        height,
+        pixel_format=pixel_format,
+        stride=stride,
+        bottom_up=bottom_up,
+    )
+    return memory_img, buffer
+
+
+def test_input_raw_memory_image(engine):
+    img = cv2.imread(str(img_path))
+    memory_img, buffer = make_raw_memory_image(img, "BGR")
+
+    result = engine(memory_img)
+
+    assert buffer is not None  # Keep the backing memory alive through inference.
+    assert len(result) == 18
+    assert result.txts[0] == "正品促销"
+
+
+@pytest.mark.parametrize(
+    "pixel_format,source",
+    [
+        ("BGR", np.array([[[1, 2, 3], [4, 5, 6]]], dtype=np.uint8)),
+        ("RGB", np.array([[[3, 2, 1], [6, 5, 4]]], dtype=np.uint8)),
+        ("BGRA", np.array([[[1, 2, 3, 0], [4, 5, 6, 255]]], dtype=np.uint8)),
+        ("BGRX", np.array([[[1, 2, 3, 8], [4, 5, 6, 9]]], dtype=np.uint8)),
+        ("RGBA", np.array([[[3, 2, 1, 0], [6, 5, 4, 255]]], dtype=np.uint8)),
+        ("RGBX", np.array([[[3, 2, 1, 8], [6, 5, 4, 9]]], dtype=np.uint8)),
+    ],
+)
+def test_raw_memory_image_converts_to_bgr(pixel_format, source):
+    memory_img, buffer = make_raw_memory_image(source, pixel_format)
+
+    result = LoadImage()(memory_img)
+
+    assert buffer is not None
+    np.testing.assert_array_equal(
+        result, np.array([[[1, 2, 3], [4, 5, 6]]], dtype=np.uint8)
+    )
+
+
+def test_raw_memory_image_supports_gray_stride_and_bottom_up():
+    gray = np.array([[10, 20], [30, 40]], dtype=np.uint8)
+    memory_img, buffer = make_raw_memory_image(
+        gray, "GRAY8", stride=4, bottom_up=True
+    )
+
+    result = LoadImage()(memory_img)
+
+    assert buffer is not None
+    expected = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+    np.testing.assert_array_equal(result, expected)
+
+
+@pytest.mark.parametrize(
+    "kwargs,error",
+    [
+        ({"address": 0}, "invalid memory address"),
+        ({"width": 0}, "width and height must be positive"),
+        ({"pixel_format": "YUV"}, "unsupported pixel format"),
+        ({"stride": 5}, "stride .* is smaller than row size"),
+        ({"length": 8}, "buffer is too small"),
+    ],
+)
+def test_raw_memory_image_rejects_invalid_metadata(kwargs, error):
+    raw = bytes(12)
+    buffer = ctypes.create_string_buffer(raw)
+    params = {
+        "address": ctypes.addressof(buffer),
+        "length": len(raw),
+        "width": 2,
+        "height": 2,
+        "pixel_format": "BGR",
+        "stride": 6,
+    }
+    params.update(kwargs)
+
+    with pytest.raises(LoadImageError, match=error):
+        LoadImage()(RawMemoryImage(**params))
 
 
 def test_input_path(engine):
