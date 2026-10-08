@@ -6,28 +6,23 @@ body = """
     | filter(attribute="scope")
     | sort(attribute="scope") %}
         - **({{commit.scope}})**{% if commit.breaking %} [**breaking**]{% endif %} \
-            {{ commit.message }} by [@{{ commit.author.name }}](https://github.com/{{ commit.author.name }}) in [{{ commit.id | truncate(length=7, end="") }}]($REPO/commit/{{ commit.id }})
+            {{ commit.message }} by {% if commit.author.github_user %}[@{{ commit.author.github_user.login }}](https://github.com/{{ commit.author.github_user.login }}){% else %}{{ commit.author.name }}{% endif %} in [{{ commit.id | truncate(length=7, end="") }}]($REPO/commit/{{ commit.id }})
     {%- endfor -%}
     {% raw %}\n{% endraw %}\
     {%- for commit in commits %}
         {%- if commit.scope -%}
         {% else -%}
             - {% if commit.breaking %} [**breaking**]{% endif %}\
-                {{ commit.message }} by [@{{ commit.author.name }}](https://github.com/{{ commit.author.name }}) in [{{ commit.id | truncate(length=7, end="") }}]($REPO/commit/{{ commit.id }})
+                {{ commit.message }} by {% if commit.author.github_user %}[@{{ commit.author.github_user.login }}](https://github.com/{{ commit.author.github_user.login }}){% else %}{{ commit.author.name }}{% endif %} in [{{ commit.id | truncate(length=7, end="") }}]($REPO/commit/{{ commit.id }})
         {% endif -%}
     {% endfor -%}
 {% endfor %}
-
-
 {% if github.contributors | length > 0 %}
 ### 🎉 Contributors
-
 {% for contributor in github.contributors %}
   - [@{{ contributor.username }}](https://github.com/{{ contributor.username }})
 {%- endfor -%}
 {% endif %}
-
-
 {% if version %}
     {% if previous.version %}\
         **Full Changelog**:  [{{ version | trim_start_matches(pat="v") }}]($REPO/compare/{{ previous.version }}..{{ version }})
@@ -38,21 +33,23 @@ body = """
     ## [unreleased]
 {% endif %}
 """
-
 footer = """
-
 """
-
 # Remove leading and trailing whitespaces from the changelog's body.
 trim = true
 postprocessors = [
-    # Replace the placeholder `<REPO>` with a URL.
+# Replace the placeholder $REPO with a URL.
     { pattern = '\$REPO', replace = "https://github.com/RapidAI/RapidOCR" }, # replace repository URL
-    # 去掉每行末尾的无效空格
+# 去掉每行末尾的无效空格
     { pattern = "(?m)[ \t]+$", replace = "" },
-    # 将连续多个空行压缩为最多一个空行
+# 将连续多个空行压缩为最多一个空行
     { pattern = "\n{3,}", replace = "\n\n" },
 ]
+
+[github]
+# 填入你的github token，用于拉取commit对应的github用户信息
+# token 权限：public_repo 即可
+token = ""
 
 [git]
 # Parse commits according to the conventional commits specification.
@@ -64,8 +61,8 @@ filter_unconventional = false
 split_commits = false
 # An array of regex based parsers to modify commit messages prior to further processing.
 commit_preprocessors = [
-    # Replace issue numbers with link templates to be updated in `changelog.postprocessors`.
-    #{ pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/orhun/git-cliff/issues/${2}))"},
+# Replace issue numbers with link templates to be updated in `changelog.postprocessors`.
+#{ pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/orhun/git-cliff/issues/${2}))"},
 ]
 # An array of regex based parsers for extracting data from the commit message.
 # Assigns commits to groups.
