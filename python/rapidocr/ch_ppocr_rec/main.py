@@ -76,7 +76,11 @@ class TextRecognizer:
             dict_download_url = (
                 dict_download_url if dict_download_url is not None else DEFAULT_DICT_URL
             )
-            dict_path = DEFAULT_MODEL_PATH / Path(dict_download_url).name
+            model_root_dir = cfg.get("model_root_dir", None)
+            dict_dir = (
+                DEFAULT_MODEL_PATH if model_root_dir is None else Path(model_root_dir)
+            )
+            dict_path = dict_dir / Path(dict_download_url).name
             if not Path(dict_path).exists():
                 DownloadFile.run(
                     DownloadFileInput(
