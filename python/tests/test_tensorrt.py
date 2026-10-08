@@ -187,6 +187,16 @@ def test_tensorrt_model_aliases_share_cache_name(monkeypatch, tmp_path):
     assert session._get_model_name(alias_cfg) == session._get_model_name(canonical_cfg)
 
 
+def test_tensorrt_close_handles_partially_initialized_session(monkeypatch):
+    tensorrt_main = import_tensorrt_main(monkeypatch)
+    session = object.__new__(tensorrt_main.TRTInferSession)
+
+    session.close()
+    session.close()
+
+    assert session._closed is True
+
+
 def test_tensorrt_explicit_model_path_skips_download(monkeypatch, tmp_path):
     tensorrt_main = import_tensorrt_main(monkeypatch)
 

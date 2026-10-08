@@ -17,6 +17,7 @@ from ...utils.typings import EngineType
 from ...utils.utils import mkdir
 from ..base import FileInfo, InferSession
 from .engine_builder import TRTEngineBuilder
+from .hardware import detect_capabilities, resolve_precision
 from .memory_utils import allocate_buffers, free_buffers
 
 
@@ -25,14 +26,15 @@ class TRTInferSession(InferSession):
         self.cfg = cfg
         self.engine_cfg = cfg.get("engine_cfg", {})
 
-        self.use_fp16 = self.engine_cfg.get("use_fp16", False)
-        self.use_int8 = self.engine_cfg.get("use_int8", False)
-
         self.model_root_dir = None
         self._closed = False
         self.device_id = self._setup_cuda_device()
 
         self.trt_logger = trt.Logger(trt.Logger.WARNING)
+        self.capabilities = detect_capabilities(self.trt_logger)
+        self.effective_precision = resolve_precision(
+            self.engine_cfg, self.capabilities
+        )
 
         engine_path = self._get_engine_path(cfg)
         self.engine = self._load_or_build_engine(cfg, engine_path)
@@ -55,7 +57,7 @@ class TRTInferSession(InferSession):
         self.close()
 
     def close(self) -> None:
-        if self._closed:
+        if getattr(self, "_closed", False):
             return
 
         self._closed = True
@@ -227,9 +229,9 @@ class TRTInferSession(InferSession):
         model_name = self._get_model_name(cfg)
         gpu_arch = self._get_gpu_arch()
 
-        if self.use_int8:
+        if self.effective_precision["use_int8"]:
             precision = "int8"
-        elif self.use_fp16:
+        elif self.effective_precision["use_fp16"]:
             precision = "fp16"
         else:
             precision = "fp32"
@@ -291,7 +293,7 @@ class TRTInferSession(InferSession):
         builder = TRTEngineBuilder(
             onnx_path=onnx_path,
             engine_path=engine_path,
-            cfg=self.engine_cfg,
+            cfg={**self.engine_cfg, **self.effective_precision},
             task_type=cfg.task_type.value,
             trt_logger=self.trt_logger,
             ocr_version=cfg.ocr_version,
