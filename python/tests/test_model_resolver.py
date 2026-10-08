@@ -2,10 +2,95 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 import pytest
-
 from rapidocr import ModelType, OCRVersion
-from rapidocr.utils.model_resolver import list_supported_langs, resolve_model_key
-from rapidocr.utils.typings import TaskType
+from rapidocr.inference_engine.base import FileInfo, InferSession
+from rapidocr.utils.model_resolver import (
+    MODEL_ROUTES,
+    list_supported_langs,
+    route_to_model_key,
+)
+from rapidocr.utils.typings import EngineType, TaskType
+from tools.validate_model_routes import validate_model_routes
+
+
+def test_model_routes_schema_is_valid():
+    validate_model_routes(MODEL_ROUTES)
+
+
+def test_every_route_resolves_in_each_available_model_registry():
+    registries = InferSession.model_info
+    for version, version_cfg in MODEL_ROUTES.items():
+        if version == "_defs":
+            continue
+        for task, task_cfg in version_cfg.items():
+            if task == "aliases":
+                continue
+            for model_type, routes in task_cfg.items():
+                if model_type == "aliases":
+                    continue
+
+                task_enum = TaskType(task)
+                version_enum = OCRVersion(version)
+                model_enum = ModelType(model_type)
+                for route in routes:
+                    model_key = route["model_key"]
+                    available_engines = 0
+                    for engine, registry in registries.items():
+                        if engine not in {item.value for item in EngineType}:
+                            continue
+                        model_dict = registry.get(version, {}).get(task, {}) or {}
+                        if model_key not in model_dict:
+                            continue
+
+                        available_engines += 1
+                        model_info = InferSession.get_model_url(
+                            FileInfo(
+                                engine_type=EngineType(engine),
+                                ocr_version=version_enum,
+                                task_type=task_enum,
+                                lang_type=route["supported_langs"][0],
+                                model_type=model_enum,
+                            )
+                        )
+                        assert model_info == model_dict[model_key]
+
+                    assert available_engines > 0, model_key
+                    for lang in route["supported_langs"]:
+                        assert (
+                            route_to_model_key(
+                                task_enum, version_enum, lang, model_enum
+                            )
+                            == model_key
+                        )
+
+
+def test_model_routes_reject_unknown_enum_values():
+    with pytest.raises(ValueError, match="Invalid OCR version"):
+        validate_model_routes({"PP-OCRv7": {}})
+
+    with pytest.raises(ValueError, match="Invalid task"):
+        validate_model_routes({"PP-OCRv6": {"recognize": {}}})
+
+    with pytest.raises(ValueError, match="Invalid model type"):
+        validate_model_routes({"PP-OCRv6": {"rec": {"large": []}}})
+
+
+def test_model_routes_accept_native_python_containers():
+    validate_model_routes(
+        {
+            "PP-OCRv6": {
+                "rec": {
+                    "small": [
+                        {
+                            "lang": "multi",
+                            "model_key": "multi_PP-OCRv6_rec_small",
+                            "supported_langs": ["ch", "en"],
+                        }
+                    ]
+                }
+            }
+        }
+    )
 
 
 @pytest.mark.parametrize(
@@ -16,16 +101,14 @@ from rapidocr.utils.typings import TaskType
     ],
 )
 def test_ppocrv6_tiny_supports_non_japan_lang(task_type, expected_key):
-    model_key = resolve_model_key(
-        task_type, OCRVersion.PPOCRV6, "fr", ModelType.TINY
-    )
+    model_key = route_to_model_key(task_type, OCRVersion.PPOCRV6, "fr", ModelType.TINY)
 
     assert model_key == expected_key
 
 
 @pytest.mark.parametrize("model_type", [ModelType.SMALL, ModelType.MEDIUM])
 def test_ppocrv6_japan_supported_by_non_tiny_models(model_type):
-    model_key = resolve_model_key(
+    model_key = route_to_model_key(
         TaskType.REC, OCRVersion.PPOCRV6, "japan", model_type
     )
 
@@ -35,12 +118,12 @@ def test_ppocrv6_japan_supported_by_non_tiny_models(model_type):
 @pytest.mark.parametrize("task_type", [TaskType.DET, TaskType.REC])
 def test_ppocrv6_tiny_does_not_support_japan(task_type):
     with pytest.raises(ValueError, match="japan.*PP-OCRv6 tiny"):
-        resolve_model_key(task_type, OCRVersion.PPOCRV6, "japan", ModelType.TINY)
+        route_to_model_key(task_type, OCRVersion.PPOCRV6, "japan", ModelType.TINY)
 
 
 def test_ppocrv6_tiny_rejects_japan_alias():
     with pytest.raises(ValueError, match="japan.*PP-OCRv6 tiny"):
-        resolve_model_key(TaskType.REC, OCRVersion.PPOCRV6, "ja", ModelType.TINY)
+        route_to_model_key(TaskType.REC, OCRVersion.PPOCRV6, "ja", ModelType.TINY)
 
 
 def test_list_supported_langs_can_filter_by_model_type():
@@ -55,9 +138,30 @@ def test_list_supported_langs_can_filter_by_model_type():
     assert "japan" in all_langs
 
 
-def test_resolve_model_key_returns_none_for_unrouted_versions():
-    model_key = resolve_model_key(
+def test_ppocrv5_rec_route_is_loaded_from_yaml():
+    model_key = route_to_model_key(
         TaskType.REC, OCRVersion.PPOCRV5, "ch", ModelType.MOBILE
     )
 
-    assert model_key is None
+    assert model_key == "ch_PP-OCRv5_rec_mobile"
+
+
+def test_ppocrv4_cls_route_is_loaded_from_yaml():
+    assert (
+        route_to_model_key(TaskType.CLS, OCRVersion.PPOCRV4, "ch", ModelType.MOBILE)
+        == "ch_ppocr_mobile_v2.0_cls_mobile"
+    )
+
+
+def test_aliases_are_scoped_to_routes():
+    assert (
+        route_to_model_key(TaskType.REC, OCRVersion.PPOCRV4, "ja", ModelType.MOBILE)
+        == "japan_PP-OCRv4_rec_mobile"
+    )
+
+
+def test_list_supported_langs_includes_cls():
+    assert list_supported_langs(TaskType.CLS, OCRVersion.PPOCRV5, ModelType.SERVER) == [
+        "ch",
+        "multi",
+    ]

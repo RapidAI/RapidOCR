@@ -166,8 +166,35 @@ def test_tensorrt_default_cache_dir_uses_model_root_dir(monkeypatch, tmp_path):
     assert engine_paths == [
         cfg.model_root_dir
         / "models"
-        / "en_PP-OCRv4_det_mobile_sm87_fp16_tf32unset.engine"
+        / "en_PP-OCRv3_det_mobile_sm87_fp32_tf32unset.engine"
     ]
+
+
+def test_tensorrt_model_aliases_share_cache_name(monkeypatch, tmp_path):
+    tensorrt_main = import_tensorrt_main(monkeypatch)
+    session = object.__new__(tensorrt_main.TRTInferSession)
+    base_cfg = {
+        "model_path": None,
+        "ocr_version": OCRVersion.PPOCRV6,
+        "task_type": TaskType.DET,
+        "model_type": ModelType.SMALL,
+    }
+
+    canonical_cfg = AttrDict(base_cfg, lang_type="ch")
+    alias_cfg = AttrDict(base_cfg, lang_type="zh")
+
+    assert session._get_model_name(canonical_cfg) == "multi_PP-OCRv6_det_small"
+    assert session._get_model_name(alias_cfg) == session._get_model_name(canonical_cfg)
+
+
+def test_tensorrt_close_handles_partially_initialized_session(monkeypatch):
+    tensorrt_main = import_tensorrt_main(monkeypatch)
+    session = object.__new__(tensorrt_main.TRTInferSession)
+
+    session.close()
+    session.close()
+
+    assert session._closed is True
 
 
 def test_tensorrt_explicit_model_path_skips_download(monkeypatch, tmp_path):
@@ -209,7 +236,7 @@ def test_tensorrt_loads_cached_engine_without_rebuild(monkeypatch, tmp_path):
 
     cfg = make_tensorrt_cfg(tmp_path, engine_cfg={"cache_dir": tmp_path / "trt_cache"})
     engine_path = (
-        tmp_path / "trt_cache" / "en_PP-OCRv4_det_mobile_sm87_fp16_tf32unset.engine"
+        tmp_path / "trt_cache" / "en_PP-OCRv3_det_mobile_sm87_fp32_tf32unset.engine"
     )
     engine_path.parent.mkdir()
     engine_path.write_bytes(b"cached engine")
@@ -239,7 +266,7 @@ def test_tensorrt_force_rebuild_ignores_cached_engine(monkeypatch, tmp_path):
         engine_cfg={"cache_dir": tmp_path / "trt_cache", "force_rebuild": True},
     )
     engine_path = (
-        tmp_path / "trt_cache" / "en_PP-OCRv4_det_mobile_sm87_fp16_tf32unset.engine"
+        tmp_path / "trt_cache" / "en_PP-OCRv3_det_mobile_sm87_fp16_tf32unset.engine"
     )
     engine_path.parent.mkdir()
     engine_path.write_bytes(b"cached engine")
@@ -278,7 +305,7 @@ def test_tensorrt_falls_back_to_rebuild_when_cached_engine_load_fails(
 
     cfg = make_tensorrt_cfg(tmp_path, engine_cfg={"cache_dir": tmp_path / "trt_cache"})
     engine_path = (
-        tmp_path / "trt_cache" / "en_PP-OCRv4_det_mobile_sm87_fp16_tf32unset.engine"
+        tmp_path / "trt_cache" / "en_PP-OCRv3_det_mobile_sm87_fp16_tf32unset.engine"
     )
     engine_path.parent.mkdir()
     engine_path.write_bytes(b"bad cached engine")

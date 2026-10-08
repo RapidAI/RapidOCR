@@ -51,15 +51,16 @@ class TRTEngineBuilder:
         config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, workspace_size)
 
         # Set precision
-        if self.cfg.get("use_fp16", True) and builder.platform_has_fast_fp16:
+        use_fp16 = self.cfg.get("use_fp16", False)
+        use_int8 = self.cfg.get("use_int8", False)
+        if use_fp16:
             config.set_flag(trt.BuilderFlag.FP16)
             logger.info("Using FP16 precision")
-        else:
-            logger.info("Using FP32 precision")
-
-        if self.cfg.get("use_int8", False) and builder.platform_has_fast_int8:
+        elif use_int8:
             config.set_flag(trt.BuilderFlag.INT8)
             logger.info("Using INT8 precision")
+        else:
+            logger.info("Using FP32 precision")
 
         # Add optimization profile for dynamic shapes
         profile = builder.create_optimization_profile()

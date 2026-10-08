@@ -12,11 +12,12 @@ from cuda.bindings import runtime as cudart
 
 from ...utils.download_file import DownloadFile, DownloadFileInput
 from ...utils.log import logger
-from ...utils.model_resolver import normalize_lang, resolve_model_key
+from ...utils.model_resolver import normalize_lang, route_to_model_key
 from ...utils.typings import EngineType
 from ...utils.utils import mkdir
 from ..base import FileInfo, InferSession
 from .engine_builder import TRTEngineBuilder
+from .hardware import detect_capabilities, resolve_precision
 from .memory_utils import allocate_buffers, free_buffers
 
 
@@ -24,11 +25,16 @@ class TRTInferSession(InferSession):
     def __init__(self, cfg: Dict[str, Any]):
         self.cfg = cfg
         self.engine_cfg = cfg.get("engine_cfg", {})
+
         self.model_root_dir = None
         self._closed = False
         self.device_id = self._setup_cuda_device()
 
         self.trt_logger = trt.Logger(trt.Logger.WARNING)
+        self.capabilities = detect_capabilities(self.trt_logger)
+        self.effective_precision = resolve_precision(
+            self.engine_cfg, self.capabilities
+        )
 
         engine_path = self._get_engine_path(cfg)
         self.engine = self._load_or_build_engine(cfg, engine_path)
@@ -51,7 +57,7 @@ class TRTInferSession(InferSession):
         self.close()
 
     def close(self) -> None:
-        if self._closed:
+        if getattr(self, "_closed", False):
             return
 
         self._closed = True
@@ -218,11 +224,18 @@ class TRTInferSession(InferSession):
             cache_dir = self.model_root_dir / "models"
 
         cache_dir = Path(cache_dir)
-        cache_dir.mkdir(parents=True, exist_ok=True)
+        mkdir(cache_dir)
 
         model_name = self._get_model_name(cfg)
         gpu_arch = self._get_gpu_arch()
-        precision = "fp16" if self.engine_cfg.get("use_fp16", True) else "fp32"
+
+        if self.effective_precision["use_int8"]:
+            precision = "int8"
+        elif self.effective_precision["use_fp16"]:
+            precision = "fp16"
+        else:
+            precision = "fp32"
+
         tf32_override = os.environ.get("NVIDIA_TF32_OVERRIDE", "unset")
 
         return cache_dir / (
@@ -234,20 +247,15 @@ class TRTInferSession(InferSession):
         if cfg.get("model_path"):
             return Path(cfg["model_path"]).stem
 
-        model_key = resolve_model_key(
-            cfg.task_type,
-            cfg.ocr_version,
-            cfg.lang_type,
-            cfg.model_type,
+        model_key = route_to_model_key(
+            cfg.task_type, cfg.ocr_version, cfg.lang_type, cfg.model_type
         )
-        if model_key is not None:
-            return model_key
+        if model_key is None:
+            task_type = cfg.task_type.value
+            lang_type = normalize_lang(cfg.lang_type)
+            model_key = f"{lang_type}_{cfg.ocr_version.value}_{task_type}_{cfg.model_type.value}"
 
-        task_type = cfg.task_type.value
-        lang_type = normalize_lang(cfg.lang_type)
-        ocr_version = cfg.ocr_version.value
-        model_type = cfg.model_type.value
-        return f"{lang_type}_{ocr_version}_{task_type}_{model_type}"
+        return model_key
 
     def _get_gpu_arch(self) -> str:
         """Get GPU architecture string for cache key (e.g., 'sm87')."""
@@ -285,7 +293,7 @@ class TRTInferSession(InferSession):
         builder = TRTEngineBuilder(
             onnx_path=onnx_path,
             engine_path=engine_path,
-            cfg=self.engine_cfg,
+            cfg={**self.engine_cfg, **self.effective_precision},
             task_type=cfg.task_type.value,
             trt_logger=self.trt_logger,
             ocr_version=cfg.ocr_version,
