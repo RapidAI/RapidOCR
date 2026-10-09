@@ -96,14 +96,24 @@ class CalRecBoxes:
 
         is_all_en_num = all(v is WordType.EN_NUM for v in word_info.word_types)
 
-        line_cols, char_widths, word_contents = [], [], []
-        for word, word_col in zip(word_info.words, word_info.word_cols):
+        # A WordInfo built without char_confs gives every word the line's score.
+        char_confs_list = word_info.char_confs or [
+            [np.mean(word_info.confs).round(5).tolist()] * len(word)
+            for word in word_info.words
+        ]
+
+        line_cols, char_widths, word_contents, word_confs = [], [], [], []
+        for word, word_col, char_confs in zip(
+            word_info.words, word_info.word_cols, char_confs_list
+        ):
             if is_all_en_num and not return_single_char_box:
                 line_cols.append(word_col)
                 word_contents.append("".join(word))
+                word_confs.append(np.mean(char_confs).round(5).tolist())
             else:
                 line_cols.extend(word_col)
                 word_contents.extend(word)
+                word_confs.extend(char_confs)
 
             if len(word_col) == 1:
                 continue
@@ -123,7 +133,7 @@ class CalRecBoxes:
             word_boxes = self.calc_box(
                 line_cols, avg_char_width, avg_col_width, bbox_points
             )
-        return word_contents, word_boxes, word_info.confs
+        return word_contents, word_boxes, word_confs
 
     def calc_en_num_box(
         self,
