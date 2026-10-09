@@ -33,6 +33,10 @@ CLS_SHAPE_BY_OCR_VERSION = {
 class TextClassifier:
     def __init__(self, cfg: Dict[str, Any]):
         self.cls_image_shape = CLS_SHAPE_BY_OCR_VERSION[cfg["ocr_version"]]
+        # The v2.0 classifier cannot read a line squeezed to its input width.
+        # PP-LCNet textline_ori (PP-OCRv5) is trained on squeezed lines and
+        # must keep receiving them.
+        self.crop_long_lines = cfg["ocr_version"] == OCRVersion.PPOCRV4
         self.cls_batch_num = cfg["cls_batch_num"]
         self.cls_thresh = cfg["cls_thresh"]
         self.postprocess_op = ClsPostProcess(cfg["label_list"])
@@ -83,6 +87,14 @@ class TextClassifier:
     def resize_norm_img(self, img: np.ndarray) -> np.ndarray:
         img_c, img_h, img_w = self.cls_image_shape
         h, w = img.shape[:2]
+        if self.crop_long_lines:
+            # Classify the middle of a long line at the model's own aspect
+            # ratio instead of the whole line squeezed into img_w.
+            keep_w = int(math.ceil(h * img_w / float(img_h)))
+            if w > keep_w:
+                left = (w - keep_w) // 2
+                img = img[:, left : left + keep_w]
+                w = keep_w
         ratio = w / float(h)
         if math.ceil(img_h * ratio) > img_w:
             resized_w = img_w
