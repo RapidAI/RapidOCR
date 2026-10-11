@@ -50,8 +50,8 @@ class DetPreProcess:
         if std is None:
             std = [0.5, 0.5, 0.5]
 
-        self.mean = np.array(mean)
-        self.std = np.array(std)
+        self.mean = np.array(mean, dtype=np.float32)
+        self.std = np.array(std, dtype=np.float32)
         self.scale = 1 / 255.0
 
         self.limit_side_len = limit_side_len
