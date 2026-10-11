@@ -25,7 +25,13 @@ class TorchInferSession(InferSession):
         with torch.no_grad():
             inp = torch.from_numpy(img)
             inp = inp.to(self.device)
-            outputs = self.predictor(inp).cpu().numpy()
+            outputs = self.predictor(inp)
+            if outputs.ndim == 3:
+                # rec logits (B, T, vocab) are large, reduce them before the copy
+                prob, idx = outputs.max(dim=2)
+                outputs = (idx.cpu().numpy(), prob.cpu().numpy())
+            else:
+                outputs = outputs.cpu().numpy()
             if self.device.type == "mps":
                 del inp
                 torch.mps.empty_cache()

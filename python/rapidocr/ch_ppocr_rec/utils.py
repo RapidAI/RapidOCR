@@ -22,8 +22,11 @@ class CTCLabelDecode:
     def __call__(
         self, preds: np.ndarray, return_word_box: bool = False, **kwargs
     ) -> Tuple[List[Tuple[str, float]], List[Any]]:
-        preds_idx = preds.argmax(axis=2)
-        preds_prob = preds.max(axis=2)
+        if isinstance(preds, tuple):
+            preds_idx, preds_prob = preds
+        else:
+            preds_idx = preds.argmax(axis=2)
+            preds_prob = preds.max(axis=2)
 
         wh_ratio_list = kwargs.get("wh_ratio_list", (1.0,))
         max_wh_ratio = kwargs.get("max_wh_ratio", 1.0)
