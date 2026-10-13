@@ -87,6 +87,15 @@ RapidOCR 是面向小模型、离线部署的开源 OCR。5.x 保留 3.x 应用�
 
 更早在具体显卡上记过的 Vulkan 整页时间没有写进本表。本机上的 lavapipe 是软件光栅器，它的毫秒数不是 GPU 性能。`Backend::gpu_only` 不会在神经网络失败时改走 CPU。
 
+真实 GPU 上的 Vulkan：Mac mini，Apple M4（10 个 CPU 核，4P+6E；10 个 GPU 核；16 GB），macOS，经 Homebrew Vulkan loader 使用 MoltenVK。`ppocr_bench`，PP-OCRv6 tiny 检测和识别模型，预热 3 次，取 15 次的中位数。整页图是合成的 1700×2200 图片，共 45 行文字，不是 x86 表格用的那张截图。
+
+| 图片 | CPU（NEON，`PPOCR_BACKEND=cpu`） | Vulkan `gpu_only` |
+| --- | ---: | ---: |
+| hello（1 行） | 25.2 ms | 79.0 ms |
+| 整页（45 行） | 210.1 ms | 697 ms |
+
+在这台机器上，Vulkan 图比 NEON 慢约 3.3 倍。检测约 72 ms；每个识别行单独跑一张图，每行约 13–16 ms。MoltenVK 不提供逐个 dispatch 的时间戳，所以那里的 `PPOCR_GPU_PROFILE` 只有主机侧时间。校验层报错为 0。4 线程下结果一致。整页中有一行在 Vulkan 上识别为 `RapidoCR`，CPU 上为 `RapidOCR`。
+
 ### 🛠️ 安装
 
 `5.0.0a1` 是预发布版。2026-10-05 这一天 PyPI 上最新的 `rapidocr` 仍是 3.9.2，因此在推送 `v5*` 标签之前（见[发布](#-发布)），下面两条命令安装的都是 **3.9.2**：

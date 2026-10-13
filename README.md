@@ -87,6 +87,15 @@ The older x86 C++ long-side-960 rows and the 1-thread rows are not listed. Repea
 
 Vulkan page times from earlier adapter checks are not repeated here. Lavapipe on this VM is a software rasterizer, so its milliseconds are not GPU performance. `Backend::gpu_only` does not fall back to a CPU neural graph.
 
+Vulkan on a real GPU: Mac mini, Apple M4 (10 CPU cores 4P+6E, 10 GPU cores, 16 GB), macOS, MoltenVK through the Homebrew Vulkan loader. `ppocr_bench`, PP-OCRv6 tiny det/rec, 3 warmup runs, median of 15. The page is a synthetic 1700×2200 image with 45 text lines, not the screenshot used for the x86 table.
+
+| Image | CPU (NEON, `PPOCR_BACKEND=cpu`) | Vulkan `gpu_only` |
+| --- | ---: | ---: |
+| hello (1 line) | 25.2 ms | 79.0 ms |
+| page (45 lines) | 210.1 ms | 697 ms |
+
+On this machine the Vulkan graph is about 3.3× slower than NEON. Detection takes about 72 ms; each recognized line runs its own graph at about 13–16 ms. MoltenVK does not report per-dispatch timestamps, so `PPOCR_GPU_PROFILE` shows only host-side times there. 0 validation errors. Results are identical across 4 threads. One line on the page reads `RapidoCR` on Vulkan and `RapidOCR` on CPU.
+
 ### 🛠️ Installation
 
 `5.0.0a1` is a pre-release. On 2026-10-05 PyPI's newest `rapidocr` file is still 3.9.2, so both of the following commands install **3.9.2** until a `v5*` tag is published (see [Releasing](#-releasing)):
