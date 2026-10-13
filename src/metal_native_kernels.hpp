@@ -105,6 +105,94 @@ kernel void pointwise_gemm(device const float* a [[buffer(0)]],
     d[index] = value;
   }
 }
+// pointwise_gemm with double-buffered staging (default; PPOCR_METAL_DISABLE_POINTWISE_DB=1 keeps the single-buffer kernel).
+kernel void pointwise_gemm_db(device const float* a [[buffer(0)]],
+                           device const float* b [[buffer(1)]],
+                           device const float* c [[buffer(2)]],
+                           device float* d [[buffer(3)]],
+                           device const float* e [[buffer(4)]],
+                           constant Params& params [[buffer(8)]],
+                           uint3 group [[threadgroup_position_in_grid]],
+                           uint local [[thread_index_in_threadgroup]],
+                           uint simd [[simdgroup_index_in_threadgroup]]) {
+  const uint plane = params.right_repeat;
+  const uint channels = params.right_per_batch;
+  const uint outputs = params.right_batch_stride;
+  const uint batch = group.y;
+  const uint plane_tiles = (plane + TP - 1) / TP;
+  const uint m0 = (group.x / plane_tiles) * TM;
+  const uint p0 = (group.x % plane_tiles) * TP;
+  threadgroup float wd[2][TM * TK];
+  threadgroup float xd[2][TK * TP];
+  threadgroup float cs[TM * TP];
+  const device float* x = a + batch * channels * plane;
+
+  for (uint i = local; i < TM * TP; i += 128) {
+    const uint m = m0 + i / TP;
+    cs[i] = m < outputs ? c[m] : 0.0f;
+  }
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  const uint sm = (simd / 2) * 16, sp = (simd % 2) * 16;
+  simdgroup_float8x8 acc[2][2];
+  for (uint i = 0; i < 2; ++i)
+    for (uint j = 0; j < 2; ++j)
+      simdgroup_load(acc[i][j], cs + (sm + i * 8) * TP + sp + j * 8, TP);
+
+  // Double-buffered staging: the next 8-deep slice is read into registers
+  // while the current one multiplies, then stored to the other buffer; one
+  // barrier per K step. Same products in the same order as pointwise_gemm.
+  float wn[2], xn[2];
+#define PPOCR_PW_FETCH(K0)                                                   \
+  for (uint r = 0; r < 2; ++r) {                                             \
+    const uint i = local + r * 128;                                          \
+    const uint m = m0 + i / TK, k = (K0) + i % TK;                           \
+    wn[r] = (m < outputs && k < channels) ? b[m * channels + k] : 0.0f;      \
+    const uint xk = (K0) + i / TP, p = p0 + i % TP;                          \
+    xn[r] = (xk < channels && p < plane) ? x[xk * plane + p] : 0.0f;         \
+  }
+  PPOCR_PW_FETCH(0u)
+  for (uint r = 0; r < 2; ++r) { wd[0][local + r * 128] = wn[r]; xd[0][local + r * 128] = xn[r]; }
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  uint cur = 0;
+  for (uint k0 = 0; k0 < channels; k0 += TK) {
+    const bool more = k0 + TK < channels;
+    if (more) { PPOCR_PW_FETCH(k0 + TK) }
+    simdgroup_float8x8 wf[2], xf[2];
+    for (uint i = 0; i < 2; ++i) simdgroup_load(wf[i], wd[cur] + (sm + i * 8) * TK, TK);
+    for (uint j = 0; j < 2; ++j) simdgroup_load(xf[j], xd[cur] + sp + j * 8, TP);
+    for (uint i = 0; i < 2; ++i)
+      for (uint j = 0; j < 2; ++j)
+        simdgroup_multiply_accumulate(acc[i][j], wf[i], xf[j], acc[i][j]);
+    if (more) {
+      for (uint r = 0; r < 2; ++r) { wd[cur ^ 1][local + r * 128] = wn[r]; xd[cur ^ 1][local + r * 128] = xn[r]; }
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    cur ^= 1;
+  }
+#undef PPOCR_PW_FETCH
+  for (uint i = 0; i < 2; ++i)
+    for (uint j = 0; j < 2; ++j)
+      simdgroup_store(acc[i][j], cs + (sm + i * 8) * TP + sp + j * 8, TP);
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  if (batch >= params.batches) return;
+  const uint mode = params.mode & 0xffffu;
+  for (uint i = local; i < TM * TP; i += 128) {
+    const uint m = m0 + i / TP, p = p0 + i % TP;
+    if (m >= outputs || p >= plane) continue;
+    const uint index = batch * params.count + m * plane + p;
+    float value = cs[i];
+    if (mode == 5u || mode == 6u || mode == 9u) value += e[index];
+    if (mode == 4u || mode == 6u) value = max(value, 0.0f);
+    if (mode == 7u || mode == 9u) value *= 1.0f / (1.0f + exp(-value));
+    if (mode == 10u) value = 1.0f / (1.0f + exp(-value));
+    if (mode == 11u) value = clamp(as_type<float>(params.operation0) * value +
+                                   as_type<float>(params.operation1), 0.0f, 1.0f);
+    if (mode == 12u) value *= clamp(as_type<float>(params.operation0) * value +
+                                    as_type<float>(params.operation1), 0.0f, 1.0f);
+    if (mode == 55u) value = 0.5f * value * (1.0f + erf_fp32(value * 0.7071067811865475f));
+    d[index] = value;
+  }
+}
 // Modes 50/51: 3x3 Conv (stride 1 or 2, ReLU for 51) as an implicit GEMM:
 // out[oc, p] = bias[oc] + sum_k W[oc, k] X[k, p] with k = ic * 9 + ky * 3 + kx,
 // the uber-shader's weight layout. Pads are in the mode's high bytes; bit 15

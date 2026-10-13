@@ -754,6 +754,7 @@ struct NativeKernels {
   id<MTLComputePipelineState> pointwise_gemm{nil};
   id<MTLComputePipelineState> conv3x3_gemm{nil};
   id<MTLComputePipelineState> rows_gemm{nil};
+  id<MTLComputePipelineState> pointwise_gemm_db{nil};
   bool attempted{};
 };
 NativeKernels g_native;
@@ -805,6 +806,7 @@ const NativeKernels& Native(id<MTLDevice> device) {
     g_native.pointwise_gemm = make(@"pointwise_gemm");
     if (std::getenv("PPOCR_METAL_DISABLE_NATIVE_CONV") == nullptr) g_native.conv3x3_gemm = make(@"conv3x3_gemm");
     if (std::getenv("PPOCR_METAL_DISABLE_NATIVE_ROWS_GEMM") == nullptr) g_native.rows_gemm = make(@"rows_gemm");
+    if (std::getenv("PPOCR_METAL_DISABLE_POINTWISE_DB") == nullptr) g_native.pointwise_gemm_db = make(@"pointwise_gemm_db");
   }
   return g_native;
 }
@@ -845,7 +847,8 @@ id<MTLComputePipelineState> NativeForDispatch(id<MTLDevice> device, const Cmd& c
   const std::uint32_t mode = push.mode & 0xffffu;
   switch (mode) {
     case 3: case 4: case 5: case 6: case 7: case 9: case 10: case 11: case 12: case 55: {
-      id<MTLComputePipelineState> state = Native(device).pointwise_gemm;
+      id<MTLComputePipelineState> state = Native(device).pointwise_gemm_db
+          ? Native(device).pointwise_gemm_db : Native(device).pointwise_gemm;
       if (!state || push.right_repeat == 0 || push.right_batch_stride == 0) return nil;
       const NSUInteger tiles = ((push.right_batch_stride + 31) / 32) * ((push.right_repeat + 31) / 32);
       *groups = MTLSizeMake(tiles, command.y, 1);
