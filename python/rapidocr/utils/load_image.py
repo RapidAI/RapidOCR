@@ -81,14 +81,15 @@ class LoadImage:
             return img
 
         if isinstance(img, bytes):
-            img = self.img_to_ndarray(Image.open(BytesIO(img)))
+            img = self.exif_transpose(Image.open(BytesIO(img)))
+            img = self.img_to_ndarray(img)
             return img
 
         if isinstance(img, np.ndarray):
             return img
 
         if isinstance(img, Image.Image):
-            return self.img_to_ndarray(img)
+            return self.img_to_ndarray(self.exif_transpose(img))
 
         if isinstance(img, MemoryImage):
             try:
@@ -116,7 +117,7 @@ class LoadImage:
             if img_corrected is None:
                 return img
             return img_corrected
-        except Exception as e:
+        except Exception:
             return img
 
     def img_to_ndarray(self, img: Image.Image) -> np.ndarray:
