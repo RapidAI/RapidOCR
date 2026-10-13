@@ -7124,7 +7124,10 @@ bool OnnxLite::RunGpuOnlyInternal(
                                   std::size_t(batches), input_channels,
                                   output_channels, plane, relu, swish, gelu));
         if (ok && sigmoid) ok = arena.UnaryInplace(result.slot, VulkanUnaryOp::sigmoid);
-        if (ok && hard_swish) ok = arena.UnaryInplace(result.slot, VulkanUnaryOp::hard_swish);
+        // HardSwish is x * clamp(x / 6 + 0.5, 0, 1). The unary's default
+        // alpha (0.2) is HardSigmoid's, so pass the HardSwish slope.
+        if (ok && hard_swish)
+          ok = arena.UnaryInplace(result.slot, VulkanUnaryOp::hard_swish, 1.F / 6.F, .5F);
       } else {
         ok = result.slot.resident && arena.Conv2d(input->slot, *weights, *bias, result.slot,
             batches, input_channels, output_channels, height, width, out_h, out_w, kernel_h, kernel_w,
@@ -7232,7 +7235,7 @@ bool OnnxLite::RunGpuOnlyInternal(
         ok = arena.UnaryInplace(result.slot, VulkanUnaryOp::gelu);
       }
       if (ok && node.op == "FusedDepthwisePointwiseConvHardSwish")
-        ok = arena.UnaryInplace(result.slot, VulkanUnaryOp::hard_swish);
+        ok = arena.UnaryInplace(result.slot, VulkanUnaryOp::hard_swish, 1.F / 6.F, .5F);
       if (ok && node.op == "FusedDepthwisePointwiseConvRelu")
         ok = arena.UnaryInplace(result.slot, VulkanUnaryOp::relu);
       if (ok) values.emplace(node.out[0], result); else arena.Release(result.slot);
