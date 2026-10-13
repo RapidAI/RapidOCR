@@ -808,11 +808,15 @@ void main() {
   // in place: element i is cleared when (i % width) >= valid width of its
   // batch item. B holds the per-item valid widths as floats, operation0 is
   // the padded width and operation1 the elements per batch item.
+  // Threads cover only columns [operation2, width): `count` is rows x
+  // (width - operation2), the narrowest item's valid width being operation2.
   if (params.mode == 69u) {
     const uint index = gl_GlobalInvocationID.x * 4u;
-    if (index >= params.count || params.operation0 == 0u || params.operation1 == 0u) return;
+    const uint span = params.operation0 - params.operation2;
+    if (index >= params.count || params.operation0 == 0u || params.operation1 == 0u || span == 0u) return;
     for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
-      const uint i = index + lane;
+      const uint row = (index + lane) / span;
+      const uint i = row * params.operation0 + params.operation2 + (index + lane - row * span);
       if (float(i % params.operation0) >= b[i / params.operation1]) d[i] = 0.0;
     }
     return;

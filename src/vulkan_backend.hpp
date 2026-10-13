@@ -342,9 +342,10 @@ class VulkanTensorArena {
   // Width-batched recognition: zero every column at or beyond each batch
   // item's valid width (`widths` holds one float per item) of an NCHW tensor
   // whose rows are `width` wide and whose items hold `per_batch` elements.
+  // Columns below `first_column` (the narrowest valid width) are skipped.
   [[nodiscard]] bool MaskWidth(VulkanTensorSlot& value, const VulkanTensorSlot& widths,
                                std::size_t batches, std::size_t per_batch,
-                               std::size_t width) noexcept;
+                               std::size_t width, std::size_t first_column) noexcept;
   // SpatialMean dividing item b's planes by divisors[b] * rows (its valid
   // width times H).
   [[nodiscard]] bool SpatialMeanMasked(const VulkanTensorSlot& input, VulkanTensorSlot& output,

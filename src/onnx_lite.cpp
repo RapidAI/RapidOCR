@@ -6676,7 +6676,9 @@ bool OnnxLite::RunGpuOnlyInternal(
         if (!mask_clean.contains(node.in[0])) {
           VulkanTensorSlot target = input->slot;
           const std::size_t per_batch = std::size_t(input->shape[1]) * input->shape[2] * input->shape[3];
-          if (!arena.MaskWidth(target, slot, widths.size(), per_batch, std::size_t(widest)))
+          const int narrowest = *std::min_element(widths.begin(), widths.end());
+          if (!arena.MaskWidth(target, slot, widths.size(), per_batch, std::size_t(widest),
+                               std::size_t(narrowest)))
             return fail();
           mask_clean.insert(node.in[0]);
         }

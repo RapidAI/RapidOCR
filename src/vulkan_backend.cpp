@@ -3776,10 +3776,13 @@ class VulkanBinaryRuntime {
   }
 
   bool RunArenaMaskWidth(std::uint32_t value_index, std::uint32_t widths_index,
-                         std::size_t batches, std::size_t per_batch, std::size_t width) noexcept {
+                         std::size_t batches, std::size_t per_batch, std::size_t width,
+                         std::size_t first_column) noexcept {
     if (batches == 0 || per_batch == 0 || width == 0 || per_batch % width != 0 ||
-        batches > UINT32_MAX / per_batch || !Initialize()) return false;
+        first_column > width || batches > UINT32_MAX / per_batch || !Initialize()) return false;
     const std::size_t elements = batches * per_batch;
+    if (first_column == width) return true;
+    const std::size_t masked = elements / width * (width - first_column);
     std::lock_guard lock(mutex_);
     if (value_index >= arena_buffers_.size() || widths_index >= arena_buffers_.size()) return false;
     const auto& value = arena_buffers_[value_index];
@@ -3803,10 +3806,11 @@ class VulkanBinaryRuntime {
                               0, 1, &arena_set, 0, nullptr);
     struct Push { std::uint32_t count, batches, operation0, operation1, operation2, operation3,
                                 steps, right_repeat, right_per_batch, right_batch_stride, mode; }
-        push{static_cast<std::uint32_t>(elements), 1u, static_cast<std::uint32_t>(width),
-             static_cast<std::uint32_t>(per_batch), 0u, 0u, 0u, 0u, 0u, 0u, 69u};
+        push{static_cast<std::uint32_t>(masked), 1u, static_cast<std::uint32_t>(width),
+             static_cast<std::uint32_t>(per_batch), static_cast<std::uint32_t>(first_column),
+             0u, 0u, 0u, 0u, 0u, 69u};
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
-    const std::size_t dispatch = (elements + 1023) / 1024;
+    const std::size_t dispatch = (masked + 1023) / 1024;
     if (dispatch == 0 || dispatch > UINT32_MAX) return false;
     CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), 1, 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
@@ -7138,12 +7142,13 @@ bool VulkanTensorArena::SpatialMean(const VulkanTensorSlot& input, VulkanTensorS
 
 bool VulkanTensorArena::MaskWidth(VulkanTensorSlot& value, const VulkanTensorSlot& widths,
                                   std::size_t batches, std::size_t per_batch,
-                                  std::size_t width) noexcept {
+                                  std::size_t width, std::size_t first_column) noexcept {
 #if defined(PPOCR_HAS_VULKAN_HEADERS) && defined(PPOCR_HAS_VULKAN_KERNELS) && defined(_WIN32)
   if (!impl_ || !value.resident || !widths.resident) return false;
-  return Runtime().RunArenaMaskWidth(value.index, widths.index, batches, per_batch, width);
+  return Runtime().RunArenaMaskWidth(value.index, widths.index, batches, per_batch, width,
+                                     first_column);
 #else
-  (void)value; (void)widths; (void)batches; (void)per_batch; (void)width;
+  (void)value; (void)widths; (void)batches; (void)per_batch; (void)width; (void)first_column;
   return false;
 #endif
 }
