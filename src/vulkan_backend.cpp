@@ -101,6 +101,15 @@ inline int FreeLibrary(HMODULE module) noexcept {
 #endif
 
 namespace ppocr::detail {
+// Metal only: request the native pointwise GEMM for shapes that fill its
+// 32x32 tiles (recognizer and detector 1x1 convs).
+inline bool MetalNativePointwiseWanted(std::size_t plane, std::size_t input_channels,
+                                       std::size_t output_channels) noexcept {
+  static const bool disabled = std::getenv("PPOCR_METAL_DISABLE_NATIVE") != nullptr;
+  return !disabled && MetalDriverRequested() && plane >= 32 && input_channels >= 8 &&
+         output_channels >= 8;
+}
+
 
 namespace {
 std::atomic<int> g_requested_vulkan_device_index{-1};
@@ -4028,6 +4037,12 @@ class VulkanBinaryRuntime {
     Push push{static_cast<std::uint32_t>(output_channels * plane), static_cast<std::uint32_t>(batches),
               alpha_bits, beta_bits, 0u, 0u, 1u, static_cast<std::uint32_t>(plane),
               static_cast<std::uint32_t>(input_channels), static_cast<std::uint32_t>(output_channels), mode};
+    // Under Metal, operation3 = 1 asks the driver for its native simdgroup
+    // GEMM (metal_native_kernels.hpp), which recomputes the grid. The
+    // uber-shader ignores the flag, so the tiled path below stays the
+    // fallback. PPOCR_METAL_DISABLE_NATIVE=1 turns the request off.
+    if (MetalNativePointwiseWanted(plane, std::size_t(input_channels), std::size_t(output_channels)))
+      push.operation3 = 1u;
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                         sizeof(push), &push);
     const auto dispatch = input_channels <= 1024
@@ -4148,6 +4163,12 @@ class VulkanBinaryRuntime {
     Push push{static_cast<std::uint32_t>(output_channels * plane), static_cast<std::uint32_t>(batches),
               0u, 0u, 0u, 0u, 1u, static_cast<std::uint32_t>(plane),
               static_cast<std::uint32_t>(input_channels), static_cast<std::uint32_t>(output_channels), mode};
+    // Under Metal, operation3 = 1 asks the driver for its native simdgroup
+    // GEMM (metal_native_kernels.hpp), which recomputes the grid. The
+    // uber-shader ignores the flag, so the tiled path below stays the
+    // fallback. PPOCR_METAL_DISABLE_NATIVE=1 turns the request off.
+    if (MetalNativePointwiseWanted(plane, std::size_t(input_channels), std::size_t(output_channels)))
+      push.operation3 = 1u;
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                         sizeof(push), &push);
     const auto dispatch = input_channels <= 1024

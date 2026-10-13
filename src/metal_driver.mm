@@ -42,6 +42,7 @@
 #include "metal_binary_msl.hpp"
 #include "metal_depthwise_tail_msl.hpp"
 #include "metal_pointwise_tail_msl.hpp"
+#include "metal_native_kernels.hpp"
 
 namespace {
 
@@ -746,6 +747,91 @@ std::atomic<std::uint64_t> g_gpu_ns{0};
 std::atomic<std::uint64_t> g_gpu_submits{0};
 std::atomic<std::uint64_t> g_gpu_dispatches{0};
 
+// ---- Native kernels ---------------------------------------------------------
+// Compiled once from kMetalNativeKernels with the same IEEE options as the
+// translated shaders. A missing kernel leaves the uber-shader path in place.
+struct NativeKernels {
+  id<MTLComputePipelineState> pointwise_gemm{nil};
+  bool attempted{};
+};
+NativeKernels g_native;
+std::mutex g_native_mutex;
+
+MTLCompileOptions* SafeCompileOptions() {
+  MTLCompileOptions* options = [MTLCompileOptions new];
+#if defined(__MAC_15_0) && __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_15_0
+  if (@available(macOS 15.0, *)) {
+    options.mathMode = MTLMathModeSafe;
+    options.mathFloatingPointFunctions = MTLMathFloatingPointFunctionsPrecise;
+  } else
+#endif
+  {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    options.fastMathEnabled = NO;
+#pragma clang diagnostic pop
+  }
+  options.languageVersion = MTLLanguageVersion2_4;
+  return options;
+}
+
+const NativeKernels& Native(id<MTLDevice> device) {
+  std::lock_guard lock(g_native_mutex);
+  if (g_native.attempted) return g_native;
+  g_native.attempted = true;
+  if (std::getenv("PPOCR_METAL_DISABLE_NATIVE") != nullptr) return g_native;
+  @autoreleasepool {
+    NSError* error = nil;
+    NSString* text = [NSString stringWithUTF8String:ppocr::detail::kMetalNativeKernels];
+    id<MTLLibrary> library = [device newLibraryWithSource:text options:SafeCompileOptions() error:&error];
+    if (!library) {
+      std::fprintf(stderr, "ppocr: Metal native kernels did not compile: %s\n",
+                   error ? error.localizedDescription.UTF8String : "unknown error");
+      return g_native;
+    }
+    const auto make = [&](NSString* name) -> id<MTLComputePipelineState> {
+      id<MTLFunction> function = [library newFunctionWithName:name];
+      if (!function) return nil;
+      NSError* pipeline_error = nil;
+      id<MTLComputePipelineState> state = [device newComputePipelineStateWithFunction:function
+                                                                                 error:&pipeline_error];
+      if (!state && Verbose())
+        std::fprintf(stderr, "ppocr: Metal native %s failed: %s\n", name.UTF8String,
+                     pipeline_error ? pipeline_error.localizedDescription.UTF8String : "unknown");
+      return state;
+    };
+    g_native.pointwise_gemm = make(@"pointwise_gemm");
+  }
+  return g_native;
+}
+
+struct PushView {
+  std::uint32_t count, batches, operation0, operation1, operation2, operation3;
+  std::uint32_t steps, right_repeat, right_per_batch, right_batch_stride, mode;
+};
+
+// Returns a native pipeline and its grid for a flagged uber-shader dispatch.
+id<MTLComputePipelineState> NativeForDispatch(id<MTLDevice> device, const Cmd& command,
+                                              MTLSize* groups, MTLSize* threads) {
+  if (command.push_size < sizeof(PushView) || !command.pipeline || !command.pipeline->program ||
+      command.pipeline->program->kind != 0) return nil;
+  PushView push{};
+  std::memcpy(&push, command.push.data(), sizeof(push));
+  if (push.operation3 != 1u) return nil;
+  const std::uint32_t mode = push.mode & 0xffffu;
+  switch (mode) {
+    case 3: case 4: case 5: case 6: case 7: case 9: case 10: case 11: case 12: case 55: {
+      id<MTLComputePipelineState> state = Native(device).pointwise_gemm;
+      if (!state || push.right_repeat == 0 || push.right_batch_stride == 0) return nil;
+      const NSUInteger tiles = ((push.right_batch_stride + 31) / 32) * ((push.right_repeat + 31) / 32);
+      *groups = MTLSizeMake(tiles, command.y, 1);
+      *threads = MTLSizeMake(128, 1, 1);
+      return state;
+    }
+    default: return nil;
+  }
+}
+
 bool EncodeCommands(MtlDevice* device, id<MTLCommandBuffer> metal_buffer, const MtlCommandBuffer& recorded) {
   static const bool serial = std::getenv("PPOCR_METAL_SERIAL_DISPATCH") != nullptr;
   id<MTLComputeCommandEncoder> encoder = nil;
@@ -779,7 +865,10 @@ bool EncodeCommands(MtlDevice* device, id<MTLCommandBuffer> metal_buffer, const 
       if (!serial) [encoder memoryBarrierWithScope:MTLBarrierScopeBuffers];
       barrier_pending = false;
     }
-    id<MTLComputePipelineState> state = PipelineForDispatch(device->device, command.pipeline, command);
+    MTLSize native_groups{}, native_threads{};
+    id<MTLComputePipelineState> native = NativeForDispatch(device->device, command, &native_groups, &native_threads);
+    id<MTLComputePipelineState> state =
+        native ? native : PipelineForDispatch(device->device, command.pipeline, command);
     if (!state) { [encoder endEncoding]; return false; }
     if (state != current) { [encoder setComputePipelineState:state]; current = state; }
     for (std::uint32_t binding = 0; binding < kBindings; ++binding) {
@@ -801,8 +890,12 @@ bool EncodeCommands(MtlDevice* device, id<MTLCommandBuffer> metal_buffer, const 
     [encoder setBytes:command.push.data() length:std::max<std::uint32_t>(command.push_size, 4)
               atIndex:kPushBufferIndex];
     const auto& local = command.pipeline->local;
-    [encoder dispatchThreadgroups:MTLSizeMake(command.x, command.y, command.z)
-            threadsPerThreadgroup:MTLSizeMake(local[0], local[1], local[2])];
+    if (native) {
+      [encoder dispatchThreadgroups:native_groups threadsPerThreadgroup:native_threads];
+    } else {
+      [encoder dispatchThreadgroups:MTLSizeMake(command.x, command.y, command.z)
+              threadsPerThreadgroup:MTLSizeMake(local[0], local[1], local[2])];
+    }
     ++dispatches;
   }
   if (encoder) [encoder endEncoding];
@@ -828,9 +921,18 @@ std::string KernelKey(const Cmd& command) {
   std::uint32_t mode = 0;
   if (command.push_size >= 44) std::memcpy(&mode, command.push.data() + 40, sizeof(mode));
   char text[64];
-  std::snprintf(text, sizeof(text), "k%d.mode%u", command.pipeline && command.pipeline->program
+  std::uint32_t op3 = 0;
+  if (command.push_size >= 24) std::memcpy(&op3, command.push.data() + 20, sizeof(op3));
+  std::snprintf(text, sizeof(text), op3 == 1u ? "n%d.mode%u" : "k%d.mode%u", command.pipeline && command.pipeline->program
                 ? command.pipeline->program->kind : -1, mode & 0xffffu);
-  return text;
+  static const bool shapes = std::getenv("PPOCR_METAL_KERNEL_SHAPES") != nullptr;
+  if (!shapes) return text;
+  std::uint32_t fields[10]{};
+  std::memcpy(fields, command.push.data(), std::min<std::size_t>(sizeof(fields), command.push_size));
+  std::string key = text;
+  for (std::uint32_t field : fields) key += "," + std::to_string(field);
+  key += " g" + std::to_string(command.x) + "x" + std::to_string(command.y);
+  return key;
 }
 
 bool SubmitProfiledCommands(MtlQueue* queue, const MtlCommandBuffer& recorded) {
