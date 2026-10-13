@@ -753,6 +753,7 @@ std::atomic<std::uint64_t> g_gpu_dispatches{0};
 struct NativeKernels {
   id<MTLComputePipelineState> pointwise_gemm{nil};
   id<MTLComputePipelineState> conv3x3_gemm{nil};
+  id<MTLComputePipelineState> rows_gemm{nil};
   bool attempted{};
 };
 NativeKernels g_native;
@@ -803,6 +804,7 @@ const NativeKernels& Native(id<MTLDevice> device) {
     };
     g_native.pointwise_gemm = make(@"pointwise_gemm");
     if (std::getenv("PPOCR_METAL_DISABLE_NATIVE_CONV") == nullptr) g_native.conv3x3_gemm = make(@"conv3x3_gemm");
+    if (std::getenv("PPOCR_METAL_DISABLE_NATIVE_ROWS_GEMM") == nullptr) g_native.rows_gemm = make(@"rows_gemm");
   }
   return g_native;
 }
@@ -828,6 +830,14 @@ id<MTLComputePipelineState> NativeForDispatch(id<MTLDevice> device, const Cmd& c
         (push.right_batch_stride != 1u && push.right_batch_stride != 2u)) return nil;
     const std::uint64_t outputs = push.count / plane;
     *groups = MTLSizeMake(((outputs + 31) / 32) * ((plane + 31) / 32), command.y, 1);
+    *threads = MTLSizeMake(128, 1, 1);
+    return state;
+  }
+  if ((push.mode & 0xffffu) == 24u || (push.mode & 0xffffu) == 25u) {
+    // Row GEMM (recognizer head / MLP); selected by mode.
+    id<MTLComputePipelineState> state = Native(device).rows_gemm;
+    if (!state || push.operation0 == 0 || push.operation2 == 0) return nil;
+    *groups = MTLSizeMake(((push.operation0 + 31) / 32) * ((push.operation2 + 31) / 32), 1, 1);
     *threads = MTLSizeMake(128, 1, 1);
     return state;
   }

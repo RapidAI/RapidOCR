@@ -187,6 +187,67 @@ kernel void conv3x3_gemm(device float* a [[buffer(0)]],
     y[batch * params.count + m * plane + p] = relu ? max(value, 0.0f) : value;
   }
 }
+// Modes 24/25: out[r, n] = (bias[n] if operation3) + sum_k A[r, k] B[k, n],
+// Swish for 25. A is [rows, depth] row-major, or [depth, lda] when
+// right_repeat (lda) is non-zero. B is [depth, columns]. Same 32x32 tiling;
+// accumulators start from the bias like the uber-shader's vec4 path.
+kernel void rows_gemm(device const float* a [[buffer(0)]],
+                      device const float* b [[buffer(1)]],
+                      device const float* c [[buffer(2)]],
+                      device float* d [[buffer(3)]],
+                      constant Params& params [[buffer(8)]],
+                      uint3 group [[threadgroup_position_in_grid]],
+                      uint local [[thread_index_in_threadgroup]],
+                      uint simd [[simdgroup_index_in_threadgroup]]) {
+  const uint rows = params.operation0, depth = params.operation1, columns = params.operation2;
+  const bool has_bias = params.operation3 != 0u;
+  const uint lda = params.right_repeat;
+  constexpr uint TK = 8;
+  const uint column_tiles = (columns + TP - 1) / TP;
+  const uint m0 = (group.x / column_tiles) * TM;
+  const uint n0 = (group.x % column_tiles) * TP;
+  threadgroup float ws[TM * TK];
+  threadgroup float xs[TK * TP];
+  threadgroup float cs[TM * TP];
+  for (uint i = local; i < TM * TP; i += 128) {
+    const uint n = n0 + i % TP;
+    cs[i] = (has_bias && n < columns) ? c[n] : 0.0f;
+  }
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  const uint sm = (simd / 2) * 16, sp = (simd % 2) * 16;
+  simdgroup_float8x8 acc[2][2];
+  for (uint i = 0; i < 2; ++i)
+    for (uint j = 0; j < 2; ++j)
+      simdgroup_load(acc[i][j], cs + (sm + i * 8) * TP + sp + j * 8, TP);
+  for (uint k0 = 0; k0 < depth; k0 += TK) {
+    for (uint i = local; i < TM * TK; i += 128) {
+      const uint r = m0 + i / TK, k = k0 + i % TK;
+      ws[i] = (r < rows && k < depth) ? (lda == 0u ? a[r * depth + k] : a[k * lda + r]) : 0.0f;
+      const uint xk = k0 + i / TP, n = n0 + i % TP;
+      xs[i] = (xk < depth && n < columns) ? b[xk * columns + n] : 0.0f;
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    simdgroup_float8x8 wf[2], xf[2];
+    for (uint i = 0; i < 2; ++i) simdgroup_load(wf[i], ws + (sm + i * 8) * TK, TK);
+    for (uint j = 0; j < 2; ++j) simdgroup_load(xf[j], xs + sp + j * 8, TP);
+    for (uint i = 0; i < 2; ++i)
+      for (uint j = 0; j < 2; ++j)
+        simdgroup_multiply_accumulate(acc[i][j], wf[i], xf[j], acc[i][j]);
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+  }
+  for (uint i = 0; i < 2; ++i)
+    for (uint j = 0; j < 2; ++j)
+      simdgroup_store(acc[i][j], cs + (sm + i * 8) * TP + sp + j * 8, TP);
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  const bool swish = (params.mode & 0xffffu) == 25u;
+  for (uint i = local; i < TM * TP; i += 128) {
+    const uint r = m0 + i / TP, n = n0 + i % TP;
+    if (r >= rows || n >= columns) continue;
+    float value = cs[i];
+    if (swish) value *= 1.0f / (1.0f + exp(-value));
+    d[r * columns + n] = value;
+  }
+}
 )MSL";
 
 }  // namespace ppocr::detail
