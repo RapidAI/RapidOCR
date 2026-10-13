@@ -277,11 +277,17 @@ jobs:
           bad=$(ls dist/*.whl | grep -v "/rapidocr_ng-$v-" || true)
           if [ -n "$bad" ]; then echo "version mismatch: $bad" >&2; exit 1; fi
 
+      - name: Keep only distributions in the upload directory
+        run: |
+          mkdir -p pypi
+          cp dist/*.whl dist/*.tar.gz pypi/
+          ls pypi
+
       - name: Publish to PyPI (API token secret)
         if: env.PYPI_API_TOKEN_V5_NG != ''
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: dist
+          packages-dir: pypi
           password: ${{ secrets.PYPI_API_TOKEN_V5_NG }}
           skip-existing: true
           attestations: false
@@ -291,7 +297,7 @@ jobs:
         if: env.PYPI_API_TOKEN_V5_NG == ''
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: dist
+          packages-dir: pypi
           skip-existing: true
           attestations: false
           verbose: true
