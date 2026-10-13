@@ -91,10 +91,10 @@ GPU on Apple silicon: Mac mini, Apple M4 (10 CPU cores 4P+6E, 10 GPU cores, 16 G
 
 | Image | CPU (NEON, `PPOCR_BACKEND=cpu`) | Vulkan (MoltenVK) `gpu_only` | Metal (`PPOCR_BACKEND=metal`) |
 | --- | ---: | ---: | ---: |
-| hello (1 line) | 25.3 ms | 77.7 ms | 12.8 ms |
-| page (45 lines) | 211 ms | 675 ms | 147.6 ms |
+| hello (1 line) | 25.3 ms | 77.4 ms | 12.4 ms |
+| page (45 lines) | 210 ms | 672 ms | 113.6 ms |
 
-Metal is about 2× faster than NEON on hello and about 1.4× faster on the page, with text equal to CPU, box IoU 1.0, identical results across 4 threads, and no Metal API validation errors. It replaces the heaviest translated kernels with native MSL ones (simdgroup-matrix GEMMs for pointwise Conv, 3×3 Conv and the recognizer head), runs the DB postprocess on the CPU from the shared probability map, and reuses reclaimed arena slots. Before these changes Metal measured 76 ms / 539 ms on the same machine. Each recognized line still runs its own exact-width graph of about 55 dependent dispatches, so the page is now bound by per-dispatch latency rather than arithmetic. `PPOCR_METAL_KERNEL_PROFILE=1` with `PPOCR_GPU_PROFILE=1` prints GPU time per kernel.
+Metal is about 2× faster than NEON on hello and about 1.85× faster on the page, with text equal to CPU, box IoU 1.0, identical results across 4 threads, and no Metal API validation errors. It replaces the heaviest translated kernels with native MSL ones (simdgroup-matrix GEMMs for pointwise Conv, 3×3 Conv and the recognizer head), runs the DB postprocess on the CPU from the shared probability map, and reuses reclaimed arena slots. Recognition batches up to 8 crops of similar width (widest/narrowest ≤ 1.5) into one graph: each crop keeps its natural width, the padded columns are zeroed before every operator that mixes along the width, SE means divide by each crop's own area and CTC decodes only each crop's own steps, so the text matches the exact-width graphs. This is the default on Metal (`PPOCR_DISABLE_GPU_REC_WIDTH_BATCH=1` turns it off; `PPOCR_ENABLE_GPU_REC_WIDTH_BATCH=1` enables it on Vulkan, where it is slower on MoltenVK). Before these changes Metal measured 76 ms / 539 ms on the same machine, and 147.6 ms on the page before width batching. The remaining time is mostly GPU arithmetic in the recognizer's pointwise Conv GEMMs (about 1 TFLOPS on M4). `PPOCR_METAL_KERNEL_PROFILE=1` with `PPOCR_GPU_PROFILE=1` prints GPU time per kernel.
 
 MoltenVK does not report per-dispatch timestamps, so `PPOCR_GPU_PROFILE` shows only host-side times there. Its text also equals CPU, with 0 validation errors and identical results across 4 threads.
 
@@ -300,7 +300,7 @@ One recorded command buffer can drop CTC timesteps on some adapters. The default
 
 #### Metal
 
-On macOS, source builds include a native Metal backend (`PPOCR_ENABLE_METAL`, default `ON` on Apple; needs `glslang` and `spirv-cross`, e.g. `brew install glslang spirv-cross`). It runs the same GPU graph and fused kernels as Vulkan, translated to MSL at build time, with weights resident in shared-storage `MTLBuffer`s. No Vulkan loader or MoltenVK is needed. Native MSL kernels (`src/metal_native_kernels.hpp`) replace the pointwise Conv, 3×3 Conv and row-GEMM modes; `PPOCR_METAL_DISABLE_NATIVE=1` falls back to the translated kernels, and `PPOCR_METAL_DEVICE_DB_POSTPROCESS=1` keeps the DB postprocess on the GPU.
+On macOS, source builds include a native Metal backend (`PPOCR_ENABLE_METAL`, default `ON` on Apple; needs `glslang` and `spirv-cross`, e.g. `brew install glslang spirv-cross`). It runs the same GPU graph and fused kernels as Vulkan, translated to MSL at build time, with weights resident in shared-storage `MTLBuffer`s. No Vulkan loader or MoltenVK is needed. Native MSL kernels (`src/metal_native_kernels.hpp`) replace the pointwise Conv, 3×3 Conv and row-GEMM modes; `PPOCR_METAL_DISABLE_NATIVE=1` falls back to the translated kernels, and `PPOCR_METAL_DEVICE_DB_POSTPROCESS=1` keeps the DB postprocess on the GPU. Width-batched recognition is described in the Apple silicon benchmark notes above.
 
 ```python
 engine = RapidOCR(params={
