@@ -13,6 +13,17 @@ option(PPOCR_BUILD_TESTS "Build the C API smoke test" ON)
 # not ship glslang, and the published CPU wheel must not change when the
 # image happens to contain a shader compiler.
 option(PPOCR_ENABLE_VULKAN "Embed Vulkan compute shaders when headers and glslangValidator are available" ON)
+# Native Metal execution of the same GPU graph on Apple platforms. The GLSL
+# kernels are compiled to SPIR-V by glslang and translated to MSL by
+# SPIRV-Cross at build time; Metal compiles them at runtime. It needs
+# third_party/Vulkan-Headers, glslangValidator and spirv-cross on the build
+# machine and adds no runtime dependency beyond Metal.framework.
+if(APPLE)
+  set(PPOCR_METAL_DEFAULT ON)
+else()
+  set(PPOCR_METAL_DEFAULT OFF)
+endif()
+option(PPOCR_ENABLE_METAL "Build the native Metal GPU backend (Apple only)" ${PPOCR_METAL_DEFAULT})
 
 if(NOT PPOCR_BUILD_SHARED AND NOT PPOCR_BUILD_STATIC)
   message(FATAL_ERROR "Enable PPOCR_BUILD_SHARED and/or PPOCR_BUILD_STATIC")
@@ -48,7 +59,18 @@ if(WIN32 AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/glslang/bin/glslang
 else()
   find_program(PPOCR_GLSLANG NAMES glslangValidator glslang)
 endif()
-if(PPOCR_ENABLE_VULKAN AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/Vulkan-Headers/include/vulkan/vulkan.h" AND PPOCR_GLSLANG)
+set(PPOCR_METAL_ACTIVE OFF)
+if(PPOCR_ENABLE_METAL AND APPLE)
+  find_program(PPOCR_SPIRV_CROSS NAMES spirv-cross)
+  if(PPOCR_SPIRV_CROSS AND PPOCR_GLSLANG AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/Vulkan-Headers/include/vulkan/vulkan.h")
+    set(PPOCR_METAL_ACTIVE ON)
+  else()
+    message(STATUS "Metal backend disabled: need Vulkan-Headers, glslangValidator and spirv-cross")
+  endif()
+elseif(PPOCR_ENABLE_METAL)
+  message(STATUS "Metal backend is only built on Apple platforms")
+endif()
+if((PPOCR_ENABLE_VULKAN OR PPOCR_METAL_ACTIVE) AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/Vulkan-Headers/include/vulkan/vulkan.h" AND PPOCR_GLSLANG)
   set(PPOCR_VULKAN_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
   set(PPOCR_VULKAN_SPV "${PPOCR_VULKAN_GENERATED_DIR}/vulkan_binary.spv")
   set(PPOCR_VULKAN_SPV_HEADER "${PPOCR_VULKAN_GENERATED_DIR}/vulkan_binary_spv.hpp")
@@ -74,6 +96,43 @@ if(PPOCR_ENABLE_VULKAN AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/Vulka
   add_dependencies(ppocr_objects ppocr_vulkan_shader)
   target_include_directories(ppocr_objects PRIVATE "${PPOCR_VULKAN_GENERATED_DIR}")
   target_compile_definitions(ppocr_objects PRIVATE PPOCR_HAS_VULKAN_KERNELS=1)
+  if(PPOCR_ENABLE_VULKAN)
+    target_compile_definitions(ppocr_objects PRIVATE PPOCR_VULKAN_LOADER=1)
+  endif()
+  if(PPOCR_METAL_ACTIVE)
+    enable_language(OBJCXX)
+    set(PPOCR_METAL_SOURCES "")
+    foreach(shader binary depthwise_tail pointwise_tail)
+      if(shader STREQUAL "binary")
+        set(name kMetalBinaryMsl)
+      elseif(shader STREQUAL "depthwise_tail")
+        set(name kMetalDepthwiseTailMsl)
+      else()
+        set(name kMetalPointwiseTailMsl)
+      endif()
+      set(raw "${PPOCR_VULKAN_GENERATED_DIR}/metal_${shader}.raw.metal")
+      set(msl "${PPOCR_VULKAN_GENERATED_DIR}/metal_${shader}.metal")
+      set(header "${PPOCR_VULKAN_GENERATED_DIR}/metal_${shader}_msl.hpp")
+      add_custom_command(
+        OUTPUT "${header}"
+        COMMAND "${PPOCR_SPIRV_CROSS}" --msl --msl-version 20400 --msl-decoration-binding
+                --output "${raw}" "${PPOCR_VULKAN_GENERATED_DIR}/vulkan_${shader}.spv"
+        COMMAND ${CMAKE_COMMAND} -DINPUT=${raw} -DOUTPUT=${msl} -P "${CMAKE_CURRENT_SOURCE_DIR}/src/metal_patch_msl.cmake"
+        COMMAND ${CMAKE_COMMAND} -DINPUT=${msl} -DOUTPUT=${header} -DNAME=${name} -P "${CMAKE_CURRENT_SOURCE_DIR}/src/embed_spirv.cmake"
+        DEPENDS "${PPOCR_VULKAN_SPV_HEADER}" "${PPOCR_VULKAN_TAIL_SPV_HEADER}" "${PPOCR_VULKAN_POINTWISE_TAIL_SPV_HEADER}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/metal_patch_msl.cmake" "${PPOCR_SPIRV_CROSS}"
+        VERBATIM)
+      list(APPEND PPOCR_METAL_SOURCES "${header}")
+    endforeach()
+    add_custom_target(ppocr_metal_shader DEPENDS ${PPOCR_METAL_SOURCES})
+    add_dependencies(ppocr_metal_shader ppocr_vulkan_shader)
+    add_dependencies(ppocr_objects ppocr_metal_shader)
+    target_sources(ppocr_objects PRIVATE src/metal_driver.mm)
+    set_source_files_properties(src/metal_driver.mm PROPERTIES COMPILE_OPTIONS "-fobjc-arc;-fno-fast-math")
+    target_compile_definitions(ppocr_objects PRIVATE PPOCR_HAS_METAL=1)
+    set(PPOCR_METAL_LINK "-framework Metal" "-framework Foundation")
+    message(STATUS "Metal backend enabled (${PPOCR_SPIRV_CROSS})")
+  endif()
 elseif(NOT PPOCR_ENABLE_VULKAN)
   message(STATUS "Vulkan compute shaders disabled by PPOCR_ENABLE_VULKAN=OFF")
 else()
@@ -132,6 +191,9 @@ if(PPOCR_BUILD_STATIC)
   if(UNIX AND NOT APPLE)
     target_link_libraries(ppocr PUBLIC ${CMAKE_DL_LIBS})
   endif()
+  if(PPOCR_METAL_LINK)
+    target_link_libraries(ppocr PUBLIC ${PPOCR_METAL_LINK})
+  endif()
   set_target_properties(ppocr PROPERTIES OUTPUT_NAME ppocr EXPORT_NAME static)
   if(WIN32)
     set_target_properties(ppocr PROPERTIES OUTPUT_NAME ppocr_static)
@@ -149,6 +211,9 @@ if(PPOCR_BUILD_SHARED)
   target_compile_definitions(ppocr_shared PUBLIC PPOCR_SHARED)
   if(UNIX AND NOT APPLE)
     target_link_libraries(ppocr_shared PRIVATE ${CMAKE_DL_LIBS})
+  endif()
+  if(PPOCR_METAL_LINK)
+    target_link_libraries(ppocr_shared PRIVATE ${PPOCR_METAL_LINK})
   endif()
   set_target_properties(ppocr_shared PROPERTIES
       OUTPUT_NAME ppocr
@@ -177,6 +242,9 @@ function(ppocr_link_objects target)
   target_compile_features(${target} PRIVATE cxx_std_20)
   if(UNIX AND NOT APPLE)
     target_link_libraries(${target} PRIVATE ${CMAKE_DL_LIBS})
+  endif()
+  if(PPOCR_METAL_LINK)
+    target_link_libraries(${target} PRIVATE ${PPOCR_METAL_LINK})
   endif()
 endfunction()
 
@@ -210,6 +278,9 @@ if(PPOCR_BUILD_EXAMPLES)
 
   add_executable(ppocr_vulkan_smoke examples/ppocr_vulkan_smoke.cpp)
   ppocr_link_objects(ppocr_vulkan_smoke)
+
+  add_executable(ppocr_metal_check examples/ppocr_metal_check.cpp)
+  ppocr_link_objects(ppocr_metal_check)
 
   add_executable(ppocr_batch_smoke examples/ppocr_batch_smoke.cpp)
   ppocr_link_runtime(ppocr_batch_smoke)

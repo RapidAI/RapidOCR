@@ -21,6 +21,16 @@ namespace ppocr::detail {
 // initialization. A negative index leaves the current choice unchanged.
 // The first initialization wins; a later request is ignored.
 void RequestVulkanDeviceIndex(int index) noexcept;
+// Native Metal driver (Apple). RequestMetalDriver() must run before the first
+// GPU initialization in the process; it makes that initialization use Metal
+// instead of a Vulkan loader. It returns false when Metal is not built in or
+// a Vulkan device was already initialized.
+[[nodiscard]] bool MetalBackendBuilt() noexcept;
+bool RequestMetalDriver() noexcept;
+[[nodiscard]] bool MetalDriverRequested() noexcept;
+[[nodiscard]] bool MetalDeviceAvailable() noexcept;
+// Shader compile, pipeline and command-buffer errors seen by the Metal driver.
+[[nodiscard]] int MetalErrorCount() noexcept;
 // The latest Vulkan submission result from the process-local runtime. This
 // is diagnostic state only: an error never authorizes a CPU fallback.
 [[nodiscard]] int VulkanLastSubmissionResult() noexcept;

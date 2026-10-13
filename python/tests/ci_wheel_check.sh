@@ -34,7 +34,8 @@ LIB=$(python - << 'PY'
 import rapidocr
 from pathlib import Path
 root = Path(rapidocr.__file__).resolve().parent
-for name in ("libppocr.so.5.0.0", "libppocr.so.5", "libppocr.so"):
+for name in ("libppocr.so.5.0.0", "libppocr.so.5", "libppocr.so",
+             "libppocr.5.0.0.dylib", "libppocr.5.dylib", "libppocr.dylib"):
     path = root / name
     if path.is_file():
         print(path)

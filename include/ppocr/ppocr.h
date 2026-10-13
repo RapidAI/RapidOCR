@@ -31,6 +31,9 @@ extern "C" {
 #define PPOCR_BACKEND_CPU 0
 #define PPOCR_BACKEND_GPU 1
 #define PPOCR_BACKEND_HYBRID 2
+/* Native Metal GPU graph (Apple). Falls back to CPU when Metal is not built
+   in or no Metal device exists; it never fails ppocr_create for that reason. */
+#define PPOCR_BACKEND_METAL 3
 
 typedef struct ppocr_ocr ppocr_ocr;
 
@@ -147,6 +150,9 @@ PPOCR_API void ppocr_request_vulkan_device(int device_index);
 /* ERROR-severity VK_LAYER_KHRONOS_validation messages since process start.
    The layer is enabled only when PPOCR_VULKAN_VALIDATION is set and not "0". */
 PPOCR_API int ppocr_vulkan_validation_error_count(void);
+/* 1 when this library has the Metal backend and the system has a Metal
+   device. Does not initialize the GPU runtime. */
+PPOCR_API int ppocr_metal_available(void);
 PPOCR_API void ppocr_query_cpu_info(ppocr_cpu_info* info);
 
 /* Thread-local. Pointer is valid until the next API call on this thread. */

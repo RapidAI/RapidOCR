@@ -13,6 +13,7 @@ PPOCR_OK = 0
 PPOCR_BACKEND_CPU = 0
 PPOCR_BACKEND_GPU = 1
 PPOCR_BACKEND_HYBRID = 2
+PPOCR_BACKEND_METAL = 3
 
 
 class Options(ctypes.Structure):
@@ -103,6 +104,7 @@ def _candidate_libraries():
     for name in names:
         yield bundled / name
     yield from bundled.glob("libppocr.so.*")
+    yield from bundled.glob("libppocr.*.dylib")
     found = ctypes.util.find_library("ppocr")
     if found:
         yield Path(found)
@@ -260,6 +262,22 @@ def backend_info() -> dict:
         "device_name": info.device_name.split(b"\x00", 1)[0].decode(errors="replace"),
         "vulkan_runtime_generation": int(info.vulkan_runtime_generation),
     }
+
+
+def metal_available() -> bool:
+    """True when this library has the Metal backend and a Metal device exists.
+
+    It does not initialize the GPU runtime, so a later engine can still pick
+    Metal for the process.
+    """
+
+    lib = load_library()
+    probe = getattr(lib, "ppocr_metal_available", None)
+    if probe is None:
+        return False
+    probe.argtypes = []
+    probe.restype = ctypes.c_int
+    return bool(probe())
 
 
 def request_vulkan_device(index: int) -> None:

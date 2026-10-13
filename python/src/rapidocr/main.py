@@ -234,6 +234,8 @@ def _apply_vulkan_options(cfg: ConfigNode, options: _native.Options) -> None:
     GPU graph when a compute device is already available, and otherwise logs
     a warning and keeps CPU. ``backend: hybrid`` is the C++ best-effort path.
     ``gpu_only`` in C++ still fails closed; this wrapper does not.
+    ``use_metal`` or ``backend: metal`` runs the GPU graph on Metal (macOS,
+    Apple Silicon) and keeps CPU when Metal is not available.
     """
 
     engine = cfg.get("EngineConfig")
@@ -241,7 +243,18 @@ def _apply_vulkan_options(cfg: ConfigNode, options: _native.Options) -> None:
     if not isinstance(section, ConfigNode):
         return
     use_vulkan = _as_bool(section.get("use_vulkan", False))
+    use_metal = _as_bool(section.get("use_metal", False))
     backend_name = str(section.get("backend", "cpu")).strip().lower()
+    if use_metal or backend_name == "metal":
+        # Probe without initializing the GPU runtime: a Vulkan probe here
+        # would fix the process on Vulkan before the engine asks for Metal.
+        if _native.metal_available():
+            options.backend = _native.PPOCR_BACKEND_METAL
+            logger.info("Using the Metal backend")
+        else:
+            logger.warning("Metal was requested but is not available; using the CPU backend")
+            options.backend = _native.PPOCR_BACKEND_CPU
+        return
     try:
         device_index = int(section.get("device_index", -1))
     except (TypeError, ValueError):

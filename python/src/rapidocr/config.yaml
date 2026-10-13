@@ -128,11 +128,14 @@ EngineConfig:
     mnn: {}
 
     # Native engine. use_vulkan tries the Vulkan graph and stays on CPU when
-    # no compute device is available. backend is cpu, hybrid, or vulkan.
+    # no compute device is available. backend is cpu, hybrid, vulkan, or
+    # metal. use_metal / backend: metal runs the GPU graph on Metal (macOS,
+    # Apple Silicon) and stays on CPU when Metal is not available.
     # device_index -1 keeps automatic adapter selection (CPU/lavapipe skipped);
     # 0 or higher selects that physical device, including lavapipe.
     ppocr_cpp:
         use_vulkan: false
+        use_metal: false
         backend: cpu
         device_index: -1
 

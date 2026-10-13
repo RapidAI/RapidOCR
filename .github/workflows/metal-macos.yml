@@ -1,0 +1,65 @@
+name: metal macos
+
+on:
+  push:
+    branches:
+      - V5_NG
+  pull_request:
+    branches:
+      - V5_NG
+  workflow_dispatch:
+
+concurrency:
+  group: metal-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  metal:
+    name: macos-14 Metal
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install shader tools
+        run: brew install glslang spirv-cross ninja
+
+      - name: Cache tiny models
+        uses: actions/cache@v4
+        with:
+          path: ci-models
+          key: rapidocr-ci-models-tiny-v1
+
+      - name: Download tiny models when the cache is empty
+        run: python python/tests/fetch_ci_models.py
+
+      - name: Build with the Metal backend (no Vulkan loader)
+        run: |
+          cmake -S . -B build-metal -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DPPOCR_BUILD_STATIC=OFF \
+            -DPPOCR_BUILD_TESTS=ON \
+            -DPPOCR_BUILD_EXAMPLES=ON \
+            -DPPOCR_ENABLE_VULKAN=OFF \
+            -DPPOCR_ENABLE_METAL=ON | tee configure.log
+          grep -q "Metal backend enabled" configure.log
+          cmake --build build-metal -j"$(sysctl -n hw.ncpu)"
+
+      - name: C API smoke
+        run: ctest --test-dir build-metal --output-on-failure
+
+      - name: Install Python test dependencies
+        run: |
+          python -m pip install -r python/tests/ci-constraints.txt \
+            pytest PyYAML requests tqdm
+
+      - name: Metal checks
+        run: bash tests/run_metal_macos.sh build-metal

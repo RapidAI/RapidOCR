@@ -36,6 +36,7 @@ ppocr::Options ToOptions(const ppocr_options* options) {
   switch (local.backend) {
     case PPOCR_BACKEND_CPU: out.backend = ppocr::Backend::cpu_only; break;
     case PPOCR_BACKEND_GPU: out.backend = ppocr::Backend::gpu_only; break;
+    case PPOCR_BACKEND_METAL: out.backend = ppocr::Backend::metal; break;
     default: out.backend = ppocr::Backend::hybrid; break;
   }
   out.det_threshold = local.det_threshold;
@@ -295,6 +296,14 @@ void ppocr_request_vulkan_device(int device_index) {
 
 int ppocr_vulkan_validation_error_count(void) {
   return ppocr::detail::VulkanValidationErrorCount();
+}
+
+int ppocr_metal_available(void) {
+  try {
+    return ppocr::MetalAvailable() ? 1 : 0;
+  } catch (...) {
+    return 0;
+  }
 }
 
 void ppocr_query_cpu_info(ppocr_cpu_info* info) {

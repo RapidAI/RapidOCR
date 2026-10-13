@@ -41,6 +41,11 @@ enum class Backend {
   cpu_only,
   gpu_only,
   hybrid,
+  // Native Metal GPU graph on Apple Silicon: the same GPU-only graph,
+  // executed by Metal. Without Metal (not built, or no device) the engine
+  // falls back to CPU instead of failing. Metal is chosen for the whole
+  // process on the first GPU initialization.
+  metal,
 };
 
 struct BackendInfo {
@@ -55,6 +60,9 @@ struct BackendInfo {
 };
 
 [[nodiscard]] PPOCR_API BackendInfo QueryBackendInfo();
+// True when the library was built with Metal and a Metal device exists.
+// Does not initialize the GPU runtime.
+[[nodiscard]] PPOCR_API bool MetalAvailable();
 
 // Which SIMD path the process will actually enter. active_isa is one of
 // "avx512", "avx2", "neon", or "scalar". AVX-512 is reported only when the

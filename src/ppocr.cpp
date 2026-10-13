@@ -1682,9 +1682,32 @@ CpuInfo QueryCpuInfo() {
   info.threads = isa.threads;
   return info;
 }
+bool MetalAvailable() {
+  return detail::MetalBackendBuilt() && detail::MetalDeviceAvailable();
+}
 OCR::OCR(const std::string& det_model,const std::string& rec_model,std::string dictionary_path,Options options) {
   if (options.vulkan_device_index >= 0)
     detail::RequestVulkanDeviceIndex(options.vulkan_device_index);
+  if (options.backend == Backend::metal) {
+    // Metal runs the GPU-only graph. Anything missing (not built, no
+    // device, Vulkan already chosen for this process, or an incomplete
+    // graph) keeps the CPU path rather than failing construction.
+    const bool metal = MetalAvailable() && detail::RequestMetalDriver() &&
+                       detail::MetalDriverRequested() &&
+                       QueryBackendInfo().full_graph_gpu_available;
+    options.backend = metal ? Backend::gpu_only : Backend::cpu_only;
+    if (metal) {
+      impl_ = std::make_unique<Impl>(det_model, rec_model, options);
+      if (!impl_->det.SupportsGpuOnly() || !impl_->rec.SupportsGpuOnly()) impl_.reset();
+    }
+    if (!impl_) {
+      std::fprintf(stderr, "ppocr: Metal backend unavailable; using CPU\n");
+      options.backend = Backend::cpu_only;
+      impl_ = std::make_unique<Impl>(det_model, rec_model, options);
+    }
+    impl_->dict = ReadDict(dictionary_path);
+    return;
+  }
   impl_=std::make_unique<Impl>(det_model,rec_model,options);
   if (options.backend == Backend::gpu_only &&
       (!QueryBackendInfo().full_graph_gpu_available || !impl_->det.SupportsGpuOnly() ||

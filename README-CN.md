@@ -87,12 +87,14 @@ RapidOCR 是面向小模型、离线部署的开源 OCR。5.x 保留 3.x 应用�
 
 更早在具体显卡上记过的 Vulkan 整页时间没有写进本表。本机上的 lavapipe 是软件光栅器，它的毫秒数不是 GPU 性能。`Backend::gpu_only` 不会在神经网络失败时改走 CPU。
 
-真实 GPU 上的 Vulkan：Mac mini，Apple M4（10 个 CPU 核，4P+6E；10 个 GPU 核；16 GB），macOS，经 Homebrew Vulkan loader 使用 MoltenVK。`ppocr_bench`，PP-OCRv6 tiny 检测和识别模型，预热 3 次，取 15 次的中位数。整页图是合成的 1700×2200 图片，共 45 行文字，不是 x86 表格用的那张截图。
+Apple 芯片上的 GPU：Mac mini，Apple M4（10 个 CPU 核，4P+6E；10 个 GPU 核；16 GB），macOS。Vulkan 经 Homebrew Vulkan loader 使用 MoltenVK；Metal 是原生后端。`ppocr_bench`，PP-OCRv6 tiny 检测和识别模型，预热 3 次，取 15 次的中位数，机器空闲。整页图是合成的 1700×2200 图片，共 45 行文字，不是 x86 表格用的那张截图。
 
-| 图片 | CPU（NEON，`PPOCR_BACKEND=cpu`） | Vulkan `gpu_only` |
-| --- | ---: | ---: |
-| hello（1 行） | 25.2 ms | 79.0 ms |
-| 整页（45 行） | 210.1 ms | 697 ms |
+| 图片 | CPU（NEON，`PPOCR_BACKEND=cpu`） | Vulkan（MoltenVK）`gpu_only` | Metal（`PPOCR_BACKEND=metal`） |
+| --- | ---: | ---: | ---: |
+| hello（1 行） | 25.4 ms | 82.4 ms | 76.3 ms |
+| 整页（45 行） | 209.3 ms | 705.8 ms | 538.4 ms |
+
+在这台机器上两条 GPU 路径都还比 NEON 慢。Metal 跑的是与 Vulkan 相同的图和 kernel，整页比 MoltenVK 快约 24%，文本和框与 CPU 完全一致。时间主要花在 kernel 上（每页约 490 ms GPU 时间、约 2600 次 dispatch），所以下一步是优化 kernel，而不是 API。
 
 在这台机器上，Vulkan 图比 NEON 慢约 3.3 倍。检测约 72 ms；每个识别行单独跑一张图，每行约 13–16 ms。MoltenVK 不提供逐个 dispatch 的时间戳，所以那里的 `PPOCR_GPU_PROFILE` 只有主机侧时间。校验层报错为 0。4 线程下结果一致。整页中有一行在 Vulkan 上识别为 `RapidoCR`，CPU 上为 `RapidOCR`。
 
@@ -296,6 +298,24 @@ ppocr::OCR ocr(det, rec, dict, options);
 
 在部分显卡上，一整条录制好的命令缓冲会丢掉 CTC 时间步。默认 GPU 路径按带栅栏的分段提交。某块显卡验证通过之后，可以用 `PPOCR_ENABLE_GPU_GRAPH_REPLAY=1` 改回单条命令缓冲。
 
+#### Metal
+
+macOS 上从源码构建时会包含原生 Metal 后端（`PPOCR_ENABLE_METAL`，Apple 上默认 `ON`；需要 `glslang` 和 `spirv-cross`，例如 `brew install glslang spirv-cross`）。它运行与 Vulkan 相同的 GPU 图和融合 kernel，构建时翻译成 MSL，权重常驻在 shared storage 的 `MTLBuffer` 中。不需要 Vulkan loader 或 MoltenVK。
+
+```python
+engine = RapidOCR(params={
+    # 模型路径同上
+    "EngineConfig.ppocr_cpp.backend": "metal",   # 或 "use_metal": True
+})
+```
+
+```cpp
+ppocr::Options options;
+options.backend = ppocr::Backend::metal;  // ppocr::MetalAvailable() 报告是否支持
+```
+
+C 接口用 `PPOCR_BACKEND_METAL`，`ppocr_metal_available()` 报告是否支持。没有 Metal 时（其他平台、未启用 Metal 的构建、`PPOCR_DISABLE_METAL=1`）三种接口都回退到 CPU，不会失败。驱动按进程选定一次：同一进程里不能混用 Metal 和 Vulkan。`ppocr_metal_check` 对比 Metal 与 CPU 并做多线程确定性检查；`tests/run_metal_macos.sh` 在 Metal API validation（`MTL_DEBUG_LAYER=1`）下运行它。
+
 ### ⚙️ 配置
 
 Python 键使用 3.x 的 `Section.name` 形式。YAML `config_path` 由 PyYAML 载入，再被 `params` 覆盖。
@@ -315,6 +335,7 @@ Python 键使用 3.x 的 `Section.name` 形式。YAML `config_path` 由 PyYAML �
 | `Rec.rec_batch_num` | 识别批大小。 |
 | `EngineConfig.ppocr_cpp.use_vulkan` | 请求 Vulkan 计算图。 |
 | `EngineConfig.ppocr_cpp.device_index` | Vulkan 设备。`-1` 跳过 lavapipe。 |
+| `EngineConfig.ppocr_cpp.use_metal` | 请求 Metal 图（macOS）；否则用 CPU。 |
 | `EngineConfig.ppocr_cpp.backend` | `cpu`、`hybrid` 或 `vulkan`。 |
 
 C++ 默认值在 `include/ppocr/ppocr.hpp` 的 `ppocr::Options` 上（`det_limit_side_len` 960，`det_limit_type` 0，ImageNet `det_mean` / `det_std`，`rec_batch_size` 4）。`PPOCR_BENCH_THREADS` 覆盖常驻 SIMD 线程池（默认 `min(16, hardware_concurrency)`）。

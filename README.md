@@ -87,12 +87,14 @@ The older x86 C++ long-side-960 rows and the 1-thread rows are not listed. Repea
 
 Vulkan page times from earlier adapter checks are not repeated here. Lavapipe on this VM is a software rasterizer, so its milliseconds are not GPU performance. `Backend::gpu_only` does not fall back to a CPU neural graph.
 
-Vulkan on a real GPU: Mac mini, Apple M4 (10 CPU cores 4P+6E, 10 GPU cores, 16 GB), macOS, MoltenVK through the Homebrew Vulkan loader. `ppocr_bench`, PP-OCRv6 tiny det/rec, 3 warmup runs, median of 15. The page is a synthetic 1700×2200 image with 45 text lines, not the screenshot used for the x86 table.
+GPU on Apple silicon: Mac mini, Apple M4 (10 CPU cores 4P+6E, 10 GPU cores, 16 GB), macOS. Vulkan is MoltenVK through the Homebrew Vulkan loader; Metal is the native backend. `ppocr_bench`, PP-OCRv6 tiny det/rec, 3 warmup runs, median of 15, idle machine. The page is a synthetic 1700×2200 image with 45 text lines, not the screenshot used for the x86 table.
 
-| Image | CPU (NEON, `PPOCR_BACKEND=cpu`) | Vulkan `gpu_only` |
-| --- | ---: | ---: |
-| hello (1 line) | 25.2 ms | 79.0 ms |
-| page (45 lines) | 210.1 ms | 697 ms |
+| Image | CPU (NEON, `PPOCR_BACKEND=cpu`) | Vulkan (MoltenVK) `gpu_only` | Metal (`PPOCR_BACKEND=metal`) |
+| --- | ---: | ---: | ---: |
+| hello (1 line) | 25.4 ms | 82.4 ms | 76.3 ms |
+| page (45 lines) | 209.3 ms | 705.8 ms | 538.4 ms |
+
+Both GPU paths are still slower than NEON on this machine. Metal runs the same graph and kernels as Vulkan; it is about 24% faster than MoltenVK on the page and gives CPU-identical text and boxes. Most of the time is in the kernels (about 490 ms of GPU time per page in about 2,600 dispatches), so kernel work, not the API, is the next step.
 
 On this machine the Vulkan graph is about 3.3× slower than NEON. Detection takes about 72 ms; each recognized line runs its own graph at about 13–16 ms. MoltenVK does not report per-dispatch timestamps, so `PPOCR_GPU_PROFILE` shows only host-side times there. 0 validation errors. Results are identical across 4 threads. One line on the page reads `RapidoCR` on Vulkan and `RapidOCR` on CPU.
 
@@ -296,6 +298,24 @@ ppocr::OCR ocr(det, rec, dict, options);
 
 One recorded command buffer can drop CTC timesteps on some adapters. The default GPU path submits fenced segments. `PPOCR_ENABLE_GPU_GRAPH_REPLAY=1` opts into the single command buffer after that adapter has been qualified.
 
+#### Metal
+
+On macOS, source builds include a native Metal backend (`PPOCR_ENABLE_METAL`, default `ON` on Apple; needs `glslang` and `spirv-cross`, e.g. `brew install glslang spirv-cross`). It runs the same GPU graph and fused kernels as Vulkan, translated to MSL at build time, with weights resident in shared-storage `MTLBuffer`s. No Vulkan loader or MoltenVK is needed.
+
+```python
+engine = RapidOCR(params={
+    # model paths as above
+    "EngineConfig.ppocr_cpp.backend": "metal",   # or "use_metal": True
+})
+```
+
+```cpp
+ppocr::Options options;
+options.backend = ppocr::Backend::metal;  // ppocr::MetalAvailable() reports support
+```
+
+In C, set `PPOCR_BACKEND_METAL`; `ppocr_metal_available()` reports support. Without Metal (other platforms, a build without it, `PPOCR_DISABLE_METAL=1`) all three fall back to CPU and do not fail. The driver is chosen once per process: Metal and Vulkan do not mix in one process. `ppocr_metal_check` compares Metal to CPU and runs a multithreaded determinism check; `tests/run_metal_macos.sh` runs it under Metal API validation (`MTL_DEBUG_LAYER=1`).
+
 ### ⚙️ Configuration
 
 Python keys use the 3.x `Section.name` form. A YAML `config_path` is loaded with PyYAML and then overridden by `params`.
@@ -315,6 +335,7 @@ Python keys use the 3.x `Section.name` form. A YAML `config_path` is loaded with
 | `Rec.rec_batch_num` | Recognizer batch size. |
 | `EngineConfig.ppocr_cpp.use_vulkan` | Request the Vulkan graph. |
 | `EngineConfig.ppocr_cpp.device_index` | Vulkan device. `-1` skips lavapipe. |
+| `EngineConfig.ppocr_cpp.use_metal` | Request the Metal graph (macOS); CPU otherwise. |
 | `EngineConfig.ppocr_cpp.backend` | `cpu`, `hybrid`, or `vulkan`. |
 
 C++ defaults live on `ppocr::Options` in `include/ppocr/ppocr.hpp` (`det_limit_side_len` 960, `det_limit_type` 0, ImageNet `det_mean` / `det_std`, `rec_batch_size` 4). `PPOCR_BENCH_THREADS` overrides the persistent SIMD pool (default `min(16, hardware_concurrency)`).

@@ -33,7 +33,8 @@ void OverrideBackendFromEnv(ppocr::Backend& backend) {
   if (value == "cpu") { backend = ppocr::Backend::cpu_only; return; }
   if (value == "hybrid") { backend = ppocr::Backend::hybrid; return; }
   if (value == "gpu") { backend = ppocr::Backend::gpu_only; return; }
-  throw std::runtime_error("PPOCR_BACKEND must be cpu, hybrid, or gpu");
+  if (value == "metal") { backend = ppocr::Backend::metal; return; }
+  throw std::runtime_error("PPOCR_BACKEND must be cpu, hybrid, gpu, or metal");
 }
 
 const char* BackendName(ppocr::Backend backend) {
@@ -41,6 +42,7 @@ const char* BackendName(ppocr::Backend backend) {
     case ppocr::Backend::cpu_only: return "cpu";
     case ppocr::Backend::gpu_only: return "gpu";
     case ppocr::Backend::hybrid: return "hybrid";
+    case ppocr::Backend::metal: return "metal";
   }
   return "unknown";
 }

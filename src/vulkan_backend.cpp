@@ -38,9 +38,29 @@
 // definitions from the Vulkan headers.  This compatibility macro is temporary
 // and is removed again after the implementation block below.
 using HMODULE = void*;
+#if defined(PPOCR_HAS_METAL)
+extern "C" PFN_vkGetInstanceProcAddr ppocr_metal_vk_get_instance_proc_addr(void);
+extern "C" int ppocr_metal_error_count(void);
+extern "C" int ppocr_metal_device_available(void);
+extern "C" void ppocr_metal_print_profile(void);
+#endif
+namespace ppocr::detail { bool MetalDriverRequested() noexcept; }
+// The Metal driver is not a shared object; this address stands in for its
+// module handle so GetProcAddress can hand out its vkGetInstanceProcAddr.
+inline HMODULE MetalModuleSentinel() noexcept {
+  static int sentinel{};
+  return &sentinel;
+}
 inline HMODULE LoadLibraryA(const char* name) noexcept {
   (void)name;
-#if defined(__APPLE__)
+#if defined(PPOCR_HAS_METAL)
+  if (ppocr::detail::MetalDriverRequested()) {
+    return ppocr_metal_vk_get_instance_proc_addr() ? MetalModuleSentinel() : nullptr;
+  }
+#endif
+#if !defined(PPOCR_VULKAN_LOADER)
+  return nullptr;
+#elif defined(__APPLE__)
   // Homebrew and the LunarG SDK install the loader outside dyld's default
   // search path, so try the usual prefixes. MoltenVK alone also exports
   // vkGetInstanceProcAddr and is the last resort when no loader exists.
@@ -59,9 +79,16 @@ inline HMODULE LoadLibraryA(const char* name) noexcept {
 #endif
 }
 inline void* GetProcAddress(HMODULE module, const char* name) noexcept {
+#if defined(PPOCR_HAS_METAL)
+  if (module == MetalModuleSentinel()) {
+    return std::strcmp(name, "vkGetInstanceProcAddr") == 0
+        ? reinterpret_cast<void*>(ppocr_metal_vk_get_instance_proc_addr()) : nullptr;
+  }
+#endif
   return module ? dlsym(module, name) : nullptr;
 }
 inline int FreeLibrary(HMODULE module) noexcept {
+  if (module == MetalModuleSentinel()) return 1;
   return module ? dlclose(module) == 0 : 0;
 }
 #define PPOCR_POSIX_VULKAN_LOADER_ADAPTER 1
@@ -78,7 +105,47 @@ namespace ppocr::detail {
 namespace {
 std::atomic<int> g_requested_vulkan_device_index{-1};
 std::atomic<bool> g_vulkan_runtime_attempted{false};
+std::atomic<bool> g_metal_requested{false};
 }  // namespace
+
+bool MetalBackendBuilt() noexcept {
+#if defined(PPOCR_HAS_METAL) && defined(PPOCR_HAS_VULKAN_KERNELS)
+  return true;
+#else
+  return false;
+#endif
+}
+
+bool RequestMetalDriver() noexcept {
+  if (!MetalBackendBuilt()) return false;
+  if (g_vulkan_runtime_attempted.load(std::memory_order_acquire)) {
+    return g_metal_requested.load(std::memory_order_acquire);
+  }
+  g_metal_requested.store(true, std::memory_order_release);
+  return true;
+}
+
+bool MetalDriverRequested() noexcept {
+  return g_metal_requested.load(std::memory_order_acquire);
+}
+
+bool MetalDeviceAvailable() noexcept {
+#if defined(PPOCR_HAS_METAL) && defined(PPOCR_HAS_VULKAN_KERNELS)
+  // PPOCR_DISABLE_METAL=1 hides the device, e.g. to test the CPU fallback.
+  if (const char* off = std::getenv("PPOCR_DISABLE_METAL"); off && off[0] && off[0] != '0') return false;
+  return ppocr_metal_device_available() != 0;
+#else
+  return false;
+#endif
+}
+
+int MetalErrorCount() noexcept {
+#if defined(PPOCR_HAS_METAL)
+  return ppocr_metal_error_count();
+#else
+  return 0;
+#endif
+}
 
 void RequestVulkanDeviceIndex(int index) noexcept {
   if (index < 0) return;
@@ -4963,6 +5030,9 @@ class VulkanBinaryRuntime {
 
   void PrintGpuProfile(double wall_ms) noexcept {
     if (!profile_enabled_) return;
+#if defined(PPOCR_HAS_METAL)
+    if (MetalDriverRequested()) ppocr_metal_print_profile();
+#endif
     std::lock_guard lock(mutex_);
     ProfileAccum delta;
     delta.fence_ms = profile_.fence_ms - printed_.fence_ms;
@@ -7380,7 +7450,9 @@ BackendInfo QueryVulkanBackendInfo() {
 
 int VulkanValidationErrorCount() noexcept {
 #if defined(PPOCR_HAS_VULKAN_HEADERS) && defined(PPOCR_HAS_VULKAN_KERNELS)
-  return g_validation_errors.load(std::memory_order_relaxed);
+  // On the Metal driver this counts shader, pipeline and command-buffer
+  // errors (Metal API validation itself aborts the process on misuse).
+  return g_validation_errors.load(std::memory_order_relaxed) + MetalErrorCount();
 #else
   return 0;
 #endif
