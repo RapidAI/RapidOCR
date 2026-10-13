@@ -1398,11 +1398,97 @@ void RecognizeGpuOnlyCropBatch(detail::OnnxLite& rec, const Options& opt,
   }
 }
 
+// Width-batched GPU recognition: crops of nearby widths share one graph at
+// the widest width; each item is masked to its own natural width (see
+// OnnxLite::RunGpuOnlyCtcTop1Masked), so text matches the exact-width
+// graphs. On by default under Metal, where one recognizer graph per line is
+// bound by dispatch latency; PPOCR_ENABLE_GPU_REC_WIDTH_BATCH=1 enables it on
+// Vulkan and PPOCR_DISABLE_GPU_REC_WIDTH_BATCH=1 turns it off.
+// PPOCR_GPU_REC_WIDTH_BATCH_MAX (default 16) caps the crops per graph and
+// PPOCR_GPU_REC_WIDTH_BATCH_RATIO (default 1.5) the widest/narrowest ratio.
+bool GpuRecWidthBatchEnabled() {
+  static const bool enabled = std::getenv("PPOCR_DISABLE_GPU_REC_WIDTH_BATCH") == nullptr &&
+      (detail::MetalDriverRequested() || std::getenv("PPOCR_ENABLE_GPU_REC_WIDTH_BATCH") != nullptr);
+  return enabled;
+}
+
+std::atomic<bool> g_gpu_rec_width_batch_failed{false};
+
+bool RecognizeGpuOnlyMaskedBatch(detail::OnnxLite& rec, const Options& opt,
+                                 const std::vector<std::string>& dict,
+                                 const std::vector<GpuCropJob>& jobs,
+                                 std::vector<std::vector<Result>>& output,
+                                 const detail::VulkanTensorSlot* page_rgb) {
+  std::vector<int> widths;
+  widths.reserve(jobs.size());
+  for (const auto& job : jobs) widths.push_back(GpuRecognitionWidth(job.crop, opt));
+  const int width = *std::max_element(widths.begin(), widths.end());
+  if (width <= 0) return false;
+  auto rec_input = GpuOnlyRecRgb(rec, opt, jobs, width, page_rgb);
+  detail::OnnxLite::CtcTop1Output ctc;
+  if (!rec.RunGpuOnlyCtcTop1Masked({{"x", std::move(rec_input)}}, widths, ctc)) return false;
+  for (std::size_t item = 0; item < jobs.size(); ++item) {
+    const auto& job = jobs[item];
+    auto [text, confidence] = DecodeCTC(ctc, item, dict);
+    output[job.page][job.result] = MakeResult(*job.box, std::move(text), confidence);
+  }
+  return true;
+}
+
 std::vector<Result> RecognizeGpuOnlyCrops(detail::OnnxLite& rec, const Options& opt,
                                           const std::vector<std::string>& dict,
                                           const Image& image,
                                           const std::vector<Box>& boxes,
                                           const detail::VulkanTensorSlot* page_rgb) {
+  if (GpuRecWidthBatchEnabled() && !g_gpu_rec_width_batch_failed.load() && boxes.size() > 1) {
+    static const std::size_t max_items = [] {
+      const char* text = std::getenv("PPOCR_GPU_REC_WIDTH_BATCH_MAX");
+      const long value = text ? std::strtol(text, nullptr, 10) : 16;
+      return static_cast<std::size_t>(std::clamp(value, 1L, 256L));
+    }();
+    static const double max_ratio = [] {
+      const char* text = std::getenv("PPOCR_GPU_REC_WIDTH_BATCH_RATIO");
+      const double value = text ? std::strtod(text, nullptr) : 1.5;
+      return value >= 1.0 ? value : 1.5;
+    }();
+    std::vector<GpuCropJob> jobs;
+    jobs.reserve(boxes.size());
+    for (std::size_t index = 0; index < boxes.size(); ++index)
+      jobs.push_back({0, index, &image, &boxes[index], CropBoundsFor(image, boxes[index])});
+    std::stable_sort(jobs.begin(), jobs.end(), [&](const GpuCropJob& left, const GpuCropJob& right) {
+      return GpuRecognitionWidth(left.crop, opt) < GpuRecognitionWidth(right.crop, opt);
+    });
+    std::vector<std::vector<Result>> output(1);
+    output.front().resize(boxes.size());
+    for (std::size_t first = 0; first < jobs.size();) {
+      const int narrowest = GpuRecognitionWidth(jobs[first].crop, opt);
+      std::size_t last = first + 1;
+      while (last < jobs.size() && last - first < max_items &&
+             GpuRecognitionWidth(jobs[last].crop, opt) <= narrowest * max_ratio) ++last;
+      const std::vector<GpuCropJob> group(jobs.begin() + std::ptrdiff_t(first),
+                                          jobs.begin() + std::ptrdiff_t(last));
+      bool done = false;
+      if (group.size() > 1 && !g_gpu_rec_width_batch_failed.load()) {
+        done = RecognizeGpuOnlyMaskedBatch(rec, opt, dict, group, output, page_rgb);
+        if (!done) g_gpu_rec_width_batch_failed.store(true);
+      }
+      if (!done) {
+        // Exact-width graphs: one per distinct width of the group.
+        for (std::size_t begin = 0; begin < group.size();) {
+          std::size_t end = begin + 1;
+          const int width = GpuRecognitionWidth(group[begin].crop, opt);
+          while (end < group.size() && GpuRecognitionWidth(group[end].crop, opt) == width) ++end;
+          RecognizeGpuOnlyCropBatch(rec, opt, dict,
+                                    std::vector<GpuCropJob>(group.begin() + std::ptrdiff_t(begin),
+                                                            group.begin() + std::ptrdiff_t(end)),
+                                    output, page_rgb);
+          begin = end;
+        }
+      }
+      first = last;
+    }
+    return std::move(output.front());
+  }
   // A single page can contain many text lines. Preserve each crop's exact
   // PP-OCR width by default, but consolidate all equal-width crops before
   // recording a recognizer graph. This remains GPU-only: RGB resize,

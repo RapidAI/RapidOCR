@@ -3775,8 +3775,51 @@ class VulkanBinaryRuntime {
     return EndArenaOpLocked();
   }
 
+  bool RunArenaMaskWidth(std::uint32_t value_index, std::uint32_t widths_index,
+                         std::size_t batches, std::size_t per_batch, std::size_t width) noexcept {
+    if (batches == 0 || per_batch == 0 || width == 0 || per_batch % width != 0 ||
+        batches > UINT32_MAX / per_batch || !Initialize()) return false;
+    const std::size_t elements = batches * per_batch;
+    std::lock_guard lock(mutex_);
+    if (value_index >= arena_buffers_.size() || widths_index >= arena_buffers_.size()) return false;
+    const auto& value = arena_buffers_[value_index];
+    const auto& widths = arena_buffers_[widths_index];
+    if (!value.live || !widths.live || value.live_elements < elements ||
+        widths.live_elements < batches) return false;
+    std::array<VkDescriptorBufferInfo, 5> infos{};
+    std::array<VkWriteDescriptorSet, 5> writes{};
+    const VkDescriptorSet arena_set = DescriptorSetForArenaOpLocked();
+    if (!arena_set) return false;
+    for (std::uint32_t binding = 0; binding < 5; ++binding) {
+      infos[binding] = binding == 1
+          ? VkDescriptorBufferInfo{widths.buffer, 0, static_cast<VkDeviceSize>(batches * sizeof(float))}
+          : VkDescriptorBufferInfo{value.buffer, 0, static_cast<VkDeviceSize>(elements * sizeof(float))};
+      writes[binding] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, arena_set, binding, 0, 1,
+                         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr, &infos[binding], nullptr};
+    }
+    UpdateDescriptors(device_, static_cast<std::uint32_t>(writes.size()), writes.data(), 0, nullptr);
+    if (!BeginArenaOpLocked()) return false;
+    cmd_bind_descriptor_sets_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_,
+                              0, 1, &arena_set, 0, nullptr);
+    struct Push { std::uint32_t count, batches, operation0, operation1, operation2, operation3,
+                                steps, right_repeat, right_per_batch, right_batch_stride, mode; }
+        push{static_cast<std::uint32_t>(elements), 1u, static_cast<std::uint32_t>(width),
+             static_cast<std::uint32_t>(per_batch), 0u, 0u, 0u, 0u, 0u, 0u, 69u};
+    cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
+    const std::size_t dispatch = (elements + 1023) / 1024;
+    if (dispatch == 0 || dispatch > UINT32_MAX) return false;
+    CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), 1, 1);
+    const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
+                                  VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
+    CmdBarrier(command_buffer_, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                          VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
+    return EndArenaOpLocked();
+  }
+
   bool RunArenaSpatialMean(std::uint32_t input_index, std::uint32_t output_index,
-                           std::size_t batches, int channels, std::size_t plane) noexcept {
+                           std::size_t batches, int channels, std::size_t plane,
+                           std::uint32_t divisor_index = UINT32_MAX,
+                           std::size_t divisor_rows = 0) noexcept {
     if (batches == 0 || channels <= 0 || plane == 0 || batches > UINT32_MAX ||
         std::size_t(channels) > UINT32_MAX / batches || !Initialize()) return false;
     const std::size_t output_elements = batches * std::size_t(channels);
@@ -3787,10 +3830,15 @@ class VulkanBinaryRuntime {
     const auto& input = arena_buffers_[input_index]; const auto& output = arena_buffers_[output_index];
     if (!input.live || !output.live || input.live_elements < input_elements ||
         output.live_elements < output_elements) return false;
+    const bool masked = divisor_index != UINT32_MAX;
+    if (masked && (divisor_index >= arena_buffers_.size() || !arena_buffers_[divisor_index].live ||
+                   arena_buffers_[divisor_index].live_elements < batches)) return false;
     std::array<VkDescriptorBufferInfo, 5> infos{}; std::array<VkWriteDescriptorSet, 5> writes{};
-    const std::array<const ArenaBuffer*, 5> sources{&input, &input, &input, &output, &input};
+    const std::array<const ArenaBuffer*, 5> sources{
+        &input, masked ? &arena_buffers_[divisor_index] : &input, &input, &output, &input};
     const std::array<VkDeviceSize, 5> ranges{
-        static_cast<VkDeviceSize>(input_elements * sizeof(float)), sizeof(float), sizeof(float),
+        static_cast<VkDeviceSize>(input_elements * sizeof(float)),
+        masked ? static_cast<VkDeviceSize>(batches * sizeof(float)) : sizeof(float), sizeof(float),
         static_cast<VkDeviceSize>(output_elements * sizeof(float)), sizeof(float)};
     const VkDescriptorSet arena_set = DescriptorSetForArenaOpLocked();
     if (!arena_set) return false;
@@ -3812,6 +3860,11 @@ class VulkanBinaryRuntime {
     static const bool serial_mean = std::getenv("PPOCR_SERIAL_SPATIAL_MEAN") != nullptr;
     const bool parallel = !serial_mean && plane >= 64 && output_elements <= 65535;
     if (parallel) push.operation2 = 1u;
+    if (masked) {
+      if (divisor_rows == 0 || divisor_rows > UINT32_MAX) return false;
+      push.operation3 = 1u; push.steps = static_cast<std::uint32_t>(channels);
+      push.right_repeat = static_cast<std::uint32_t>(divisor_rows);
+    }
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
     const std::size_t dispatch = parallel ? output_elements : (output_elements + 255) / 256;
     CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), 1, 1);
@@ -7083,12 +7136,39 @@ bool VulkanTensorArena::SpatialMean(const VulkanTensorSlot& input, VulkanTensorS
 #endif
 }
 
+bool VulkanTensorArena::MaskWidth(VulkanTensorSlot& value, const VulkanTensorSlot& widths,
+                                  std::size_t batches, std::size_t per_batch,
+                                  std::size_t width) noexcept {
+#if defined(PPOCR_HAS_VULKAN_HEADERS) && defined(PPOCR_HAS_VULKAN_KERNELS) && defined(_WIN32)
+  if (!impl_ || !value.resident || !widths.resident) return false;
+  return Runtime().RunArenaMaskWidth(value.index, widths.index, batches, per_batch, width);
+#else
+  (void)value; (void)widths; (void)batches; (void)per_batch; (void)width;
+  return false;
+#endif
+}
+
+bool VulkanTensorArena::SpatialMeanMasked(const VulkanTensorSlot& input, VulkanTensorSlot& output,
+                                          std::size_t batches, int channels, std::size_t plane,
+                                          const VulkanTensorSlot& divisors,
+                                          std::size_t rows) noexcept {
+#if defined(PPOCR_HAS_VULKAN_HEADERS) && defined(PPOCR_HAS_VULKAN_KERNELS) && defined(_WIN32)
+  if (!impl_ || !input.resident || !output.resident || !divisors.resident) return false;
+  return Runtime().RunArenaSpatialMean(input.index, output.index, batches, channels, plane,
+                                       divisors.index, rows);
+#else
+  (void)input; (void)output; (void)batches; (void)channels; (void)plane; (void)divisors; (void)rows;
+  return false;
+#endif
+}
+
 bool VulkanTensorArena::SqueezeExcitationGate(
     const VulkanTensorSlot& input, const VulkanTensorSlot& first_weights,
     const VulkanTensorSlot& first_bias, const VulkanTensorSlot& second_weights,
     const VulkanTensorSlot& second_bias, VulkanTensorSlot& output,
     std::size_t batches, int channels, int reduced_channels, std::size_t plane,
-    float alpha, float beta) noexcept {
+    float alpha, float beta, const VulkanTensorSlot* mean_divisors,
+    std::size_t mean_rows) noexcept {
   if (!impl_ || !input.resident || !first_weights.resident || !first_bias.resident ||
       !second_weights.resident || !second_bias.resident || !output.resident ||
       batches == 0 || channels <= 0 || reduced_channels <= 0 || plane == 0 ||
@@ -7101,7 +7181,8 @@ bool VulkanTensorArena::SqueezeExcitationGate(
   auto gate = Acquire(batches * std::size_t(channels), "se-gate");
   const auto release_all = [&] { Release(gate); Release(reduced); Release(mean); };
   if (!mean.resident || !reduced.resident || !gate.resident ||
-      !SpatialMean(input, mean, batches, channels, plane) ||
+      !(mean_divisors ? SpatialMeanMasked(input, mean, batches, channels, plane, *mean_divisors, mean_rows)
+                      : SpatialMean(input, mean, batches, channels, plane)) ||
       !PointwiseConv(mean, first_weights, first_bias, reduced, batches, channels,
                      reduced_channels, 1, true, false) ||
       !PointwiseConv(reduced, second_weights, second_bias, gate, batches, reduced_channels,

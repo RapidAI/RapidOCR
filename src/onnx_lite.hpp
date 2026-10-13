@@ -83,6 +83,15 @@ class OnnxLite {
   [[nodiscard]] bool RunGpuOnlyCtcTop1(
       std::unordered_map<std::string, GpuTensor> inputs,
       CtcTop1Output& output) const;
+  // Width-batched form: input item b holds `valid_widths[b]` real columns
+  // followed by zeros. Before every width-mixing operator the padded columns
+  // are cleared, SE means divide by each item's valid area, and the output
+  // is ragged (row_offsets / sequence_steps), so every item decodes exactly
+  // as its own exact-width graph would. Returns false, without changing
+  // `output`, when the graph holds an operator the mask cannot represent.
+  [[nodiscard]] bool RunGpuOnlyCtcTop1Masked(
+      std::unordered_map<std::string, GpuTensor> inputs,
+      const std::vector<int>& valid_widths, CtcTop1Output& output) const;
   // Replay several already-recorded recognizer graphs with one queue submit
   // and download each fused CTC Top-1. Returns false when any key is missing
   // so the caller can fall back to per-width RunGpuOnlyCtcTop1.

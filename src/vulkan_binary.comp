@@ -804,6 +804,19 @@ void main() {
   // Mode 37 is the NCHW spatial reduction used by detector and recognizer SE
   // gates. One invocation retains the portable scalar accumulation order for
   // one channel plane, yet leaves both the source and compact result on GPU.
+  // Mode 69 zeroes the padded right columns of a width-batched NCHW tensor
+  // in place: element i is cleared when (i % width) >= valid width of its
+  // batch item. B holds the per-item valid widths as floats, operation0 is
+  // the padded width and operation1 the elements per batch item.
+  if (params.mode == 69u) {
+    const uint index = gl_GlobalInvocationID.x * 4u;
+    if (index >= params.count || params.operation0 == 0u || params.operation1 == 0u) return;
+    for (uint lane = 0u; lane < 4u && index + lane < params.count; ++lane) {
+      const uint i = index + lane;
+      if (float(i % params.operation0) >= b[i / params.operation1]) d[i] = 0.0;
+    }
+    return;
+  }
   if (params.mode == 37u && params.operation2 == 1u) {
     // Parallel form: one workgroup per plane, strided partial sums and a
     // fixed-shape tree, so the result is deterministic for every run.
@@ -821,7 +834,10 @@ void main() {
       if (local < stride) wg_lo[local] += wg_lo[local + stride];
       barrier();
     }
-    if (local == 0u) d[index] = wg_lo[0] / float(plane);
+    // operation3 == 1: masked width batch; B holds each item's valid
+    // width, `right_repeat` the rows (H) and `steps` the planes per item.
+    if (local == 0u)
+      d[index] = wg_lo[0] / (params.operation3 == 1u ? b[index / params.steps] * float(params.right_repeat) : float(plane));
     return;
   }
   if (params.mode == 37u) {
@@ -832,7 +848,7 @@ void main() {
     float sum = 0.0;
     const uint offset = index * plane;
     for (uint item = 0u; item < plane; ++item) sum += a[offset + item];
-    d[index] = sum / float(plane);
+    d[index] = sum / (params.operation3 == 1u ? b[index / params.steps] * float(params.right_repeat) : float(plane));
     return;
   }
   // Mode 38 splits the PP-OCR fused QKV tensor `[N,T,3,H,D]` straight to

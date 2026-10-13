@@ -337,7 +337,19 @@ class VulkanTensorArena {
       const VulkanTensorSlot& first_bias, const VulkanTensorSlot& second_weights,
       const VulkanTensorSlot& second_bias, VulkanTensorSlot& output,
       std::size_t batches, int channels, int reduced_channels,
-      std::size_t plane, float alpha, float beta) noexcept;
+      std::size_t plane, float alpha, float beta,
+      const VulkanTensorSlot* mean_divisors = nullptr, std::size_t mean_rows = 0) noexcept;
+  // Width-batched recognition: zero every column at or beyond each batch
+  // item's valid width (`widths` holds one float per item) of an NCHW tensor
+  // whose rows are `width` wide and whose items hold `per_batch` elements.
+  [[nodiscard]] bool MaskWidth(VulkanTensorSlot& value, const VulkanTensorSlot& widths,
+                               std::size_t batches, std::size_t per_batch,
+                               std::size_t width) noexcept;
+  // SpatialMean dividing item b's planes by divisors[b] * rows (its valid
+  // width times H).
+  [[nodiscard]] bool SpatialMeanMasked(const VulkanTensorSlot& input, VulkanTensorSlot& output,
+                                       std::size_t batches, int channels, std::size_t plane,
+                                       const VulkanTensorSlot& divisors, std::size_t rows) noexcept;
   // Splits `[N,T,3,H,D]` directly into three attention tensors `[N,H,T,D]`.
   // This mirrors the PP-OCRv6 fused QKV graph transformation and avoids the
   // former full `[3,N,H,T,D]` transient entirely.

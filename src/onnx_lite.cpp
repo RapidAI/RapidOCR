@@ -18,6 +18,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
+#include <map>
 #include <unordered_set>
 
 namespace ppocr::detail {
@@ -6011,6 +6012,92 @@ std::vector<std::int64_t> DeviceReshapeShape(const DeviceValue& value, const Ten
 // node, never a hidden CPU fallback. Immutable constants are cached in
 // persistent Vulkan slots across calls; the activation map owns/reuses all
 // other arena slots by exact graph liveness.
+namespace {
+// Width-batched recognition (RunGpuOnlyCtcTop1Masked). Set only for the
+// duration of one RunGpuOnlyInternal call on this thread.
+thread_local const std::vector<int>* t_mask_input_widths = nullptr;
+thread_local std::vector<int> t_mask_output_widths;
+
+// Operators that act per column (no mixing along W): padded columns may
+// hold any value before them.
+bool MaskPerColumnOp(const std::string& op) {
+  static const std::unordered_set<std::string> ops{
+      "Identity", "Squeeze", "Unsqueeze", "Transpose", "Add", "Mul", "Sub", "Div",
+      "Relu", "Sigmoid", "HardSigmoid", "HardSwish", "Erf", "BatchNormalization",
+      "FusedExpandGeluProjectAdd", "FusedMatMulBias", "MatMul", "Softmax"};
+  return ops.contains(op);
+}
+
+bool MaskConvLikeOp(const std::string& op) {
+  return op == "Conv" || op == "FusedConvRelu" || op == "FusedConvGelu" ||
+         op == "FusedConvHardSwish" || op == "FusedConvSwish" || op == "FusedConvSigmoid" ||
+         op == "FusedConvHardSigmoid" || op == "FusedDepthwiseHardSwish" ||
+         op == "FusedDepthwiseExpandGeluProjectAdd" || op == "FusedDepthwisePointwiseConvGelu" ||
+         op == "FusedDepthwisePointwiseConv" || op == "FusedDepthwisePointwiseConvRelu" ||
+         op == "FusedDepthwisePointwiseConvHardSwish";
+}
+
+struct MaskWindow { int kernel = 1, stride = 1, pad_left = 0, pad_right = 0; bool ok = false; };
+
+// Window of the operator's first stage along W, from its ONNX attributes
+// (Conv-like: kernel from the 4-D weight in[1]).
+MaskWindow MaskWindowOf(const Node& node, const GraphData& graph) {
+  MaskWindow window;
+  if (node.attr.contains("auto_pad") && !node.attr.at("auto_pad").s.empty() &&
+      node.attr.at("auto_pad").s != "NOTSET") return window;
+  if (node.op == "AveragePool") {
+    const auto& kernel = Attr(node, "kernel_shape").ints;
+    if (kernel.size() != 2) return window;
+    window.kernel = int(kernel[1]);
+  } else {
+    if (node.in.size() < 2) return window;
+    const auto weight = graph.initializers.find(node.in[1]);
+    if (weight == graph.initializers.end() || weight->second.shape.size() != 4) return window;
+    window.kernel = int(weight->second.shape[3]);
+  }
+  const auto& strides = Attr(node, "strides").ints;
+  const auto& pads = Attr(node, "pads").ints;
+  if (!strides.empty() && strides.size() != 2) return window;
+  if (!pads.empty() && pads.size() != 4) return window;
+  window.stride = strides.empty() ? 1 : int(strides[1]);
+  window.pad_left = pads.empty() ? 0 : int(pads[1]);
+  window.pad_right = pads.empty() ? 0 : int(pads[3]);
+  window.ok = window.kernel > 0 && window.stride > 0;
+  return window;
+}
+
+int MaskOutputWidth(int width, const MaskWindow& window) {
+  const int span = width + window.pad_left + window.pad_right - window.kernel;
+  return span < 0 ? 0 : span / window.stride + 1;
+}
+
+// Per-tensor valid widths for every activation of the graph, or empty when
+// the graph holds an operator the width mask cannot represent.
+std::unordered_map<std::string, std::vector<int>> MaskWidthPlan(
+    const GraphData& graph, const std::string& input, const std::vector<int>& widths) {
+  std::unordered_map<std::string, std::vector<int>> plan;
+  plan.emplace(input, widths);
+  for (const auto& node : graph.nodes) {
+    if (node.in.empty() || node.out.size() != 1) return {};
+    const auto source = plan.find(node.in[0]);
+    if (source == plan.end()) return {};
+    std::vector<int> out = source->second;
+    if (MaskConvLikeOp(node.op) || node.op == "AveragePool") {
+      const auto window = MaskWindowOf(node, graph);
+      if (!window.ok) return {};
+      if (node.op == "AveragePool" &&
+          (window.pad_left != 0 || window.pad_right != 0)) return {};
+      for (int& width : out) width = MaskOutputWidth(width, window);
+    } else if (node.op != "FusedSEGateMul" && !MaskPerColumnOp(node.op)) {
+      return {};
+    }
+    for (const int width : out) if (width <= 0) return {};
+    plan[node.out[0]] = std::move(out);
+  }
+  return plan;
+}
+}  // namespace
+
 bool OnnxLite::RunGpuOnlyInternal(
     std::unordered_map<std::string, Tensor>* host_inputs,
     std::unordered_map<std::string, GpuTensor> device_values,
@@ -6050,7 +6137,8 @@ bool OnnxLite::RunGpuOnlyInternal(
   // repeat the CPU text. Replay stays available as an explicit opt-in for
   // adapters that have qualified it. PPOCR_DISABLE_GPU_GRAPH_REPLAY still
   // forces the segmented path even when the opt-in is set.
-  const bool allow_replay = (!device_values.empty() || rgb_front != nullptr) &&
+  const bool allow_replay = t_mask_input_widths == nullptr &&
+      (!device_values.empty() || rgb_front != nullptr) &&
       std::getenv("PPOCR_ENABLE_GPU_GRAPH_REPLAY") != nullptr &&
       std::getenv("PPOCR_DISABLE_GPU_GRAPH_REPLAY") == nullptr &&
       !model_has_isolated_tail;
@@ -6279,6 +6367,46 @@ bool OnnxLite::RunGpuOnlyInternal(
       for (auto& [_, value] : values) arena.Release(value.slot);
       return false;
     }
+  }
+  // Width-batched recognition: plan every activation's per-item valid
+  // widths and upload each distinct vector before recording (host writes
+  // must precede the graph's first dispatch).
+  std::unordered_map<std::string, std::vector<int>> mask_plan;
+  std::map<std::vector<int>, VulkanTensorSlot> mask_slots;
+  std::unordered_set<std::string> mask_clean;
+  bool mask_sequence = false;
+  struct MaskSlotRelease {
+    VulkanTensorArena& arena; std::map<std::vector<int>, VulkanTensorSlot>& slots;
+    ~MaskSlotRelease() { for (auto& [_, slot] : slots) arena.Release(slot); }
+  } mask_slot_release{arena, mask_slots};
+  t_mask_output_widths.clear();
+  if (t_mask_input_widths) {
+    if (!graph_input_name || impl.graph.outputs.size() != 1) {
+      for (auto& [_, value] : values) arena.Release(value.slot);
+      return false;
+    }
+    mask_plan = MaskWidthPlan(impl.graph, *graph_input_name, *t_mask_input_widths);
+    bool uploaded = !mask_plan.empty();
+    for (const auto& [_, widths] : mask_plan) {
+      if (!uploaded) break;
+      if (mask_slots.contains(widths)) continue;
+      const std::vector<float> data(widths.begin(), widths.end());
+      auto slot = arena.Acquire(data.size(), "rec-mask-widths");
+      uploaded = slot.resident && arena.Upload(slot, data.data(), data.size());
+      if (slot.resident) mask_slots.emplace(widths, slot);
+    }
+    if (!uploaded) {
+      for (auto& [_, value] : values) arena.Release(value.slot);
+      return false;
+    }
+    // The front end writes zeros right of each crop's natural width.
+    mask_clean.insert(*graph_input_name);
+    const auto output_plan = mask_plan.find(impl.graph.outputs.front());
+    if (output_plan == mask_plan.end()) {
+      for (auto& [_, value] : values) arena.Release(value.slot);
+      return false;
+    }
+    t_mask_output_widths = output_plan->second;
   }
   bool persistent_graph = false;
   if (allow_replay && replay_key != 0 && !arena.HasPersistentGraph(replay_key)) {
@@ -6519,6 +6647,42 @@ bool OnnxLite::RunGpuOnlyInternal(
     }
     const auto* input = fetch(node.in[0]);
     if (!input) return fail();
+    const VulkanTensorSlot* mask_divisors = nullptr;
+    if (t_mask_input_widths) {
+      const auto planned = mask_plan.find(node.in[0]);
+      if (planned == mask_plan.end()) return fail();
+      const auto& widths = planned->second;
+      const int widest = *std::max_element(widths.begin(), widths.end());
+      if (node.op == "Transpose") mask_sequence = true;
+      if (!mask_sequence) {
+        // Before the sequence Transpose every activation keeps W last and
+        // the widest crop defines the padded width.
+        if (input->shape.empty() || input->shape.back() != widest ||
+            input->shape[0] != std::int64_t(widths.size())) return fail();
+      } else if (node.op == "Transpose" ? input->shape.size() != 3 || input->shape[2] != widest
+                                        : input->shape.size() != 3 || input->shape[1] != widest) {
+        return fail();
+      }
+      if (node.op == "Softmax" && !mask_sequence) return fail();
+      const bool mixes = node.op == "FusedSEGateMul" || node.op == "AveragePool" ||
+          (MaskConvLikeOp(node.op) && [&] {
+            const auto window = MaskWindowOf(node, impl.graph);
+            return !window.ok || window.kernel != 1 || window.stride != 1 ||
+                   window.pad_left != 0 || window.pad_right != 0;
+          }());
+      if (mixes) {
+        if (input->shape.size() != 4 || mask_sequence) return fail();
+        const auto& slot = mask_slots.at(widths);
+        if (!mask_clean.contains(node.in[0])) {
+          VulkanTensorSlot target = input->slot;
+          const std::size_t per_batch = std::size_t(input->shape[1]) * input->shape[2] * input->shape[3];
+          if (!arena.MaskWidth(target, slot, widths.size(), per_batch, std::size_t(widest)))
+            return fail();
+          mask_clean.insert(node.in[0]);
+        }
+        if (node.op == "FusedSEGateMul") mask_divisors = &slot;
+      }
+    }
     DeviceValue result;
     bool ok{};
     bool aliases_first_input{};
@@ -6941,7 +7105,8 @@ bool OnnxLite::RunGpuOnlyInternal(
       result.shape = input->shape; result.slot = arena.Acquire(input->slot.live_elements, node.out[0]);
       ok = result.slot.resident && arena.SqueezeExcitationGate(input->slot, *w1, *b1, *w2, *b2, result.slot,
           std::size_t(input->shape[0]), channels, reduced, std::size_t(input->shape[2]) * input->shape[3],
-          Attr(node, "alpha").f, Attr(node, "beta").f);
+          Attr(node, "alpha").f, Attr(node, "beta").f, mask_divisors,
+          mask_divisors ? std::size_t(input->shape[2]) : 0);
       // residual=1 is x*(1+SE(x)) = x + x*SE(x). SqueezeExcitationGate already
       // writes x*SE(x); adding the source stays on device.
       if (ok && AttrInt(node, "residual", 0) != 0)
@@ -8158,6 +8323,28 @@ bool OnnxLite::RunGpuOnlyCtcTop1(
       previous = index;
     }
   }
+  return true;
+}
+
+bool OnnxLite::RunGpuOnlyCtcTop1Masked(
+    std::unordered_map<std::string, GpuTensor> inputs, const std::vector<int>& valid_widths,
+    CtcTop1Output& output) const {
+  if (valid_widths.empty()) return false;
+  CtcTop1Output dense;
+  t_mask_input_widths = &valid_widths;
+  const bool ok = RunGpuOnlyCtcTop1(std::move(inputs), dense);
+  t_mask_input_widths = nullptr;
+  const std::vector<int> steps = std::move(t_mask_output_widths);
+  t_mask_output_widths.clear();
+  if (!ok || dense.batches != int(valid_widths.size()) || steps.size() != valid_widths.size())
+    return false;
+  dense.row_offsets.resize(steps.size());
+  for (std::size_t item = 0; item < steps.size(); ++item) {
+    if (steps[item] <= 0 || steps[item] > dense.steps) return false;
+    dense.row_offsets[item] = item * std::size_t(dense.steps);
+  }
+  dense.sequence_steps = steps;
+  output = std::move(dense);
   return true;
 }
 
