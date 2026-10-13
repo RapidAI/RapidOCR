@@ -180,10 +180,15 @@ MtlProgram* ProgramFor(id<MTLDevice> device, int kind) {
     MTLCompileOptions* options = [MTLCompileOptions new];
     // Fast math may reassociate or flush denormals; recognition text must
     // match the CPU graph, so compile with IEEE semantics.
+    // mathMode is new in the macOS 15 SDK; older SDKs (macos-14 runners)
+    // only have fastMathEnabled.
+#if defined(__MAC_15_0) && __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_15_0
     if (@available(macOS 15.0, *)) {
       options.mathMode = MTLMathModeSafe;
       options.mathFloatingPointFunctions = MTLMathFloatingPointFunctionsPrecise;
-    } else {
+    } else
+#endif
+    {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
       options.fastMathEnabled = NO;
