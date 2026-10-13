@@ -91,8 +91,8 @@ GPU on Apple silicon: Mac mini, Apple M4 (10 CPU cores 4P+6E, 10 GPU cores, 16 G
 
 | Image | CPU (NEON, `PPOCR_BACKEND=cpu`) | Vulkan (MoltenVK) `gpu_only` | Metal (`PPOCR_BACKEND=metal`) |
 | --- | ---: | ---: | ---: |
-| hello (1 line) | 25.3 ms | 77.4 ms | 12.4 ms |
-| page (45 lines) | 210 ms | 672 ms | 113.6 ms |
+| hello (1 line) | 25.3 ms | 77.4 ms | 11.3 ms |
+| page (45 lines) | 210 ms | 672 ms | 107.2 ms |
 
 Metal is about 2× faster than NEON on hello and about 1.85× faster on the page, with text equal to CPU, box IoU 1.0, identical results across 4 threads, and no Metal API validation errors. It replaces the heaviest translated kernels with native MSL ones (simdgroup-matrix GEMMs for pointwise Conv, 3×3 Conv and the recognizer head), runs the DB postprocess on the CPU from the shared probability map, and reuses reclaimed arena slots. Recognition batches up to 8 crops of similar width (widest/narrowest ≤ 1.5) into one graph: each crop keeps its natural width, the padded columns are zeroed before every operator that mixes along the width, SE means divide by each crop's own area and CTC decodes only each crop's own steps, so the text matches the exact-width graphs. This is the default on Metal (`PPOCR_DISABLE_GPU_REC_WIDTH_BATCH=1` turns it off; `PPOCR_ENABLE_GPU_REC_WIDTH_BATCH=1` enables it on Vulkan, where it is slower on MoltenVK). Before these changes Metal measured 76 ms / 539 ms on the same machine, and 147.6 ms on the page before width batching. The remaining time is mostly GPU arithmetic in the recognizer's pointwise Conv GEMMs (about 1 TFLOPS on M4). `PPOCR_METAL_KERNEL_PROFILE=1` with `PPOCR_GPU_PROFILE=1` prints GPU time per kernel.
 

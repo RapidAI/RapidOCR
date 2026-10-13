@@ -91,8 +91,8 @@ Apple 芯片上的 GPU：Mac mini，Apple M4（10 个 CPU 核，4P+6E；10 个 G
 
 | 图片 | CPU（NEON，`PPOCR_BACKEND=cpu`） | Vulkan（MoltenVK）`gpu_only` | Metal（`PPOCR_BACKEND=metal`） |
 | --- | ---: | ---: | ---: |
-| hello（1 行） | 25.3 ms | 77.4 ms | 12.4 ms |
-| 整页（45 行） | 210 ms | 672 ms | 113.6 ms |
+| hello（1 行） | 25.3 ms | 77.4 ms | 11.3 ms |
+| 整页（45 行） | 210 ms | 672 ms | 107.2 ms |
 
 Metal 在 hello 上比 NEON 快约 2 倍，整页快约 1.85 倍；文本与 CPU 一致，框 IoU 为 1.0，4 线程结果一致，Metal API validation 无报错。它把最重的翻译 kernel 换成了原生 MSL kernel（逐点 Conv、3×3 Conv 和识别头的 simdgroup-matrix GEMM），DB 后处理改在 CPU 上读共享的概率图，并复用回收的 arena 槽位。识别把宽度相近的最多 8 个裁剪（最宽/最窄 ≤ 1.5）合进一张图：每个裁剪保持自己的自然宽度，在每个沿宽度混合的算子之前把填充列清零，SE 均值按各自的有效面积相除，CTC 只解码各自的有效步数，所以文本与按精确宽度跑的图一致。Metal 上默认开启（`PPOCR_DISABLE_GPU_REC_WIDTH_BATCH=1` 关闭；`PPOCR_ENABLE_GPU_REC_WIDTH_BATCH=1` 在 Vulkan 上开启，但在 MoltenVK 上更慢）。优化前在同一台机器上 Metal 为 76 ms / 539 ms，按宽度批量之前整页为 147.6 ms。剩下的时间主要是识别模型逐点 Conv GEMM 的 GPU 计算（M4 上约 1 TFLOPS）。`PPOCR_METAL_KERNEL_PROFILE=1` 配合 `PPOCR_GPU_PROFILE=1` 可打印每个 kernel 的 GPU 时间。
 
