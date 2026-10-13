@@ -3770,8 +3770,13 @@ class VulkanBinaryRuntime {
                                 steps, right_repeat, right_per_batch, right_batch_stride, mode; }
         push{static_cast<std::uint32_t>(output_elements), 1u, static_cast<std::uint32_t>(output_elements),
              static_cast<std::uint32_t>(plane), 0u, 0u, 0u, 0u, 0u, 0u, 37u};
+    // Large planes: one workgroup per plane with a parallel reduction.
+    // PPOCR_SERIAL_SPATIAL_MEAN=1 keeps one invocation per plane.
+    static const bool serial_mean = std::getenv("PPOCR_SERIAL_SPATIAL_MEAN") != nullptr;
+    const bool parallel = !serial_mean && plane >= 64 && output_elements <= 65535;
+    if (parallel) push.operation2 = 1u;
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
-    const std::size_t dispatch = (output_elements + 255) / 256;
+    const std::size_t dispatch = parallel ? output_elements : (output_elements + 255) / 256;
     CmdDispatch(command_buffer_, static_cast<std::uint32_t>(dispatch), 1, 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
                                   VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};

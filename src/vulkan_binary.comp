@@ -804,6 +804,26 @@ void main() {
   // Mode 37 is the NCHW spatial reduction used by detector and recognizer SE
   // gates. One invocation retains the portable scalar accumulation order for
   // one channel plane, yet leaves both the source and compact result on GPU.
+  if (params.mode == 37u && params.operation2 == 1u) {
+    // Parallel form: one workgroup per plane, strided partial sums and a
+    // fixed-shape tree, so the result is deterministic for every run.
+    const uint index = gl_WorkGroupID.x;
+    const uint planes = params.operation0;
+    const uint plane = params.operation1;
+    if (index >= planes || plane == 0u) return;
+    const uint local = gl_LocalInvocationID.x;
+    const uint offset = index * plane;
+    float sum = 0.0;
+    for (uint item = local; item < plane; item += gl_WorkGroupSize.x) sum += a[offset + item];
+    wg_lo[local] = sum;
+    barrier();
+    for (uint stride = gl_WorkGroupSize.x / 2u; stride > 0u; stride >>= 1u) {
+      if (local < stride) wg_lo[local] += wg_lo[local + stride];
+      barrier();
+    }
+    if (local == 0u) d[index] = wg_lo[0] / float(plane);
+    return;
+  }
   if (params.mode == 37u) {
     const uint index = gl_GlobalInvocationID.x;
     const uint planes = params.operation0;
