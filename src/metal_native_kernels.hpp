@@ -193,8 +193,9 @@ kernel void pointwise_gemm_db(device const float* a [[buffer(0)]],
     d[index] = value;
   }
 }
-// Modes 50/51: 3x3 Conv (stride 1 or 2, ReLU for 51) as an implicit GEMM:
-// out[oc, p] = bias[oc] + sum_k W[oc, k] X[k, p] with k = ic * 9 + ky * 3 + kx,
+// Modes 50/51 (3x3) and 14/15 (any KHxKW) Conv, one stride for H and W,
+// ReLU for 51/15, as an implicit GEMM:
+// out[oc, p] = bias[oc] + sum_k W[oc, k] X[k, p] with k = (ic * KH + ky) * KW + kx,
 // the uber-shader's weight layout. Pads are in the mode's high bytes; bit 15
 // swaps the input (D) and output (A) bindings. Same 32x32 tiling as above.
 kernel void conv3x3_gemm(device float* a [[buffer(0)]],
@@ -214,7 +215,9 @@ kernel void conv3x3_gemm(device float* a [[buffer(0)]],
   const bool swap_ad = (params.mode & 0x8000u) != 0u;
   const uint plane = output_h * output_w;
   const uint outputs = params.count / plane;
-  const uint depth = channels * 9u;
+  const uint kernel_h = params.right_repeat, kernel_w = params.right_per_batch;
+  const uint taps = kernel_h * kernel_w;
+  const uint depth = channels * taps;
   const uint batch = group.y;
   const uint plane_tiles = (plane + TP - 1) / TP;
   const uint m0 = (group.x / plane_tiles) * TM;
@@ -243,7 +246,7 @@ kernel void conv3x3_gemm(device float* a [[buffer(0)]],
       const uint xk = k0 + i / TP, p = p0 + i % TP;
       float v = 0.0f;
       if (xk < depth && p < plane) {
-        const uint ic = xk / 9u, r = xk - ic * 9u, ky = r / 3u, kx = r - ky * 3u;
+        const uint ic = xk / taps, r = xk - ic * taps, ky = r / kernel_w, kx = r - ky * kernel_w;
         const uint oy = p / output_w, ox = p - oy * output_w;
         const int iy = int(oy * stride + ky) - pad_top;
         const int ix = int(ox * stride + kx) - pad_left;
@@ -266,7 +269,7 @@ kernel void conv3x3_gemm(device float* a [[buffer(0)]],
       simdgroup_store(acc[i][j], cs + (sm + i * 8) * TP + sp + j * 8, TP);
   threadgroup_barrier(mem_flags::mem_threadgroup);
   if (batch >= params.batches) return;
-  const bool relu = (params.mode & 0x7fffu) == 51u;
+  const bool relu = (params.mode & 0x7fffu) == 51u || (params.mode & 0x7fffu) == 15u;
   device float* y = swap_ad ? a : d;
   for (uint i = local; i < TM * TP; i += 128) {
     const uint m = m0 + i / TP, p = p0 + i % TP;

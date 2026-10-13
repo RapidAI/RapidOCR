@@ -823,9 +823,14 @@ id<MTLComputePipelineState> NativeForDispatch(id<MTLDevice> device, const Cmd& c
       command.pipeline->program->kind != 0) return nil;
   PushView push{};
   std::memcpy(&push, command.push.data(), sizeof(push));
-  if ((push.mode & 0x7fffu) == 50u || (push.mode & 0x7fffu) == 51u) {
-    // 3x3 Conv: the uber-shader reads every field, so the driver selects
-    // the native kernel by mode (PPOCR_METAL_DISABLE_NATIVE_CONV=1 opts out).
+  static const bool native_generic_conv = std::getenv("PPOCR_METAL_DISABLE_NATIVE_GENERIC_CONV") == nullptr;
+  if ((push.mode & 0x7fffu) == 50u || (push.mode & 0x7fffu) == 51u ||
+      (native_generic_conv && ((push.mode & 0x7fffu) == 14u || (push.mode & 0x7fffu) == 15u) &&
+       push.right_repeat > 0 && push.right_repeat <= 7 && push.right_per_batch > 0 &&
+       push.right_per_batch <= 7)) {
+    // KHxKW Conv (3x3 modes 50/51, generic 14/15): the uber-shader reads every
+    // field, so the driver selects the native implicit-GEMM kernel by mode
+    // (PPOCR_METAL_DISABLE_NATIVE_GENERIC_CONV=1 keeps 14/15 on the uber-shader).
     id<MTLComputePipelineState> state = Native(device).conv3x3_gemm;
     const std::uint64_t plane = std::uint64_t(push.operation3) * push.steps;
     if (!state || plane == 0 || push.count % plane != 0 ||
