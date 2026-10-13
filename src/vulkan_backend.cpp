@@ -7716,11 +7716,11 @@ bool VulkanResizeRgbToNchw(
   auto out_slot = arena.Acquire(output_elements, "hyb-rgb-nchw");
   if (!rgb_slot.resident || !out_slot.resident ||
       !arena.UploadRgb8(rgb_slot, rgb, rgb_bytes) ||
+      // Zero constants select the shader's built-in set for this geometry
+      // (recognizer for height 48, detector otherwise).
       !arena.ResizeRgbToNchw(rgb_slot, out_slot, source_width, source_height, 0, 0,
                              source_width, source_height, output_width, output_height,
-                             1.F / (255.F * .229F), -.485F / .229F,
-                             1.F / (255.F * .224F), -.456F / .224F,
-                             1.F / (255.F * .225F), -.406F / .225F) ||
+                             0.F, 0.F, 0.F, 0.F, 0.F, 0.F) ||
       !arena.Download(output, out_slot, output_elements)) {
     arena.Release(out_slot);
     arena.Release(rgb_slot);
