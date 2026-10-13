@@ -1,8 +1,11 @@
 # rapidocr 5
 
-`rapidocr` 5.0.0a1 is the next major version of the PyPI package
+`rapidocr_ng` 5.0.0a1 is published on PyPI as
+[rapidocr_ng](https://pypi.org/project/rapidocr_ng/), separate from the official
 [rapidocr](https://pypi.org/project/rapidocr/). The import name is still
-`rapidocr`. This line is the native PP-OCRv6 engine on the `V5_NG` branch.
+`rapidocr`: `pip install rapidocr_ng`, then `from rapidocr import RapidOCR`.
+Both projects install the same `rapidocr` package directory, so do not install
+them in one environment (run `pip uninstall rapidocr` first). This line is the native PP-OCRv6 engine on the `V5_NG` branch.
 The 3.x line (latest tag `v3.9.2`) stays on `main`. This repository has no
 4.x release.
 
@@ -105,9 +108,9 @@ sdist. It runs on pushes and pull requests to `V5_NG`, on tags named `v5*`,
 and from the Actions “Run workflow” button. A normal push does not upload
 anything to PyPI. Publishing happens only when a `v5*` tag is pushed.
 
-`5.0.0a1` is a pre-release. `pip install rapidocr` keeps installing the 3.x
-release on `main`. The 5.x file is installed with an explicit version, for
-example `pip install rapidocr==5.0.0a1`.
+`5.0.0a1` is a pre-release: `pip install --pre rapidocr_ng` or
+`pip install rapidocr_ng==5.0.0a1`. `pip install rapidocr` installs the
+official 3.x package instead.
 
 How to turn on PyPI Trusted Publishing, which tag to push, and the Actions
 permission the GitHub Release step needs are in

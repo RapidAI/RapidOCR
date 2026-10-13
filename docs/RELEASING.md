@@ -1,4 +1,6 @@
-# Releasing rapidocr 5.x
+# Releasing rapidocr_ng 5.x
+
+The PyPI distribution name is `rapidocr_ng`. The import name is still `rapidocr`.
 
 The workflow is `.github/workflows/build-wheels.yml`.
 
@@ -23,21 +25,22 @@ wheel does not gain a `libvulkan` dependency. A Vulkan-enabled build is the
 source default when `glslangValidator` and `third_party/Vulkan-Headers` are
 present; `.github/workflows/vulkan-lavapipe.yml` runs that build on lavapipe.
 
-The wheel and sdist files are uploaded as the `rapidocr-dist` artifact,
+The wheel and sdist files are uploaded as the `rapidocr_ng-dist` artifact (files `rapidocr_ng-5.0.0a1-*.whl` and `rapidocr_ng-5.0.0a1.tar.gz`),
 with `SHA256SUMS`. PyPI publishing and the GitHub Release run only for a
 push of a `v5*` tag. They do not run for a branch push, a pull request, or a
 manual run from a branch.
 
-`5.0.0a1` is a pre-release, so `pip install rapidocr` on PyPI continues to
-select the 3.x line until a final 5.x release exists. Install a pre-release
-with an explicit version.
+`5.0.0a1` is a pre-release, so install it with `pip install --pre rapidocr_ng`
+or `pip install rapidocr_ng==5.0.0a1`. `pip install rapidocr` still installs
+the official 3.x package, which is a different project.
 
 ## Trusted publisher
 
 Daniel configures this once on PyPI and GitHub. The workflow already
 requests `id-token: write` and uses the GitHub Environment named `pypi`.
 
-1. On the `rapidocr` project at PyPI, open Publishing → Add a new pending
+1. On the `rapidocr_ng` project at PyPI (a new name, so use a pending
+   publisher), open Publishing → Add a new pending
    publisher (or an ordinary publisher if the project already exists).
 2. Owner: `RapidAI`. Repository: `RapidOCR`. Workflow name:
    `build-wheels.yml`. Environment name: `pypi`.

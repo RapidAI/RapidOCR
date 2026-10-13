@@ -19,7 +19,7 @@
 <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
 <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors"><img src="https://img.shields.io/github/contributors/RapidAI/RapidOCR?color=9ea"></a>
 <a href="https://pepy.tech/project/rapidocr"><img src="https://static.pepy.tech/personalized-badge/rapidocr?period=total&units=abbreviation&left_color=grey&right_color=blue&left_text=Downloads%20rapidocr"></a>
-<a href="https://pypi.org/project/rapidocr/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr"></a>
+<a href="https://pypi.org/project/rapidocr_ng/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr_ng"></a>
 <a href="https://github.com/RapidAI/RapidOCR/stargazers"><img src="https://img.shields.io/github/stars/RapidAI/RapidOCR?color=ccf"></a>
 <a href="https://semver.org/"><img alt="SemVer2.0" src="https://img.shields.io/badge/SemVer-2.0-brightgreen"></a>
 <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
@@ -98,17 +98,17 @@ RapidOCR 是面向小模型、离线部署的开源 OCR。5.x 保留 3.x 应用�
 
 ### 🛠️ 安装
 
-`5.0.0a1` 是预发布版。2026-10-05 这一天 PyPI 上最新的 `rapidocr` 仍是 3.9.2，因此在推送 `v5*` 标签之前（见[发布](#-发布)），下面两条命令安装的都是 **3.9.2**：
+这一版在 PyPI 上的名字是 **`rapidocr_ng`**，import 名仍是 `rapidocr`，用法与 `main` 一致：`pip install rapidocr_ng`，然后 `from rapidocr import RapidOCR`。两个发行包安装的是同一个 `rapidocr` 包目录，所以不要在同一个环境里同时安装 `rapidocr_ng` 和官方 `rapidocr`；先执行 `pip uninstall rapidocr`。
+
+`5.0.0a1` 是预发布版，推送 `v5*` 标签（见[发布](#-发布)）之后才会出现在 PyPI 上。之后这样安装：
 
 ```bash
-pip install rapidocr
-pip install --pre rapidocr
+pip uninstall rapidocr   # 如果装过官方包
+pip install --pre rapidocr_ng
 ```
 
-标签发布之后，`pip install rapidocr` 仍会解析到最新的正式版，预发布版用：
-
-```bash
-pip install --pre rapidocr
+```python
+from rapidocr import RapidOCR
 ```
 
 在本分支的检出目录安装（需要 CMake ≥ 3.20、C++20 编译器，以及 `pyproject.toml` 里的 Python 依赖）：
@@ -121,7 +121,7 @@ pip install .
 
 ```bash
 pip wheel . -w dist
-pip install dist/rapidocr-*.whl
+pip install dist/rapidocr_ng-*.whl
 ```
 
 在检出目录里 `pip install ./python` 也可以，它让 CMake 指向父目录，但打不出自包含的 sdist。仓库根目录的 `pip install .` 可以。

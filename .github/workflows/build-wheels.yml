@@ -39,7 +39,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: rapidocr-sdist
+          name: rapidocr_ng-sdist
           path: |
             dist/*.tar.gz
             dist/SHA256SUMS
@@ -76,7 +76,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: rapidocr-wheels-x86_64
+          name: rapidocr_ng-wheels-x86_64
           path: wheelhouse/*.whl
           if-no-files-found: error
 
@@ -117,7 +117,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: rapidocr-wheels-aarch64
+          name: rapidocr_ng-wheels-aarch64
           path: wheelhouse/*.whl
           if-no-files-found: error
 
@@ -162,7 +162,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: rapidocr-wheels-aarch64
+          name: rapidocr_ng-wheels-aarch64
           path: wheelhouse/*.whl
           if-no-files-found: error
 
@@ -178,7 +178,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: rapidocr-*
+          pattern: rapidocr_ng-*
           merge-multiple: true
           path: dist
 
@@ -189,7 +189,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: rapidocr-dist
+          name: rapidocr_ng-dist
           path: |
             dist/*.whl
             dist/*.tar.gz
@@ -208,7 +208,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: rapidocr-dist
+          name: rapidocr_ng-dist
           path: dist
 
       - name: Publish to PyPI

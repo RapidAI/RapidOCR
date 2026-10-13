@@ -19,7 +19,7 @@
 <a href=""><img src="https://img.shields.io/badge/OS-Linux%2C%20Win%2C%20Mac-pink.svg"></a>
 <a href="https://github.com/RapidAI/RapidOCR/graphs/contributors"><img src="https://img.shields.io/github/contributors/RapidAI/RapidOCR?color=9ea"></a>
 <a href="https://pepy.tech/project/rapidocr"><img src="https://static.pepy.tech/personalized-badge/rapidocr?period=total&units=abbreviation&left_color=grey&right_color=blue&left_text=Downloads%20rapidocr"></a>
-<a href="https://pypi.org/project/rapidocr/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr"></a>
+<a href="https://pypi.org/project/rapidocr_ng/"><img alt="PyPI" src="https://img.shields.io/pypi/v/rapidocr_ng"></a>
 <a href="https://github.com/RapidAI/RapidOCR/stargazers"><img src="https://img.shields.io/github/stars/RapidAI/RapidOCR?color=ccf"></a>
 <a href="https://semver.org/"><img alt="SemVer2.0" src="https://img.shields.io/badge/SemVer-2.0-brightgreen"></a>
 <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
@@ -98,17 +98,17 @@ On this machine the Vulkan graph is about 3.3× slower than NEON. Detection take
 
 ### 🛠️ Installation
 
-`5.0.0a1` is a pre-release. On 2026-10-05 PyPI's newest `rapidocr` file is still 3.9.2, so both of the following commands install **3.9.2** until a `v5*` tag is published (see [Releasing](#-releasing)):
+The PyPI name of this line is **`rapidocr_ng`**; the import name stays `rapidocr`, so code is the same as on `main`: `pip install rapidocr_ng`, then `from rapidocr import RapidOCR`. Both distributions install the same `rapidocr` package directory, so do not install `rapidocr_ng` and the official `rapidocr` in one environment; run `pip uninstall rapidocr` first.
+
+`5.0.0a1` is a pre-release. It is on PyPI only after a `v5*` tag is published (see [Releasing](#-releasing)). Then install it with:
 
 ```bash
-pip install rapidocr
-pip install --pre rapidocr
+pip uninstall rapidocr   # if the official package is installed
+pip install --pre rapidocr_ng
 ```
 
-After that tag, `pip install rapidocr` keeps resolving to the newest final release, and the pre-release is installed with:
-
-```bash
-pip install --pre rapidocr
+```python
+from rapidocr import RapidOCR
 ```
 
 From a checkout of this branch (CMake ≥ 3.20, a C++20 compiler, and the Python dependencies in `pyproject.toml`):
@@ -121,7 +121,7 @@ That build follows `pyproject.toml`: shared `libppocr`, examples and tests off, 
 
 ```bash
 pip wheel . -w dist
-pip install dist/rapidocr-*.whl
+pip install dist/rapidocr_ng-*.whl
 ```
 
 `pip install ./python` also works from a checkout. It points CMake at the parent tree and does not produce a self-contained sdist. The repository-root `pip install .` does.
