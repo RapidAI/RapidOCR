@@ -1133,6 +1133,21 @@ std::vector<Box> DBPostDevice(detail::VulkanTensorArena& arena,
   const int height = static_cast<int>(probability.shape[2]);
   const int width = static_cast<int>(probability.shape[3]);
   const std::size_t plane = std::size_t(height) * width;
+  // Metal runs on unified memory, so reading the probability map back costs
+  // a memcpy. The device connectivity kernel is a single serial workgroup
+  // (about 180 ms for a 1700x2200 page on M4) while the CPU flood fill is a
+  // few ms, so Metal uses the CPU DBPost on the same map. That function is
+  // the reference the device kernel reproduces, so boxes are unchanged.
+  // PPOCR_METAL_DEVICE_DB_POSTPROCESS=1 keeps the device kernel.
+  static const bool metal_device_db = std::getenv("PPOCR_METAL_DEVICE_DB_POSTPROCESS") != nullptr;
+  if (detail::MetalDriverRequested() && !metal_device_db) {
+    const std::size_t elements = (batch_index + 1) * plane;
+    std::vector<float> host(elements);
+    if (!arena.Download(host.data(), probability.slot, elements)) FailGpuOnly("DB postprocess download");
+    Tensor map({1, 1, height, width},
+               std::vector<float>(host.begin() + std::ptrdiff_t(batch_index * plane), host.end()));
+    return DBPost(map, dst_w, dst_h, opt);
+  }
   std::vector<detail::VulkanDbBox> compact;
   if (!arena.DbPostprocess(probability.slot, batch_index * plane, height, width,
                            dst_w, dst_h, opt.det_threshold, opt.det_box_threshold,
