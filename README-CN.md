@@ -87,16 +87,16 @@ RapidOCR 是面向小模型、离线部署的开源 OCR。5.x 保留 3.x 应用�
 
 更早在具体显卡上记过的 Vulkan 整页时间没有写进本表。本机上的 lavapipe 是软件光栅器，它的毫秒数不是 GPU 性能。`Backend::gpu_only` 不会在神经网络失败时改走 CPU。
 
-Apple 芯片上的 GPU：Mac mini，Apple M4（10 个 CPU 核，4P+6E；10 个 GPU 核；16 GB），macOS。Vulkan 经 Homebrew Vulkan loader 使用 MoltenVK；Metal 是原生后端。`ppocr_bench`，PP-OCRv6 tiny 检测和识别模型，预热 3 次，取 15 次的中位数，机器空闲。整页图是合成的 1700×2200 图片，共 45 行文字，不是 x86 表格用的那张截图。
+Apple 芯片上的 GPU：Mac mini，Apple M4（10 个 CPU 核，4P+6E；10 个 GPU 核；16 GB），macOS。Vulkan 经 Homebrew Vulkan loader 使用 MoltenVK；Metal 是原生后端。`ppocr_bench`，PP-OCRv6 tiny 检测和识别模型，预热 3 次，取 20 次的中位数，机器空闲；交替 A/B 的两轮结果相差在 2% 以内。整页图是合成的 1700×2200 图片，共 45 行文字，不是 x86 表格用的那张截图。
 
 | 图片 | CPU（NEON，`PPOCR_BACKEND=cpu`） | Vulkan（MoltenVK）`gpu_only` | Metal（`PPOCR_BACKEND=metal`） |
 | --- | ---: | ---: | ---: |
-| hello（1 行） | 25.4 ms | 82.4 ms | 76.3 ms |
-| 整页（45 行） | 209.3 ms | 705.8 ms | 538.4 ms |
+| hello（1 行） | 25.3 ms | 77.7 ms | 12.8 ms |
+| 整页（45 行） | 211 ms | 675 ms | 147.6 ms |
 
-在这台机器上两条 GPU 路径都还比 NEON 慢。Metal 跑的是与 Vulkan 相同的图和 kernel，整页比 MoltenVK 快约 24%，文本和框与 CPU 完全一致。时间主要花在 kernel 上（每页约 490 ms GPU 时间、约 2600 次 dispatch），所以下一步是优化 kernel，而不是 API。
+Metal 在 hello 上比 NEON 快约 2 倍，整页快约 1.4 倍；文本与 CPU 一致，框 IoU 为 1.0，4 线程结果一致，Metal API validation 无报错。它把最重的翻译 kernel 换成了原生 MSL kernel（逐点 Conv、3×3 Conv 和识别头的 simdgroup-matrix GEMM），DB 后处理改在 CPU 上读共享的概率图，并复用回收的 arena 槽位。优化前在同一台机器上 Metal 为 76 ms / 539 ms。每个识别行仍单独运行一张精确宽度的图，约 55 个相互依赖的 dispatch，所以整页现在受每次 dispatch 的延迟限制，而不是算力。`PPOCR_METAL_KERNEL_PROFILE=1` 配合 `PPOCR_GPU_PROFILE=1` 可打印每个 kernel 的 GPU 时间。
 
-在这台机器上，Vulkan 图比 NEON 慢约 3.3 倍。检测约 72 ms；每个识别行单独跑一张图，每行约 13–16 ms。MoltenVK 不提供逐个 dispatch 的时间戳，所以那里的 `PPOCR_GPU_PROFILE` 只有主机侧时间。校验层报错为 0。4 线程下结果一致。整页中有一行在 Vulkan 上识别为 `RapidoCR`，CPU 上为 `RapidOCR`。
+MoltenVK 不提供逐个 dispatch 的时间戳，所以那里的 `PPOCR_GPU_PROFILE` 只有主机侧时间。它的文本也与 CPU 一致，校验层报错为 0，4 线程下结果一致。
 
 ### 🛠️ 安装
 
@@ -300,7 +300,7 @@ ppocr::OCR ocr(det, rec, dict, options);
 
 #### Metal
 
-macOS 上从源码构建时会包含原生 Metal 后端（`PPOCR_ENABLE_METAL`，Apple 上默认 `ON`；需要 `glslang` 和 `spirv-cross`，例如 `brew install glslang spirv-cross`）。它运行与 Vulkan 相同的 GPU 图和融合 kernel，构建时翻译成 MSL，权重常驻在 shared storage 的 `MTLBuffer` 中。不需要 Vulkan loader 或 MoltenVK。
+macOS 上从源码构建时会包含原生 Metal 后端（`PPOCR_ENABLE_METAL`，Apple 上默认 `ON`；需要 `glslang` 和 `spirv-cross`，例如 `brew install glslang spirv-cross`）。它运行与 Vulkan 相同的 GPU 图和融合 kernel，构建时翻译成 MSL，权重常驻在 shared storage 的 `MTLBuffer` 中。不需要 Vulkan loader 或 MoltenVK。原生 MSL kernel（`src/metal_native_kernels.hpp`）替换了逐点 Conv、3×3 Conv 和行 GEMM 模式；`PPOCR_METAL_DISABLE_NATIVE=1` 回退到翻译的 kernel，`PPOCR_METAL_DEVICE_DB_POSTPROCESS=1` 让 DB 后处理留在 GPU 上。
 
 ```python
 engine = RapidOCR(params={

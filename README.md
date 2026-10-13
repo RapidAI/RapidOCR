@@ -87,16 +87,16 @@ The older x86 C++ long-side-960 rows and the 1-thread rows are not listed. Repea
 
 Vulkan page times from earlier adapter checks are not repeated here. Lavapipe on this VM is a software rasterizer, so its milliseconds are not GPU performance. `Backend::gpu_only` does not fall back to a CPU neural graph.
 
-GPU on Apple silicon: Mac mini, Apple M4 (10 CPU cores 4P+6E, 10 GPU cores, 16 GB), macOS. Vulkan is MoltenVK through the Homebrew Vulkan loader; Metal is the native backend. `ppocr_bench`, PP-OCRv6 tiny det/rec, 3 warmup runs, median of 15, idle machine. The page is a synthetic 1700×2200 image with 45 text lines, not the screenshot used for the x86 table.
+GPU on Apple silicon: Mac mini, Apple M4 (10 CPU cores 4P+6E, 10 GPU cores, 16 GB), macOS. Vulkan is MoltenVK through the Homebrew Vulkan loader; Metal is the native backend. `ppocr_bench`, PP-OCRv6 tiny det/rec, 3 warmup runs, median of 20, idle machine; both rounds of an alternating A/B run agreed within 2%. The page is a synthetic 1700×2200 image with 45 text lines, not the screenshot used for the x86 table.
 
 | Image | CPU (NEON, `PPOCR_BACKEND=cpu`) | Vulkan (MoltenVK) `gpu_only` | Metal (`PPOCR_BACKEND=metal`) |
 | --- | ---: | ---: | ---: |
-| hello (1 line) | 25.4 ms | 82.4 ms | 76.3 ms |
-| page (45 lines) | 209.3 ms | 705.8 ms | 538.4 ms |
+| hello (1 line) | 25.3 ms | 77.7 ms | 12.8 ms |
+| page (45 lines) | 211 ms | 675 ms | 147.6 ms |
 
-Both GPU paths are still slower than NEON on this machine. Metal runs the same graph and kernels as Vulkan; it is about 24% faster than MoltenVK on the page and gives CPU-identical text and boxes. Most of the time is in the kernels (about 490 ms of GPU time per page in about 2,600 dispatches), so kernel work, not the API, is the next step.
+Metal is about 2× faster than NEON on hello and about 1.4× faster on the page, with text equal to CPU, box IoU 1.0, identical results across 4 threads, and no Metal API validation errors. It replaces the heaviest translated kernels with native MSL ones (simdgroup-matrix GEMMs for pointwise Conv, 3×3 Conv and the recognizer head), runs the DB postprocess on the CPU from the shared probability map, and reuses reclaimed arena slots. Before these changes Metal measured 76 ms / 539 ms on the same machine. Each recognized line still runs its own exact-width graph of about 55 dependent dispatches, so the page is now bound by per-dispatch latency rather than arithmetic. `PPOCR_METAL_KERNEL_PROFILE=1` with `PPOCR_GPU_PROFILE=1` prints GPU time per kernel.
 
-On this machine the Vulkan graph is about 3.3× slower than NEON. Detection takes about 72 ms; each recognized line runs its own graph at about 13–16 ms. MoltenVK does not report per-dispatch timestamps, so `PPOCR_GPU_PROFILE` shows only host-side times there. 0 validation errors. Results are identical across 4 threads. One line on the page reads `RapidoCR` on Vulkan and `RapidOCR` on CPU.
+MoltenVK does not report per-dispatch timestamps, so `PPOCR_GPU_PROFILE` shows only host-side times there. Its text also equals CPU, with 0 validation errors and identical results across 4 threads.
 
 ### 🛠️ Installation
 
@@ -300,7 +300,7 @@ One recorded command buffer can drop CTC timesteps on some adapters. The default
 
 #### Metal
 
-On macOS, source builds include a native Metal backend (`PPOCR_ENABLE_METAL`, default `ON` on Apple; needs `glslang` and `spirv-cross`, e.g. `brew install glslang spirv-cross`). It runs the same GPU graph and fused kernels as Vulkan, translated to MSL at build time, with weights resident in shared-storage `MTLBuffer`s. No Vulkan loader or MoltenVK is needed.
+On macOS, source builds include a native Metal backend (`PPOCR_ENABLE_METAL`, default `ON` on Apple; needs `glslang` and `spirv-cross`, e.g. `brew install glslang spirv-cross`). It runs the same GPU graph and fused kernels as Vulkan, translated to MSL at build time, with weights resident in shared-storage `MTLBuffer`s. No Vulkan loader or MoltenVK is needed. Native MSL kernels (`src/metal_native_kernels.hpp`) replace the pointwise Conv, 3×3 Conv and row-GEMM modes; `PPOCR_METAL_DISABLE_NATIVE=1` falls back to the translated kernels, and `PPOCR_METAL_DEVICE_DB_POSTPROCESS=1` keeps the DB postprocess on the GPU.
 
 ```python
 engine = RapidOCR(params={
