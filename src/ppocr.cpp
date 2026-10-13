@@ -1415,7 +1415,7 @@ void RecognizeGpuOnlyCropBatch(detail::OnnxLite& rec, const Options& opt,
 // graphs. On by default under Metal, where one recognizer graph per line is
 // bound by dispatch latency; PPOCR_ENABLE_GPU_REC_WIDTH_BATCH=1 enables it on
 // Vulkan and PPOCR_DISABLE_GPU_REC_WIDTH_BATCH=1 turns it off.
-// PPOCR_GPU_REC_WIDTH_BATCH_MAX (default 16) caps the crops per graph and
+// PPOCR_GPU_REC_WIDTH_BATCH_MAX (default 8) caps the crops per graph and
 // PPOCR_GPU_REC_WIDTH_BATCH_RATIO (default 1.5) the widest/narrowest ratio.
 bool GpuRecWidthBatchEnabled() {
   static const bool enabled = std::getenv("PPOCR_DISABLE_GPU_REC_WIDTH_BATCH") == nullptr &&
@@ -1454,7 +1454,7 @@ std::vector<Result> RecognizeGpuOnlyCrops(detail::OnnxLite& rec, const Options& 
   if (GpuRecWidthBatchEnabled() && !g_gpu_rec_width_batch_failed.load() && boxes.size() > 1) {
     static const std::size_t max_items = [] {
       const char* text = std::getenv("PPOCR_GPU_REC_WIDTH_BATCH_MAX");
-      const long value = text ? std::strtol(text, nullptr, 10) : 16;
+      const long value = text ? std::strtol(text, nullptr, 10) : 8;
       return static_cast<std::size_t>(std::clamp(value, 1L, 256L));
     }();
     static const double max_ratio = [] {
