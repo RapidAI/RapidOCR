@@ -27,14 +27,18 @@ for lib in libs:
                           capture_output=True, text=True).stdout.split()
     assert arch == ["arm64"], arch
 
+# Metal must be compiled in: linked against Metal.framework and carrying the
+# embedded MSL kernels. GitHub's macOS VMs expose no Metal device, so a missing
+# device only downgrades the runtime check (backend=metal must then fall back
+# to CPU and still read the text).
 for lib in libs:
-    print(subprocess.run(["otool", "-L", str(lib)], capture_output=True, text=True).stdout)
-    syms = subprocess.run(["nm", "-g", str(lib)], capture_output=True, text=True).stdout
-    print("\n".join(l for l in syms.splitlines() if "metal" in l.lower()))
-print("PPOCR_DISABLE_METAL =", os.environ.get("PPOCR_DISABLE_METAL"))
-print("loaded library:", getattr(_native.load_library(), "_name", None))
-assert _native.metal_available(), "wheel has no usable Metal backend"
-print("metal_available_ok")
+    links = subprocess.run(["otool", "-L", str(lib)], check=True, capture_output=True, text=True).stdout
+    assert "Metal.framework" in links, links
+    syms = subprocess.run(["nm", "-g", str(lib)], check=True, capture_output=True, text=True).stdout
+    assert "kMetalBinaryMsl" in syms and "_ppocr_metal_device_available" in syms, lib
+print("metal_built_ok")
+has_device = _native.metal_available()
+print("metal_device_available", has_device)
 
 from rapidocr import RapidOCR
 
@@ -51,6 +55,6 @@ engine = RapidOCR(params={
 result = engine("python/tests/data/hello.png")
 print("metal hello", result.txts, result.scores)
 assert result.txts == ("Hello RapidOCR 123",), result.txts
-print("metal_hello_ocr_ok")
+print("metal_hello_ocr_ok" if has_device else "metal_fallback_hello_ocr_ok")
 PY
 echo "ci_wheel_check_macos_ok"
