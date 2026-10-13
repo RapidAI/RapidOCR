@@ -120,6 +120,10 @@ class VulkanTensorArena {
   // Submit the current graph segment, wait for completion, then immediately
   // begin the next recording.  All live arena slots remain resident; unlike a
   // host graph boundary this emits no activation download or upload.
+  // Close a strict-graph segment and submit it without waiting. Ordering
+  // with the next segment is kept on the queue; the final EndGraphRecording
+  // (or any download/standalone submission) waits for every pending segment.
+  [[nodiscard]] bool EndGraphSegment() noexcept;
   [[nodiscard]] bool SubmitGraphSegment() noexcept;
   // Record a reusable whole-graph command buffer. Later inferences overwrite
   // only the pinned input slot and submit; intermediate activations stay on

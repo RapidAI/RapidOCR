@@ -2152,6 +2152,10 @@ class VulkanBinaryRuntime {
 
   float* ArenaMappedData(std::uint32_t index) noexcept {
     std::lock_guard lock(mutex_);
+    // Host writes may target a buffer that a pending ring segment still
+    // reads (it was released there and reacquired since). Wait first; the
+    // segment being recorded right now is not submitted, so this is safe.
+    (void)DrainSegmentsLocked();
     if (index >= arena_buffers_.size() || !arena_buffers_[index].live) return nullptr;
     auto& slot = arena_buffers_[index];
     // Callers use this escape hatch only at a public host->GPU boundary.
@@ -2164,6 +2168,10 @@ class VulkanBinaryRuntime {
     CpuSpan timer{profile_enabled_, &profile_.upload_ms, &profile_.uploads};
     if (!source) return false;
     std::lock_guard lock(mutex_);
+    // Host writes may target a buffer that a pending ring segment still
+    // reads (it was released there and reacquired since). Wait first; the
+    // segment being recorded right now is not submitted, so this is safe.
+    (void)DrainSegmentsLocked();
     if (index >= arena_buffers_.size()) return false;
     auto& slot = arena_buffers_[index];
     if (!slot.live || elements > slot.live_elements) return false;
@@ -2178,6 +2186,10 @@ class VulkanBinaryRuntime {
 
   bool FlushArenaWrites(std::uint32_t index, std::size_t elements) noexcept {
     std::lock_guard lock(mutex_);
+    // Host writes may target a buffer that a pending ring segment still
+    // reads (it was released there and reacquired since). Wait first; the
+    // segment being recorded right now is not submitted, so this is safe.
+    (void)DrainSegmentsLocked();
     if (index >= arena_buffers_.size()) return false;
     auto& slot = arena_buffers_[index];
     if (!slot.live || elements > slot.live_elements) return false;
@@ -2192,6 +2204,7 @@ class VulkanBinaryRuntime {
     CpuSpan timer{profile_enabled_, &profile_.download_ms, &profile_.downloads};
     if (!destination) return false;
     std::lock_guard lock(mutex_);
+    if (!DrainSegmentsLocked()) return false;
     if (index >= arena_buffers_.size()) return false;
     auto& slot = arena_buffers_[index];
     if (!slot.live || elements > slot.live_elements) return false;
@@ -2210,6 +2223,11 @@ class VulkanBinaryRuntime {
     std::lock_guard lock(mutex_);
     if (pending_standalone_ && !FlushPendingStandaloneLocked()) return false;
     if (arena_recording_) return false;
+    // Pipelined strict-graph segments: a segment closed with EndGraphSegment
+    // is submitted without a CPU wait. The next segment records into the
+    // other ring entry while the GPU executes, and only waits when it must
+    // reuse a ring entry that is still pending.
+    if (!SelectSegmentRingLocked()) return false;
     // Graph descriptors are immutable for the whole command-buffer lifetime.
     // Reclaim the previous graph's sets only after its fence has completed.
     if (reset_descriptor_pool_(device_, graph_descriptor_pool_, 0) != VK_SUCCESS) return false;
@@ -2220,7 +2238,7 @@ class VulkanBinaryRuntime {
     // avoids carrying a whole high-resolution detector frontier into a later
     // narrow tail dispatch on UMA adapters, while constants and live branch
     // tensors remain entirely device resident.
-    TrimFreeArenaBuffersLocked();
+    if (segments_in_flight_ == 0) TrimFreeArenaBuffersLocked();
     // Driver-isolation diagnostic: allocate a distinct command-buffer object
     // for each fenced graph segment. This is still a GPU-only boundary (no
     // tensor staging), and lets an adapter distinguish recorded-command
@@ -2239,6 +2257,10 @@ class VulkanBinaryRuntime {
     if (BeginCommandBuffer(command_buffer_, &begin) != VK_SUCCESS) return false;
     cmd_bind_pipeline_(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
     arena_recording_ = true;
+    // With an earlier segment possibly still executing, slots it released
+    // may be rewritten here (WAR/WAW). Queue submission order plus this
+    // barrier orders every earlier compute/transfer access before this
+    // segment's reads and writes.
     // Arena inputs can originate either from a host-visible mapped upload or
     // from a preceding standalone preprocessing submission.  A command-buffer
     // boundary alone does not establish either HOST_WRITE -> shader-read or
@@ -2246,12 +2268,14 @@ class VulkanBinaryRuntime {
     // to the first strict-graph dispatch; later arena primitives emit their
     // own compute-to-compute barriers after each write.
     const VkMemoryBarrier input_barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr,
-        VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-        VK_ACCESS_SHADER_READ_BIT};
+        VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT |
+            VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT};
     CmdBarrier(command_buffer_,
-        VK_PIPELINE_STAGE_HOST_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &input_barrier,
-        0, nullptr, 0, nullptr);
+        VK_PIPELINE_STAGE_HOST_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
+        &input_barrier, 0, nullptr, 0, nullptr);
     recording_descriptor_sets_.clear();
     // The preceding graph submission was fenced before a new recording can
     // begin, so slots released by that earlier graph are now safe to recycle.
@@ -2264,14 +2288,40 @@ class VulkanBinaryRuntime {
     return true;
   }
 
-  bool EndArenaRecording(bool submit) noexcept {
+  bool EndArenaRecording(bool submit, bool wait = true) noexcept {
     std::lock_guard lock(mutex_);
     if (!arena_recording_) return false;
     arena_recording_ = false;
-    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
+    if (EndCommandBuffer(command_buffer_) != VK_SUCCESS) {
+      RestoreSegmentRingLocked();
+      return false;
+    }
     if (!submit) {
       recording_descriptor_sets_.clear();
+      RestoreSegmentRingLocked();
       return true;
+    }
+    if (segment_ring_active_ >= 0) {
+      // Pipelined ring entry: submit without blocking. A final segment
+      // (wait == true) then waits for every pending ring entry at once.
+      const int entry = segment_ring_active_;
+      const VkSubmitInfo ring_info{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
+                                   1, &segment_ring_[entry].command_buffer, 0, nullptr};
+      VkResult result = reset_fences_(device_, 1, &segment_ring_[entry].fence);
+      if (result == VK_SUCCESS)
+        result = QueueSubmitRaw(queue_, 1, &ring_info, segment_ring_[entry].fence);
+      recording_descriptor_sets_.clear();
+      RestoreSegmentRingLocked();
+      if (result != VK_SUCCESS) {
+        last_submission_result_.store(static_cast<int>(result), std::memory_order_release);
+        restart_required_.store(true, std::memory_order_release);
+        (void)DrainSegmentsLocked();
+        return false;
+      }
+      segment_ring_[entry].in_flight = true;
+      ++segments_in_flight_;
+      if (!wait) return true;
+      return DrainSegmentsLocked();
     }
     const VkSubmitInfo info{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr,
                             1, &command_buffer_, 0, nullptr};
@@ -2304,8 +2354,135 @@ class VulkanBinaryRuntime {
     // A persistent recorded graph must stay in one command buffer so replay
     // is a single submit. Driver-isolation fences remain for ephemeral graphs.
     if (persistent_recording_) return true;
-    if (!EndArenaRecording(true)) return false;
+    if (!EndArenaRecording(true, false)) return false;
     return BeginArenaRecording();
+  }
+
+  // ---- Pipelined strict-graph segment ring --------------------------------
+  // Two {command buffer, descriptor pool, fence} entries dedicated to strict
+  // graph segments. Everything else keeps using the original command_buffer_,
+  // graph_descriptor_pool_ and submission_fence_, and drains the ring first.
+  struct SegmentRingEntry {
+    VkCommandBuffer command_buffer{};
+    VkDescriptorPool descriptor_pool{};
+    VkFence fence{};
+    bool in_flight{};
+  };
+
+  static bool SegmentPipelineEnabled() noexcept {
+    static const bool enabled = std::getenv("PPOCR_DISABLE_GPU_SEGMENT_PIPELINE") == nullptr;
+    return enabled;
+  }
+
+  bool EnsureSegmentRingLocked() noexcept {
+    if (segment_ring_ready_) return true;
+    if (segment_ring_failed_ || !SegmentPipelineEnabled()) return false;
+    segment_ring_failed_ = true;
+    if (!command_pool_ || !create_fence_ || !create_descriptor_pool_) return false;
+    // Same capacity as graph_descriptor_pool_ (kGraphDescriptorSets there).
+    constexpr std::uint32_t kRingDescriptorSets = 8192;
+    const VkDescriptorPoolSize pool_size{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 5 * kRingDescriptorSets};
+    const VkDescriptorPoolCreateInfo pool_info{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        nullptr, 0, kRingDescriptorSets, 1, &pool_size};
+    const VkCommandBufferAllocateInfo command_info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        nullptr, command_pool_, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1};
+    const VkFenceCreateInfo fence_info{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0};
+    for (auto& entry : segment_ring_) {
+      if (allocate_command_buffers_(device_, &command_info, &entry.command_buffer) != VK_SUCCESS ||
+          create_descriptor_pool_(device_, &pool_info, nullptr, &entry.descriptor_pool) != VK_SUCCESS ||
+          create_fence_(device_, &fence_info, nullptr, &entry.fence) != VK_SUCCESS) {
+        DestroySegmentRingLocked();
+        return false;
+      }
+    }
+    segment_ring_failed_ = false;
+    segment_ring_ready_ = true;
+    return true;
+  }
+
+  void DestroySegmentRingLocked() noexcept {
+    for (auto& entry : segment_ring_) {
+      if (entry.fence && destroy_fence_) destroy_fence_(device_, entry.fence, nullptr);
+      if (entry.descriptor_pool && destroy_descriptor_pool_)
+        destroy_descriptor_pool_(device_, entry.descriptor_pool, nullptr);
+      entry = SegmentRingEntry{};  // command buffers are freed with command_pool_
+    }
+    segment_ring_ready_ = false;
+    segments_in_flight_ = 0;
+    segment_ring_active_ = -1;
+    segment_ring_next_ = 0;
+  }
+
+  // Called from BeginArenaRecording. Ordinary (non-persistent) graphs record
+  // into a ring entry; waits only if that entry's previous segment is pending.
+  bool SelectSegmentRingLocked() noexcept {
+    segment_ring_active_ = -1;
+    if (persistent_recording_ || !EnsureSegmentRingLocked()) return true;
+    if (std::getenv("PPOCR_GPU_ONLY_FRESH_COMMAND_BUFFER") != nullptr ||
+        std::getenv("PPOCR_GPU_ONLY_QUEUE_IDLE_SEGMENTS") != nullptr) {
+      return DrainSegmentsLocked();
+    }
+    const int entry = segment_ring_next_;
+    auto& ring = segment_ring_[entry];
+    if (ring.in_flight) {
+      const VkResult waited = WaitFenceNoCollect(ring.fence);
+      ring.in_flight = false;
+      --segments_in_flight_;
+      if (waited != VK_SUCCESS) {
+        last_submission_result_.store(static_cast<int>(waited), std::memory_order_release);
+        restart_required_.store(true, std::memory_order_release);
+        (void)DrainSegmentsLocked();
+        return false;
+      }
+    }
+    segment_ring_next_ = 1 - entry;
+    segment_ring_active_ = entry;
+    ring_saved_command_buffer_ = command_buffer_;
+    saved_graph_descriptor_pool_ = graph_descriptor_pool_;
+    command_buffer_ = ring.command_buffer;
+    graph_descriptor_pool_ = ring.descriptor_pool;
+    return true;
+  }
+
+  void RestoreSegmentRingLocked() noexcept {
+    if (segment_ring_active_ < 0) return;
+    command_buffer_ = ring_saved_command_buffer_;
+    graph_descriptor_pool_ = saved_graph_descriptor_pool_;
+    segment_ring_active_ = -1;
+  }
+
+  VkResult WaitFenceNoCollect(VkFence fence) noexcept {
+    const auto start = std::chrono::steady_clock::now();
+    const VkResult result = wait_for_fences_(device_, 1, &fence, VK_TRUE,
+                                             std::numeric_limits<std::uint64_t>::max());
+    if (profile_enabled_) {
+      profile_.fence_ms += std::chrono::duration<double, std::milli>(
+                               std::chrono::steady_clock::now() - start).count();
+      ++profile_.fences;
+    }
+    return result;
+  }
+
+  // Wait for every pending ring segment. Must run before any other command
+  // buffer, host mapping access, or buffer destruction can observe their work.
+  bool DrainSegmentsLocked() noexcept {
+    if (segments_in_flight_ == 0) return true;
+    VkFence fences[2]{};
+    std::uint32_t count = 0;
+    for (auto& entry : segment_ring_) {
+      if (entry.in_flight) fences[count++] = entry.fence;
+    }
+    const VkResult waited = count == 0 ? VK_SUCCESS
+        : WaitFence(device_, count, fences, VK_TRUE, std::numeric_limits<std::uint64_t>::max());
+    for (auto& entry : segment_ring_) entry.in_flight = false;
+    segments_in_flight_ = 0;
+    last_submission_result_.store(static_cast<int>(waited), std::memory_order_release);
+    if (waited != VK_SUCCESS) {
+      restart_required_.store(true, std::memory_order_release);
+      if (std::getenv("PPOCR_GPU_ONLY_TRACE") != nullptr)
+        std::cerr << "Vulkan pipelined segment wait failed wait=" << waited << '\n';
+    }
+    return waited == VK_SUCCESS;
   }
 
   PersistentGraph* FindPersistentGraphLocked(std::uint64_t key) noexcept {
@@ -2341,6 +2518,7 @@ class VulkanBinaryRuntime {
   bool BeginPersistentGraphRecording(std::uint64_t key) noexcept {
     if (!Initialize()) return false;
     std::lock_guard lock(mutex_);
+    if (!DrainSegmentsLocked()) return false;
     if (pending_standalone_ && !FlushPendingStandaloneLocked()) return false;
     if (arena_recording_ || persistent_recording_) return false;
     // The persistent-graph budget bounds how many recorded replay command
@@ -5390,7 +5568,7 @@ class VulkanBinaryRuntime {
   }
 
   VkResult BeginCommandBuffer(VkCommandBuffer cb, const VkCommandBufferBeginInfo* info) noexcept {
-    if (profile_enabled_) {
+    if (profile_enabled_ && segments_in_flight_ == 0) {
       profile_written_ = 0;
       profile_label_ids_.clear();
       profile_reset_pending_ = query_pool_ != VK_NULL_HANDLE;
@@ -5414,6 +5592,15 @@ class VulkanBinaryRuntime {
 
   VkResult QueueSubmit(VkQueue queue, std::uint32_t count, const VkSubmitInfo* infos,
                        VkFence fence) noexcept {
+    // Every non-ring submission (standalone ops, transfers, replay, legacy
+    // fenced graphs) observes completed ring segments, as before pipelining.
+    if (segments_in_flight_ != 0 && !DrainSegmentsLocked())
+      return static_cast<VkResult>(last_submission_result_.load(std::memory_order_acquire));
+    return QueueSubmitRaw(queue, count, infos, fence);
+  }
+
+  VkResult QueueSubmitRaw(VkQueue queue, std::uint32_t count, const VkSubmitInfo* infos,
+                          VkFence fence) noexcept {
     if (!profile_enabled_) return queue_submit_(queue, count, infos, fence);
     const auto start = std::chrono::steady_clock::now();
     const VkResult result = queue_submit_(queue, count, infos, fence);
@@ -5847,6 +6034,9 @@ class VulkanBinaryRuntime {
     // constants after a GPU reset rather than dereferencing stale indices.
     arena_generation_.fetch_add(1, std::memory_order_acq_rel);
     if (queue_ && queue_wait_idle_) queue_wait_idle_(queue_);
+    RestoreSegmentRingLocked();
+    DestroySegmentRingLocked();
+    segment_ring_failed_ = false;
     if (query_pool_ && destroy_query_pool_) destroy_query_pool_(device_, query_pool_, nullptr);
     query_pool_ = VK_NULL_HANDLE;
     DestroyArenaBuffers();
@@ -5977,6 +6167,14 @@ class VulkanBinaryRuntime {
   const float* conv2d_weights_{};
   const float* conv2d_bias_{};
   VkFence submission_fence_{};
+  SegmentRingEntry segment_ring_[2]{};
+  bool segment_ring_ready_{};
+  bool segment_ring_failed_{};
+  int segment_ring_active_{-1};
+  int segment_ring_next_{};
+  int segments_in_flight_{};
+  VkCommandBuffer ring_saved_command_buffer_{};
+  VkDescriptorPool saved_graph_descriptor_pool_{};
   VkSemaphore chain_semaphore_{};
   bool pending_standalone_{};
   bool defer_next_standalone_{};
@@ -6193,6 +6391,14 @@ bool VulkanTensorArena::EndGraphRecording(bool submit) noexcept {
   return impl_ && Runtime().EndArenaRecording(submit);
 #else
   (void)submit;
+  return false;
+#endif
+}
+
+bool VulkanTensorArena::EndGraphSegment() noexcept {
+#if defined(PPOCR_HAS_VULKAN_HEADERS) && defined(PPOCR_HAS_VULKAN_KERNELS) && defined(_WIN32)
+  return impl_ && Runtime().EndArenaRecording(true, false);
+#else
   return false;
 #endif
 }

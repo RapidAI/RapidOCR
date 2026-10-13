@@ -7958,7 +7958,7 @@ bool OnnxLite::RunGpuOnlyInternal(
         std::cerr << "GPU-only arena live=" << arena.live_bytes()
                   << " capacity=" << arena.capacity_bytes() << '\n';
       }
-      if (!arena.EndGraphRecording()) return fail();
+      if (!arena.EndGraphSegment()) return fail();
       graph_recording = false;
       recorded_nodes = 0;
     }
