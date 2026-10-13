@@ -161,7 +161,19 @@ void main() {
     // 3 current component.  The second half of B is a device-only FIFO of
     // pixel indices, giving linear-time component traversal instead of a
     // repeated whole-map wave scan. State never crosses the host boundary.
-    for (uint i = 0u; i < elements; ++i) b[i] = a[i] > threshold ? 1.0 : 0.0;
+    // params.batches == 2 applies the CPU path's 2x2 dilation: a pixel is
+    // foreground when it or its left, upper or upper-left neighbour is above
+    // the threshold (kernels::BuildDetectorMask).
+    const bool dilate = params.batches == 2u;
+    for (uint i = 0u; i < elements; ++i) {
+      bool on = a[i] > threshold;
+      if (dilate && !on) {
+        const uint y = i / width, x = i - y * width;
+        on = (x > 0u && a[i - 1u] > threshold) ||
+             (y > 0u && (a[i - width] > threshold || (x > 0u && a[i - width - 1u] > threshold)));
+      }
+      b[i] = on ? 1.0 : 0.0;
+    }
     uint result_count = 0u;
     for (uint start = 0u; start < elements; ++start) {
       if (b[start] != 1.0) continue;
@@ -448,7 +460,9 @@ void main() {
   // native packed RGB input; D is
   // the NCHW result. Mode 46 uses PP-OCR detector BGR/ImageNet affine
   // constants; mode 47 uses recognizer BGR [-1,1] normalization.
-  if ((params.mode & 0xffffu) == 46u || (params.mode & 0xffffu) == 47u) {
+  // Bit 15 (0x8000) means binding E holds custom [scale, offset] per BGR
+  // channel (Options::det_mean/det_std or rec_mean/rec_std).
+  if ((params.mode & 0x7fffu) == 46u || (params.mode & 0x7fffu) == 47u) {
     const uint index = gl_GlobalInvocationID.x * 4u;
     const uint source_w = params.operation0;
     const uint source_h = params.operation1;
@@ -520,7 +534,8 @@ void main() {
       precise const float vertical = upper * one_minus_dy + lower * dy;
       const float sampled_value = clamp(float(int(vertical + 0.5)), 0.0, 255.0);
       float scale; float offset;
-      if ((params.mode & 0xffffu) == 47u) { scale = 2.0 / 255.0; offset = -1.0; }
+      if ((params.mode & 0x8000u) != 0u) { scale = e[channel * 2u]; offset = e[channel * 2u + 1u]; }
+      else if ((params.mode & 0x7fffu) == 47u) { scale = 2.0 / 255.0; offset = -1.0; }
       else if (channel == 0u) { scale = 1.0 / (255.0 * 0.229); offset = -0.485 / 0.229; }
       else if (channel == 1u) { scale = 1.0 / (255.0 * 0.224); offset = -0.456 / 0.224; }
       else { scale = 1.0 / (255.0 * 0.225); offset = -0.406 / 0.225; }

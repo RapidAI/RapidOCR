@@ -1136,7 +1136,7 @@ std::vector<Box> DBPostDevice(detail::VulkanTensorArena& arena,
   std::vector<detail::VulkanDbBox> compact;
   if (!arena.DbPostprocess(probability.slot, batch_index * plane, height, width,
                            dst_w, dst_h, opt.det_threshold, opt.det_box_threshold,
-                           opt.det_unclip_ratio, compact)) {
+                           opt.det_unclip_ratio, compact, opt.det_use_dilation != 0)) {
     FailGpuOnly("DB postprocess");
   }
   std::vector<Box> boxes;
@@ -1502,9 +1502,14 @@ std::vector<Result> RecognizeGpuOnly(detail::OnnxLite& det, detail::OnnxLite& re
   // dedicated service with a small shape set but increases its steady-state
   // device/host allocator footprint. The default keeps RGB source storage
   // transient while detector/recognizer input replays remain enabled.
-  static const bool rgb_in_graph =
+  // The in-graph RGB front end normalizes with the ImageNet constants only.
+  static const bool rgb_in_graph_requested =
       std::getenv("PPOCR_ENABLE_GPU_RGB_IN_GRAPH") != nullptr &&
       std::getenv("PPOCR_DISABLE_GPU_RGB_IN_GRAPH") == nullptr;
+  const bool rgb_in_graph = rgb_in_graph_requested && IsDefaultDetectorNorm(opt);
+  // The detector front end applies Options::det_mean / det_std, like the CPU
+  // path (rapidocr's config uses 0.5 / 0.5, not the ImageNet defaults).
+  const auto det_norm = ChannelNormFrom(opt.det_mean, opt.det_std);
   const auto peeked_rgb =
       rgb_in_graph ? det.PeekGpuReplayRgb(det_shape, image.width, image.height)
                    : detail::VulkanTensorSlot{};
@@ -1540,9 +1545,9 @@ std::vector<Result> RecognizeGpuOnly(detail::OnnxLite& det, detail::OnnxLite& re
         !det_arena.UploadRgb8(det_rgb, image.rgb.data(), image.rgb.size()) ||
         !det_arena.ResizeRgbToNchw(det_rgb, det_input, image.width, image.height,
                                    0, 0, image.width, image.height, det_w, det_h,
-                                   1.F / (255.F * .229F), -.485F / .229F,
-                                   1.F / (255.F * .224F), -.456F / .224F,
-                                   1.F / (255.F * .225F), -.406F / .225F)) {
+                                   det_norm.scale[0], det_norm.offset[0],
+                                   det_norm.scale[1], det_norm.offset[1],
+                                   det_norm.scale[2], det_norm.offset[2])) {
       (void)det_arena.FlushDeferredStandalone();
       if (!borrowed_det) det_arena.Release(det_input);
       if (!peeked_rgb.resident) det_arena.Release(det_rgb);

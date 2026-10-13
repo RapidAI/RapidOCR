@@ -3371,7 +3371,8 @@ class VulkanBinaryRuntime {
                          int region_width, int region_height, int output_width,
                          int output_height, bool recognition,
                          std::size_t output_offset_elements = 0,
-                         int content_width = 0) noexcept {
+                         int content_width = 0,
+                         std::uint32_t norm_index = UINT32_MAX) noexcept {
     if (source_width <= 0 || source_height <= 0 || left < 0 || top < 0 || region_width <= 0 ||
         region_height <= 0 || output_width <= 0 || output_height <= 0 || left + region_width > source_width ||
         top + region_height > source_height || !Initialize()) return false;
@@ -3384,13 +3385,19 @@ class VulkanBinaryRuntime {
     const auto& rgb = arena_buffers_[rgb_index]; const auto& output = arena_buffers_[output_index];
     if (!rgb.live || !output.live || rgb.live_elements < rgb_elements ||
         output.live_elements < output_offset_elements + output_elements) return false;
+    // Binding E carries custom [scale, offset] x 3 when norm_index is set.
+    const bool custom_norm = norm_index != UINT32_MAX;
+    if (custom_norm && (norm_index >= arena_buffers_.size() || !arena_buffers_[norm_index].live ||
+                        arena_buffers_[norm_index].live_elements < 6)) return false;
+    const ArenaBuffer* norm = custom_norm ? &arena_buffers_[norm_index] : &rgb;
     std::array<VkDescriptorBufferInfo, 5> infos{}; std::array<VkWriteDescriptorSet, 5> writes{};
-    const std::array<const ArenaBuffer*, 5> sources{&rgb, &rgb, &rgb, &output, &rgb};
+    const std::array<const ArenaBuffer*, 5> sources{&rgb, &rgb, &rgb, &output, norm};
     // Packed RGB is read as uint words, so the descriptor range covers the
     // last partial word. The arena slot is allocated in floats and is larger.
     const VkDeviceSize rgb_range = VkDeviceSize((rgb_elements + 3u) & ~std::size_t{3});
     const std::array<VkDeviceSize, 5> ranges{rgb_range, sizeof(float), sizeof(float),
-                                              VkDeviceSize(output_elements * sizeof(float)), sizeof(float)};
+                                              VkDeviceSize(output_elements * sizeof(float)),
+                                              custom_norm ? 6 * sizeof(float) : sizeof(float)};
     const VkDescriptorSet arena_set = DescriptorSetForArenaOpLocked(); if (!arena_set) return false;
     for (std::uint32_t binding = 0; binding < 5; ++binding) {
       infos[binding] = {sources[binding]->buffer,
@@ -3416,7 +3423,7 @@ class VulkanBinaryRuntime {
              static_cast<std::uint32_t>(source_height), static_cast<std::uint32_t>(left), static_cast<std::uint32_t>(top),
              static_cast<std::uint32_t>(region_width), static_cast<std::uint32_t>(region_height),
              static_cast<std::uint32_t>(output_width), static_cast<std::uint32_t>(output_height),
-             (recognition ? 47u : 46u) | packed_content};
+             (recognition ? 47u : 46u) | packed_content | (custom_norm ? 0x8000u : 0u)};
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
     CmdDispatch(command_buffer_, static_cast<std::uint32_t>((output_elements + 1023) / 1024), 1, 1);
     const VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT};
@@ -3508,7 +3515,8 @@ class VulkanBinaryRuntime {
                              std::uint32_t state_index, std::uint32_t result_index,
                              int height, int width, int image_width, int image_height,
                              float threshold, float box_threshold,
-                             float unclip_ratio, std::size_t result_elements) noexcept {
+                             float unclip_ratio, std::size_t result_elements,
+                             bool dilate = false) noexcept {
     if (height <= 0 || width <= 0 || image_width <= 0 || image_height <= 0 ||
         result_elements < 6 || !Initialize()) return false;
     const std::size_t elements = std::size_t(height) * width;
@@ -3551,8 +3559,10 @@ class VulkanBinaryRuntime {
     std::memcpy(&unclip_bits, &unclip_ratio, sizeof(unclip_ratio));
     struct Push { std::uint32_t count, batches, operation0, operation1, operation2, operation3,
                                 steps, right_repeat, right_per_batch, right_batch_stride, mode; }
-        push{static_cast<std::uint32_t>(elements), 1u, threshold_bits, box_threshold_bits,
-             unclip_bits, static_cast<std::uint32_t>(image_width),
+        // `batches` selects the mask: 1 is the plain threshold, 2 adds the
+        // CPU path's 2x2 dilation (Options::det_use_dilation).
+        push{static_cast<std::uint32_t>(elements), dilate ? 2u : 1u, threshold_bits,
+             box_threshold_bits, unclip_bits, static_cast<std::uint32_t>(image_width),
              static_cast<std::uint32_t>(image_height), static_cast<std::uint32_t>(height),
              static_cast<std::uint32_t>(width), static_cast<std::uint32_t>(capacity), 54u};
     cmd_push_constants_(command_buffer_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
@@ -6288,10 +6298,19 @@ VulkanBinaryRuntime& Runtime() {
 }  // namespace
 #endif
 
-struct VulkanTensorArena::Impl {};
+struct VulkanTensorArena::Impl {
+  // Front-end normalization constants that differ from the shader's built-in
+  // PP-OCR sets (Options::det_mean/det_std, rec_mean/rec_std). Six floats,
+  // [scale, offset] per BGR channel, re-uploaded only when they change.
+  VulkanTensorSlot norm;
+  std::array<float, 6> norm_values{};
+};
 
 VulkanTensorArena::VulkanTensorArena() : impl_(new Impl) {}
-VulkanTensorArena::~VulkanTensorArena() { delete impl_; }
+VulkanTensorArena::~VulkanTensorArena() {
+  if (impl_ && impl_->norm.resident) Release(impl_->norm);
+  delete impl_;
+}
 VulkanTensorArena::VulkanTensorArena(VulkanTensorArena&& other) noexcept
     : impl_(std::exchange(other.impl_, nullptr)) {}
 VulkanTensorArena& VulkanTensorArena::operator=(VulkanTensorArena&& other) noexcept {
@@ -6507,22 +6526,66 @@ bool VulkanTensorArena::UploadRgb8(const VulkanTensorSlot& slot, const std::uint
 #endif
 }
 
+#if defined(PPOCR_HAS_VULKAN_HEADERS) && defined(PPOCR_HAS_VULKAN_KERNELS) && defined(_WIN32)
+namespace {
+// The shader's built-in constants, written exactly as the callers used to
+// pass them. Matching values keep the original code path bit for bit.
+bool IsBuiltInNorm(bool recognition, const std::array<float, 6>& values) noexcept {
+  const std::array<float, 6> detector{1.F / (255.F * .229F), -.485F / .229F,
+                                      1.F / (255.F * .224F), -.456F / .224F,
+                                      1.F / (255.F * .225F), -.406F / .225F};
+  const std::array<float, 6> recognizer{2.F / 255.F, -1.F, 2.F / 255.F, -1.F, 2.F / 255.F, -1.F};
+  // Callers that never set constants pass zeros.
+  const std::array<float, 6> unset{};
+  if (values == unset) return true;
+  const auto& built_in = recognition ? recognizer : detector;
+  for (std::size_t i = 0; i < 6; ++i) {
+    if (std::abs(values[i] - built_in[i]) > 1e-6F * std::max(1.F, std::abs(built_in[i]))) return false;
+  }
+  return true;
+}
+}  // namespace
+#endif
+
+std::uint32_t VulkanTensorArena::NormSlotFor(bool recognition, const float* values) noexcept {
+#if defined(PPOCR_HAS_VULKAN_HEADERS) && defined(PPOCR_HAS_VULKAN_KERNELS) && defined(_WIN32)
+  std::array<float, 6> wanted{};
+  std::copy(values, values + 6, wanted.begin());
+  if (IsBuiltInNorm(recognition, wanted)) return UINT32_MAX;
+  if (!impl_->norm.resident) impl_->norm = Acquire(8, "front-end-norm", true);
+  if (!impl_->norm.resident) return UINT32_MAX - 1;
+  if (impl_->norm_values != wanted || impl_->norm.live_elements < 6) {
+    if (!Upload(impl_->norm, wanted.data(), wanted.size())) return UINT32_MAX - 1;
+    impl_->norm_values = wanted;
+  }
+  return impl_->norm.index;
+#else
+  (void)recognition; (void)values;
+  return UINT32_MAX;
+#endif
+}
+
 bool VulkanTensorArena::ResizeRgbToNchw(
     const VulkanTensorSlot& rgb, VulkanTensorSlot& output, int source_width,
     int source_height, int left, int top, int region_width, int region_height,
-    int output_width, int output_height, float, float, float, float, float, float) noexcept {
+    int output_width, int output_height, float blue_scale, float blue_offset,
+    float green_scale, float green_offset, float red_scale, float red_offset) noexcept {
 #if defined(PPOCR_HAS_VULKAN_HEADERS) && defined(PPOCR_HAS_VULKAN_KERNELS) && defined(_WIN32)
   if (!impl_ || !rgb.resident || !output.resident) return false;
-  // The exported PP-OCRv6 front ends have fixed affine constants; keeping the
-  // signature explicit documents the boundary while the shader selects the
-  // exact detector/recognizer constant set by output geometry.
+  // The shader has the PP-OCR detector/recognizer constant sets built in and
+  // picks one by output geometry. Other constants are bound as a buffer.
   const bool recognition = output_height == 48;
+  const float values[6]{blue_scale, blue_offset, green_scale, green_offset, red_scale, red_offset};
+  const std::uint32_t norm = NormSlotFor(recognition, values);
+  if (norm == UINT32_MAX - 1) return false;
   return Runtime().RunArenaRgbResize(rgb.index, output.index, source_width, source_height,
                                      left, top, region_width, region_height, output_width,
-                                     output_height, recognition);
+                                     output_height, recognition, 0, 0, norm);
 #else
   (void)rgb; (void)output; (void)source_width; (void)source_height; (void)left; (void)top;
   (void)region_width; (void)region_height; (void)output_width; (void)output_height;
+  (void)blue_scale; (void)blue_offset; (void)green_scale; (void)green_offset; (void)red_scale;
+  (void)red_offset;
   return false;
 #endif
 }
@@ -6545,19 +6608,24 @@ bool VulkanTensorArena::ResizeRgbToNchwAt(
     const VulkanTensorSlot& rgb, VulkanTensorSlot& output,
     std::size_t output_offset_elements, int source_width, int source_height,
     int left, int top, int region_width, int region_height, int output_width,
-    int output_height, float, float, float, float, float, float,
+    int output_height, float blue_scale, float blue_offset, float green_scale,
+    float green_offset, float red_scale, float red_offset,
     int content_width) noexcept {
 #if defined(PPOCR_HAS_VULKAN_HEADERS) && defined(PPOCR_HAS_VULKAN_KERNELS) && defined(_WIN32)
   if (!impl_ || !rgb.resident || !output.resident) return false;
   const bool recognition = output_height == 48;
+  const float values[6]{blue_scale, blue_offset, green_scale, green_offset, red_scale, red_offset};
+  const std::uint32_t norm = NormSlotFor(recognition, values);
+  if (norm == UINT32_MAX - 1) return false;
   return Runtime().RunArenaRgbResize(rgb.index, output.index, source_width, source_height,
                                      left, top, region_width, region_height, output_width,
                                      output_height, recognition, output_offset_elements,
-                                     content_width);
+                                     content_width, norm);
 #else
   (void)rgb; (void)output; (void)output_offset_elements; (void)source_width; (void)source_height;
   (void)left; (void)top; (void)region_width; (void)region_height; (void)output_width; (void)output_height;
-  (void)content_width;
+  (void)blue_scale; (void)blue_offset; (void)green_scale; (void)green_offset; (void)red_scale;
+  (void)red_offset; (void)content_width;
   return false;
 #endif
 }
@@ -6586,7 +6654,7 @@ bool VulkanTensorArena::ThresholdToMask(const VulkanTensorSlot& probability,
 bool VulkanTensorArena::DbPostprocess(
     const VulkanTensorSlot& probability, std::size_t probability_offset_elements,
     int height, int width, int image_width, int image_height, float threshold,
-    float box_threshold, float unclip_ratio, std::vector<VulkanDbBox>& boxes) noexcept {
+    float box_threshold, float unclip_ratio, std::vector<VulkanDbBox>& boxes, bool dilate) noexcept {
 #if defined(PPOCR_HAS_VULKAN_HEADERS) && defined(PPOCR_HAS_VULKAN_KERNELS) && defined(_WIN32)
   boxes.clear();
   if (!impl_ || !probability.resident || height <= 0 || width <= 0 || image_width <= 0 ||
@@ -6607,7 +6675,8 @@ bool VulkanTensorArena::DbPostprocess(
       !Runtime().RunArenaDbPostprocess(probability.index, probability_offset_elements,
                                        state.index, compact.index, height, width,
                                        image_width, image_height, threshold,
-                                       box_threshold, unclip_ratio, compact.live_elements)) {
+                                       box_threshold, unclip_ratio, compact.live_elements,
+                                       dilate)) {
     Release(compact); Release(state); return false;
   }
   std::vector<float> host(compact.live_elements);
@@ -6629,7 +6698,7 @@ bool VulkanTensorArena::DbPostprocess(
 #else
   (void)probability; (void)probability_offset_elements; (void)height; (void)width;
   (void)image_width; (void)image_height; (void)threshold; (void)box_threshold;
-  (void)unclip_ratio; (void)boxes;
+  (void)unclip_ratio; (void)boxes; (void)dilate;
   return false;
 #endif
 }

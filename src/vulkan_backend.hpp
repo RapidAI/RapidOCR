@@ -206,7 +206,8 @@ class VulkanTensorArena {
                                    int height, int width, int image_width,
                                    int image_height, float threshold,
                                    float box_threshold, float unclip_ratio,
-                                   std::vector<VulkanDbBox>& boxes) noexcept;
+                                   std::vector<VulkanDbBox>& boxes,
+                                   bool dilate = false) noexcept;
   // CTC top-1 reduction runs on device. Indices/probabilities are compact
   // result metadata downloaded only once after all recognizer graph work.
   [[nodiscard]] bool CtcTop1(const VulkanTensorSlot& logits,
@@ -515,6 +516,10 @@ class VulkanTensorArena {
   [[nodiscard]] std::size_t live_bytes() const noexcept;
 
  private:
+  // Arena index of a buffer holding custom front-end normalization, or
+  // UINT32_MAX when the shader's built-in constants apply (UINT32_MAX - 1 on
+  // allocation failure).
+  [[nodiscard]] std::uint32_t NormSlotFor(bool recognition, const float* values) noexcept;
   struct Impl;
   Impl* impl_{};
 };
