@@ -1,6 +1,6 @@
 # rapidocr 5
 
-`rapidocr_ng` 5.0.0a1 is published on PyPI as
+`rapidocr_ng` 5.0.0a2 is published on PyPI as
 [rapidocr_ng](https://pypi.org/project/rapidocr_ng/), separate from the official
 [rapidocr](https://pypi.org/project/rapidocr/). The import name is still
 `rapidocr`: `pip install rapidocr_ng`, then `from rapidocr import RapidOCR`.
@@ -108,8 +108,8 @@ sdist. It runs on pushes and pull requests to `V5_NG`, on tags named `v5*`,
 and from the Actions “Run workflow” button. A normal push does not upload
 anything to PyPI. Publishing happens only when a `v5*` tag is pushed.
 
-`5.0.0a1` is a pre-release: `pip install --pre rapidocr_ng` or
-`pip install rapidocr_ng==5.0.0a1`. `pip install rapidocr` installs the
+`5.0.0a2` is a pre-release: `pip install --pre rapidocr_ng` or
+`pip install rapidocr_ng==5.0.0a2`. `pip install rapidocr` installs the
 official 3.x package instead.
 
 How to turn on PyPI Trusted Publishing, which tag to push, and the Actions

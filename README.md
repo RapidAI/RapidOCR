@@ -29,7 +29,7 @@ Join our [Discord](https://discord.gg/33eyQJq498)
 [简体中文](./README-CN.md) | English
 </div>
 
-This branch (`V5_NG`) is **rapidocr 5.0.0a1**: a C++ PP-OCRv6 engine with a C ABI, a C++ API, and a Python package whose import name is still `rapidocr`. The 3.x line (latest tag `v3.9.2`) stays on [`main`](https://github.com/RapidAI/RapidOCR/tree/main). Hosted demos linked from the badges above run that 3.x line.
+This branch (`V5_NG`) is **rapidocr 5.0.0a2**: a C++ PP-OCRv6 engine with a C ABI, a C++ API, and a Python package whose import name is still `rapidocr`. The 3.x line (latest tag `v3.9.2`) stays on [`main`](https://github.com/RapidAI/RapidOCR/tree/main). Hosted demos linked from the badges above run that 3.x line.
 
 ### 📝 Introduction
 
@@ -102,7 +102,7 @@ MoltenVK does not report per-dispatch timestamps, so `PPOCR_GPU_PROFILE` shows o
 
 The PyPI name of this line is **`rapidocr_ng`**; the import name stays `rapidocr`, so code is the same as on `main`: `pip install rapidocr_ng`, then `from rapidocr import RapidOCR`. Both distributions install the same `rapidocr` package directory, so do not install `rapidocr_ng` and the official `rapidocr` in one environment; run `pip uninstall rapidocr` first.
 
-`5.0.0a1` is a pre-release. It is on PyPI only after a `v5*` tag is published (see [Releasing](#-releasing)). Then install it with:
+`5.0.0a2` is a pre-release. It is on PyPI only after a `v5*` tag is published (see [Releasing](#-releasing)). Then install it with:
 
 ```bash
 pip uninstall rapidocr   # if the official package is installed

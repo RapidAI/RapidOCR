@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "rapidocr_ng"
-version = "5.0.0a1"
+version = "5.0.0a2"
 description = "RapidOCR 5 (rapidocr_ng): PP-OCRv6 with the native engine; import name rapidocr"
 readme = "README.md"
 requires-python = ">=3.9"

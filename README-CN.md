@@ -29,7 +29,7 @@
 简体中文 | [English](./README.md)
 </div>
 
-本分支（`V5_NG`）是 **rapidocr 5.0.0a1**：C++ 实现的 PP-OCRv6 引擎，带 C ABI、C++ API，以及导入名仍为 `rapidocr` 的 Python 包。3.x 线（最新标签 `v3.9.2`）留在 [`main`](https://github.com/RapidAI/RapidOCR/tree/main)。上方徽章里的在线演示跑的是 3.x。
+本分支（`V5_NG`）是 **rapidocr 5.0.0a2**：C++ 实现的 PP-OCRv6 引擎，带 C ABI、C++ API，以及导入名仍为 `rapidocr` 的 Python 包。3.x 线（最新标签 `v3.9.2`）留在 [`main`](https://github.com/RapidAI/RapidOCR/tree/main)。上方徽章里的在线演示跑的是 3.x。
 
 ### 📝 简介
 
@@ -102,7 +102,7 @@ MoltenVK 不提供逐个 dispatch 的时间戳，所以那里的 `PPOCR_GPU_PROF
 
 这一版在 PyPI 上的名字是 **`rapidocr_ng`**，import 名仍是 `rapidocr`，用法与 `main` 一致：`pip install rapidocr_ng`，然后 `from rapidocr import RapidOCR`。两个发行包安装的是同一个 `rapidocr` 包目录，所以不要在同一个环境里同时安装 `rapidocr_ng` 和官方 `rapidocr`；先执行 `pip uninstall rapidocr`。
 
-`5.0.0a1` 是预发布版，推送 `v5*` 标签（见[发布](#-发布)）之后才会出现在 PyPI 上。之后这样安装：
+`5.0.0a2` 是预发布版，推送 `v5*` 标签（见[发布](#-发布)）之后才会出现在 PyPI 上。之后这样安装：
 
 ```bash
 pip uninstall rapidocr   # 如果装过官方包

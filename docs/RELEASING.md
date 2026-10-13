@@ -16,7 +16,7 @@ Triggers:
 
 - push to `V5_NG`
 - pull request targeting `V5_NG`
-- tag `v5*` (for example `v5.0.0a1`)
+- tag `v5*` (for example `v5.0.0a2`)
 - Actions → Run workflow
 
 The wheel build passes `-DPPOCR_ENABLE_VULKAN=OFF`. Shaders stay out of the
@@ -25,13 +25,13 @@ wheel does not gain a `libvulkan` dependency. A Vulkan-enabled build is the
 source default when `glslangValidator` and `third_party/Vulkan-Headers` are
 present; `.github/workflows/vulkan-lavapipe.yml` runs that build on lavapipe.
 
-The wheel and sdist files are uploaded as the `rapidocr_ng-dist` artifact (files `rapidocr_ng-5.0.0a1-*.whl` and `rapidocr_ng-5.0.0a1.tar.gz`),
+The wheel and sdist files are uploaded as the `rapidocr_ng-dist` artifact (files `rapidocr_ng-5.0.0a2-*.whl` and `rapidocr_ng-5.0.0a2.tar.gz`),
 with `SHA256SUMS`. PyPI publishing and the GitHub Release run only for a
 push of a `v5*` tag. They do not run for a branch push, a pull request, or a
 manual run from a branch.
 
-`5.0.0a1` is a pre-release, so install it with `pip install --pre rapidocr_ng`
-or `pip install rapidocr_ng==5.0.0a1`. `pip install rapidocr` still installs
+`5.0.0a2` is a pre-release, so install it with `pip install --pre rapidocr_ng`
+or `pip install rapidocr_ng==5.0.0a2`. `pip install rapidocr` still installs
 the official 3.x package, which is a different project.
 
 ## Trusted publisher
@@ -60,8 +60,8 @@ requests `id-token: write` and uses the GitHub Environment named `pypi`.
 From `V5_NG`, with the version in `pyproject.toml` already set:
 
 ```bash
-git tag v5.0.0a1
-git push origin v5.0.0a1
+git tag v5.0.0a2
+git push origin v5.0.0a2
 ```
 
 That push runs the wheel build, then publishes `dist/*.whl` and the sdist to

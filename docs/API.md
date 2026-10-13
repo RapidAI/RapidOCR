@@ -91,7 +91,7 @@ Exceptions use `std::runtime_error`. The C ABI catches them.
 
 ## Python package
 
-This is **rapidocr 5.0.0a1**, the next major version of the PyPI package
+This is **rapidocr 5.0.0a2**, the next major version of the PyPI package
 `rapidocr`. The import name stays `rapidocr`. The 3.x line (through tag
 `v3.9.2`) remains on `main`. There is no 4.x tag in this repository. A
 migration note is in `python/README.md`.

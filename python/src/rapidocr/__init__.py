@@ -1,11 +1,11 @@
-"""RapidOCR 5 (``rapidocr`` 5.0.0a1).
+"""RapidOCR 5 (``rapidocr`` 5.0.0a2).
 
 This is the next major version of the ``rapidocr`` package. The import name
 is still ``rapidocr``. The 3.x line lives on ``main``; see ``python/README.md``
 for what changed.
 """
 
-__version__ = "5.0.0a1"
+__version__ = "5.0.0a2"
 
 from .download import download_models
 from .main import RapidOCR, RapidOCRError
