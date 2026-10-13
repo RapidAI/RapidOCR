@@ -27,6 +27,12 @@ for lib in libs:
                           capture_output=True, text=True).stdout.split()
     assert arch == ["arm64"], arch
 
+for lib in libs:
+    print(subprocess.run(["otool", "-L", str(lib)], capture_output=True, text=True).stdout)
+    syms = subprocess.run(["nm", "-g", str(lib)], capture_output=True, text=True).stdout
+    print("\n".join(l for l in syms.splitlines() if "metal" in l.lower()))
+print("PPOCR_DISABLE_METAL =", os.environ.get("PPOCR_DISABLE_METAL"))
+print("loaded library:", getattr(_native.load_library(), "_name", None))
 assert _native.metal_available(), "wheel has no usable Metal backend"
 print("metal_available_ok")
 

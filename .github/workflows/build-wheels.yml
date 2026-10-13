@@ -191,6 +191,7 @@ jobs:
         uses: pypa/cibuildwheel@v2.23.3
         env:
           CIBW_PLATFORM: macos
+          CIBW_BUILD_VERBOSITY: 1
           CIBW_ARCHS: arm64
           CIBW_SKIP: "pp* *-macosx_x86_64 *-macosx_universal2"
 
