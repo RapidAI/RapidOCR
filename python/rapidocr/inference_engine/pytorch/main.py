@@ -2,7 +2,7 @@
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import torch
@@ -22,10 +22,23 @@ class TorchInferSession(InferSession):
         self.predictor = ModelLoader(cfg, self.device).predictor
 
     def __call__(self, img: np.ndarray):
+        return self._run(img, reduce=False)
+
+    def infer_argmax(self, img: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """For rec: argmax/max of the (B, T, vocab) logits on the device, so only
+        (B, T) is copied to the CPU."""
+        return self._run(img, reduce=True)
+
+    def _run(self, img: np.ndarray, reduce: bool):
         with torch.no_grad():
             inp = torch.from_numpy(img)
             inp = inp.to(self.device)
-            outputs = self.predictor(inp).cpu().numpy()
+            outputs = self.predictor(inp)
+            if reduce:
+                prob, idx = outputs.max(dim=2)
+                outputs = (idx.cpu().numpy(), prob.cpu().numpy())
+            else:
+                outputs = outputs.cpu().numpy()
             if self.device.type == "mps":
                 del inp
                 torch.mps.empty_cache()

@@ -128,7 +128,7 @@ class TextRecognizer:
                 norm_img_batch.append(norm_img[np.newaxis, :])
             norm_img_batch = np.concatenate(norm_img_batch).astype(np.float32)
 
-            preds = self.session(norm_img_batch)
+            preds = self.session.infer_argmax(norm_img_batch)
             line_results, word_results = self.postprocess_op(
                 preds,
                 return_word_box,
