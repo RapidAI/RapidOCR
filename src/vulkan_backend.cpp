@@ -41,7 +41,19 @@ using HMODULE = void*;
 inline HMODULE LoadLibraryA(const char* name) noexcept {
   (void)name;
 #if defined(__APPLE__)
-  return dlopen("libvulkan.1.dylib", RTLD_NOW | RTLD_LOCAL);
+  // Homebrew and the LunarG SDK install the loader outside dyld's default
+  // search path, so try the usual prefixes. MoltenVK alone also exports
+  // vkGetInstanceProcAddr and is the last resort when no loader exists.
+  if (const char* path = std::getenv("PPOCR_VULKAN_LIBRARY")) {
+    if (HMODULE module = dlopen(path, RTLD_NOW | RTLD_LOCAL)) return module;
+  }
+  for (const char* candidate : {"libvulkan.1.dylib", "/opt/homebrew/lib/libvulkan.1.dylib",
+                                "/usr/local/lib/libvulkan.1.dylib", "libMoltenVK.dylib",
+                                "/opt/homebrew/lib/libMoltenVK.dylib",
+                                "/usr/local/lib/libMoltenVK.dylib"}) {
+    if (HMODULE module = dlopen(candidate, RTLD_NOW | RTLD_LOCAL)) return module;
+  }
+  return nullptr;
 #else
   return dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
 #endif
@@ -229,12 +241,33 @@ class VulkanBinaryRuntime {
     }
     VkInstanceCreateInfo instance_info{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, nullptr,
                                         0, &app, 0, nullptr, 0, nullptr};
+    // MoltenVK (macOS) is a portability driver: the loader hides it unless
+    // the instance opts into VK_KHR_portability_enumeration.
+    std::vector<const char*> instance_extensions;
+    {
+      auto enumerate_extensions = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(
+          get_instance_proc_(VK_NULL_HANDLE, "vkEnumerateInstanceExtensionProperties"));
+      std::uint32_t count = 0;
+      if (enumerate_extensions && enumerate_extensions(nullptr, &count, nullptr) == VK_SUCCESS) {
+        std::vector<VkExtensionProperties> available(count);
+        if (enumerate_extensions(nullptr, &count, available.data()) == VK_SUCCESS) {
+          for (const auto& extension : available) {
+            if (std::strcmp(extension.extensionName, "VK_KHR_portability_enumeration") == 0) {
+              instance_extensions.push_back("VK_KHR_portability_enumeration");
+              instance_info.flags |= 0x00000001;  // VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR
+            }
+          }
+        }
+      }
+    }
     if (enable_validation) {
       instance_info.enabledLayerCount = 1;
       instance_info.ppEnabledLayerNames = &validation_layer;
-      instance_info.enabledExtensionCount = 1;
-      instance_info.ppEnabledExtensionNames = &debug_extension;
+      instance_extensions.push_back(debug_extension);
     }
+    instance_info.enabledExtensionCount = static_cast<std::uint32_t>(instance_extensions.size());
+    instance_info.ppEnabledExtensionNames =
+        instance_extensions.empty() ? nullptr : instance_extensions.data();
     if (create_instance_(&instance_info, nullptr, &instance_) != VK_SUCCESS) {
       CleanupUnlocked();
       return false;
@@ -275,8 +308,26 @@ class VulkanBinaryRuntime {
     const float priority = 1.F;
     const VkDeviceQueueCreateInfo queue_info{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, nullptr,
                                               0, queue_family_, 1, &priority};
+    // A portability-subset device (MoltenVK) must enable that extension.
+    std::vector<const char*> device_extensions;
+    if (auto enumerate_device_extensions = Global<PFN_vkEnumerateDeviceExtensionProperties>(
+            "vkEnumerateDeviceExtensionProperties")) {
+      std::uint32_t count = 0;
+      if (enumerate_device_extensions(physical_, nullptr, &count, nullptr) == VK_SUCCESS) {
+        std::vector<VkExtensionProperties> available(count);
+        if (enumerate_device_extensions(physical_, nullptr, &count, available.data()) == VK_SUCCESS) {
+          for (const auto& extension : available) {
+            if (std::strcmp(extension.extensionName, "VK_KHR_portability_subset") == 0)
+              device_extensions.push_back("VK_KHR_portability_subset");
+          }
+        }
+      }
+    }
     const VkDeviceCreateInfo device_info{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, nullptr, 0,
-                                          1, &queue_info, 0, nullptr, 0, nullptr, nullptr};
+                                          1, &queue_info, 0, nullptr,
+                                          static_cast<std::uint32_t>(device_extensions.size()),
+                                          device_extensions.empty() ? nullptr : device_extensions.data(),
+                                          nullptr};
     if (create_device_(physical_, &device_info, nullptr, &device_) != VK_SUCCESS) {
       CleanupUnlocked();
       return false;
