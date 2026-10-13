@@ -77,7 +77,7 @@ a tag that is already on PyPI skips the existing file (`skip-existing`).
 ## PyPI credentials
 
 The `publish` job runs only on a pushed `v5*` tag, in GitHub environment `pypi`.
-If repository secret `PYPI_API_TOKEN` is set, it uploads with that token;
+If repository secret `PYPI_API_TOKEN_V4_NG` is set, it uploads with that token;
 otherwise it uses PyPI Trusted Publishing (owner `RapidAI`, repository
 `RapidOCR`, workflow `build-wheels.yml`, environment `pypi`). The tag must equal
 `v` + the package version (e.g. `v5.0.0a2`), or the job stops before uploading.
