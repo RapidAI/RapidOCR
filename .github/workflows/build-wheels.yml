@@ -249,6 +249,8 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v5')
     runs-on: ubuntu-latest
     environment: pypi
+    env:
+      PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
     permissions:
       id-token: write
       contents: write
@@ -258,7 +260,28 @@ jobs:
           name: rapidocr_ng-dist
           path: dist
 
-      - name: Publish to PyPI
+      - name: Check tag matches package version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          v="${TAG#v}"
+          ls dist
+          ls dist/rapidocr_ng-"$v".tar.gz
+          bad=$(ls dist/*.whl | grep -v "/rapidocr_ng-$v-" || true)
+          if [ -n "$bad" ]; then echo "version mismatch: $bad" >&2; exit 1; fi
+
+      - name: Publish to PyPI (API token secret)
+        if: env.PYPI_API_TOKEN != ''
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true
+          attestations: false
+          verbose: true
+
+      - name: Publish to PyPI (Trusted Publishing)
+        if: env.PYPI_API_TOKEN == ''
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
