@@ -109,6 +109,15 @@ inline bool MetalNativePointwiseWanted(std::size_t plane, std::size_t input_chan
   return !disabled && MetalDriverRequested() && plane >= 32 && input_channels >= 8 &&
          output_channels >= 8;
 }
+// Metal only: the native implicit-GEMM 3x3 Conv (modes 50/51) handles any
+// plane and channel count, so smaller planes (width-batched recognizer
+// stems) also leave the generic direct kernel.
+inline bool MetalNativeConvWanted(std::size_t plane, int stride_height, int stride_width) noexcept {
+  static const bool disabled = std::getenv("PPOCR_METAL_DISABLE_NATIVE") != nullptr ||
+                               std::getenv("PPOCR_METAL_DISABLE_NATIVE_CONV") != nullptr;
+  return !disabled && MetalDriverRequested() && plane >= 64 && stride_height == stride_width &&
+         (stride_height == 1 || stride_height == 2);
+}
 
 
 namespace {
@@ -4643,7 +4652,10 @@ class VulkanBinaryRuntime {
         std::getenv("PPOCR_DISABLE_VULKAN_CONV2D_SPATIAL") == nullptr &&
         ((stride_height == 1 && input_channels <= 64) ||
          (stride_height == 2 && input_channels <= 32));
-    const std::uint32_t mode = (use_spatial_3x3
+    const bool use_native_3x3 = !use_spatial_3x3 && kernel_height == 3 && kernel_width == 3 &&
+        (activation_mode == 0 || activation_mode == 1) &&
+        MetalNativeConvWanted(output_plane, stride_height, stride_width);
+    const std::uint32_t mode = (use_spatial_3x3 || use_native_3x3
         ? (activation_mode == 1 ? 51u : 50u)
         : static_cast<std::uint32_t>(14 + activation_mode)) |
         (static_cast<std::uint32_t>(pad_top) << 16u) |
@@ -4659,13 +4671,13 @@ class VulkanBinaryRuntime {
     // The 4-OC tiled kernel's spatial mapping is stride-1 only. Stem
     // FusedMaxPoolConcatConv is 32-IC 3x3 s2 (40x176); using the s1 tile
     // zeroed outputs (CPU 16.4 vs GPU 0 at the first real-DetInput miss).
-    const bool use_tiled = !use_spatial_3x3 && stride_height == 1 &&
+    const bool use_tiled = !use_spatial_3x3 && !use_native_3x3 && stride_height == 1 &&
         weights_per_channel <= 4096 &&
         output_plane >= kTiledMinimumOutputPlane &&
         std::getenv("PPOCR_DISABLE_VULKAN_CONV2D_TILE") == nullptr;
     const bool tile4oc = use_tiled && kernel_height == 3 && kernel_width == 3 &&
         weights_per_channel * 4 <= 4096;
-    const std::size_t dispatch = use_spatial_3x3
+    const std::size_t dispatch = (use_spatial_3x3 || use_native_3x3)
         ? std::size_t((output_width + 15) / 16) * std::size_t((output_height + 15) / 16) *
               std::size_t((output_channels + 3) / 4)
         : (use_tiled
