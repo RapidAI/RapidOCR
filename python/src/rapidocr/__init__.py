@@ -10,7 +10,7 @@ __version__ = "5.0.0a1"
 from .download import download_models
 from .main import RapidOCR, RapidOCRError
 from .typings import EngineType, LangCls, LangDet, LangRec, ModelType, OCRVersion
-from .utils.load_image import LoadImageError
+from .utils.load_image import LoadImageError, MemoryImage, RawMemoryImage
 from .utils.vis_res import VisRes
 from ._native import backend_info, cpu_info, request_vulkan_device
 
@@ -19,6 +19,8 @@ __all__ = [
     "RapidOCR",
     "RapidOCRError",
     "LoadImageError",
+    "MemoryImage",
+    "RawMemoryImage",
     "VisRes",
     "EngineType",
     "LangCls",

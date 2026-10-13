@@ -112,3 +112,14 @@ example `pip install rapidocr==5.0.0a1`.
 How to turn on PyPI Trusted Publishing, which tag to push, and the Actions
 permission the GitHub Release step needs are in
 [`docs/RELEASING.md`](../docs/RELEASING.md).
+
+### Ported from `main` (#755)
+
+- `RawMemoryImage(address, length, width, height, pixel_format="BGRA", stride=None, bottom_up=False)`
+  reads an uncompressed pixel buffer (GRAY/BGR/RGB/BGRA/BGRX/RGBA/RGBX) by address.
+- `bytes`, `bytearray`, `MemoryImage` and PIL inputs honor the EXIF orientation, like paths.
+- Model routing lives in `default_models.yaml` under `model_routes`.
+  `RapidOCR.list_supported_langs("rec", "PP-OCRv6", "tiny")` and
+  `rapidocr --list-langs --task rec --ocr_version PP-OCRv6 --model_type tiny` list the languages.
+- `Global.model_root_dir` accepts `str` or `Path`; the recognizer dictionary is stored there too.
+- No OpenCV dependency or extra.

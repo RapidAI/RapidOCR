@@ -9,8 +9,7 @@ from typing import Dict, Union
 import yaml
 
 from ..utils.log import logger
-from ..utils.model_resolver import normalize_lang, resolve_model_key
-from ..utils.typings import ModelType
+from ..utils.model_resolver import normalize_lang, route_to_model_key
 
 cur_dir = Path(__file__).resolve().parent.parent
 MODEL_URL_PATH = cur_dir / "default_models.yaml"
@@ -55,7 +54,7 @@ class InferSession:
                 f"Unsupported configuration: {engine_type}.{ocr_version}.{task_type}.{model_type}"
             )
 
-        model_key = resolve_model_key(
+        model_key = route_to_model_key(
             file_info.task_type,
             file_info.ocr_version,
             file_info.lang_type,
@@ -69,16 +68,6 @@ class InferSession:
             raise ValueError(
                 f"Unsupported configuration: {engine_type}.{ocr_version}.{task_type}.{lang_type}.{model_type}"
             )
-
-        # 优先查找 server 模型
-        if model_type == ModelType.SERVER.value:
-            for key in model_dict:
-                if key.startswith(lang_type) and model_type in key:
-                    return model_dict[key]
-
-        for key in model_dict:
-            if key.startswith(lang_type) and model_type in key:
-                return model_dict[key]
 
         logger.error(
             "Unsupported configuration:\n"

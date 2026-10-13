@@ -19,8 +19,9 @@ import numpy as np
 from . import _native
 from .inference_engine.base import FileInfo, InferSession
 from .output import RapidOCROutput, filter_by_score
-from .typings import EngineType, OCRVersion
+from .typings import EngineType, ModelType, OCRVersion, TaskType
 from .utils.load_image import LoadImage, LoadImageError
+from .utils.model_resolver import list_supported_langs as _list_supported_langs
 from .utils.parse_parameters import ConfigNode, ParseParams
 from .utils.process_img import apply_vertical_padding, map_boxes_to_original, resize_image_within_bounds
 
@@ -39,6 +40,18 @@ def _enum_value(value: Any) -> Any:
 
 
 class RapidOCR:
+    @staticmethod
+    def list_supported_langs(task_type, ocr_version, model_type=None):
+        """Languages routed by ``model_routes`` in default_models.yaml, as on ``main``."""
+
+        if isinstance(task_type, str):
+            task_type = TaskType(task_type.lower())
+        if isinstance(ocr_version, str):
+            ocr_version = OCRVersion(ocr_version)
+        if isinstance(model_type, str):
+            model_type = ModelType(model_type.lower())
+        return _list_supported_langs(task_type, ocr_version, model_type)
+
     def __init__(self, config_path: Optional[str] = None, params: Optional[Dict[str, Any]] = None):
         self.cfg = _load_config(config_path, params)
         level = str(self.cfg.Global.get("log_level", "info")).upper()
@@ -359,21 +372,55 @@ def _resolve_models(cfg: ConfigNode) -> tuple:
     return str(det), str(rec), str(dictionary)
 
 
-def main() -> None:
+def parse_args(arg_list: Optional[list] = None):
     import argparse
 
     parser = argparse.ArgumentParser(description="RapidOCR native PP-OCRv6 demo")
-    parser.add_argument("image")
+    parser.add_argument("image", nargs="?", default=None)
+    parser.add_argument("-img", "--img_path", dest="img_path", default=None)
     parser.add_argument("--det", default=None)
     parser.add_argument("--rec", default=None)
     parser.add_argument("--dict", dest="dictionary", default=None)
-    parser.add_argument("--model-type", default="tiny", choices=["tiny", "small", "medium"])
-    args = parser.parse_args()
+    parser.add_argument("--text_score", type=float, default=None)
+    parser.add_argument("--lang_type", default=None)
+    parser.add_argument(
+        "--model-type",
+        "--model_type",
+        dest="model_type",
+        default=None,
+        choices=[x.value for x in ModelType],
+    )
+    parser.add_argument("--list-langs", action="store_true", dest="list_langs")
+    parser.add_argument("--task", choices=[x.value for x in TaskType], default="rec")
+    parser.add_argument(
+        "--ocr_version", choices=[x.value for x in OCRVersion], default="PP-OCRv6"
+    )
+    return parser.parse_args(arg_list)
+
+
+def main(arg_list: Optional[list] = None) -> None:
+    args = parse_args(arg_list)
+
+    if args.list_langs:
+        print("\n".join(RapidOCR.list_supported_langs(args.task, args.ocr_version, args.model_type)))
+        return
+
+    image = args.img_path or args.image
+    if image is None:
+        raise SystemExit("rapidocr: an image path is required (positional or -img/--img_path)")
+    model_type = args.model_type or "tiny"
+    if model_type not in {"tiny", "small", "medium"}:
+        raise SystemExit(f"rapidocr: PP-OCRv6 has no {model_type!r} model")
     params = {
-        "Det.model_type": args.model_type,
-        "Rec.model_type": args.model_type,
+        "Det.model_type": model_type,
+        "Rec.model_type": model_type,
         "Global.use_cls": False,
     }
+    if args.text_score is not None:
+        params["Global.text_score"] = args.text_score
+    if args.lang_type:
+        params["Det.lang_type"] = args.lang_type
+        params["Rec.lang_type"] = args.lang_type
     if args.det:
         params["Det.model_path"] = args.det
     if args.rec:
@@ -381,7 +428,7 @@ def main() -> None:
     if args.dictionary:
         params["Rec.rec_keys_path"] = args.dictionary
     engine = RapidOCR(params=params)
-    result = engine(args.image)
+    result = engine(image)
     print(result)
     if result.txts:
         for text, score in zip(result.txts, result.scores or ()):
