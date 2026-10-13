@@ -247,7 +247,13 @@ jobs:
   publish:
     name: PyPI and GitHub Release
     needs: dist
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v5')
+    # always(): dist itself runs after a skipped job (aarch64 qemu), and without
+    # it the skipped ancestor would skip publishing as well.
+    if: >-
+      always() &&
+      needs.dist.result == 'success' &&
+      github.event_name == 'push' &&
+      startsWith(github.ref, 'refs/tags/v5')
     runs-on: ubuntu-latest
     environment: pypi
     env:
