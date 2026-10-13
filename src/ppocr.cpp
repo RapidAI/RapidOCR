@@ -1328,7 +1328,17 @@ detail::OnnxLite::GpuTensor GpuOnlyRecRgb(detail::OnnxLite& rec, const Options& 
         (rgb.resident && arena.UploadRgb8(
             rgb, source.image->rgb.data(), source.image->rgb.size()));
     bool resized = uploaded;
+    // Metal: record a source's crop resizes into one command buffer (one
+    // fence instead of one per crop). The first crop stays standalone so
+    // its normalization constants are written before any recording starts.
+    static const bool group_resizes = detail::MetalDriverRequested() &&
+        std::getenv("PPOCR_METAL_DISABLE_GROUPED_REC_RESIZE") == nullptr;
+    bool recording = false;
     for (const std::size_t item : source.items) {
+      if (group_resizes && resized && !recording && item != source.items.front() &&
+          source.items.size() > 2) {
+        recording = arena.BeginGraphRecording();
+      }
       const auto& job = jobs[item];
       // `width` is the 64-aligned Vulkan tensor grid.  Sampling must however
       // use the unrounded PP-OCR aspect-ratio width; the trailing grid columns
@@ -1351,6 +1361,7 @@ detail::OnnxLite::GpuTensor GpuOnlyRecRgb(detail::OnnxLite& rec, const Options& 
           rec_norm.offset[1], rec_norm.scale[2], rec_norm.offset[2], content_width);
       if (!resized) break;
     }
+    if (recording) resized = arena.EndGraphRecording(resized) && resized;
     if (!reuse_page) arena.Release(rgb);
     if (!resized) {
       (void)arena.FlushDeferredStandalone();
