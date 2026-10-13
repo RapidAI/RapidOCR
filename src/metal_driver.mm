@@ -76,6 +76,7 @@ struct MtlProgram {
   id<MTLComputePipelineState> generic{nil};
   std::unordered_map<std::uint32_t, id<MTLComputePipelineState>> by_mode;
   bool specializable{};
+  int kind{-1};
 };
 
 struct MtlPipeline {
@@ -174,6 +175,7 @@ MtlProgram* ProgramFor(id<MTLDevice> device, int kind) {
   auto& program = g_programs[kind];
   if (g_program_attempted[kind]) return program.library ? &program : nullptr;
   g_program_attempted[kind] = true;
+  program.kind = kind;
   @autoreleasepool {
     bool specializable = false;
     const std::string source = PrepareSource(kind, &specializable);
@@ -808,6 +810,53 @@ bool EncodeCommands(MtlDevice* device, id<MTLCommandBuffer> metal_buffer, const 
   return true;
 }
 
+// PPOCR_METAL_KERNEL_PROFILE=1: run every recorded command in its own
+// command buffer and attribute its GPU time to the shader kind and mode.
+// Execution stays in submission order, so results are unchanged; only the
+// timing of the run is distorted by the per-command commits.
+struct KernelStat { double ms{}; std::uint64_t calls{}; std::uint64_t groups{}; NSUInteger tg_memory{}; NSUInteger max_threads{}; };
+std::mutex g_kernel_mutex;
+std::map<std::string, KernelStat> g_kernel_stats;
+
+bool KernelProfileEnabled() {
+  static const bool enabled = std::getenv("PPOCR_METAL_KERNEL_PROFILE") != nullptr;
+  return enabled;
+}
+
+std::string KernelKey(const Cmd& command) {
+  if (command.type == CmdType::copy) return "copy";
+  std::uint32_t mode = 0;
+  if (command.push_size >= 44) std::memcpy(&mode, command.push.data() + 40, sizeof(mode));
+  char text[64];
+  std::snprintf(text, sizeof(text), "k%d.mode%u", command.pipeline && command.pipeline->program
+                ? command.pipeline->program->kind : -1, mode & 0xffffu);
+  return text;
+}
+
+bool SubmitProfiledCommands(MtlQueue* queue, const MtlCommandBuffer& recorded) {
+  MtlCommandBuffer single;
+  for (const Cmd& command : recorded.commands) {
+    if (command.type == CmdType::barrier) continue;
+    single.commands.assign(1, command);
+    @autoreleasepool {
+      id<MTLCommandBuffer> metal_buffer = [queue->device->queue commandBuffer];
+      if (!EncodeCommands(queue->device, metal_buffer, single)) return false;
+      [metal_buffer commit];
+      [metal_buffer waitUntilCompleted];
+      if (metal_buffer.status == MTLCommandBufferStatusError) return false;
+      const double ms = (metal_buffer.GPUEndTime - metal_buffer.GPUStartTime) * 1e3;
+      std::lock_guard lock(g_kernel_mutex);
+      auto& stat = g_kernel_stats[KernelKey(command)];
+      stat.ms += ms; ++stat.calls; stat.groups += std::uint64_t(command.x) * command.y * command.z;
+      if (command.type == CmdType::dispatch) {
+        id<MTLComputePipelineState> state = PipelineForDispatch(queue->device->device, command.pipeline, command);
+        if (state) { stat.tg_memory = state.staticThreadgroupMemoryLength; stat.max_threads = state.maxTotalThreadsPerThreadgroup; }
+      }
+    }
+  }
+  return true;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue_handle, std::uint32_t count, const VkSubmitInfo* submits,
                                            VkFence fence) {
   auto* queue = As<MtlQueue>(queue_handle);
@@ -816,6 +865,11 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue_handle, std::uint32_t c
     static const bool profile = std::getenv("PPOCR_GPU_PROFILE") != nullptr;
     for (std::uint32_t i = 0; i < count; ++i) {
       for (std::uint32_t j = 0; j < submits[i].commandBufferCount; ++j) {
+        if (KernelProfileEnabled()) {
+          if (!SubmitProfiledCommands(queue, *As<MtlCommandBuffer>(submits[i].pCommandBuffers[j])))
+            return VK_ERROR_DEVICE_LOST;
+          continue;
+        }
         if (!metal_buffer) metal_buffer = [queue->device->queue commandBufferWithUnretainedReferences];
         if (!EncodeCommands(queue->device, metal_buffer, *As<MtlCommandBuffer>(submits[i].pCommandBuffers[j]))) {
           return VK_ERROR_DEVICE_LOST;
@@ -917,4 +971,14 @@ extern "C" void ppocr_metal_print_profile(void) {
                static_cast<unsigned long long>(g_gpu_submits.load(std::memory_order_relaxed)),
                static_cast<unsigned long long>(g_gpu_dispatches.load(std::memory_order_relaxed)),
                static_cast<double>(ns) / 1e6);
+  if (!KernelProfileEnabled()) return;
+  std::lock_guard lock(g_kernel_mutex);
+  std::vector<std::pair<std::string, KernelStat>> rows(g_kernel_stats.begin(), g_kernel_stats.end());
+  std::sort(rows.begin(), rows.end(), [](const auto& a, const auto& b) { return a.second.ms > b.second.ms; });
+  for (const auto& [key, stat] : rows) {
+    std::fprintf(stderr, "metal_kernel %-16s gpu_ms=%9.3f calls=%7llu groups=%10llu tg_bytes=%5lu max_threads=%4lu\n",
+                 key.c_str(), stat.ms, static_cast<unsigned long long>(stat.calls),
+                 static_cast<unsigned long long>(stat.groups), static_cast<unsigned long>(stat.tg_memory),
+                 static_cast<unsigned long>(stat.max_threads));
+  }
 }
