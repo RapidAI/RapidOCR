@@ -251,7 +251,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: pypi
     env:
-      PYPI_API_TOKEN_V4_NG: ${{ secrets.PYPI_API_TOKEN_V4_NG }}
+      PYPI_API_TOKEN_V5_NG: ${{ secrets.PYPI_API_TOKEN_V5_NG }}
     permissions:
       id-token: write
       contents: write
@@ -272,17 +272,17 @@ jobs:
           if [ -n "$bad" ]; then echo "version mismatch: $bad" >&2; exit 1; fi
 
       - name: Publish to PyPI (API token secret)
-        if: env.PYPI_API_TOKEN_V4_NG != ''
+        if: env.PYPI_API_TOKEN_V5_NG != ''
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
-          password: ${{ secrets.PYPI_API_TOKEN_V4_NG }}
+          password: ${{ secrets.PYPI_API_TOKEN_V5_NG }}
           skip-existing: true
           attestations: false
           verbose: true
 
       - name: Publish to PyPI (Trusted Publishing)
-        if: env.PYPI_API_TOKEN_V4_NG == ''
+        if: env.PYPI_API_TOKEN_V5_NG == ''
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
