@@ -2173,7 +2173,12 @@ class VulkanBinaryRuntime {
     std::lock_guard lock(mutex_);
     std::size_t selected = arena_buffers_.size();
     VkDeviceSize selected_capacity = std::numeric_limits<VkDeviceSize>::max();
-    for (std::size_t index = 0; index < arena_buffers_.size(); ++index) {
+    // Only buffers of the requested kind can match. Scanning the per-kind
+    // index list (ascending, like arena_buffers_) keeps the selection and its
+    // tie-break identical without walking every persistent weight buffer for
+    // each transient activation.
+    const auto& kind_indices = persistent ? persistent_arena_indices_ : transient_arena_indices_;
+    for (const std::uint32_t index : kind_indices) {
       const auto& candidate = arena_buffers_[index];
       // A recorded command buffer has not executed yet.  Although the graph
       // planner has reached a tensor's final *logical* consumer, that earlier
@@ -2194,7 +2199,21 @@ class VulkanBinaryRuntime {
     if (selected == arena_buffers_.size()) {
       ArenaBuffer slot{};
       if (!CreateArenaBuffer(slot, GrowCapacity(required), persistent)) return result;
-      arena_buffers_.push_back(std::move(slot));
+      // Reuse an entry that Reclaim destroyed (capacity 0) before growing
+      // the vector. Without this every request after a reclaim appends new
+      // entries and each Acquire scans an ever longer list.
+      // Only transient entries are recycled: persistent constants are never
+      // reclaimed per request, so their list does not grow.
+      auto& empty = empty_transient_arena_indices_;
+      if (!persistent && !empty.empty()) {
+        selected = empty.back();
+        empty.pop_back();
+        arena_buffers_[selected] = std::move(slot);
+      } else {
+        (persistent ? persistent_arena_indices_ : transient_arena_indices_)
+            .push_back(static_cast<std::uint32_t>(arena_buffers_.size()));
+        arena_buffers_.push_back(std::move(slot));
+      }
     }
     auto& slot = arena_buffers_[selected];
     slot.live = true;
@@ -5447,7 +5466,9 @@ class VulkanBinaryRuntime {
       if (total <= retain) break;
       auto& slot = arena_buffers_[index];
       const VkDeviceSize capacity = slot.capacity;
+      const bool was_persistent = slot.persistent;
       DestroyArenaBuffer(slot);
+      if (!was_persistent) empty_transient_arena_indices_.push_back(static_cast<std::uint32_t>(index));
       total -= capacity;
     }
     // Constant slots sub-allocate 64 MiB shared blocks. Returning their
@@ -5495,6 +5516,9 @@ class VulkanBinaryRuntime {
   void DestroyArenaBuffers() noexcept {
     for (auto& slot : arena_buffers_) DestroyArenaBuffer(slot);
     arena_buffers_.clear();
+    persistent_arena_indices_.clear();
+    transient_arena_indices_.clear();
+    empty_transient_arena_indices_.clear();
     for (auto& block : persistent_memory_blocks_) {
       if (block.mapped) unmap_memory_(device_, block.memory);
       if (block.memory) free_memory_(device_, block.memory, nullptr);
@@ -6302,6 +6326,11 @@ class VulkanBinaryRuntime {
   // later graph value of compatible size, preventing peak memory from growing
   // with the number of graph nodes.
   std::vector<ArenaBuffer> arena_buffers_;
+  // Indices into arena_buffers_ by kind, ascending; see AcquireArenaSlot.
+  std::vector<std::uint32_t> persistent_arena_indices_;
+  std::vector<std::uint32_t> transient_arena_indices_;
+  // Destroyed (capacity 0) transient entries, reused before growing.
+  std::vector<std::uint32_t> empty_transient_arena_indices_;
   // Long-lived model constants share a small number of mapped VkDeviceMemory
   // allocations. Each still has a dedicated VkBuffer view for descriptors.
   std::vector<ArenaMemoryBlock> persistent_memory_blocks_;
