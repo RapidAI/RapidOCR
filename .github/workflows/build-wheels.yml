@@ -213,14 +213,56 @@ jobs:
           path: wheelhouse/*.whl
           if-no-files-found: error
 
+  wheels-windows-x64:
+    name: wheels Windows x64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache tiny models
+        uses: actions/cache@v4
+        with:
+          path: ci-models
+          key: rapidocr-ci-models-tiny-v1
+
+      - name: Download tiny models when the cache is empty
+        run: python python/tests/fetch_ci_models.py
+
+      - name: Build Windows x64 wheels
+        uses: pypa/cibuildwheel@v2.23.3
+        env:
+          CIBW_PLATFORM: windows
+          CIBW_ARCHS: AMD64
+          CIBW_SKIP: "pp* *-win32 *-win_arm64"
+          CIBW_BUILD_VERBOSITY: 1
+
+      - name: Check Windows tags
+        shell: bash
+        run: |
+          ls wheelhouse
+          test "$(ls wheelhouse/*-win_amd64.whl | wc -l)" -eq 5
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rapidocr_ng-wheels-windows-x64
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+
   dist:
     name: SHA256SUMS
-    needs: [sdist, wheels-x86_64, wheels-aarch64, wheels-aarch64-qemu, wheels-macos-arm64]
+    needs: [sdist, wheels-x86_64, wheels-aarch64, wheels-aarch64-qemu, wheels-macos-arm64, wheels-windows-x64]
     if: >-
       always() &&
       needs.sdist.result == 'success' &&
       needs.wheels-x86_64.result == 'success' &&
       needs.wheels-macos-arm64.result == 'success' &&
+      needs.wheels-windows-x64.result == 'success' &&
       (needs.wheels-aarch64.result == 'success' || needs.wheels-aarch64-qemu.result == 'success')
     runs-on: ubuntu-latest
     steps:

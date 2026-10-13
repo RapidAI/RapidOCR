@@ -76,6 +76,11 @@ environment = { CMAKE_ARGS = "-DPPOCR_BUILD_EXAMPLES=OFF -DPPOCR_BUILD_TESTS=OFF
 # macOS arm64 wheels are built only by the wheels-macos-arm64 job (macos-14),
 # which overrides `skip` above. Metal is on: glslang and spirv-cross are build
 # tools only; the wheel needs nothing beyond Metal.framework at runtime.
+[tool.cibuildwheel.windows]
+archs = ["AMD64"]
+environment = { CMAKE_ARGS = "-DPPOCR_BUILD_EXAMPLES=OFF -DPPOCR_BUILD_TESTS=OFF -DPPOCR_BUILD_STATIC=OFF -DPPOCR_BUILD_SHARED=ON -DPPOCR_ENABLE_VULKAN=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded", CMAKE_BUILD_PARALLEL_LEVEL = "4", SKBUILD_BUILD_VERBOSE = "true" }
+test-command = "python {project}/python/tests/ci_wheel_check.py"
+
 [tool.cibuildwheel.macos]
 archs = ["arm64"]
 before-all = "brew install glslang spirv-cross"
