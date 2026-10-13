@@ -5308,11 +5308,11 @@ namespace {
 // 16-wide tile, so the inner loop does not spill. Weights stay in their
 // original [row][K] layout; this is not an 8-wide packed broadcast.
 [[gnu::noinline]] void Avx512ExpandProjectSpatial32(
-    float* __restrict__ dst, const float* __restrict__ src,
-    const float* __restrict__ expand_weights, const float* expand_bias,
-    const float* __restrict__ project_weights, const float* project_bias,
+    float* __restrict dst, const float* __restrict src,
+    const float* __restrict expand_weights, const float* expand_bias,
+    const float* __restrict project_weights, const float* project_bias,
     int channels, int hidden, std::size_t plane, std::size_t spatial,
-    float* __restrict__ packed_act, float* __restrict__ hidden_tile) noexcept {
+    float* __restrict packed_act, float* __restrict hidden_tile) noexcept {
   for (int channel = 0; channel < channels; ++channel) {
     const float* in = src + std::size_t(channel) * plane + spatial;
     float* out = packed_act + std::size_t(channel) * 32;

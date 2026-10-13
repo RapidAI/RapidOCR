@@ -2314,11 +2314,11 @@ namespace {
 // would spill. Weights stay in [row][K]; this is not an 8-wide packed
 // broadcast.
 [[gnu::noinline]] void Avx2ExpandProjectSpatial16(
-    float* __restrict__ dst, const float* __restrict__ src,
-    const float* __restrict__ expand_weights, const float* expand_bias,
-    const float* __restrict__ project_weights, const float* project_bias,
+    float* __restrict dst, const float* __restrict src,
+    const float* __restrict expand_weights, const float* expand_bias,
+    const float* __restrict project_weights, const float* project_bias,
     int channels, int hidden, std::size_t plane, std::size_t spatial,
-    float* __restrict__ packed_act, float* __restrict__ hidden_tile) noexcept {
+    float* __restrict packed_act, float* __restrict hidden_tile) noexcept {
   for (int channel = 0; channel < channels; ++channel) {
     const float* in = src + std::size_t(channel) * plane + spatial;
     float* out = packed_act + std::size_t(channel) * 16;
@@ -2975,7 +2975,7 @@ void Avx2GemmPacked32(float* dst, const float* a, const float* packed_b,
       const float pmax = Avx2ReduceMaxPs(v);
       const __m256 eq = _mm256_cmp_ps(v, _mm256_set1_ps(pmax), _CMP_EQ_OQ);
       const int bits = _mm256_movemask_ps(eq);
-      const int lane = bits ? __builtin_ctz(bits) : 0;
+      const int lane = bits ? std::countr_zero(static_cast<unsigned>(bits)) : 0;
       float& mx = ctc_max[row];
       float& sm = ctc_sum[row];
       if (pmax > mx) {
