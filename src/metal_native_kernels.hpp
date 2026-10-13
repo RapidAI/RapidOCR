@@ -105,6 +105,88 @@ kernel void pointwise_gemm(device const float* a [[buffer(0)]],
     d[index] = value;
   }
 }
+// Modes 50/51: 3x3 Conv (stride 1 or 2, ReLU for 51) as an implicit GEMM:
+// out[oc, p] = bias[oc] + sum_k W[oc, k] X[k, p] with k = ic * 9 + ky * 3 + kx,
+// the uber-shader's weight layout. Pads are in the mode's high bytes; bit 15
+// swaps the input (D) and output (A) bindings. Same 32x32 tiling as above.
+kernel void conv3x3_gemm(device float* a [[buffer(0)]],
+                         device const float* b [[buffer(1)]],
+                         device const float* c [[buffer(2)]],
+                         device float* d [[buffer(3)]],
+                         constant Params& params [[buffer(8)]],
+                         uint3 group [[threadgroup_position_in_grid]],
+                         uint local [[thread_index_in_threadgroup]],
+                         uint simd [[simdgroup_index_in_threadgroup]]) {
+  const uint channels = params.operation0;
+  const uint input_h = params.operation1, input_w = params.operation2;
+  const uint output_h = params.operation3, output_w = params.steps;
+  const uint stride = params.right_batch_stride;
+  const int pad_top = int((params.mode >> 16u) & 0xffu);
+  const int pad_left = int((params.mode >> 24u) & 0xffu);
+  const bool swap_ad = (params.mode & 0x8000u) != 0u;
+  const uint plane = output_h * output_w;
+  const uint outputs = params.count / plane;
+  const uint depth = channels * 9u;
+  const uint batch = group.y;
+  const uint plane_tiles = (plane + TP - 1) / TP;
+  const uint m0 = (group.x / plane_tiles) * TM;
+  const uint p0 = (group.x % plane_tiles) * TP;
+  threadgroup float ws[TM * TK];
+  threadgroup float xs[TK * TP];
+  threadgroup float cs[TM * TP];
+  const uint input_plane = input_h * input_w;
+  const device float* x = (swap_ad ? d : a) + batch * channels * input_plane;
+
+  for (uint i = local; i < TM * TP; i += 128) {
+    const uint m = m0 + i / TP;
+    cs[i] = m < outputs ? c[m] : 0.0f;
+  }
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  const uint sm = (simd / 2) * 16, sp = (simd % 2) * 16;
+  simdgroup_float8x8 acc[2][2];
+  for (uint i = 0; i < 2; ++i)
+    for (uint j = 0; j < 2; ++j)
+      simdgroup_load(acc[i][j], cs + (sm + i * 8) * TP + sp + j * 8, TP);
+
+  for (uint k0 = 0; k0 < depth; k0 += TK) {
+    for (uint i = local; i < TM * TK; i += 128) {
+      const uint m = m0 + i / TK, k = k0 + i % TK;
+      ws[i] = (m < outputs && k < depth) ? b[m * depth + k] : 0.0f;
+      const uint xk = k0 + i / TP, p = p0 + i % TP;
+      float v = 0.0f;
+      if (xk < depth && p < plane) {
+        const uint ic = xk / 9u, r = xk - ic * 9u, ky = r / 3u, kx = r - ky * 3u;
+        const uint oy = p / output_w, ox = p - oy * output_w;
+        const int iy = int(oy * stride + ky) - pad_top;
+        const int ix = int(ox * stride + kx) - pad_left;
+        if (iy >= 0 && iy < int(input_h) && ix >= 0 && ix < int(input_w))
+          v = x[ic * input_plane + uint(iy) * input_w + uint(ix)];
+      }
+      xs[i] = v;
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    simdgroup_float8x8 wf[2], xf[2];
+    for (uint i = 0; i < 2; ++i) simdgroup_load(wf[i], ws + (sm + i * 8) * TK, TK);
+    for (uint j = 0; j < 2; ++j) simdgroup_load(xf[j], xs + sp + j * 8, TP);
+    for (uint i = 0; i < 2; ++i)
+      for (uint j = 0; j < 2; ++j)
+        simdgroup_multiply_accumulate(acc[i][j], wf[i], xf[j], acc[i][j]);
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+  }
+  for (uint i = 0; i < 2; ++i)
+    for (uint j = 0; j < 2; ++j)
+      simdgroup_store(acc[i][j], cs + (sm + i * 8) * TP + sp + j * 8, TP);
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  if (batch >= params.batches) return;
+  const bool relu = (params.mode & 0x7fffu) == 51u;
+  device float* y = swap_ad ? a : d;
+  for (uint i = local; i < TM * TP; i += 128) {
+    const uint m = m0 + i / TP, p = p0 + i % TP;
+    if (m >= outputs || p >= plane) continue;
+    const float value = cs[i];
+    y[batch * params.count + m * plane + p] = relu ? max(value, 0.0f) : value;
+  }
+}
 )MSL";
 
 }  // namespace ppocr::detail

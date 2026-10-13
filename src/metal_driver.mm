@@ -752,6 +752,7 @@ std::atomic<std::uint64_t> g_gpu_dispatches{0};
 // translated shaders. A missing kernel leaves the uber-shader path in place.
 struct NativeKernels {
   id<MTLComputePipelineState> pointwise_gemm{nil};
+  id<MTLComputePipelineState> conv3x3_gemm{nil};
   bool attempted{};
 };
 NativeKernels g_native;
@@ -801,6 +802,7 @@ const NativeKernels& Native(id<MTLDevice> device) {
       return state;
     };
     g_native.pointwise_gemm = make(@"pointwise_gemm");
+    if (std::getenv("PPOCR_METAL_DISABLE_NATIVE_CONV") == nullptr) g_native.conv3x3_gemm = make(@"conv3x3_gemm");
   }
   return g_native;
 }
@@ -817,6 +819,18 @@ id<MTLComputePipelineState> NativeForDispatch(id<MTLDevice> device, const Cmd& c
       command.pipeline->program->kind != 0) return nil;
   PushView push{};
   std::memcpy(&push, command.push.data(), sizeof(push));
+  if ((push.mode & 0x7fffu) == 50u || (push.mode & 0x7fffu) == 51u) {
+    // 3x3 Conv: the uber-shader reads every field, so the driver selects
+    // the native kernel by mode (PPOCR_METAL_DISABLE_NATIVE_CONV=1 opts out).
+    id<MTLComputePipelineState> state = Native(device).conv3x3_gemm;
+    const std::uint64_t plane = std::uint64_t(push.operation3) * push.steps;
+    if (!state || plane == 0 || push.count % plane != 0 ||
+        (push.right_batch_stride != 1u && push.right_batch_stride != 2u)) return nil;
+    const std::uint64_t outputs = push.count / plane;
+    *groups = MTLSizeMake(((outputs + 31) / 32) * ((plane + 31) / 32), command.y, 1);
+    *threads = MTLSizeMake(128, 1, 1);
+    return state;
+  }
   if (push.operation3 != 1u) return nil;
   const std::uint32_t mode = push.mode & 0xffffu;
   switch (mode) {
