@@ -12,6 +12,12 @@ aarch64 build runs under QEMU on `ubuntu-latest`. After `auditwheel repair`,
 the workflow rejects a wheel whose filename and `auditwheel show` output are
 not `manylinux2014` or `manylinux_2_17`.
 
+macOS wheels are CPython 3.9–3.13 `macosx_14_0_arm64` builds from the
+`wheels-macos-arm64` job on `macos-14`, with the Metal backend compiled in
+(glslang and spirv-cross are build-time tools only). The install test runs
+the shared wheel check, checks `minos 14.0` and arm64 on the library, and
+reads the hello image on Metal.
+
 Triggers:
 
 - push to `V5_NG`
