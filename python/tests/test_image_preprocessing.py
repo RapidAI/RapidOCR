@@ -4,10 +4,10 @@
 from types import SimpleNamespace
 
 import numpy as np
-
 import rapidocr.main as main_module
 from rapidocr import RapidOCR
 from rapidocr.ch_ppocr_det import TextDetOutput
+from rapidocr.utils.process_img import map_boxes_to_original, resize_image_within_bounds
 
 
 def test_preprocess_img_returns_original_when_disabled(monkeypatch):
@@ -51,3 +51,25 @@ def test_detect_and_crop_skips_vertical_padding_when_disabled(monkeypatch):
     assert cropped_imgs[0] is img
     assert det_res.boxes is boxes
     assert op_record["padding_1"] == {"top": 0, "left": 0}
+
+
+def test_resize_ratios_map_boxes_after_both_size_limits():
+    original = np.zeros((100, 1000, 3), dtype=np.uint8)
+    resized, ratio_h, ratio_w = resize_image_within_bounds(
+        original, min_side_len=128, max_side_len=512
+    )
+
+    assert resized.shape[:2] == (128, 1024)
+    assert ratio_h == original.shape[0] / resized.shape[0]
+    assert ratio_w == original.shape[1] / resized.shape[1]
+
+    boxes = np.array([[[128, 32], [256, 32], [256, 64], [128, 64]]], dtype=np.float32)
+    mapped = map_boxes_to_original(
+        boxes,
+        {"preprocess": {"ratio_h": ratio_h, "ratio_w": ratio_w}},
+        *original.shape[:2],
+    )
+    np.testing.assert_allclose(
+        mapped,
+        [[[125, 25], [250, 25], [250, 50], [125, 50]]],
+    )
