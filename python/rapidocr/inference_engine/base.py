@@ -5,7 +5,7 @@ import abc
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 from omegaconf import OmegaConf
@@ -92,6 +92,11 @@ class InferSession(abc.ABC):
     @abc.abstractmethod
     def __call__(self, input_content: np.ndarray) -> np.ndarray:
         pass
+
+    def infer_argmax(self, input_content: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """argmax/max over the last axis of the output (rec logits)."""
+        preds = self(input_content)
+        return preds.argmax(axis=2), preds.max(axis=2)
 
     @staticmethod
     def _verify_model(model_path: Union[str, Path, None]):
