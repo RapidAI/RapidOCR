@@ -4,7 +4,7 @@
 import copy
 import math
 from enum import Enum
-from typing import List, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
@@ -28,6 +28,7 @@ class CalRecBoxes:
         dt_boxes: np.ndarray,
         rec_res: TextRecOutput,
         return_single_char_box: bool = False,
+        rotated_180: Optional[Sequence[bool]] = None,
     ) -> TextRecOutput:
         word_results = []
         for idx, (img, box) in enumerate(zip(imgs, dt_boxes)):
@@ -43,6 +44,10 @@ class CalRecBoxes:
                 return_single_char_box,
             )
             word_box_list = self.adjust_box_overlap(copy.deepcopy(word_box_list))
+            if rotated_180 is not None and rotated_180[idx]:
+                # The text was recognized on the crop after the classifier turned
+                # it by 180 degrees, so map the boxes back onto the unrotated crop.
+                word_box_list = self.rotate_boxes_180(word_box_list, w, h)
             direction = self.get_box_direction(box)
             word_box_list = self.reverse_rotate_crop_image(
                 copy.deepcopy(box), word_box_list, direction
@@ -53,6 +58,12 @@ class CalRecBoxes:
 
         rec_res.word_results = tuple(word_results)
         return rec_res
+
+    @staticmethod
+    def rotate_boxes_180(
+        word_box_list: List[List[List[float]]], w: int, h: int
+    ) -> List[List[List[float]]]:
+        return [[[w - x, h - y] for x, y in box] for box in word_box_list]
 
     @staticmethod
     def get_box_direction(box: np.ndarray) -> Direction:
