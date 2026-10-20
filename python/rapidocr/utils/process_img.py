@@ -107,17 +107,17 @@ def get_rotate_crop_image(img: np.ndarray, points: np.ndarray) -> np.ndarray:
 def resize_image_within_bounds(
     img: np.ndarray, min_side_len: float, max_side_len: float
 ) -> Tuple[np.ndarray, float, float]:
-    h, w = img.shape[:2]
+    original_h, original_w = img.shape[:2]
+    h, w = original_h, original_w
     max_value = max(h, w)
-    ratio_h = ratio_w = 1.0
     if max_value > max_side_len:
-        img, ratio_h, ratio_w = reduce_max_side(img, max_side_len)
+        img, _, _ = reduce_max_side(img, max_side_len)
 
     h, w = img.shape[:2]
     min_value = min(h, w)
     if min_value < min_side_len:
-        img, ratio_h, ratio_w = increase_min_side(img, min_side_len)
-    return img, ratio_h, ratio_w
+        img, _, _ = increase_min_side(img, min_side_len)
+    return img, original_h / img.shape[0], original_w / img.shape[1]
 
 
 def reduce_max_side(
