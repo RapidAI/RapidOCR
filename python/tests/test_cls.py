@@ -57,8 +57,9 @@ def test_ppocrv5_cls_server():
 
 def test_ppocrv4_cls_long_line():
     # A long line used to be squeezed into the 192x48 input of the v2.0 model,
-    # which then missed that it was upside down (#744).
-    engine = RapidOCR()
+    # which then missed that it was upside down (#744). Pinned to PP-OCRv4 so
+    # that a change of the default classifier cannot bypass the crop.
+    engine = RapidOCR(params={"Cls.ocr_version": OCRVersion.PPOCRV4})
     img = cv2.imread(str(tests_dir / "test_letterbox_like.jpg"))
     thresh = engine.cfg.Cls.cls_thresh
 
