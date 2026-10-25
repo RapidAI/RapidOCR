@@ -25,8 +25,8 @@ class TorchInferSession(InferSession):
         return self._run(img, reduce=False)
 
     def infer_argmax(self, img: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """For rec: argmax/max of the (B, T, vocab) logits on the device, so only
-        (B, T) is copied to the CPU."""
+        """For the recognizer: argmax/max of the rec logits over the last axis
+        (vocab) on the device, so only (B, T) is copied to the CPU."""
         return self._run(img, reduce=True)
 
     def _run(self, img: np.ndarray, reduce: bool):
@@ -35,7 +35,7 @@ class TorchInferSession(InferSession):
             inp = inp.to(self.device)
             outputs = self.predictor(inp)
             if reduce:
-                prob, idx = outputs.max(dim=2)
+                prob, idx = outputs.max(dim=-1)
                 outputs = (idx.cpu().numpy(), prob.cpu().numpy())
             else:
                 outputs = outputs.cpu().numpy()
