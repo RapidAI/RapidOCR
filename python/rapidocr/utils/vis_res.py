@@ -260,7 +260,9 @@ class VisRes:
         """
         if khatt is not None and RTL_PATTERN.search(txt):
             options = {"font": self.font_path, "fallback_fonts": RTL_FALLBACK_FONTS}
-            left, top, right, bottom = khatt.text_bbox(txt, size_px=font_size, **options)
+            left, top, right, bottom = khatt.text_bbox(
+                txt, size_px=font_size, **options
+            )
             scale = min(
                 self.get_box_width(box) / max(right - left, 1),
                 self.get_box_height(box) / max(bottom - top, 1),

@@ -75,7 +75,9 @@ def test_vis_draws_rtl_text_with_khatt(monkeypatch):
             "Rec.ocr_version": OCRVersion.PPOCRV5,
         }
     )
-    result = engine(tests_dir / "arabic.png", use_det=False, use_cls=False, use_rec=True)
+    result = engine(
+        tests_dir / "arabic.png", use_det=False, use_cls=False, use_rec=True
+    )
     vis_img = result.vis()
     assert vis_img.shape[2] == 3
     assert drawn == list(result.txts)
@@ -94,11 +96,19 @@ def test_rtl_line_starts_at_the_right_edge_and_fits_its_box():
 
 
 def test_ltr_line_is_drawn_by_pillow(monkeypatch):
-    khatt = pytest.importorskip("khatt")
-    monkeypatch.setattr(vis_res.khatt, "draw_text", lambda *args, **kwargs: pytest.fail("khatt used"))
+    pytest.importorskip("khatt")
+    monkeypatch.setattr(
+        vis_res.khatt, "draw_text", lambda *args, **kwargs: pytest.fail("khatt used")
+    )
     vis = vis_res.VisRes()
     img = Image.new("RGB", (300, 60), (255, 255, 255))
-    vis.draw_line(img, ImageDraw.Draw(img), [[20, 10], [280, 10], [280, 50], [20, 50]], "Hello", 32)
+    vis.draw_line(
+        img,
+        ImageDraw.Draw(img),
+        [[20, 10], [280, 10], [280, 50], [20, 50]],
+        "Hello",
+        32,
+    )
     assert ink_box(img) is not None
 
 
@@ -106,5 +116,11 @@ def test_rtl_line_without_khatt_is_drawn_by_pillow(monkeypatch):
     monkeypatch.setattr(vis_res, "khatt", None)
     vis = vis_res.VisRes(lang_type=LangRec.ARABIC)
     img = Image.new("RGB", (300, 60), (255, 255, 255))
-    vis.draw_line(img, ImageDraw.Draw(img), [[20, 10], [280, 10], [280, 50], [20, 50]], ARABIC_TEXT, 32)
+    vis.draw_line(
+        img,
+        ImageDraw.Draw(img),
+        [[20, 10], [280, 10], [280, 50], [20, 50]],
+        ARABIC_TEXT,
+        32,
+    )
     assert ink_box(img)[0] >= 20
