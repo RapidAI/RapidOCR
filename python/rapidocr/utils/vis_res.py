@@ -3,6 +3,7 @@
 # @Contact: liekkaskono@163.com
 import math
 import random
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple, Union
@@ -18,12 +19,24 @@ from .log import logger
 from .model_resolver import normalize_lang
 from .typings import LangRec
 
+try:
+    # Part of the rtl extra: joins Arabic letters and lays out right-to-left
+    # text, which Pillow only does when it is built with Raqm
+    import khatt
+except ImportError:
+    khatt = None
+
 root_dir = Path(__file__).resolve().parent.parent
 InputType = Union[str, np.ndarray, bytes, Path, Image.Image]
 
 DEFAULT_FONT_DIR = root_dir / "models"
 DEFAULT_FONT_PATH = DEFAULT_FONT_DIR / "FZYTK.TTF"
 FONT_YAML_PATH = root_dir / "default_models.yaml"
+
+# Hebrew, Arabic, Syriac, Thaana, N'Ko and the Arabic presentation forms
+RTL_PATTERN = re.compile("[֐-ࣿיִ-﷿ﹰ-ﻼ]")
+# Arabic glyphs for a font that has none, e.g. the default FZYTK.TTF
+RTL_FALLBACK_FONTS = ["noto-naskh"]
 
 
 @lru_cache()
@@ -173,8 +186,7 @@ class VisRes:
                 cur_y += self.get_char_size(font, c)
         else:
             font_size = max(int(box_height * 0.8), 10)
-            font = ImageFont.truetype(self.font_path, font_size, encoding="utf-8")
-            draw_right.text([box[0][0], box[0][1]], txt, fill=(0, 0, 0), font=font)
+            self.draw_line(img_right, draw_right, box, txt, font_size)
 
         img_left = Image.blend(image, img_left, 0.5)
         img_show = Image.new("RGB", (w * 2, h), 255)
@@ -224,14 +236,57 @@ class VisRes:
                     cur_y += self.get_char_size(font, c)
             else:
                 font_size = max(int(box_height * 0.8), 10)
-                font = ImageFont.truetype(self.font_path, font_size, encoding="utf-8")
-                draw_right.text([box[0][0], box[0][1]], txt, fill=(0, 0, 0), font=font)
+                self.draw_line(img_right, draw_right, box, txt, font_size)
 
         img_left = Image.blend(image, img_left, 0.5)
         img_show = Image.new("RGB", (w * 2, h), (255, 255, 255))
         img_show.paste(img_left, (0, 0, w, h))
         img_show.paste(img_right, (w, 0, w * 2, h))
         return np.array(img_show)
+
+    def draw_line(
+        self,
+        img: Image.Image,
+        draw: ImageDraw.ImageDraw,
+        box: List[List[Union[float, int]]],
+        txt: str,
+        font_size: int,
+    ) -> None:
+        """Draw a horizontal line of text in its box.
+
+        With khatt installed (``pip install "rapidocr[rtl]"``), right-to-left text
+        is shaped and starts at the right edge of the box, where it was read. It
+        is centered vertically, and made smaller if it would not fit the box.
+        """
+        if khatt is not None and RTL_PATTERN.search(txt):
+            options = {"font": self.font_path, "fallback_fonts": RTL_FALLBACK_FONTS}
+            left, top, right, bottom = khatt.text_bbox(
+                txt, size_px=font_size, **options
+            )
+            scale = min(
+                self.get_box_width(box) / max(right - left, 1),
+                self.get_box_height(box) / max(bottom - top, 1),
+            )
+            if scale < 1:
+                font_size = max(int(font_size * scale), 10)
+                left, top, right, bottom = khatt.text_bbox(
+                    txt, size_px=font_size, **options
+                )
+
+            middle_y = (box[1][1] + box[2][1]) / 2
+            khatt.draw_text(
+                img,
+                (float(box[1][0]), float(middle_y - (bottom - top) / 2)),
+                txt,
+                size_px=font_size,
+                fill=(0, 0, 0),
+                anchor="rt",
+                **options,
+            )
+            return
+
+        font = ImageFont.truetype(self.font_path, font_size, encoding="utf-8")
+        draw.text([box[0][0], box[0][1]], txt, fill=(0, 0, 0), font=font)
 
     @staticmethod
     def get_random_color() -> Tuple[int, int, int]:

@@ -44,7 +44,11 @@ Changelog = "https://github.com/RapidAI/RapidOCR/releases"
 rapidocr = "rapidocr.main:main"
 
 [project.optional-dependencies]
-rtl = ["python-bidi>=0.4.2,<1.0"]
+rtl = [
+    "python-bidi>=0.4.2,<1.0",
+    # Shapes Arabic text in vis(); needs Python 3.10+
+    "khatt>=0.4.0; python_version >= '3.10'",
+]
 
 [tool.setuptools]
 include-package-data = true
