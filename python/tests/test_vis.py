@@ -95,6 +95,17 @@ def test_rtl_line_starts_at_the_right_edge_and_fits_its_box():
     assert left >= 20 and top >= 10 and bottom <= 50
 
 
+def test_rtl_line_shrinks_below_10px_to_fit_a_small_box():
+    pytest.importorskip("khatt")
+    vis = vis_res.VisRes(lang_type=LangRec.ARABIC)
+    img = Image.new("RGB", (100, 30), (255, 255, 255))
+    box = [[20, 10], [60, 10], [60, 18], [20, 18]]
+    vis.draw_line(img, ImageDraw.Draw(img), box, ARABIC_TEXT, 10)
+
+    left, top, right, bottom = ink_box(img)
+    assert left >= 20 and right <= 60 and top >= 10 and bottom <= 18
+
+
 def test_ltr_line_is_drawn_by_pillow(monkeypatch):
     pytest.importorskip("khatt")
     monkeypatch.setattr(

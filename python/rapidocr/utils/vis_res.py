@@ -268,7 +268,7 @@ class VisRes:
                 self.get_box_height(box) / max(bottom - top, 1),
             )
             if scale < 1:
-                font_size = max(int(font_size * scale), 10)
+                font_size = max(int(font_size * scale), 1)
                 left, top, right, bottom = khatt.text_bbox(
                     txt, size_px=font_size, **options
                 )
