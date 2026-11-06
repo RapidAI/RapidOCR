@@ -67,7 +67,7 @@ class TextRecognizer:
 
         # Long lines are unreadable at the network's fixed input height, so wide
         # crops are cut into pieces before recognition and joined afterwards.
-        self.split_wide_crops = cfg.get("split_wide_crops", True)
+        self.split_wide_crops = cfg.get("split_wide_crops", False)
         self.split_above = cfg.get("split_above", 800)
         self.split_chunk = cfg.get("split_chunk", 240)
         # A cut is rejoined with a space unless the blank run is narrower than
@@ -182,12 +182,15 @@ class TextRecognizer:
             )
             all_word_results = None
 
-        # Routing por tipo de documento + post-procesado (español multi-documento)
-        try:
-            doc_type = classify_doc_type("\n".join(txts)).get("type", "OTRO")
-            txts = tuple(mask_text_es(t, doc_type) for t in txts)
-        except Exception:
-            pass
+        # Spanish post-processing (identity numbers, amounts, dates) only makes
+        # sense for Spanish documents, and it rewrites text, so it must never run
+        # for other languages.
+        if normalize_lang(self.cfg.lang_type) == LangRec.ES.value:
+            try:
+                doc_type = classify_doc_type("\n".join(txts)).get("type", "OTRO")
+                txts = tuple(mask_text_es(t, doc_type) for t in txts)
+            except Exception:
+                pass
 
         if normalize_lang(self.cfg.lang_type) in RTL_LANGS:
             txts = reorder_bidi_for_display(txts)
