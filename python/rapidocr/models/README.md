@@ -8,7 +8,8 @@ are part of the configuration, not downloads:
 | `ppocr_keys_es.txt` | 116 | current checkpoint, type router |
 | `ppocr_keys_es_v1.txt` | 107 | earlier checkpoints, regression tests |
 
-The weights are too large to version and are published as release assets:
+The weights are too large to version and are published as release assets of
+<https://github.com/alfonsodg/RapidOCR/releases/tag/spanish-multidoc-v1>:
 
 | file | size | notes |
 | --- | --- | --- |
