@@ -124,6 +124,13 @@ class LoadImage:
         if img.mode == "1":
             img = img.convert("L")
             return np.array(img)
+
+        # The raw arrays of these modes hold palette indices or ink values,
+        # not the colours later steps expect.
+        if img.mode == "P":
+            img = img.convert("RGBA")
+        elif img.mode == "CMYK":
+            img = img.convert("RGB")
         return np.array(img)
 
     def convert_img(self, img: np.ndarray, origin_img_type: Any) -> np.ndarray:

@@ -8,6 +8,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import pytest
+from PIL import Image
 from pytest import mark
 
 root_dir = Path(__file__).resolve().parent.parent
@@ -312,6 +313,59 @@ def test_mode_one_img(engine):
     img_path = test_dir / "issue_170.png"
     result = engine(img_path)
     assert result.txts[0] == "TEST"
+
+
+@pytest.mark.parametrize("input_type", ["path", "bytes", "pil"])
+def test_palette_img_loads_palette_colors(tmp_path, input_type):
+    img = Image.new("P", (3, 1))
+    img.putpalette([255, 255, 255, 0, 0, 0, 200, 30, 10])
+    img.putdata([0, 1, 2])
+    path = tmp_path / "palette.png"
+    img.save(path)
+    inputs = {"path": path, "bytes": path.read_bytes(), "pil": img}
+
+    result = LoadImage()(inputs[input_type])
+
+    expected = np.array([[[255, 255, 255], [0, 0, 0], [10, 30, 200]]], dtype=np.uint8)
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_palette_img_with_transparency_uses_alpha():
+    img = Image.new("P", (2, 1))
+    img.putpalette([0, 0, 0, 0, 0, 0])
+    img.putdata([0, 1])
+    img.info["transparency"] = 0
+
+    result = LoadImage()(img)
+
+    expected = np.array([[[255, 255, 255], [0, 0, 0]]], dtype=np.uint8)
+    np.testing.assert_array_equal(result, expected)
+
+
+@pytest.mark.parametrize("input_type", ["path", "bytes", "pil"])
+def test_cmyk_img_loads_as_bgr(tmp_path, input_type):
+    img = Image.new("CMYK", (3, 1))
+    img.putdata([(0, 0, 0, 0), (0, 0, 0, 255), (0, 255, 255, 0)])
+    path = tmp_path / "cmyk.tif"
+    img.save(path)
+    inputs = {"path": path, "bytes": path.read_bytes(), "pil": img}
+
+    result = LoadImage()(inputs[input_type])
+
+    expected = np.array([[[255, 255, 255], [0, 0, 0], [0, 0, 255]]], dtype=np.uint8)
+    np.testing.assert_array_equal(result, expected)
+
+
+def test_palette_img(engine, tmp_path):
+    gray = cv2.imread(str(test_dir / "en.jpg"), cv2.IMREAD_GRAYSCALE)
+    img = Image.new("P", (gray.shape[1], gray.shape[0]))
+    img.putpalette([255, 255, 255, 0, 0, 0])
+    img.putdata((gray < 128).astype(np.uint8).flatten().tolist())
+    path = tmp_path / "palette.png"
+    img.save(path)
+
+    result = engine(path)
+    assert len(result) > 0
 
 
 @mark.parametrize(
