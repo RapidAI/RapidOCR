@@ -2,18 +2,6 @@
   "version": 1,
   "snapshots": [
     {
-      "timestamp": "2026-09-21T02:23:17.702Z",
-      "totalStars": 7888,
-      "repos": [
-        {
-          "fullName": "RapidAI/RapidOCR",
-          "name": "RapidOCR",
-          "owner": "RapidAI",
-          "stars": 7888
-        }
-      ]
-    },
-    {
       "timestamp": "2026-09-22T02:26:38.685Z",
       "totalStars": 7906,
       "repos": [
@@ -624,7 +612,19 @@
           "stars": 8500
         }
       ]
+    },
+    {
+      "timestamp": "2026-11-12T04:55:23.255Z",
+      "totalStars": 8510,
+      "repos": [
+        {
+          "fullName": "RapidAI/RapidOCR",
+          "name": "RapidOCR",
+          "owner": "RapidAI",
+          "stars": 8510
+        }
+      ]
     }
   ],
-  "starsAtLastNotification": 8500
+  "starsAtLastNotification": 8510
 }
