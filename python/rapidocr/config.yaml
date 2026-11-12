@@ -150,6 +150,19 @@ Det:
     use_dilation: true
     score_mode: fast
 
+    # Sliced inference (SAHI) for large pages, opt-in because it multiplies
+    # inference cost. Tiles are upscaled before inference because small text
+    # falls below what the detector resolves at native scale; boxes are mapped
+    # back afterwards. For a 300 DPI drawing, the tuned combination is:
+    #   use_tiling: true, tile_min_side: 1200, tile_size: 640, tile_scale: 2.0
+    # and raise Global.max_side_len, or the page is shrunk before detection and
+    # no tile ever sees the small text.
+    use_tiling: false
+    tile_min_side: 1200
+    tile_size: 640
+    tile_overlap: 0.15
+    tile_scale: 2.0
+
 Cls:
     engine_type: "onnxruntime"
     lang_type: "ch"
@@ -180,3 +193,19 @@ Rec:
     rec_keys_path: null
     rec_img_shape: [3, 48, 320]
     rec_batch_num: 6
+
+    # Wide crops are cut into readable pieces before recognition: the network
+    # input is 48x320, so a 300-character line would arrive with ~3 px per glyph.
+    # Opt-in, because it changes the text produced for long lines.
+    # For documents with long prose lines the tuned combination is:
+    #   split_wide_crops: true, split_above: 800, split_chunk: 240
+    split_wide_crops: false
+    split_above: 800
+    split_chunk: 240
+    # A cut is rejoined with a space only when the blank run is at least this
+    # wide, so identifiers and machine-readable zones rejoin tight.
+    split_word_gap: 6
+    # Splitting merged multi-line blocks by row bands measured worse on most
+    # document types, so it stays off.
+    split_blocks: false
+    split_block_min_height: 60
