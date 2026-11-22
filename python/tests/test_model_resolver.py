@@ -165,3 +165,23 @@ def test_list_supported_langs_includes_cls():
         "ch",
         "multi",
     ]
+
+
+@pytest.mark.parametrize(
+    "task_type,model_type,expected_key",
+    [
+        (TaskType.DET, ModelType.TINY, "multi_PP-OCRv6_det_tiny"),
+        (TaskType.DET, ModelType.SMALL, "multi_PP-OCRv6_det_small"),
+        (TaskType.DET, ModelType.MEDIUM, "multi_PP-OCRv6_det_medium"),
+        (TaskType.REC, ModelType.TINY, "multi_PP-OCRv6_rec_tiny"),
+        (TaskType.REC, ModelType.SMALL, "multi_PP-OCRv6_rec_small"),
+        (TaskType.REC, ModelType.MEDIUM, "multi_PP-OCRv6_rec_medium"),
+    ],
+)
+def test_ppocrv6_multi_routes_to_multilingual_model(
+    task_type, model_type, expected_key
+):
+    assert (
+        route_to_model_key(task_type, OCRVersion.PPOCRV6, "multi", model_type)
+        == expected_key
+    )

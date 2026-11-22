@@ -2,6 +2,7 @@ model_routes:
   # Reusable language sets for models that share one multilingual model.
   _defs:
     ppocrv6_langs: &ppocrv6_langs
+      - multi
       - ch
       - chinese_cht
       - en
@@ -56,6 +57,7 @@ model_routes:
       - german
 
     ppocrv6_tiny_langs: &ppocrv6_tiny_langs
+      - multi
       - ch
       - chinese_cht
       - en
