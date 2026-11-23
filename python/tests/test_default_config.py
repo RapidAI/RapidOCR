@@ -98,6 +98,7 @@ def test_default_openvino_engine_config(default_cfg):
     assert cfg.num_streams == -1
     assert cfg.enable_hyper_threading is None
     assert cfg.scheduling_core_type is None
+    assert cfg.inference_precision_hint is None
 
 
 def test_default_other_engine_configs(default_cfg):

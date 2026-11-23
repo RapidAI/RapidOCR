@@ -47,5 +47,9 @@ class CPUConfig:
         if scheduling_core_type is not None:
             config["SCHEDULING_CORE_TYPE"] = str(scheduling_core_type)
 
+        inference_precision_hint = self.cfg.get("inference_precision_hint", None)
+        if inference_precision_hint is not None:
+            config["INFERENCE_PRECISION_HINT"] = str(inference_precision_hint)
+
         logger.info(f"Using OpenVINO config: {config}")
         return config

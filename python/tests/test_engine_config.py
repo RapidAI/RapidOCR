@@ -163,6 +163,7 @@ def test_openvino_cpu_config_omits_defaults():
         num_streams=-1,
         enable_hyper_threading=None,
         scheduling_core_type=None,
+        inference_precision_hint=None,
     )
 
     assert CPUConfig(cfg).get_config() == {}
@@ -177,6 +178,7 @@ def test_openvino_cpu_config_maps_non_default_values(monkeypatch):
         num_streams=1,
         enable_hyper_threading=False,
         scheduling_core_type="PCORE_ONLY",
+        inference_precision_hint="f32",
     )
     monkeypatch.setattr("rapidocr.inference_engine.openvino.device_config.os.cpu_count", lambda: 8)
 
@@ -188,6 +190,7 @@ def test_openvino_cpu_config_maps_non_default_values(monkeypatch):
         "NUM_STREAMS": "1",
         "ENABLE_HYPER_THREADING": "False",
         "SCHEDULING_CORE_TYPE": "PCORE_ONLY",
+        "INFERENCE_PRECISION_HINT": "f32",
     }
 
 
@@ -200,6 +203,7 @@ def test_openvino_cpu_config_ignores_invalid_thread_count(monkeypatch):
         num_streams=-1,
         enable_hyper_threading=None,
         scheduling_core_type=None,
+        inference_precision_hint=None,
     )
     monkeypatch.setattr("rapidocr.inference_engine.openvino.device_config.os.cpu_count", lambda: 8)
 
