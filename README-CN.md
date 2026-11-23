@@ -132,7 +132,7 @@ RapidOCR 是一个基于 Apache2.0 许可的开源项目，其持续开发之所
 
 |Sponsors|Application|Introduction|
 |:---:|:---:|:---|
-|<img src="https://raw.githubusercontent.com/RapidAI/RapidOCRDocs-Assets/main/images/cf/81/cf81416c9356063e2fe7349347388f7089555981a8bea70045f02128a9dca406.jpg" width=65 height=65  style="border-radius: 19px; border: none;">|[无限星河](https://infistar.cc/)|Claude、GPT、Gemini、Grok、DeepSeek 等 200+ 官方纯血模型，一个 Key 搞定。低至官方 0.1 折（省 99%），上千线路安全冗余自动切换，每个模型都能验真，适合 OCR 识别后直接接大模型做文档总结与提取。RapidOCR 用户通过[专属链接](https://www.infistar.cc/register?aff=6K7TCVJX&ref_source=link)注册直接送 ¥5。|
+|<img src="https://raw.githubusercontent.com/RapidAI/RapidOCRDocs-Assets/main/images/cf/81/cf81416c9356063e2fe7349347388f7089555981a8bea70045f02128a9dca406.jpg" width=65 height=65 style="border-radius: 19px; border: none;">|[无限星河](https://infistar.cc/)|Claude、GPT、Gemini、Grok、DeepSeek 等 200+ 官方纯血模型，一个 Key 搞定。低至官方 0.1 折（省 99%），上千线路安全冗余自动切换，每个模型都能验真，适合 OCR 识别后直接接大模型做文档总结与提取。RapidOCR 用户通过[专属链接](https://www.infistar.cc/register?aff=6K7TCVJX&ref_source=link)注册直接送 ¥5。|
 |<img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Quicker.jpg" width=65 height=65  style="border-radius: 12px; border: none;"/>|[Quicker](https://getquicker.net/)|您的指尖工作箱|
 
 #### 支持者
