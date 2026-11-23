@@ -68,6 +68,7 @@ EngineConfig:
         num_streams: -1
         enable_hyper_threading: null
         scheduling_core_type: null
+        inference_precision_hint: null
 
     paddle:
         cpu_math_library_num_threads: -1
