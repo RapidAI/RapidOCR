@@ -145,6 +145,7 @@ RapidOCR is an Apache2.0-licensed open source project with its ongoing developme
 
 |Sponsors|Application|Introduction|
 |:---:|:---:|:---|
+|<img src="https://raw.githubusercontent.com/RapidAI/RapidOCRDocs-Assets/main/images/cf/81/cf81416c9356063e2fe7349347388f7089555981a8bea70045f02128a9dca406.jpg" width=65 height=65  style="border-radius: 19px; border: none;">|[无限星河](https://infistar.cc/)|One API key for 200+ genuine models including Claude, GPT, Gemini, Grok & DeepSeek. From 0.1x official pricing (up to 99% off), 1,000+ redundant routes with auto failover, verifiable models — ideal for piping OCR output into LLMs.RapidOCR users get ¥5 free via the exclusive [link](https://www.infistar.cc/register?aff=6K7TCVJX&ref_source=link).|
 |<img src="https://github.com/RapidAI/RapidOCR/releases/download/v1.1.0/Quicker.jpg" width=65 height=65  style="border-radius: 12px; border: none;"/>|[Quicker](https://getquicker.net/)|Your fingertip toolbox|
 
 #### Backers
