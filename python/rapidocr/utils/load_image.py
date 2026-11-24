@@ -134,6 +134,9 @@ class LoadImage:
         return np.array(img)
 
     def convert_img(self, img: np.ndarray, origin_img_type: Any) -> np.ndarray:
+        if img.dtype.kind == "u" and img.dtype.itemsize == 2:
+            img = self.uint16_to_uint8(img)
+
         if img.ndim == 2:
             return cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
@@ -158,6 +161,17 @@ class LoadImage:
             )
 
         raise LoadImageError(f"The ndim({img.ndim}) of the img is not in [2, 3]")
+
+    @staticmethod
+    def uint16_to_uint8(img: np.ndarray) -> np.ndarray:
+        """16-bit images (PIL mode I;16, cv2.IMREAD_UNCHANGED) can hold values
+        up to 65535, but the models expect 0-255. Scale by the image maximum,
+        so 12-bit data in a 16-bit container keeps its contrast."""
+        max_val = int(img.max()) if img.size else 0
+        if max_val <= 255:
+            return img.astype(np.uint8)
+        img = img.astype(np.uint32) * 255 + max_val // 2
+        return (img // max_val).astype(np.uint8)
 
     @staticmethod
     def cvt_two_to_three(img: np.ndarray) -> np.ndarray:
