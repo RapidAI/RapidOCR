@@ -162,16 +162,12 @@ class LoadImage:
     @staticmethod
     def cvt_two_to_three(img: np.ndarray) -> np.ndarray:
         """gray + alpha → BGR"""
-        img_gray = img[..., 0]
-        img_bgr = cv2.cvtColor(img_gray, cv2.COLOR_GRAY2BGR)
-
-        img_alpha = img[..., 1]
-        not_a = cv2.bitwise_not(img_alpha)
-        not_a = cv2.cvtColor(not_a, cv2.COLOR_GRAY2BGR)
-
-        new_img = cv2.bitwise_and(img_bgr, img_bgr, mask=img_alpha)
-        new_img = cv2.add(new_img, not_a)
-        return new_img
+        if img.dtype != np.uint8:
+            raise LoadImageError("Expected an 8-bit grayscale image with alpha")
+        gray, alpha = cv2.split(img)
+        foreground = cv2.multiply(gray, alpha, scale=1 / 255)
+        blended = cv2.add(foreground, cv2.bitwise_not(alpha))
+        return cv2.cvtColor(blended, cv2.COLOR_GRAY2BGR)
 
     @staticmethod
     def cvt_four_to_three(img: np.ndarray) -> np.ndarray:
