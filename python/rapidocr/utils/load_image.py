@@ -217,13 +217,7 @@ class LoadImage:
             raise LoadImageError("invalid memory address or length")
 
         encoded = string_at(img.address, img.length)
-        arr = np.frombuffer(encoded, dtype=np.uint8)
-        result = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-
-        if result is None:
-            raise LoadImageError("cannot decode image from memory")
-
-        return result
+        return self.convert_img(self.load_img(encoded), bytes)
 
     @staticmethod
     def load_raw_memory_image(img: RawMemoryImage) -> np.ndarray:
