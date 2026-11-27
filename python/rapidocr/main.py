@@ -15,11 +15,12 @@ from .cal_rec_boxes import CalRecBoxes
 from .ch_ppocr_cls import TextClassifier, TextClsOutput
 from .ch_ppocr_det import TextDetector, TextDetOutput
 from .ch_ppocr_rec import TextRecInput, TextRecognizer, TextRecOutput
+from .ch_ppocr_rec.main import RTL_LANGS
 from .cli import check_install, check_required_files, generate_cfg
 from .utils.download_models import download_models
 from .utils.load_image import InputType, LoadImage
 from .utils.log import logger
-from .utils.model_resolver import list_supported_langs
+from .utils.model_resolver import list_supported_langs, normalize_lang
 from .utils.output import RapidOCROutput
 from .utils.parse_parameters import ParseParams
 from .utils.process_img import (
@@ -30,7 +31,7 @@ from .utils.process_img import (
     resize_image_within_bounds,
 )
 from .utils.typings import LangRec, ModelType, OCRVersion, TaskType
-from .utils.utils import filter_by_indices
+from .utils.utils import filter_by_indices, validate_rtl_dependency
 from .utils.vis_res import VisRes
 
 root_dir = Path(__file__).resolve().parent
@@ -89,6 +90,15 @@ class RapidOCR:
         self.return_single_char_box = cfg.Global.return_single_char_box
 
         self.cfg = cfg
+        self._validate_rec_dependencies()
+
+    def _validate_rec_dependencies(self) -> None:
+        if (
+            self.use_rec
+            and self.text_rec is None
+            and normalize_lang(self.cfg.Rec.lang_type) in RTL_LANGS
+        ):
+            validate_rtl_dependency()
 
     def __call__(
         self,
@@ -333,6 +343,8 @@ class RapidOCR:
                 obj = getattr(obj, attr)
 
             setattr(obj, path[-1], value)
+
+        self._validate_rec_dependencies()
 
     def preprocess_img(self, ori_img: np.ndarray) -> Tuple[np.ndarray, Dict[str, Any]]:
         if not self.cfg.Global.use_preprocess_img:
