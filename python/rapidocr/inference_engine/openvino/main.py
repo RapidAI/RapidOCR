@@ -68,7 +68,7 @@ class OpenVINOInferSession(InferSession):
     def __call__(self, input_content: np.ndarray) -> np.ndarray:
         try:
             self.session.infer(inputs=[input_content])
-            return self.session.get_output_tensor().data
+            return self.session.get_output_tensor(0).data
         except Exception as e:
             error_info = traceback.format_exc()
             raise OpenVINOError(error_info) from e
