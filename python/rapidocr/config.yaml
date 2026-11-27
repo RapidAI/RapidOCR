@@ -150,6 +150,19 @@ Det:
     use_dilation: true
     score_mode: fast
 
+    # Sliced inference (SAHI) for large pages, opt-in because it multiplies
+    # inference cost. Tiles are upscaled before inference because small text
+    # falls below what the detector resolves at native scale; boxes are mapped
+    # back afterwards. For a 300 DPI drawing, the tuned combination is:
+    #   use_tiling: true, tile_min_side: 1200, tile_size: 640, tile_scale: 2.0
+    # and raise Global.max_side_len, or the page is shrunk before detection and
+    # no tile ever sees the small text.
+    use_tiling: false
+    tile_min_side: 1200
+    tile_size: 640
+    tile_overlap: 0.15
+    tile_scale: 2.0
+
 Cls:
     engine_type: "onnxruntime"
     lang_type: "ch"
