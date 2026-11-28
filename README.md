@@ -224,4 +224,4 @@ license terms.
 
 RapidOCR does not claim ownership of the upstream model weights.
 Model-specific sources, hashes, attribution, and conversion information
-are documented in [MODEL_LICENSES.md](./MODEL_LICENSES.md).
+are documented in [MODEL_LICENSES.md](./python/MODEL_LICENSES.md).
